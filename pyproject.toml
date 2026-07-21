@@ -13,8 +13,10 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "pgvector>=0.3.6",
+    "psycopg[binary]>=3.2",
     "python-dotenv>=1.0",
     "structlog>=24.4",
+    "greenlet>=3.5.3",
 ]
 
 [project.optional-dependencies]
