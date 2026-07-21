@@ -26,6 +26,15 @@ class Settings(BaseSettings):
     db_schema_test: str = "test"
     vector_dimension: int = 1536
 
+    jwt_secret: str = "change_me_super_secret_at_least_32_chars_long_for_hs256"
+    jwt_algorithm: str = "HS256"
+    access_token_ttl_minutes: int = 60
+    cors_origins: str = "http://localhost:3000"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     @property
     def primary_dsn(self) -> str:
         return (
