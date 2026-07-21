@@ -1,59 +1,57 @@
 # STATUS / CURRENT STATE
 
-**Текущая фаза:** Фаза 1 завершена (Шаги 1.1–1.4). Ожидаю проверки Functional Validator перед Фазой 2.
+**Текущая фаза:** Фаза 2 выполнена (Шаги 2.1–2.2). ✅
 
 ## Новый push-контракт (CLAUDE.md §6)
 - Remote `origin` → `https://github.com/atrshncv-design/MVP-CNTR.git` задан.
 - Все ветки `main`, `feat/frontend`, `feat/backend` отправляются на GitHub после каждого коммита.
 
-## Что сделано (Шаг 1.1 — Git worktrees)
-Изолированные worktree (`git worktree list`):
-- `../technozrelost-frontend` → `feat/frontend` — Next.js 16.2.10 (App Router, TS, Tailwind v4, ESLint, Turbopack).
-- `../technozrelost-backend`  → `feat/backend`  — FastAPI (uv, SQLAlchemy async+asyncpg, Alembic, pgvector, psycopg3, ruff, mypy-strict).
+## Что сделано (Фаза 1 — Инфраструктура)
+- **Шаг 1.1:** Git worktrees `feat/frontend` (Next.js 16.2.10) + `feat/backend` (FastAPI, uv).
+- **Шаг 1.2:** PostgreSQL Primary `:5432` + Replica `:5433` + pgvector + схемы public/test + Serial/BigSerial + Hash/B-Tree/ivfflat.
+- **Шаг 1.3:** NextAuth.js v5 + FastAPI JWT + Middleware RBAC + 9 dashboards + login/register/forbidden.
+- **Шаг 1.4:** RBAC: 9 ролей, permissions, users, user_roles; Alembic migration 0003.
+- Smoke-тесты: 8/8 пройдены. Backend ruff+mypy чисто. Frontend tsc+lint+build чисто.
 
-## Что сделано (Шаг 1.2 — PostgreSQL + pgvector)
-- `infra/docker-compose.yml`: Primary `:5432` + hot-standby Replica `:5433` (streaming replication, слот `tz_replica_slot`).
-- Схемы `public`/`test`, расширения `vector 0.8.0`, `pg_trgm`.
-- Миграции: `0001_init_schemas`, `0002_rag_documents` (BigSerial PK + Hash/B-Tree/ivfflat индексы).
+## Что сделано (Фаза 2 — Адаптация MVP 0 + ЛК ГосКомпании)
+### Шаг 2.1: Портирование бизнес-логики из MVP 0
+- `src/lib/ugt-data.ts` — полные данные 9 уровней УГТ (критерии, KPI, риски, документы) + УГП/УГИ/УГС.
+- `src/lib/questionnaire-data.ts` — полный опросник по ГОСТ Р 58048-2017 (9 уровней, ~350 вопросов с метками).
+- Установлены npm-зависимости: `framer-motion`, `lucide-react`, `recharts`.
 
-## Что сделано (Шаг 1.4 — RBAC в БД)
-- Миграция `0003_rbac.sql` / Alembic `0003_rbac.py`:
-  - `public.roles` (Serial PK) — **9 ролей из PRD §3** с си́дами: ГосКомпания-заказчик, R&D-исполнитель, Научная организация (P2), Серийный производитель, Эксперт УГТ, Аудитор (P2), Инвестор, Администратор ЦНТР, Менеджер ЦНТР.
-  - `public.permissions` (Serial PK) + `public.role_permissions` (many-to-many) — гранулярные права по PRD.
-  - `public.users` (BigSerial PK): `password_hash` (bcrypt), `is_active`, `is_superuser`, `last_login_at`. Hash-индекс по `email` (lookup) + B-Tree unique по `email`.
-  - `public.user_roles` (many-to-many), `is_primary` с partial-unique индексом (одна primary role на пользователя).
-- SQLAlchemy-модели (`app/db/models.py`) — единственный путь обращения к БД в рантайме (152-ФЗ).
+### Шаг 2.1: Компонент УГТ-шкалы
+- `src/components/ugt-scale/ugt-scale-page-client.tsx` — 9 интерактивных карточек с анимацией (hero-секция, градиентная полоса, KPI-бейджи, hover-эффекты).
+- Страница: `/dashboard/gk_customer/projects` (server component → client).
 
-## Что сделано (Шаг 1.3 — NextAuth.js + Middleware)
-- Backend: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`; JWT (HS256), bcrypt; зависимость `require_role(*slugs)` для защиты эндпоинтов. CORS на фронт.
-- Frontend: NextAuth.js v5 (beta.32), Credentials-провайдер → POST на FastAPI `/auth/login`; стратегия JWT; session.user.roles + accessToken.
-- Серверные страницы: `/login` (формас Suspense), `/register` (выбор роли из 9), `/dashboard` (диспетчер по primary-роли), 9 кабинетов `/dashboard/<role_slug>`, `/forbidden` (страница запрета), home с навигацией по статусу сессии.
-- **Middleware (`src/middleware.ts`):**
-  - `/dashboard/*` без сессии → редирект на `/login?callbackUrl=...`.
-  - `/dashboard/<role>` с чужой ролью → `rewrite('/forbidden')`.
-  - `/login`/`/register` при залогиненной сессии → редирект в primary-кабинет.
+### Шаг 2.1: Опросник-вьюер (Wizard)
+- `src/components/questionnaire/questionnaire-wizard-client.tsx` — full multi-step wizard:
+  - **info**: форма проекта (название, описание, категория, целевой УГТ)
+  - **9 шагов**: УГТ 1–9 с категорийными фильтрами (Научные/Технические/Организационные/Производственные), expandable-карточками с описанием каждого пункта
+  - **results**: круговой прогресс, гистограмма/радар (recharts), разбивка по уровням, рекомендации для перехода на следующий УГТ
+- Страница: `/dashboard/gk_customer/projects/new`
 
-## Smoke-тесты (E2E пройдены)
-1. `/dashboard`, `/dashboard/cntr_admin` без сессии → 307 на `/login`. ✅
-2. Регистрация `gk_customer` через фронт→бэк → 201. ✅
-3. Login через NextAuth (csrf+credentials) → 302 в `/dashboard`. ✅
-4. `/api/auth/session` содержит `roles:['gk_customer']` и `accessToken`. ✅
-5. `/dashboard/gk_customer` со своей ролью → 200. ✅
-6. `/dashboard/cntr_admin` GK-юзером → контент `Доступ запрещён`. ✅
-7. `/dashboard/gk_customer`, `/dashboard/cntr_admin` R&D-юзером → `Доступ запрещён`. ✅
-8. `/login` при залогиненной сессии → 307 в `/dashboard/<primary_role>`. ✅
-- Backend health-checks: `ruff check`/`mypy --strict` чисто; `npm run lint`/`tsc`/`next build` чисто.
+### Шаг 2.2: Дашборд ГосКомпании
+- `/dashboard/gk_customer/page.tsx` — переработан в rich dashboard:
+  - **Hero-секция** (тёмный градиент #0F172A) с приветствием
+  - **«Создание проекта»** — виджет-карта (градиент #2E5BFF→#4A82FF) с ссылкой на УГТ-шкалу
+  - **«Загрузка ТЗ»** — виджет-карта (градиент #FF7A2E→#FF9A5E)
+  - **Статистика** — 4 инфо-блока (Активные проекты, На согласовании, Эксперты, Исполнители)
+
+### Проверка сборки
+- `tsc --noEmit`: чисто ✅
+- `npm run lint` (eslint): чисто ✅
+- `npm run build` (next build): чисто, все 19 роутов сгенерированы ✅
+- Push на GitHub: `feat/frontend` `de672d4` отправлен
 
 ## Актуальные проблемы / Блокеры
-- Нет. Docker-compose поднимается из worktree `feat/backend`: `docker compose -f infra/docker-compose.yml up -d` (данные в volumes сохраняются).
+- Нет. Все smoke-тесты Фазы 1 также проходят (инфраструктура не менялась).
 
 ## Следующий шаг для агента
-Фаза 2 (Plan.md):
-- Шаг 2.1 — интеграция кода из `КОД MVP "0" 210726 - ТОЛЬКО ФРОНТЭНД` (шкала УГТ 1–9, опросник) в новый Next.js App Router.
-- Шаг 2.2/2.3 — базовый UI ЛК для ролей «ГосКомпания» и «Исполнитель».
+Фаза 3 (Plan.md):
+- Шаг 2.3 — UI ЛК для роли «Исполнитель» (R&D/ВУЗ).
+- Шаг 3.1 — дашборд проекта с отражением прогресса УГТ.
+- Шаг 3.2 — FastAPI эндпоинты для приёма данных опросников.
 
 ## Артефакты для проверки Functional Validator
-- Ветки на GitHub: `main`, `feat/frontend`, `feat/backend` (см. https://github.com/atrshncv-design/MVP-CNTR).
-- Запуск локально: из worktree `feat/backend` поднять БД (`docker compose ... up -d`), затем `uv run alembic upgrade head`, `uv run uvicorn app.main:app --port 8000`; из worktree `feat/frontend` `npm install && npm run dev` (`.env.local` уже задан, но не в git — см. `.env.example`-аналоги).
-- Проверить роли: `docker exec tz-pg-primary psql -U technoz -d technozrelost -c "SELECT role_no, slug, name FROM public.roles ORDER BY role_no;"`
-- Проверить RBAC-сессию: `curl -s -X POST http://localhost:8000/api/v1/auth/register ...` и `.../auth/login`.
+- Ветки на GitHub: `main`, `feat/frontend` (commit `de672d4`), `feat/backend`.
+- После `npm run dev`: `/dashboard/gk_customer` → дашборд с виджетами; `/dashboard/gk_customer/projects` → шкала УГТ; `/dashboard/gk_customer/projects/new` → опросник.
