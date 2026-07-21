@@ -47,6 +47,33 @@ export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
     "cntr_admin",
     "cntr_manager",
   ],
+  "/dashboard/executors": [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "cntr_admin",
+    "cntr_manager",
+  ],
+  "/dashboard/technologies": [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "ugt_expert",
+    "auditor",
+    "investor",
+    "cntr_admin",
+    "cntr_manager",
+  ],
+  "/dashboard/ai-assistant": [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "cntr_admin",
+    "cntr_manager",
+  ],
 };
 
 export function isProtectedRoute(pathname: string): boolean {

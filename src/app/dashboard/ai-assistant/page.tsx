@@ -1,0 +1,165 @@
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Send,
+  Bot,
+  User,
+  Loader2,
+  FileText,
+} from 'lucide-react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  sources?: Array<{ id: number; title: string; doc_type: string }>;
+}
+
+export default function AiAssistantPage() {
+  const { data: session } = useSession();
+  const [messages, setMessages] = useState<Message[]>([{
+    role: 'assistant',
+    content: 'Здравствуйте! Я AI-ассистент платформы «Технозрелость». Задайте мне вопрос по методологии ГОСТ Р 58048-2017, уровням УГТ или документации проектов.',
+  }]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || sending || !session?.user?.accessToken) return;
+
+    const userMsg: Message = { role: 'user', content: input.trim() };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput('');
+    setSending(true);
+
+    try {
+      const res = await fetch(`${API_URL}/api/v1/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.user.accessToken}`,
+        },
+        body: JSON.stringify({ message: userMsg.content, history: [] }),
+      });
+
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+
+      const assistantMsg: Message = {
+        role: 'assistant',
+        content: data.reply.content,
+        sources: data.sources?.map((s: { id: number; title: string; doc_type: string }) => ({
+          id: s.id,
+          title: s.title,
+          doc_type: s.doc_type,
+        })) ?? [],
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch {
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: 'Произошла ошибка при обращении к серверу. Попробуйте ещё раз.',
+      }]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="flex h-[calc(100vh-100px)] flex-col">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-[#0F172A]">AI-ассистент</h1>
+        <p className="text-sm text-gray-500">
+          Задавайте вопросы по ГОСТ Р 58048-2017, уровням УГТ и документации
+        </p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+        {messages.map((msg, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+          >
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+                msg.role === 'user'
+                  ? 'bg-[#2E5BFF]'
+                  : 'bg-gray-100'
+              }`}
+            >
+              {msg.role === 'user'
+                ? <User size={16} className="text-white" />
+                : <Bot size={16} className="text-[#2E5BFF]" />
+              }
+            </div>
+            <div
+              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                msg.role === 'user'
+                  ? 'bg-[#2E5BFF] text-white'
+                  : 'bg-gray-50 text-[#0F172A]'
+              }`}
+            >
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+              {msg.sources && msg.sources.length > 0 && (
+                <div className="mt-2 border-t border-gray-200 pt-2">
+                  <p className="flex items-center gap-1 text-xs text-gray-400 mb-1">
+                    <FileText size={12} /> Источники:
+                  </p>
+                  {msg.sources.map((s) => (
+                    <span
+                      key={s.id}
+                      className="mr-1 inline-block rounded bg-[#2E5BFF]10 px-2 py-0.5 text-xs text-[#2E5BFF]"
+                    >
+                      {s.title}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ))}
+        {sending && (
+          <div className="flex gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100">
+              <Bot size={16} className="text-[#2E5BFF]" />
+            </div>
+            <div className="rounded-2xl bg-gray-50 px-4 py-3">
+              <Loader2 size={16} className="animate-spin text-[#2E5BFF]" />
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Введите вопрос по ГОСТ Р 58048-2017..."
+          className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#2E5BFF]"
+        />
+        <button
+          onClick={sendMessage}
+          disabled={sending || !input.trim()}
+          className="flex items-center gap-2 rounded-xl bg-[#2E5BFF] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1a4be0] disabled:opacity-50"
+        >
+          {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          Отправить
+        </button>
+      </div>
+    </div>
+  );
+}
