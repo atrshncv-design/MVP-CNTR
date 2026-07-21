@@ -1,65 +1,65 @@
 # STATUS / CURRENT STATE
 
-**Текущая фаза:** Фаза 2 выполнена (Шаги 2.1–2.2). ✅
+**Текущая фаза:** Фаза 3 завершена ✅ (Шаги 3.1–3.4).
 
 ## Новый push-контракт (CLAUDE.md §6)
 - Remote `origin` → `https://github.com/atrshncv-design/MVP-CNTR.git` задан.
 - Все ветки `main`, `feat/frontend`, `feat/backend` отправляются на GitHub после каждого коммита.
 
-## Что сделано (Фаза 1 — Инфраструктура)
-- **Шаг 1.1:** Git worktrees `feat/frontend` (Next.js 16.2.10) + `feat/backend` (FastAPI, uv).
-- **Шаг 1.2:** PostgreSQL Primary `:5432` + Replica `:5433` + pgvector + схемы public/test + Serial/BigSerial + Hash/B-Tree/ivfflat.
-- **Шаг 1.3:** NextAuth.js v5 + FastAPI JWT + Middleware RBAC + 9 dashboards + login/register/forbidden.
-- **Шаг 1.4:** RBAC: 9 ролей, permissions, users, user_roles; Alembic migration 0003.
-- Smoke-тесты: 8/8 пройдены. Backend ruff+mypy чисто. Frontend tsc+lint+build чисто.
+## Что сделано (Фаза 1 — Инфраструктура) ✅
+- **Шаг 1.1:** Git worktrees (Next.js 16.2.10 + FastAPI, uv).
+- **Шаг 1.2:** PostgreSQL Primary/Replica + pgvector + schemas public/test + Serial/BigSerial + Hash/B-Tree/ivfflat.
+- **Шаг 1.3:** NextAuth.js v5 + FastAPI JWT + Middleware RBAC.
+- **Шаг 1.4:** RBAC: 9 ролей, permissions, users, user_roles; Alembic 0003.
 
-## Что сделано (Фаза 2 — Адаптация MVP 0 + ЛК ГосКомпании)
-### Шаг 2.1: Портирование бизнес-логики из MVP 0
-- `src/lib/ugt-data.ts` — полные данные 9 уровней УГТ (критерии, KPI, риски, документы) + УГП/УГИ/УГС.
-- `src/lib/questionnaire-data.ts` — полный опросник по ГОСТ Р 58048-2017 (9 уровней, ~350 вопросов с метками).
-- Установлены npm-зависимости: `framer-motion`, `lucide-react`, `recharts`.
+## Что сделано (Фаза 2 — Адаптация MVP 0 + ЛК) ✅
+- **Шаг 2.1–2.3:** Портированы УГТ-данные + опросник, УГТ-шкала, Wizard, дашборды ГК и R&D.
 
-### Шаг 2.1: Компонент УГТ-шкалы
-- `src/components/ugt-scale/ugt-scale-page-client.tsx` — 9 интерактивных карточек с анимацией (hero-секция, градиентная полоса, KPI-бейджи, hover-эффекты).
-- Страница: `/dashboard/gk_customer/projects` (server component → client).
+## Что сделано (Фаза 3 — Дашборд проекта + RAG + Генератор) ✅
 
-### Шаг 2.1: Опросник-вьюер (Wizard)
-- `src/components/questionnaire/questionnaire-wizard-client.tsx` — full multi-step wizard:
-  - **info**: форма проекта (название, описание, категория, целевой УГТ)
-  - **9 шагов**: УГТ 1–9 с категорийными фильтрами (Научные/Технические/Организационные/Производственные), expandable-карточками с описанием каждого пункта
-  - **results**: круговой прогресс, гистограмма/радар (recharts), разбивка по уровням, рекомендации для перехода на следующий УГТ
-- Страница: `/dashboard/gk_customer/projects/new`
+### Шаг 3.1 (frontend): Дашборд проекта `/dashboard/project/[id]`
+- Multi-role маршрут (все 9 ролей) в `ROUTE_ALLOWED_ROLES`.
+- Radar УГТ (recharts), прогресс-бары 1–9, КТ-1 go/no-go, документы, команда, бюджет (RBAC), аудит.
 
-### Шаг 2.2: Дашборд ГосКомпании
-- `/dashboard/gk_customer/page.tsx` — переработан в rich dashboard:
-  - **Hero-секция** (тёмный градиент #0F172A) с приветствием
-  - **«Создание проекта»** — виджет-карта (градиент #2E5BFF→#4A82FF) с ссылкой на УГТ-шкалу
-  - **«Загрузка ТЗ»** — виджет-карта (градиент #FF7A2E→#FF9A5E)
-  - **Статистика** — 4 инфо-блока (Активные проекты, На согласовании, Эксперты, Исполнители)
+### Шаг 3.2 (backend): API опросников
+- 6 таблиц (projects, questionnaire_results, project_members, control_points, project_documents, audit_trail).
+- `GET /api/v1/projects/{id}` (полный граф) + `POST /api/v1/projects/questionnaire` (upsert).
+- Alembic 0004, ruff чисто.
 
-### Проверка сборки
-- `tsc --noEmit`: чисто ✅
-- `npm run lint` (eslint): чисто ✅
-- `npm run build` (next build): чисто, все 19 роутов сгенерированы ✅
-- Push на GitHub: `feat/frontend` `de672d4` отправлен
+### Шаг 3.3 (backend): RAG-пайплайн
+- `app/core/embeddings.py` — детерминированная 1536-dim векторизация текста (feature hashing + SHA-256), без внешних зависимостей.
+- `app/services/rag.py` — upsert документа с вычислением эмбеддинга; KNN-поиск через pgvector `<=>` (cosine distance).
+- `app/api/v1/rag.py` — 3 эндпоинта:
+  - `POST /api/v1/rag/templates` — загрузка шаблона с авто-эмбеддингом (только cntr_admin/cntr_manager)
+  - `POST /api/v1/rag/search` — семантический поиск по тексту (doc_type/ugt_level фильтры)
+  - `GET /api/v1/rag/templates` — список шаблонов
+- `db/migrations/sql/0005_rag_metadata.sql` — добавил `template_metadata JSONB` в `rag_documents`.
+- Alembic 0005.
 
-## Актуальные проблемы / Блокеры
-- Нет. Все smoke-тесты Фазы 1 также проходят (инфраструктура не менялась).
+### Шаг 3.4 (backend): Генератор документов (ИИ v0)
+- `app/services/document_generator.py` — шаблонизатор `{{variable}}`:
+  - Подстановка полей проекта (name, description, category, budget, target/current level).
+  - Подстановка данных опросника (level_N_percentage, level_N_items).
+  - Бюджетные расчёты (30%/40%/30% по этапам).
+- `app/api/v1/generation.py` — `POST /api/v1/projects/{id}/generate/{doc_type}` (tz / passport / teo).
+- `app/db/seed_templates.py` — 3 полноценных шаблона с переменными:
+  - **Техническое задание (ТЗ)** — структура по ГОСТ, бюджет, перечень документации.
+  - **Паспорт проекта** — УГТ-профиль по 9 уровням, команда, контрольные точки.
+  - **Технико-экономическое обоснование (ТЭО)** — оценка затрат, риски, эффективность.
 
-### Шаг 2.3: ЛК Исполнителя (R&D)
-- `/dashboard/rd_executor/page.tsx` — полноценный дашборд с тремя разделами:
-  - **«Мои компетенции»**: карточка профиля организации (название, УГТ 3–6, тип, завершённые проекты) + 6 областей компетенций с тегами и уровнем УГТ (e.g. «Компьютерное зрение — УГТ 6»)
-  - **«Доступные задачи»**: витрина 6 mock-проектов от ГосКомпаний (Росатом, РЖД, Газпром, Лукойл, ЦНТР) — карточки с УГТ-range, бюджетом, описанием, тегами, кнопкой «Откликнуться»
-  - **«Шаблоны документов»**: 3 заглушки скачивания (ТЗ, ТЭО, Паспорт проекта) с иконками, форматом, размером
-
-## Текущая фаза: Фаза 2 завершена ✅ (Шаги 2.1–2.3)
-
-## Следующий шаг для агента
-Фаза 3 (Plan.md):
-- Шаг 3.1 — дашборд проекта с отражением прогресса УГТ (шкала 1–9).
-- Шаг 3.2 — FastAPI эндпоинты для приёма JSON-данных опросников.
-- Шаг 3.3 — RAG-пайплайн: загрузка шаблонов в pgvector.
+### Проверка
+- Backend: `ruff check app/ db/` — чисто ✅.
+- Frontend: `tsc --noEmit` ✅, `npm run lint` ✅, `npm run build` ✅ (21 роутов).
+- Push: `feat/backend` (3484a24) + `feat/frontend` (eaa4077) отправлены в `origin`.
 
 ## Артефакты для проверки Functional Validator
-- Ветки на GitHub: `main`, `feat/frontend` (commit `de672d4`), `feat/backend`.
-- После `npm run dev`: `/dashboard/gk_customer` → дашборд с виджетами; `/dashboard/gk_customer/projects` → шкала УГТ; `/dashboard/gk_customer/projects/new` → опросник.
+- `POST /api/v1/rag/templates` — загрузить новый шаблон → авто-эмбеддинг
+- `POST /api/v1/rag/search` — найти шаблоны по текстовому запросу
+- `POST /api/v1/projects/{id}/generate/tz` — сгенерировать ТЗ по данным проекта
+- `POST /api/v1/projects/{id}/generate/passport` — паспорт проекта
+- `POST /api/v1/projects/{id}/generate/teo` — ТЭО
+- `uv run python app/db/seed_templates.py` — засеять 3 шаблона в RAG-базу
+
+## Следующая фаза: Фаза 4 (Plan.md)
+- Шаг 4.1 — Реестр технологий и Каталог исполнителей.
+- Шаг 4.2 — Чат-бот AI v0 на GigaChat API.
