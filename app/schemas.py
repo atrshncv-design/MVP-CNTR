@@ -166,3 +166,47 @@ class GeneratedDocumentOut(BaseModel):
     content: str
     template_id: int | None = None
     variables: dict[str, str] = {}
+
+
+# ─── Executors & Technologies (Реестры) ──────────────────────────────────────
+
+
+class ExecutorOut(BaseModel):
+    id: int
+    full_name: str
+    organization: str | None = None
+    role_slug: str
+    role_name: str
+    competencies: list[str] = []
+    completed_projects: int = 0
+
+
+class TechnologyOut(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+    category: str | None = None
+    status: str
+    current_level: int
+    target_level: int
+    organization: str | None = None
+    created_by_name: str | None = None
+    created_at: str | None = None
+
+
+# ─── AI Assistant (Чат) ──────────────────────────────────────────────────────
+
+
+class ChatIn(BaseModel):
+    message: str
+    history: list[dict] = []
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatOut(BaseModel):
+    reply: ChatMessage
+    sources: list[RagDocumentOut] = []
