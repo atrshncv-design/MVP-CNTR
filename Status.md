@@ -1,29 +1,59 @@
 # STATUS / CURRENT STATE
 
-**Текущая фаза:** Фаза 1 завершена по Шагам 1.1–1.2. Ожидаю проверки Functional Validator перед Шагом 1.3.
+**Текущая фаза:** Фаза 1 завершена (Шаги 1.1–1.4). Ожидаю проверки Functional Validator перед Фазой 2.
 
-**Что сделано (Шаг 1.1 — Git worktrees):**
-- Инициализирован git-репозиторий на ветке `main`; baseline-коммиты с CLAUDE.md/Plan.md/PRD.md/Status.md и импортом исходников MVP 0 (вложенный `.git` переименован в `.git_backup_mvp0`, исключён из индекса).
-- Созданы два изолированных worktree (sibling-директории, не ломают `main`):
-  - `../technozrelost-frontend`  → ветка `feat/frontend` — скаффолд Next.js 16.2.10 (App Router, TypeScript, Tailwind v4, ESLint, Turbopack, src-dir). `tsc --noEmit` и `eslint` — чисто.
-  - `../technozrelost-backend`   → ветка `feat/backend`  — скаффолд FastAPI (uv, Python 3.14 venv, SQLAlchemy 2 async + asyncpg, Alembic, pgvector, psycopg3, ruff, mypy). Health-эндпоинты `/api/v1/health` и `/api/v1/ready` отвечают 200; `ruff check` и `mypy --strict` — чисто.
+## Новый push-контракт (CLAUDE.md §6)
+- Remote `origin` → `https://github.com/atrshncv-design/MVP-CNTR.git` задан.
+- Все ветки `main`, `feat/frontend`, `feat/backend` отправляются на GitHub после каждого коммита.
 
-**Что сделано (Шаг 1.2 — PostgreSQL + pgvector):**
-- `infra/docker-compose.yml`: PostgreSQL 16 + pgvector 0.8.0, Primary (`:5432`) и hot-standby Replica (`:5433`) через streaming replication (`pg_basebackup` + физический слот `tz_replica_slot`).
-- Миграции (Alembic + эквивалентный SQL-слой в `db/migrations/sql/`):
-  - `0001_init_schemas.sql`: схемы `public` (продакшн) и `test` (гипотезы); расширения `vector` и `pg_trgm`; журнал `db_migration_log` (Serial PK, Hash + B-Tree).
-  - `0002_rag_documents.sql`: `public.rag_documents` — BigSerial PK, `embedding vector(1536)`, Hash-индекс по `content_hash`, B-Tree по `(doc_type, created_at)` и `ugt_level`, ivfflat по `embedding` (cosine).
-- **Валидация пройдена:** схемы public/test существуют; `vector 0.8.0` и `pg_trgm 1.6` подключены; индексы hash/btree/ivfflat созданы; sequences Serial/BigSerial на месте; Primary принимает запись, Replica read-only (INSERT отвергается); строка реплицируется, lag ~0; KNN-поиск по векторам работает.
-- Заготовлен `infra/nginx/nginx.conf` — балансировщик перед API-серверами (активируется в Фазе 3).
+## Что сделано (Шаг 1.1 — Git worktrees)
+Изолированные worktree (`git worktree list`):
+- `../technozrelost-frontend` → `feat/frontend` — Next.js 16.2.10 (App Router, TS, Tailwind v4, ESLint, Turbopack).
+- `../technozrelost-backend`  → `feat/backend`  — FastAPI (uv, SQLAlchemy async+asyncpg, Alembic, pgvector, psycopg3, ruff, mypy-strict).
 
-**Актуальные проблемы / Блокеры:**
-- Нет. (Docker Desktop был поднят автоматически; если daemon упадёт — `docker compose -f infra/docker-compose.yml up -d` из worktree backend поднимет стек заново, данные сохранятся в volumes.)
+## Что сделано (Шаг 1.2 — PostgreSQL + pgvector)
+- `infra/docker-compose.yml`: Primary `:5432` + hot-standby Replica `:5433` (streaming replication, слот `tz_replica_slot`).
+- Схемы `public`/`test`, расширения `vector 0.8.0`, `pg_trgm`.
+- Миграции: `0001_init_schemas`, `0002_rag_documents` (BigSerial PK + Hash/B-Tree/ivfflat индексы).
 
-**Следующий шаг для агента:**
-Шаг 1.3 (Plan.md) — интеграция NextAuth.js на стороне Next.js (регистрация, логин, защита маршрутов через Middleware). Затем Шаг 1.4 — RBAC-таблицы для 9 ролей (`Users`, `Roles`, `Projects`) в worktree `feat/backend`.
+## Что сделано (Шаг 1.4 — RBAC в БД)
+- Миграция `0003_rbac.sql` / Alembic `0003_rbac.py`:
+  - `public.roles` (Serial PK) — **9 ролей из PRD §3** с си́дами: ГосКомпания-заказчик, R&D-исполнитель, Научная организация (P2), Серийный производитель, Эксперт УГТ, Аудитор (P2), Инвестор, Администратор ЦНТР, Менеджер ЦНТР.
+  - `public.permissions` (Serial PK) + `public.role_permissions` (many-to-many) — гранулярные права по PRD.
+  - `public.users` (BigSerial PK): `password_hash` (bcrypt), `is_active`, `is_superuser`, `last_login_at`. Hash-индекс по `email` (lookup) + B-Tree unique по `email`.
+  - `public.user_roles` (many-to-many), `is_primary` с partial-unique индексом (одна primary role на пользователя).
+- SQLAlchemy-модели (`app/db/models.py`) — единственный путь обращения к БД в рантайме (152-ФЗ).
 
-**Артефакты для проверки Functional Validator:**
-- `git worktree list` (из корня проекта).
-- Ветки: `main`, `feat/frontend`, `feat/backend` (`git log --oneline --all`).
-- Контейнеры: `docker ps` → `tz-pg-primary`, `tz-pg-replica`.
-- БД: `docker exec tz-pg-primary psql -U technoz -d technozrelost -c "\dt public.*"` и `\dx`.
+## Что сделано (Шаг 1.3 — NextAuth.js + Middleware)
+- Backend: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`; JWT (HS256), bcrypt; зависимость `require_role(*slugs)` для защиты эндпоинтов. CORS на фронт.
+- Frontend: NextAuth.js v5 (beta.32), Credentials-провайдер → POST на FastAPI `/auth/login`; стратегия JWT; session.user.roles + accessToken.
+- Серверные страницы: `/login` (формас Suspense), `/register` (выбор роли из 9), `/dashboard` (диспетчер по primary-роли), 9 кабинетов `/dashboard/<role_slug>`, `/forbidden` (страница запрета), home с навигацией по статусу сессии.
+- **Middleware (`src/middleware.ts`):**
+  - `/dashboard/*` без сессии → редирект на `/login?callbackUrl=...`.
+  - `/dashboard/<role>` с чужой ролью → `rewrite('/forbidden')`.
+  - `/login`/`/register` при залогиненной сессии → редирект в primary-кабинет.
+
+## Smoke-тесты (E2E пройдены)
+1. `/dashboard`, `/dashboard/cntr_admin` без сессии → 307 на `/login`. ✅
+2. Регистрация `gk_customer` через фронт→бэк → 201. ✅
+3. Login через NextAuth (csrf+credentials) → 302 в `/dashboard`. ✅
+4. `/api/auth/session` содержит `roles:['gk_customer']` и `accessToken`. ✅
+5. `/dashboard/gk_customer` со своей ролью → 200. ✅
+6. `/dashboard/cntr_admin` GK-юзером → контент `Доступ запрещён`. ✅
+7. `/dashboard/gk_customer`, `/dashboard/cntr_admin` R&D-юзером → `Доступ запрещён`. ✅
+8. `/login` при залогиненной сессии → 307 в `/dashboard/<primary_role>`. ✅
+- Backend health-checks: `ruff check`/`mypy --strict` чисто; `npm run lint`/`tsc`/`next build` чисто.
+
+## Актуальные проблемы / Блокеры
+- Нет. Docker-compose поднимается из worktree `feat/backend`: `docker compose -f infra/docker-compose.yml up -d` (данные в volumes сохраняются).
+
+## Следующий шаг для агента
+Фаза 2 (Plan.md):
+- Шаг 2.1 — интеграция кода из `КОД MVP "0" 210726 - ТОЛЬКО ФРОНТЭНД` (шкала УГТ 1–9, опросник) в новый Next.js App Router.
+- Шаг 2.2/2.3 — базовый UI ЛК для ролей «ГосКомпания» и «Исполнитель».
+
+## Артефакты для проверки Functional Validator
+- Ветки на GitHub: `main`, `feat/frontend`, `feat/backend` (см. https://github.com/atrshncv-design/MVP-CNTR).
+- Запуск локально: из worktree `feat/backend` поднять БД (`docker compose ... up -d`), затем `uv run alembic upgrade head`, `uv run uvicorn app.main:app --port 8000`; из worktree `feat/frontend` `npm install && npm run dev` (`.env.local` уже задан, но не в git — см. `.env.example`-аналоги).
+- Проверить роли: `docker exec tz-pg-primary psql -U technoz -d technozrelost -c "SELECT role_no, slug, name FROM public.roles ORDER BY role_no;"`
+- Проверить RBAC-сессию: `curl -s -X POST http://localhost:8000/api/v1/auth/register ...` и `.../auth/login`.
