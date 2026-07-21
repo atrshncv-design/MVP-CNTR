@@ -1,1 +1,3 @@
 .DS_Store\nnode_modules/\n.next/\n__pycache__/\n*.pyc\n.venv/\n.env\n.env.local\ndist/\nbuild/\n.idea/\n.vscode/\ncoverage/\n*.log\n.DS_Store\n
+.git_backup_mvp0/
+*/.git_backup_mvp0/
