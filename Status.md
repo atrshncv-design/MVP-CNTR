@@ -1,65 +1,102 @@
 # STATUS / CURRENT STATE
 
-**Текущая фаза:** Фаза 3 завершена ✅ (Шаги 3.1–3.4).
+**MVP v2 ЗАВЕРШЁН ✅ (Фазы 1–4)**
 
-## Новый push-контракт (CLAUDE.md §6)
-- Remote `origin` → `https://github.com/atrshncv-design/MVP-CNTR.git` задан.
-- Все ветки `main`, `feat/frontend`, `feat/backend` отправляются на GitHub после каждого коммита.
+## Push-контракт
+- Remote `origin` → `https://github.com/atrshncv-design/MVP-CNTR.git`
+- `main` (dd91a07), `feat/frontend` (e8805f2), `feat/backend` (298b24f) — все отправлены.
 
-## Что сделано (Фаза 1 — Инфраструктура) ✅
-- **Шаг 1.1:** Git worktrees (Next.js 16.2.10 + FastAPI, uv).
-- **Шаг 1.2:** PostgreSQL Primary/Replica + pgvector + schemas public/test + Serial/BigSerial + Hash/B-Tree/ivfflat.
-- **Шаг 1.3:** NextAuth.js v5 + FastAPI JWT + Middleware RBAC.
-- **Шаг 1.4:** RBAC: 9 ролей, permissions, users, user_roles; Alembic 0003.
+---
 
-## Что сделано (Фаза 2 — Адаптация MVP 0 + ЛК) ✅
-- **Шаг 2.1–2.3:** Портированы УГТ-данные + опросник, УГТ-шкала, Wizard, дашборды ГК и R&D.
+## Фаза 1 — Инфраструктура ✅
+- **Шаг 1.1:** Git worktrees (Next.js 16 + FastAPI, uv)
+- **Шаг 1.2:** PostgreSQL Primary/Replica + pgvector + схемы public/test
+- **Шаг 1.3:** NextAuth.js v5 + FastAPI JWT + middleware RBAC
+- **Шаг 1.4:** RBAC: 9 ролей, permissions, users, user_roles (Alembic 0003)
 
-## Что сделано (Фаза 3 — Дашборд проекта + RAG + Генератор) ✅
+## Фаза 2 — Адаптация MVP 0 + ЛК ✅
+- **Шаг 2.1–2.3:** УГТ-данные, опросник ~350 вопросов, Wizard, УГТ-шкала, дашборды ГК и R&D
 
-### Шаг 3.1 (frontend): Дашборд проекта `/dashboard/project/[id]`
-- Multi-role маршрут (все 9 ролей) в `ROUTE_ALLOWED_ROLES`.
-- Radar УГТ (recharts), прогресс-бары 1–9, КТ-1 go/no-go, документы, команда, бюджет (RBAC), аудит.
+## Фаза 3 — Дашборд проекта + RAG + Генератор ✅
+- **Шаг 3.1:** `/dashboard/project/[id]` — радар УГТ, прогресс-бары, КТ, документы, команда, бюджет (RBAC), аудит
+- **Шаг 3.2:** 6 таблиц (projects, questionnaire_results, project_members, control_points, project_documents, audit_trail); `GET /api/v1/projects/{id}` + `POST /api/v1/projects/questionnaire`
+- **Шаг 3.3:** RAG-пайплайн: hash-based embedding (1536-dim), KNN-поиск pgvector `<=>`, `POST /api/v1/rag/templates`, `POST /api/v1/rag/search`
+- **Шаг 3.4:** Генератор документов: `POST /api/v1/projects/{id}/generate/{tz|passport|teo}`, шаблоны с `{{variable}}`, seed-скрипт
 
-### Шаг 3.2 (backend): API опросников
-- 6 таблиц (projects, questionnaire_results, project_members, control_points, project_documents, audit_trail).
-- `GET /api/v1/projects/{id}` (полный граф) + `POST /api/v1/projects/questionnaire` (upsert).
-- Alembic 0004, ruff чисто.
+## Фаза 4 — Реестры + AI-ассистент ✅
 
-### Шаг 3.3 (backend): RAG-пайплайн
-- `app/core/embeddings.py` — детерминированная 1536-dim векторизация текста (feature hashing + SHA-256), без внешних зависимостей.
-- `app/services/rag.py` — upsert документа с вычислением эмбеддинга; KNN-поиск через pgvector `<=>` (cosine distance).
-- `app/api/v1/rag.py` — 3 эндпоинта:
-  - `POST /api/v1/rag/templates` — загрузка шаблона с авто-эмбеддингом (только cntr_admin/cntr_manager)
-  - `POST /api/v1/rag/search` — семантический поиск по тексту (doc_type/ugt_level фильтры)
-  - `GET /api/v1/rag/templates` — список шаблонов
-- `db/migrations/sql/0005_rag_metadata.sql` — добавил `template_metadata JSONB` в `rag_documents`.
-- Alembic 0005.
+### Шаг 4.1 (Fullstack): Реестры
+**Backend:**
+- `GET /api/v1/executors` — каталог исполнителей (rd_executor, scientific_org, serial_manufacturer) с фильтром по роли и количеством проектов
+- `GET /api/v1/technologies` — реестр проектов с фильтрацией по статусу, категории, уровню УГТ
 
-### Шаг 3.4 (backend): Генератор документов (ИИ v0)
-- `app/services/document_generator.py` — шаблонизатор `{{variable}}`:
-  - Подстановка полей проекта (name, description, category, budget, target/current level).
-  - Подстановка данных опросника (level_N_percentage, level_N_items).
-  - Бюджетные расчёты (30%/40%/30% по этапам).
-- `app/api/v1/generation.py` — `POST /api/v1/projects/{id}/generate/{doc_type}` (tz / passport / teo).
-- `app/db/seed_templates.py` — 3 полноценных шаблона с переменными:
-  - **Техническое задание (ТЗ)** — структура по ГОСТ, бюджет, перечень документации.
-  - **Паспорт проекта** — УГТ-профиль по 9 уровням, команда, контрольные точки.
-  - **Технико-экономическое обоснование (ТЭО)** — оценка затрат, риски, эффективность.
+**Frontend:**
+- `/dashboard/executors` — сетка карточек исполнителей с поиском и фильтром по ролям
+- `/dashboard/technologies` — сетка карточек технологий с прогресс-барами УГТ, фильтрами по статусу/категории
 
-### Проверка
-- Backend: `ruff check app/ db/` — чисто ✅.
-- Frontend: `tsc --noEmit` ✅, `npm run lint` ✅, `npm run build` ✅ (21 роутов).
-- Push: `feat/backend` (3484a24) + `feat/frontend` (eaa4077) отправлены в `origin`.
+### Шаг 4.2 (Fullstack): AI-ассистент
+**Backend:**
+- `POST /api/v1/chat` — принимает вопрос, делает семантический поиск по RAG-базе, возвращает ответ
+- `app/services/gigachat.py` — обёртка GigaChat API (OAuth + completion) с graceful fallback при отсутствии ключа
+- `app/services/ai_assistant.py` — построитель RAG-контекста + оркестратор чата
+- `GIGACHAT_CREDENTIALS` в `app/core/config.py` (добавить в `.env` для включения GigaChat)
 
-## Артефакты для проверки Functional Validator
-- `POST /api/v1/rag/templates` — загрузить новый шаблон → авто-эмбеддинг
-- `POST /api/v1/rag/search` — найти шаблоны по текстовому запросу
-- `POST /api/v1/projects/{id}/generate/tz` — сгенерировать ТЗ по данным проекта
-- `POST /api/v1/projects/{id}/generate/passport` — паспорт проекта
-- `POST /api/v1/projects/{id}/generate/teo` — ТЭО
-- `uv run python app/db/seed_templates.py` — засеять 3 шаблона в RAG-базу
+**Frontend:**
+- `/dashboard/ai-assistant` — интерфейс чата с пузырьками сообщений, отображением источников из RAG, индикатором загрузки
 
-## Следующая фаза: Фаза 4 (Plan.md)
-- Шаг 4.1 — Реестр технологий и Каталог исполнителей.
-- Шаг 4.2 — Чат-бот AI v0 на GigaChat API.
+### Валидация
+- Backend: `ruff check app/` — чисто ✅
+- Frontend: `tsc --noEmit` чисто ✅, `eslint` чисто ✅, `next build` чисто ✅ (22 роута)
+
+---
+
+## Итоговая архитектура MVP v2
+
+```
+Frontend (Next.js 16, App Router, 22 роута)
+├── /dashboard/gk_customer          — ЛК ГосКомпании
+├── /dashboard/rd_executor          — ЛК R&D-исполнителя
+├── /dashboard/scientific_org       — ЛК Научной организации
+├── /dashboard/serial_manufacturer  — ЛК Производителя
+├── /dashboard/ugt_expert           — ЛК Эксперта УГТ
+├── /dashboard/auditor              — ЛК Аудитора
+├── /dashboard/investor             — ЛК Инвестора
+├── /dashboard/cntr_admin           — ЛК Админа ЦНТР
+├── /dashboard/cntr_manager         — ЛК Менеджера ЦНТР
+├── /dashboard/gk_customer/projects — УГТ-шкала
+├── /dashboard/gk_customer/projects/new — Опросник
+├── /dashboard/project/[id]         — Дашборд проекта
+├── /dashboard/executors            — Каталог исполнителей
+├── /dashboard/technologies         — Реестр технологий
+├── /dashboard/ai-assistant         — AI-ассистент
+├── /login, /register, /forbidden
+└── Middleware RBAC (все 9 ролей)
+
+Backend (FastAPI, 15+ эндпоинтов)
+├── POST /api/v1/auth/register
+├── POST /api/v1/auth/login
+├── GET  /api/v1/auth/me
+├── GET  /api/v1/health
+├── GET  /api/v1/projects/{id}
+├── POST /api/v1/projects/questionnaire
+├── POST /api/v1/projects/{id}/generate/{doc_type}
+├── POST /api/v1/rag/templates
+├── POST /api/v1/rag/search
+├── GET  /api/v1/rag/templates
+├── GET  /api/v1/executors
+├── GET  /api/v1/technologies
+└── POST /api/v1/chat
+
+Database (PostgreSQL + pgvector)
+├── public.users, roles, permissions, user_roles, role_permissions
+├── public.projects, questionnaire_results, project_members
+├── public.control_points, project_documents, audit_trail
+└── public.rag_documents (pgvector, ivfflat index)
+```
+
+## Следующие шаги (пост-MVP)
+- Загрузка настоящих документов/шаблонов в RAG (через `POST /api/v1/rag/templates`)
+- Подключение GigaChat (установить `GIGACHAT_CREDENTIALS` в `.env`)
+- Populate БД реальными пользователями и проектами
+- Unit-тесты / интеграционные тесты
+- CI/CD pipelines
