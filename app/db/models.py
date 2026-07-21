@@ -2,15 +2,18 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Identity,
     Integer,
     MetaData,
+    Numeric,
     Select,
     SmallInteger,
     String,
@@ -19,6 +22,7 @@ from sqlalchemy import (
     func,
     select,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 metadata = MetaData(schema="public")
@@ -114,3 +118,132 @@ def stmt_user_by_email(email: str) -> Select[tuple[User]]:
 
 def stmt_role_by_slug(slug: str) -> Select[tuple[Role]]:
     return select(Role).where(Role.slug == slug)
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(100))
+    target_level: Mapped[int] = mapped_column(Integer, nullable=False, default=9)
+    current_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    budget: Mapped[float | None] = mapped_column(Numeric(15, 2))
+    created_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class QuestionnaireResult(Base):
+    __tablename__ = "questionnaire_results"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    level_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    checked_items: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
+    )
+    role_in_project: Mapped[str] = mapped_column(String(64), nullable=False)
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ControlPoint(Base):
+    __tablename__ = "control_points"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    point_type: Mapped[str] = mapped_column(String(32), nullable=False, default="gate")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    decision: Mapped[str | None] = mapped_column(String(16))
+    decided_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ProjectDocument(Base):
+    __tablename__ = "project_documents"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    doc_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    file_url: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    uploaded_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class AuditTrailEntry(Base):
+    __tablename__ = "audit_trail"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
+    action: Mapped[str] = mapped_column(String(128), nullable=False)
+    details: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class RagDocument(Base):
+    __tablename__ = "rag_documents"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    title: Mapped[str] = mapped_column(String(512), nullable=False)
+    doc_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    ugt_level: Mapped[int | None] = mapped_column(SmallInteger)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    raw_text: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536))
+    source_uri: Mapped[str | None] = mapped_column(String(1024))
+    template_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
