@@ -7,6 +7,7 @@
 - Iteration 22/25: повторный Checker выявил арифметическую и scope-коллизию. Capacity пересчитан в 56 валовых Maker-дней (43 scope + 13 reserve), RAG/AI переоценён до 8 дней, state machine начат 3 августа, а Full MVP v2 и fallback Core Pilot v1 получили разные traceability tiers, названия и release gates.
 - Iteration 23/25: финальный Checker вернул `READY`: capacity, критический путь, Full/Core scope и gates были согласованы; оставшихся плановых блокеров на той итерации не было. Последующая Functional Validation уточнила документный scope.
 - Iteration 24/25: Functional Validator уточнил августовскую цель и утвердил доменную модель: тип организации, системная роль и роль в проекте разделены; организация может выступать в разных проектных качествах. Умная заявка оценивается правилами + AI, но окончательное принятие/отказ остаётся за менеджером ЦНТР. Августовский scope документов сокращён до 3–5, а внешние интеграции перенесены на октябрь–декабрь.
+- Iteration 25/25: утверждён onboarding-domain: независимые физлица допустимы, критерии входа принадлежат профильному отделу, пользователь может иметь видимые в ЛК memberships в нескольких организациях. ФНС оформляется как отказоустойчивый verification-provider, а менеджер сохраняет финальное решение; будущая LLM-автоматизация требует версионированных критериев, evidence, объяснения и human override.
 
 - Iteration 1/25: atomic state restored from `CLAUDE.md`, `Plan.md`, `Status.md`, and `PRD.md`.
 - Found stale worktree metadata and untracked frontend/backend copies inside `main`; no code was changed there.
