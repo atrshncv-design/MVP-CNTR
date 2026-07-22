@@ -9,6 +9,10 @@
 - Iteration 24/25: Functional Validator уточнил августовскую цель и утвердил доменную модель: тип организации, системная роль и роль в проекте разделены; организация может выступать в разных проектных качествах. Умная заявка оценивается правилами + AI, но окончательное принятие/отказ остаётся за менеджером ЦНТР. Августовский scope документов сокращён до 3–5, а внешние интеграции перенесены на октябрь–декабрь.
 - Iteration 25/25: утверждён onboarding-domain: независимые физлица допустимы, критерии входа принадлежат профильному отделу, пользователь может иметь видимые в ЛК memberships в нескольких организациях. ФНС оформляется как отказоустойчивый verification-provider, а менеджер сохраняет финальное решение; будущая LLM-автоматизация требует версионированных критериев, evidence, объяснения и human override.
 
+## Product decision cycle 2 — 2026-07-22
+
+- Iteration 1/25: для MVP утверждён фиксированный пошаговый опросник с AI-пост-анализом вместо динамической беседы. Возвраты на уточнение и version history закладываются в workflow. Показатели проекта остаются предварительными и будут исполняться из версионированной конфигурации профильного отдела.
+
 - Iteration 1/25: atomic state restored from `CLAUDE.md`, `Plan.md`, `Status.md`, and `PRD.md`.
 - Found stale worktree metadata and untracked frontend/backend copies inside `main`; no code was changed there.
 - Created isolated branches/worktrees: `codex/recovery-docs`, `codex/recovery-frontend`, and `codex/recovery-backend`.
