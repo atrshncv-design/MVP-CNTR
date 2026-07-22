@@ -1,0 +1,92 @@
+{
+  "files": {
+    "code": [
+      "eslint.config.mjs",
+      "next.config.ts",
+      "postcss.config.mjs",
+      "src/app/api/auth/[...nextauth]/route.ts",
+      "src/app/dashboard/_role-dashboard.tsx",
+      "src/app/dashboard/ai-assistant/page.tsx",
+      "src/app/dashboard/auditor/page.tsx",
+      "src/app/dashboard/cntr_admin/page.tsx",
+      "src/app/dashboard/cntr_manager/page.tsx",
+      "src/app/dashboard/executors/page.tsx",
+      "src/app/dashboard/gk_customer/page.tsx",
+      "src/app/dashboard/gk_customer/projects/new/page.tsx",
+      "src/app/dashboard/gk_customer/projects/page.tsx",
+      "src/app/dashboard/investor/page.tsx",
+      "src/app/dashboard/layout.tsx",
+      "src/app/dashboard/page.tsx",
+      "src/app/dashboard/project/[id]/page.tsx",
+      "src/app/dashboard/rd_executor/page.tsx",
+      "src/app/dashboard/scientific_org/page.tsx",
+      "src/app/dashboard/serial_manufacturer/page.tsx",
+      "src/app/dashboard/technologies/page.tsx",
+      "src/app/dashboard/ugt_expert/page.tsx",
+      "src/app/forbidden/page.tsx",
+      "src/app/layout.tsx",
+      "src/app/login/page.tsx",
+      "src/app/page.tsx",
+      "src/app/register/page.tsx",
+      "src/auth.config.ts",
+      "src/components/questionnaire/index.ts",
+      "src/components/questionnaire/questionnaire-wizard-client.tsx",
+      "src/components/ugt-scale/index.ts",
+      "src/components/ugt-scale/ugt-scale-page-client.tsx",
+      "src/lib/questionnaire-data.ts",
+      "src/lib/roles.ts",
+      "src/lib/ugt-data.ts",
+      "src/middleware.ts"
+    ],
+    "document": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "README.md"
+    ],
+    "paper": [],
+    "image": [
+      "public/file.svg",
+      "public/globe.svg",
+      "public/next.svg",
+      "public/vercel.svg",
+      "public/window.svg"
+    ],
+    "video": []
+  },
+  "total_files": 44,
+  "total_words": 21591,
+  "needs_graph": false,
+  "warning": "Corpus is ~21,591 words - fits in a single context window. You may not need a graph.",
+  "skipped_sensitive": [],
+  "graphifyignore_patterns": 28,
+  "git": {
+    "source_owner": "git",
+    "source_hash": "e8805f263ce4fb1cf5df890efee9f8b1f74f386d",
+    "branches": [
+      "codex/recovery-backend",
+      "codex/recovery-docs",
+      "codex/recovery-frontend",
+      "feat/backend",
+      "feat/frontend",
+      "main"
+    ],
+    "max_commits": 200,
+    "active_within_days": 30
+  },
+  "scope": {
+    "requested_mode": "all",
+    "resolved_mode": "all",
+    "source": "cli",
+    "root": ".",
+    "git_root": ".",
+    "head": "e8805f263ce4fb1cf5df890efee9f8b1f74f386d",
+    "candidate_count": null,
+    "included_count": 44,
+    "excluded_untracked_count": 0,
+    "excluded_ignored_count": 0,
+    "excluded_sensitive_count": 0,
+    "missing_committed_count": 0,
+    "warnings": [],
+    "recommendation": null
+  }
+}

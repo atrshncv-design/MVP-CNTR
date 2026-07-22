@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Graphify exports a prebuilt third-party studio bundle for local graph
+    // inspection; it is not application source and must not enter product lint.
+    ".graphify/**",
   ]),
 ]);
 
