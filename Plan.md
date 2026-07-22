@@ -48,7 +48,7 @@ P2-роли (научная организация и аудитор) могут
 До 31 августа доступно около 28 рабочих дней. План исполним только при модели
 `2 Maker-потока + 1 независимый Checker`: один Maker ведёт domain/backend/data,
 второй — frontend/E2E, Checker не пишет production-код. Валовая ёмкость — 56
-Maker-дней; 43 распределены по пакетам, 13 (23%) зарезервированы на интеграцию,
+Maker-дней; 40 распределены по пакетам, 16 (29%) зарезервированы на интеграцию,
 неопределённость, дефекты и UAT.
 
 | Пакет | Оценка, Maker-дней | Зависимость |
@@ -57,17 +57,17 @@ Maker-дней; 43 распределены по пакетам, 13 (23%) зар
 | Auth/RBAC + audit | 4 | схемы/permissions |
 | State machine Блоков 1–2 | 7 | RBAC, process contract |
 | Опросник/УГТ/КТ | 4 | state machine |
-| Document workflow + 22 templates | 7 | шаблоны и access matrix |
+| Document workflow + 3–5 templates | 4 | шаблоны и access matrix |
 | Реестры | 3 | реальные datasets |
 | RAG + AI Maker/Checker + redaction/limits/Redis | 8 | corpus, реестры, document contracts |
 | CI, security, observability, UAT | 6 | все P0 slices |
-| **Итого** | **43** | критический путь: RBAC → state machine → documents → AI |
+| **Итого** | **40** | критический путь: RBAC → state machine → documents → AI |
 
 Если работает только один Maker-поток, полный MVP v2 получает `NO-GO`. Допустим
 отдельно названный **Core Pilot v1** объёмом 22 Maker-дня: auth/RBAC (4), полный
 state machine Блоков 1–2 (7), опросник/УГТ/КТ-1 (4), только ТЗ/Паспорт/ТЭО (3),
 CI/security/UAT (4). Он использует существующий UI без редизайна и не заявляет
-22 документа, реестры, AI или выполнение полного MVP v2. Нельзя сокращать
+полный набор документов, реестры, AI или выполнение полного MVP v2. Нельзя сокращать
 безопасность, тесты или возвратные сценарии ради сохранения витрины.
 
 ## 2.2. P0 traceability matrix
@@ -83,7 +83,7 @@ route/table names; ниже — обязательная карта резуль
 | Core+Full | Финансирование | project finance | funding-sources/budget | funding_sources, budget_entries | customer, manager, admin; scoped read | 7-source validation + plan/fact tests |
 | Core+Full | Блок 2, элементы 1–8 | execution timeline | projects/transitions/control-points | stage_events, control_points, verification | assigned participants by stage | 8-element happy path + role matrix |
 | Core+Full | УГТ/опросник | questionnaire + UGT dashboard | questionnaire/assessment | questionnaire_results, ugt_assessments | customer/editor, expert/verifier | draft resume + server calculation tests |
-| Full | 22 документа | document workspace | templates/documents/versions/accept | templates, documents, versions, approvals | per-type access matrix | 22 golden files + forbidden access tests |
+| Full | 3–5 ключевых документов | document workspace | templates/documents/versions/accept | templates, documents, versions, approvals | per-type access matrix | golden files + forbidden access tests для каждого типа |
 | Full | Реестры | technologies/executors | registries/search | technologies, executors, competencies | authenticated/read; admin/write | filters/pagination/data provenance E2E |
 | Full | AI Maker–Checker | assistant + review result | rag/search/chat/document-review | rag_documents, ai_runs, review_findings | project-scoped; admin audit | groundedness, redaction, budget and rejection tests |
 | Core+Full | Audit | admin/project history | audit/events | append-only audit_trail | admin + project-scoped read | immutability/access/retention tests |
@@ -129,9 +129,9 @@ document/evidence references и immutable audit event. Property/contract tests
   данные в P0-маршрутах ESLint/тестовым правилом.
 - [ ] Подготовить тестовые fixtures только в схеме `test`; demo-данные должны
   быть явно отделены от production runtime.
-- [ ] До 28 июля утвердить process state machine, role-access matrix и список
-  22 типов документов; до 31 июля получить хотя бы структурные схемы всех
-  шаблонов. Это входной gate, а не задача последней недели.
+- [ ] До 28 июля утвердить process state machine и role-access matrix; до 7
+  августа выбрать 3–5 типов документов, до 10 августа получить их структурные
+  схемы. Это входной gate, а не задача последней недели.
 
 **Gate 31 июля:** выбранный дизайн применён к login, dashboard shell и одному
 P0-кабинету; Agent Browser проходит keyboard/accessibility smoke; ни один P0
@@ -176,9 +176,9 @@ P0-кабинету; Agent Browser проходит keyboard/accessibility smoke
 Оценка 11 Maker-дней закрывается двумя потоками в период 3–14 августа, причём
 опросник подключается к стабильному transition contract не раньше 8 августа.
 
-### Этап 4 — документооборот и 22 артефакта (15–21 августа)
+### Этап 4 — документооборот и 3–5 ключевых артефактов (15–21 августа)
 
-- [ ] Согласовать с методологами реестр 22 типов, обязательные поля, версии и
+- [ ] Согласовать с методологами 3–5 типов, обязательные поля, версии и
   права доступа. Отсутствующий шаблон является бизнес-блокером, не поводом
   генерировать фиктивный документ.
 - [ ] Реализовать единый template registry, статусы draft/review/approved,
@@ -189,11 +189,11 @@ P0-кабинету; Agent Browser проходит keyboard/accessibility smoke
   постороннему исполнителю.
 - [ ] Добавить golden-file/contract tests для каждого согласованного типа.
 
-**Gate 21 августа:** если схемы 22 шаблонов утверждены до 31 июля, все типы
+**Gate 21 августа:** если схемы выбранных шаблонов утверждены до 10 августа, все типы
 создаются без ручной правки структуры, версионируются, проходят role-access
 tests и не содержат пустых обязательных секций. Если входной gate сорван,
-release получает статус `NO-GO` по целевой метрике 22 документов либо явно
-переименовывается в Core Release без ложного заявления о полном MVP v2.
+release получает статус `NO-GO` по документообороту; отсутствие шаблона нельзя
+скрывать генерацией пустого файла.
 
 ### Этап 5 — реестры, RAG и AI v0 (22–26 августа)
 
@@ -245,7 +245,7 @@ Checker отклоняет неполный/неподтверждённый р�
 
 - четыре полных role-based E2E (заказчик, исполнитель, менеджер, администратор);
 - happy path 7+8 этапов и четыре loop-back сценария;
-- 22/22 golden document contracts для Full MVP v2;
+- golden document contracts для каждого из 3–5 выбранных типов;
 - axe: 0 critical/serious на login, dashboard, project, questionnaire,
   documents; ручная keyboard/focus/contrast проверка этих маршрутов;
 - audit events append-only, обязательные поля заполнены, retention для MVP —
@@ -281,10 +281,34 @@ Release target: медианное elapsed time платформы не выше
 
 ## 5. Решения, требующие Functional Validator
 
+### Утверждено в ходе Functional Validation
+
+- **Цель 31 августа:** рабочий клиентский вертикальный цикл от умной заявки до
+  мониторинга показателей проекта; полнота функций важнее количества экранов.
+- **Identity/domain model:** `OrganizationType`, системная `UserRole` и
+  контекстная `ProjectRole` являются разными сущностями. Одна организация может
+  быть заказчиком в одном проекте и исполнителем в другом; пользователь может
+  иметь разные проектные роли в разных проектах.
+- **Умная заявка:** детерминированные правила проверяют структуру и рассчитывают
+  формальные показатели; AI анализирует свободный текст, классифицирует,
+  выявляет противоречия и формирует вопросы/рекомендации. AI может присвоить
+  `готова к рассмотрению` или `нужно уточнение`, но окончательные принятие и
+  отказ принадлежат менеджеру ЦНТР и записываются в audit trail.
+- **Архитектурный рост:** stateless Next.js/FastAPI за Nginx, PostgreSQL
+  Primary/Replica; Redis — необязательный cache/rate-limit слой, не source of
+  truth и не single point of failure.
+- **Августовский документооборот:** реализуются 3–5 ключевых типов; конкретный
+  набор Functional Validator утвердит позже. Требование 22/22 переносится из
+  августовского release gate в последующий релиз.
+- **Отложено на октябрь–декабрь:** платёжный шлюз, Telegram, ЕСИА, УКЭП, live
+  ФИПС, 1С/Контур, ВПК-контур и сертификация ФСТЭК.
+
+### Требует решения
+
 - Выбор одного из трёх UI-направлений на базе MVP 0 — до 27 июля.
 - Подтверждение state machine, КТ-2…КТ-4 и четырёх возвратов — до 28 июля.
-- Утверждение списка 22 типов и role-access matrix — до 28 июля; структурные
-  схемы шаблонов — до 31 июля; финальные тексты — до 7 августа.
+- Утверждение 3–5 типов документов и role-access matrix — до 7 августа;
+  структурные схемы выбранных шаблонов — до 10 августа.
 - Подтверждение source of truth по ролям: PRD (P2 роли 3/6, инвестор P1) — до
   28 июля.
 - Подтверждение Core cut: без платёжного шлюза и Telegram; Redis только cache,
