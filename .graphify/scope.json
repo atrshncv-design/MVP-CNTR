@@ -1,0 +1,16 @@
+{
+  "requested_mode": "tracked",
+  "resolved_mode": "tracked",
+  "source": "cli",
+  "root": ".",
+  "git_root": ".",
+  "head": "b462f390336d55921d150e692c9e5c47f013d43b",
+  "candidate_count": 346,
+  "included_count": 4,
+  "excluded_untracked_count": 11,
+  "excluded_ignored_count": 1,
+  "excluded_sensitive_count": 0,
+  "missing_committed_count": 341,
+  "warnings": [],
+  "recommendation": "Use --scope all or graphify.yaml inputs.corpus for a knowledge-base folder."
+}

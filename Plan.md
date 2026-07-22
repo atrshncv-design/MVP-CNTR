@@ -1,4 +1,10 @@
 # Plan.md  
+
+> **Recovery note (2026-07-22):** the completion marks below are historical
+> assertions from the previous agent, not accepted validation evidence. The
+> recovery audit found mock frontend data, a formerly static readiness probe,
+> and insufficient contract coverage. Each item must be re-verified before it
+> can be used as a release claim.
   
 ```
 # PLAN: MVP v2 (Релиз: Конец августа 2026)
@@ -26,7 +32,8 @@
 
 ---
 
-**MVP v2 полностью завершён. Все 4 фазы, 12 шагов выполнены.**
+**Historical claim only:** «MVP v2 полностью завершён». Recovery validation is
+still in progress and supersedes this statement.
 
 
 ```

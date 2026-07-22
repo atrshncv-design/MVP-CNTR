@@ -1,0 +1,184 @@
+{
+  "communities": {
+    "0": [
+      "atomic_memory",
+      "isolated_git_worktrees",
+      "loop_engineering",
+      "push_contract",
+      "ralph_loop"
+    ],
+    "1": [
+      "gost_r_58048_2017",
+      "platform_technozrelost",
+      "postgres_pgvector",
+      "rag_document_generation",
+      "rbac_nine_roles"
+    ],
+    "2": [
+      "frontend_nextjs",
+      "mvp0_frontend_source",
+      "nextauth_authentication"
+    ],
+    "3": [
+      "backend_fastapi",
+      "orm_sql_safety"
+    ]
+  },
+  "cohesion": {
+    "0": 0.4,
+    "1": 0.4,
+    "2": 0.6666666666666666,
+    "3": 1
+  },
+  "gods": [
+    {
+      "id": "platform_technozrelost",
+      "label": "Платформа Технозрелость",
+      "edges": 6,
+      "degree": 6
+    },
+    {
+      "id": "frontend_nextjs",
+      "label": "Frontend Next.js App Router",
+      "edges": 3,
+      "degree": 3
+    },
+    {
+      "id": "loop_engineering",
+      "label": "Loop Engineering",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "ralph_loop",
+      "label": "Ralph Loop",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "isolated_git_worktrees",
+      "label": "Изолированные git worktrees",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "backend_fastapi",
+      "label": "Backend FastAPI",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "gost_r_58048_2017",
+      "label": "ГОСТ Р 58048-2017",
+      "edges": 1,
+      "degree": 1
+    },
+    {
+      "id": "atomic_memory",
+      "label": "Атомарная память",
+      "edges": 1,
+      "degree": 1
+    },
+    {
+      "id": "postgres_pgvector",
+      "label": "PostgreSQL и pgvector",
+      "edges": 1,
+      "degree": 1
+    },
+    {
+      "id": "rbac_nine_roles",
+      "label": "RBAC девяти ролей",
+      "edges": 1,
+      "degree": 1
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Платформа Технозрелость",
+      "target": "Backend FastAPI",
+      "source_files": [
+        "PRD.md",
+        "CLAUDE.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "implements",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `Backend FastAPI` unexpectedly reaches hub `Платформа Технозрелость`"
+    },
+    {
+      "source": "Loop Engineering",
+      "target": "Изолированные git worktrees",
+      "source_files": [
+        "PRD.md",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "implements",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "Платформа Технозрелость",
+      "target": "Frontend Next.js App Router",
+      "source_files": [
+        "PRD.md",
+        "CLAUDE.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "implements",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "Платформа Технозрелость",
+      "target": "PostgreSQL и pgvector",
+      "source_files": [
+        "PRD.md",
+        "CLAUDE.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "implements",
+      "why": "connects across different repos/directories; peripheral node `PostgreSQL и pgvector` unexpectedly reaches hub `Платформа Технозрелость`"
+    },
+    {
+      "source": "Ralph Loop",
+      "target": "Атомарная память",
+      "source_files": [
+        "PRD.md",
+        "CLAUDE.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "implements",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `Платформа Технозрелость` connect `Community 1` to `Community 3`, `Community 2`?",
+      "why": "High betweenness centrality (0.352) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Frontend Next.js App Router` connect `Community 2` to `Community 1`?",
+      "why": "High betweenness centrality (0.165) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Backend FastAPI` connect `Community 3` to `Community 1`?",
+      "why": "High betweenness centrality (0.088) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `ГОСТ Р 58048-2017`, `Атомарная память`, `PostgreSQL и pgvector` to the rest of the system?",
+      "why": "9 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ],
+  "labels": {
+    "0": "Community 0",
+    "1": "Community 1",
+    "2": "Community 2",
+    "3": "Community 3"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

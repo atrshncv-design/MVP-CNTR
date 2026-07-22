@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-07-22",
+  "tools": {
+    "agent_browser": {"version": "0.27.0", "state": "ready"},
+    "anima_sdk": {"version": "0.27.0", "state": "ready/gated", "gate": "ANIMA_TOKEN and design source"},
+    "cli_anything_hub": {"version": "0.4.1", "state": "ready"},
+    "design_md": {"version": "0.3.0", "state": "ready"},
+    "graphify": {"version": "0.17.1", "state": "ready"},
+    "headroom": {"version": "0.32.1", "state": "ready/restart-required"},
+    "huashu_design": {"state": "ready"},
+    "ponytail": {"version": "4.8.4", "state": "ready/restart-required"},
+    "harness_bench_fast": {"task_set_version": "0.13.0", "tasks": 351, "state": "ready"}
+  }
+}
