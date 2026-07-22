@@ -12,6 +12,7 @@
 ## Product decision cycle 2 — 2026-07-22
 
 - Iteration 1/25: для MVP утверждён фиксированный пошаговый опросник с AI-пост-анализом вместо динамической беседы. Возвраты на уточнение и version history закладываются в workflow. Показатели проекта остаются предварительными и будут исполняться из версионированной конфигурации профильного отдела.
+- Iteration 2/25: Functional Validator скорректировал уровень проектирования: дальнейшая работа идёт top-down от бизнес-контуров, архитектуры, стека и БД к вертикальным сценариям, и лишь затем к частным функциям. Ветвление опросника отмечено как возможный этап воронки; anonymous draft и точная видимость AI-оценок перенесены в decision backlog.
 
 - Iteration 1/25: atomic state restored from `CLAUDE.md`, `Plan.md`, `Status.md`, and `PRD.md`.
 - Found stale worktree metadata and untracked frontend/backend copies inside `main`; no code was changed there.
