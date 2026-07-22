@@ -2,6 +2,11 @@
 
 ## Recovery session — 2026-07-22
 
+- Iteration 20/25: Graphify-сверка PRD, frontend и backend преобразована в новый доказательный план до 31 августа. План строится из шести вертикальных этапов, отзывает историческую «готовность», ставит реальные gates для UX, RBAC, проекта/УГТ, 22 документов, реестров/RAG и production hardening, а также явно фиксирует решения Functional Validator и v3-out-of-scope.
+- Iteration 21/25: независимый Checker отклонил первый календарь как необоснованный. План усилен capacity-моделью и Core cut line, P0 traceability matrix, полным state machine 7+8 с четырьмя возвратами, ранними шаблонными зависимостями, измерением бизнес-метрики −30%, AI Maker–Checker/redaction/cost limits, Redis/FIPS reconciliation и сценарными release gates.
+- Iteration 22/25: повторный Checker выявил арифметическую и scope-коллизию. Capacity пересчитан в 56 валовых Maker-дней (43 scope + 13 reserve), RAG/AI переоценён до 8 дней, state machine начат 3 августа, а Full MVP v2 и fallback Core Pilot v1 получили разные traceability tiers, названия и release gates.
+- Iteration 23/25: финальный Checker вернул `READY`: capacity, критический путь, Full/Core scope и gates согласованы; оставшихся плановых блокеров нет. Full MVP v2 требует 22/22 golden document contracts, тогда как Core Pilot имеет отдельный gate на ТЗ/Паспорт/ТЭО.
+
 - Iteration 1/25: atomic state restored from `CLAUDE.md`, `Plan.md`, `Status.md`, and `PRD.md`.
 - Found stale worktree metadata and untracked frontend/backend copies inside `main`; no code was changed there.
 - Created isolated branches/worktrees: `codex/recovery-docs`, `codex/recovery-frontend`, and `codex/recovery-backend`.
