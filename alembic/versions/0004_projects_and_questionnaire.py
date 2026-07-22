@@ -25,7 +25,10 @@ def _sql(name: str) -> str:
 
 def upgrade() -> None:
     op.execute(_sql("0004_projects_and_questionnaire.sql"))
-    op.execute("INSERT INTO public.db_migration_log (filename) VALUES ('0004_projects_and_questionnaire.sql')")
+    op.execute(
+        "INSERT INTO public.db_migration_log (filename) "
+        "VALUES ('0004_projects_and_questionnaire.sql')"
+    )
 
 
 def downgrade() -> None:

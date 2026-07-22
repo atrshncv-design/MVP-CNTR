@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
+import httpx
+
+from app.core.config import settings
 from app.core.deps import CurrentUser, DBSession
 from app.schemas import ChatIn, ChatMessage
 from app.services.rag import search_documents
@@ -20,49 +25,43 @@ async def build_rag_context(db: DBSession, query: str, top_k: int = 3) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-async def ask_gigachat(system_prompt: str, user_message: str) -> str:
-    import httpx
-
-    settings_type = type("", (), {})
-    settings = settings_type()
-    settings.gigachat_credentials = None
-
-    from app.core.config import settings as app_settings
-
-    if not app_settings.gigachat_credentials or app_settings.gigachat_credentials == "change_me":
+async def ask_gigachat(system_prompt: str, user_message: str) -> str | None:
+    if not settings.gigachat_credentials or settings.gigachat_credentials == "change_me":
         return None
 
-    auth_resp = httpx.post(
-        "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
-        data={"scope": "GIGACHAT_API_PERS"},
-        headers={
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": f"Bearer {app_settings.gigachat_credentials}",
-            "RqUID": "00000000-0000-0000-0000-000000000000",
-        },
-        verify=False,
-    )
-    if auth_resp.status_code != 200:
-        return None
-    token = auth_resp.json().get("access_token")
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            auth_response = await client.post(
+                "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
+                data={"scope": "GIGACHAT_API_PERS"},
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Authorization": f"Basic {settings.gigachat_credentials}",
+                    "RqUID": str(uuid4()),
+                },
+            )
+            auth_response.raise_for_status()
+            token = auth_response.json().get("access_token")
+            if not token:
+                return None
 
-    resp = httpx.post(
-        GIGACHAT_API_URL,
-        json={
-            "model": "GigaChat",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            "temperature": 0.3,
-            "max_tokens": 2000,
-        },
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-        verify=False,
-    )
-    if resp.status_code != 200:
+            response = await client.post(
+                GIGACHAT_API_URL,
+                json={
+                    "model": "GigaChat",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 2000,
+                },
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            response.raise_for_status()
+    except (httpx.HTTPError, ValueError, KeyError):
         return None
-    return resp.json()["choices"][0]["message"]["content"]
+    return response.json()["choices"][0]["message"]["content"]
 
 
 async def process_chat(

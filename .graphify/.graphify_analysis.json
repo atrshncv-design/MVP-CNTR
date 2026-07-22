@@ -1,0 +1,395 @@
+{
+  "communities": {
+    "0": [
+      "app_schemas",
+      "app_schemas_audittrailentryout",
+      "app_schemas_chatin",
+      "app_schemas_chatmessage",
+      "app_schemas_chatout",
+      "app_schemas_controlpointout",
+      "app_schemas_executorout",
+      "app_schemas_generateddocumentout",
+      "app_schemas_loginin",
+      "app_schemas_projectdetailout",
+      "app_schemas_projectdocumentout",
+      "app_schemas_projectmemberout",
+      "app_schemas_projectout",
+      "app_schemas_questionnaireresultin",
+      "app_schemas_questionnaireresultout",
+      "app_schemas_ragdocumentin",
+      "app_schemas_ragdocumentout",
+      "app_schemas_ragsearchin",
+      "app_schemas_ragsearchresult",
+      "app_schemas_registerin",
+      "app_schemas_roleout",
+      "app_schemas_technologyout",
+      "app_schemas_tokenout",
+      "app_schemas_userout",
+      "basemodel",
+      "v1_chat",
+      "v1_chat_chat",
+      "v1_generation",
+      "v1_generation_generate_project_document",
+      "v1_technologies",
+      "v1_technologies_list_technologies"
+    ],
+    "1": [
+      "db_models",
+      "db_models_audittrailentry",
+      "db_models_base",
+      "db_models_controlpoint",
+      "db_models_permission",
+      "db_models_project",
+      "db_models_projectdocument",
+      "db_models_projectmember",
+      "db_models_questionnaireresult",
+      "db_models_ragdocument",
+      "db_models_role",
+      "db_models_stmt_role_by_slug",
+      "db_models_stmt_user_by_email",
+      "db_models_user",
+      "db_seed_templates",
+      "db_seed_templates_rationale_1",
+      "db_seed_templates_seed",
+      "declarativebase"
+    ],
+    "2": [
+      "app_main",
+      "app_main_create_app",
+      "app_main_lifespan",
+      "tests_test_health",
+      "tests_test_health_test_health_reports_service_identity",
+      "tests_test_health_test_openapi_exposes_health_contract",
+      "tests_test_health_test_ready_fails_closed_when_database_check_fails",
+      "tests_test_health_test_ready_reports_checked_database_roles"
+    ],
+    "3": [
+      "sql_0004_projects_and_questionnaire",
+      "sql_0004_projects_and_questionnaire_public_audit_trail",
+      "sql_0004_projects_and_questionnaire_public_control_points",
+      "sql_0004_projects_and_questionnaire_public_project_documents",
+      "sql_0004_projects_and_questionnaire_public_project_members",
+      "sql_0004_projects_and_questionnaire_public_projects",
+      "sql_0004_projects_and_questionnaire_public_questionnaire_results",
+      "sql_0004_projects_and_questionnaire_public_users"
+    ],
+    "4": [
+      "v1_projects",
+      "v1_projects_at_out",
+      "v1_projects_cp_out",
+      "v1_projects_doc_out",
+      "v1_projects_get_project_detail",
+      "v1_projects_mem_out",
+      "v1_projects_qr_out",
+      "v1_projects_save_questionnaire"
+    ],
+    "5": [
+      "basesettings",
+      "core_config",
+      "core_config_get_settings",
+      "core_config_settings",
+      "core_config_settings_cors_origin_list",
+      "core_config_settings_primary_dsn",
+      "core_config_settings_replica_dsn"
+    ],
+    "6": [
+      "sql_0003_rbac",
+      "sql_0003_rbac_public_permissions",
+      "sql_0003_rbac_public_role_permissions",
+      "sql_0003_rbac_public_roles",
+      "sql_0003_rbac_public_user_roles",
+      "sql_0003_rbac_public_users"
+    ],
+    "7": [
+      "core_security",
+      "core_security_create_access_token",
+      "core_security_decode_token",
+      "core_security_hash_password",
+      "core_security_verify_password"
+    ],
+    "8": [
+      "v1_auth",
+      "v1_auth_login",
+      "v1_auth_me",
+      "v1_auth_register",
+      "v1_auth_user_out"
+    ],
+    "9": [
+      "v1_health",
+      "v1_health_check_databases",
+      "v1_health_check_engine",
+      "v1_health_health",
+      "v1_health_ready"
+    ],
+    "10": [
+      "versions_0001_init_schemas",
+      "versions_0001_init_schemas_downgrade",
+      "versions_0001_init_schemas_rationale_1",
+      "versions_0001_init_schemas_sql",
+      "versions_0001_init_schemas_upgrade"
+    ],
+    "11": [
+      "versions_0002_rag_documents",
+      "versions_0002_rag_documents_downgrade",
+      "versions_0002_rag_documents_rationale_1",
+      "versions_0002_rag_documents_sql",
+      "versions_0002_rag_documents_upgrade"
+    ],
+    "12": [
+      "versions_0003_rbac",
+      "versions_0003_rbac_downgrade",
+      "versions_0003_rbac_rationale_1",
+      "versions_0003_rbac_sql",
+      "versions_0003_rbac_upgrade"
+    ],
+    "13": [
+      "versions_0004_projects_and_questionnaire",
+      "versions_0004_projects_and_questionnaire_downgrade",
+      "versions_0004_projects_and_questionnaire_rationale_1",
+      "versions_0004_projects_and_questionnaire_sql",
+      "versions_0004_projects_and_questionnaire_upgrade"
+    ],
+    "14": [
+      "versions_0005_rag_metadata",
+      "versions_0005_rag_metadata_downgrade",
+      "versions_0005_rag_metadata_rationale_1",
+      "versions_0005_rag_metadata_sql",
+      "versions_0005_rag_metadata_upgrade"
+    ],
+    "15": [
+      "alembic_env",
+      "alembic_env_rationale_1",
+      "alembic_env_run_migrations_offline",
+      "alembic_env_run_migrations_online"
+    ],
+    "16": [
+      "core_embeddings",
+      "core_embeddings_embed_text",
+      "core_embeddings_embed_texts",
+      "core_embeddings_tokenize"
+    ],
+    "17": [
+      "services_ai_assistant",
+      "services_ai_assistant_ask_gigachat",
+      "services_ai_assistant_build_rag_context",
+      "services_ai_assistant_process_chat"
+    ],
+    "18": [
+      "services_rag",
+      "services_rag_list_templates",
+      "services_rag_search_documents",
+      "services_rag_upsert_document"
+    ],
+    "19": [
+      "v1_rag",
+      "v1_rag_get_templates",
+      "v1_rag_search_rag",
+      "v1_rag_upload_template"
+    ],
+    "20": [
+      "core_deps",
+      "core_deps_get_current_user",
+      "core_deps_require_role"
+    ],
+    "21": [
+      "services_document_generator",
+      "services_document_generator_generate_document",
+      "services_document_generator_resolve_variable"
+    ],
+    "22": [
+      "v1_executors",
+      "v1_executors_get_executors",
+      "v1_executors_list_executors"
+    ],
+    "23": [
+      "app_init",
+      "app_init_rationale_1"
+    ],
+    "24": [
+      "core_database",
+      "core_database_get_db"
+    ],
+    "25": [
+      "sql_0001_init_schemas",
+      "sql_0001_init_schemas_public_db_migration_log"
+    ],
+    "26": [
+      "sql_0002_rag_documents",
+      "sql_0002_rag_documents_public_rag_documents"
+    ],
+    "27": [
+      "api_init"
+    ],
+    "28": [
+      "core_init"
+    ],
+    "29": [
+      "db_init"
+    ],
+    "30": [
+      "sql_0005_rag_metadata"
+    ],
+    "31": [
+      "v1_init"
+    ]
+  },
+  "cohesion": {
+    "0": 0.11182795698924732,
+    "1": 0.17647058823529413,
+    "2": 0.25,
+    "3": 0.6071428571428571,
+    "4": 0.4642857142857143,
+    "5": 0.3333333333333333,
+    "6": 0.6,
+    "7": 0.4,
+    "8": 0.7,
+    "9": 0.6,
+    "10": 0.5,
+    "11": 0.5,
+    "12": 0.5,
+    "13": 0.5,
+    "14": 0.5,
+    "15": 0.5,
+    "16": 0.8333333333333334,
+    "17": 0.8333333333333334,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.6666666666666666,
+    "21": 1,
+    "22": 1,
+    "23": 1,
+    "24": 1,
+    "25": 1,
+    "26": 1,
+    "27": 1,
+    "28": 1,
+    "29": 1,
+    "30": 1,
+    "31": 1
+  },
+  "gods": [
+    {
+      "id": "db_models_base",
+      "label": "Base",
+      "edges": 12,
+      "degree": 12
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_projects",
+      "label": "public.projects",
+      "edges": 7,
+      "degree": 7
+    },
+    {
+      "id": "v1_projects_get_project_detail",
+      "label": "get_project_detail()",
+      "edges": 6,
+      "degree": 6
+    },
+    {
+      "id": "core_config_settings",
+      "label": "Settings",
+      "edges": 6,
+      "degree": 6
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_users",
+      "label": "public.users",
+      "edges": 6,
+      "degree": 6
+    },
+    {
+      "id": "v1_auth_user_out",
+      "label": "_user_out()",
+      "edges": 4,
+      "degree": 4
+    },
+    {
+      "id": "v1_health_check_databases",
+      "label": "check_databases()",
+      "edges": 3,
+      "degree": 3
+    },
+    {
+      "id": "v1_projects_qr_out",
+      "label": "_qr_out()",
+      "edges": 3,
+      "degree": 3
+    },
+    {
+      "id": "core_embeddings_embed_text",
+      "label": "embed_text()",
+      "edges": 3,
+      "degree": 3
+    },
+    {
+      "id": "db_models_ragdocument",
+      "label": "RagDocument",
+      "edges": 3,
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Seed RAG templates into the database.  Usage:     uv run python app/db/seed_temp",
+      "target": "RagDocument",
+      "source_files": [
+        "app/db/seed_templates.py",
+        "app/db/models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source"
+    }
+  ],
+  "questions": [
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Alembic environment for the Technozrelost backend.  Миграции используют **синхро`, `init schemas + pgvector  Revision ID: 0001 Revises: Create Date: 2026-07-21 12:0`, `rag_documents table (pgvector, Hash/B-Tree indexes)  Revision ID: 0002 Revises:` to the rest of the system?",
+      "why": "9 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11182795698924732 - nodes in this community are weakly interconnected."
+    }
+  ],
+  "labels": {
+    "0": "Community 0",
+    "1": "Community 1",
+    "2": "Community 2",
+    "3": "Community 3",
+    "4": "Community 4",
+    "5": "Community 5",
+    "6": "Community 6",
+    "7": "Community 7",
+    "8": "Community 8",
+    "9": "Community 9",
+    "10": "Community 10",
+    "11": "Community 11",
+    "12": "Community 12",
+    "13": "Community 13",
+    "14": "Community 14",
+    "15": "Community 15",
+    "16": "Community 16",
+    "17": "Community 17",
+    "18": "Community 18",
+    "19": "Community 19",
+    "20": "Community 20",
+    "21": "Community 21",
+    "22": "Community 22",
+    "23": "Community 23",
+    "24": "Community 24",
+    "25": "Community 25",
+    "26": "Community 26",
+    "27": "Community 27",
+    "28": "Community 28",
+    "29": "Community 29",
+    "30": "Community 30",
+    "31": "Community 31"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}
