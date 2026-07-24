@@ -40,6 +40,8 @@
       "tests/test_health.py"
     ],
     "document": [
+      ".agents/skills/graphify/SKILL.md",
+      ".graphify/GRAPH_REPORT.md",
       "AGENTS.md",
       "README.md",
       "db/migrations/README.md",
@@ -50,15 +52,15 @@
     "image": [],
     "video": []
   },
-  "total_files": 42,
-  "total_words": 8580,
+  "total_files": 44,
+  "total_words": 13769,
   "needs_graph": false,
-  "warning": "Corpus is ~8,580 words - fits in a single context window. You may not need a graph.",
+  "warning": "Corpus is ~13,769 words - fits in a single context window. You may not need a graph.",
   "skipped_sensitive": [],
-  "graphifyignore_patterns": 16,
+  "graphifyignore_patterns": 17,
   "git": {
     "source_owner": "git",
-    "source_hash": "298b24fc5abbbff680f4470159d15253eefa8fa7",
+    "source_hash": "4803fb66a0010e0c82e0232821c58cb6a86d05bc",
     "branches": [
       "codex/recovery-backend",
       "codex/recovery-docs",
@@ -71,19 +73,19 @@
     "active_within_days": 30
   },
   "scope": {
-    "requested_mode": "all",
-    "resolved_mode": "all",
-    "source": "cli",
+    "requested_mode": "auto",
+    "resolved_mode": "committed",
+    "source": "default-auto",
     "root": ".",
     "git_root": ".",
-    "head": "298b24fc5abbbff680f4470159d15253eefa8fa7",
-    "candidate_count": null,
-    "included_count": 42,
-    "excluded_untracked_count": 0,
-    "excluded_ignored_count": 0,
+    "head": "4803fb66a0010e0c82e0232821c58cb6a86d05bc",
+    "candidate_count": 67,
+    "included_count": 44,
+    "excluded_untracked_count": 3,
+    "excluded_ignored_count": 5199,
     "excluded_sensitive_count": 0,
     "missing_committed_count": 0,
     "warnings": [],
-    "recommendation": null
+    "recommendation": "Use --scope all or graphify.yaml inputs.corpus for a knowledge-base folder."
   }
 }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import Select, or_, select
 
 from app.core.deps import CurrentUser, DBSession
 from app.db.models import (
@@ -24,6 +24,22 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+def project_list_stmt(user: CurrentUser) -> Select[tuple[Project]]:
+    statement = select(Project).order_by(Project.updated_at.desc(), Project.id.desc())
+    if user.is_superuser:
+        return statement
+    joined_projects = select(ProjectMember.project_id).where(ProjectMember.user_id == user.id)
+    return statement.where(
+        or_(Project.created_by == user.id, Project.id.in_(joined_projects))
+    )
+
+
+@router.get("", response_model=list[ProjectOut])
+async def list_projects(db: DBSession, user: CurrentUser) -> list[ProjectOut]:
+    result = await db.execute(project_list_stmt(user))
+    return [_project_out(project) for project in result.scalars().all()]
 
 
 @router.get("/{project_id}", response_model=ProjectDetailOut)
@@ -58,17 +74,7 @@ async def get_project_detail(
     audit_trail = at_result.scalars().all()
 
     return ProjectDetailOut(
-        project=ProjectOut(
-            id=project.id,
-            name=project.name,
-            description=project.description,
-            category=project.category,
-            target_level=project.target_level,
-            current_level=project.current_level,
-            status=project.status,
-            budget=project.budget,
-            created_by=project.created_by,
-        ),
+        project=_project_out(project),
         questionnaire_results=[_qr_out(r) for r in questionnaire_results],
         control_points=[_cp_out(cp) for cp in control_points],
         documents=[_doc_out(d) for d in documents],
@@ -114,6 +120,22 @@ async def save_questionnaire(
     await db.refresh(result)
 
     return _qr_out(result)
+
+
+def _project_out(project: Project) -> ProjectOut:
+    return ProjectOut(
+        id=project.id,
+        name=project.name,
+        description=project.description,
+        category=project.category,
+        target_level=project.target_level,
+        current_level=project.current_level,
+        status=project.status,
+        budget=project.budget,
+        created_by=project.created_by,
+        created_at=project.created_at.isoformat() if project.created_at else None,
+        updated_at=project.updated_at.isoformat() if project.updated_at else None,
+    )
 
 
 def _qr_out(r: QuestionnaireResult) -> QuestionnaireResultOut:
