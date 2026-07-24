@@ -1,5 +1,17 @@
 # STATUS / CURRENT STATE
 
+## Stage 1 — product UX and data shell (started 2026-07-24)
+
+- Iteration 1/25: Functional Validator approved the governing principle:
+  MVP 0 supplies the visual language; the recovered architecture and real data
+  supply behavior. The Huashu direction gate now contains one shared design
+  spec and three rendered HTML directions under `design/phase-1/`.
+- Agent Browser rendered A, B, and C at 1440×900 and saved the matching PNG
+  evidence. Production UI remains unchanged until Functional Validator selects
+  a direction. The next atomic step is to record that choice in
+  `direction-approved.md`, derive `DESIGN.md`, and begin the TDD implementation
+  of login, dashboard shell, and one P0 workspace.
+
 ## Recovery session — 2026-07-22
 
 - Iteration 20/25: Graphify-сверка PRD, frontend и backend преобразована в новый доказательный план до 31 августа. План строится из шести вертикальных этапов, отзывает историческую «готовность», ставит реальные gates для UX, RBAC, проекта/УГТ, 22 документов, реестров/RAG и production hardening, а также явно фиксирует решения Functional Validator и v3-out-of-scope.
