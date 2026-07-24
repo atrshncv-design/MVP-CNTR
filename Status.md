@@ -11,6 +11,11 @@
   a direction. The next atomic step is to record that choice in
   `direction-approved.md`, derive `DESIGN.md`, and begin the TDD implementation
   of login, dashboard shell, and one P0 workspace.
+- Iteration 2/25: Functional Validator selected direction B, «Процесс в
+  центре». The exact decision and rendered source are recorded in
+  `design/phase-1/direction-approved.md`; `DESIGN.md` now defines the approved
+  tokens, shell hierarchy, process-first layout, API-only data rule, semantic
+  states, and responsive/accessibility constraints. Huashu-gate is complete.
 
 ## Recovery session — 2026-07-22
 
