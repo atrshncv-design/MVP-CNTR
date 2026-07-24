@@ -176,39 +176,11 @@
       "source_location": "L1"
     },
     {
-      "id": "gk_customer_page_containervariants",
-      "label": "containerVariants",
-      "file_type": "code",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L7"
-    },
-    {
-      "id": "gk_customer_page_easeout",
-      "label": "easeOut",
-      "file_type": "code",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L15"
-    },
-    {
-      "id": "gk_customer_page_itemvariants",
-      "label": "itemVariants",
-      "file_type": "code",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L17"
-    },
-    {
-      "id": "gk_customer_page_statcards",
-      "label": "statCards",
-      "file_type": "code",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L26"
-    },
-    {
       "id": "gk_customer_page_gkcustomerdashboard",
       "label": "GkCustomerDashboard()",
       "file_type": "code",
       "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L33"
+      "source_location": "L4"
     },
     {
       "id": "new_page",
@@ -260,11 +232,18 @@
       "source_location": "L1"
     },
     {
+      "id": "dashboard_layout_navigation",
+      "label": "navigation",
+      "file_type": "code",
+      "source_file": "src/app/dashboard/layout.tsx",
+      "source_location": "L4"
+    },
+    {
       "id": "dashboard_layout_dashboardlayout",
       "label": "DashboardLayout()",
       "file_type": "code",
       "source_file": "src/app/dashboard/layout.tsx",
-      "source_location": "L4"
+      "source_location": "L12"
     },
     {
       "id": "dashboard_page",
@@ -523,7 +502,7 @@
       "label": "LoginPage()",
       "file_type": "code",
       "source_file": "src/app/login/page.tsx",
-      "source_location": "L72"
+      "source_location": "L84"
     },
     {
       "id": "app_page",
@@ -1040,7 +1019,7 @@
     },
     {
       "source": "nextauth_route",
-      "target": "private_tmp_mvp_cntr_recovery_frontend_src_auth_config",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_auth_config",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/api/auth/[...nextauth]/route.ts",
@@ -1058,7 +1037,7 @@
     },
     {
       "source": "dashboard_role_dashboard",
-      "target": "private_tmp_mvp_cntr_recovery_frontend_src_auth_config",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_auth_config",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/_role-dashboard.tsx",
@@ -1319,65 +1298,29 @@
     },
     {
       "source": "gk_customer_page",
-      "target": "framer_motion",
-      "relation": "imports_from",
-      "confidence": "EXTRACTED",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L3",
-      "weight": 1
-    },
-    {
-      "source": "gk_customer_page",
-      "target": "lucide_react",
-      "relation": "imports_from",
-      "confidence": "EXTRACTED",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L4",
-      "weight": 1
-    },
-    {
-      "source": "gk_customer_page",
       "target": "link",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L5",
+      "source_location": "L1",
       "weight": 1
     },
     {
       "source": "gk_customer_page",
-      "target": "gk_customer_page_containervariants",
-      "relation": "contains",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_auth_config",
+      "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L7",
+      "source_location": "L2",
       "weight": 1
     },
     {
       "source": "gk_customer_page",
-      "target": "gk_customer_page_easeout",
-      "relation": "contains",
+      "target": "src_auth_auth",
+      "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L15",
-      "weight": 1
-    },
-    {
-      "source": "gk_customer_page",
-      "target": "gk_customer_page_itemvariants",
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L17",
-      "weight": 1
-    },
-    {
-      "source": "gk_customer_page",
-      "target": "gk_customer_page_statcards",
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L26",
+      "source_location": "L2",
       "weight": 1
     },
     {
@@ -1386,7 +1329,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/gk_customer/page.tsx",
-      "source_location": "L33",
+      "source_location": "L4",
       "weight": 1
     },
     {
@@ -1481,7 +1424,7 @@
     },
     {
       "source": "dashboard_layout",
-      "target": "private_tmp_mvp_cntr_recovery_frontend_src_auth_config",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_auth_config",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/layout.tsx",
@@ -1508,11 +1451,20 @@
     },
     {
       "source": "dashboard_layout",
-      "target": "dashboard_layout_dashboardlayout",
+      "target": "dashboard_layout_navigation",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/layout.tsx",
       "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "dashboard_layout",
+      "target": "dashboard_layout_dashboardlayout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/app/dashboard/layout.tsx",
+      "source_location": "L12",
       "weight": 1
     },
     {
@@ -1526,7 +1478,7 @@
     },
     {
       "source": "dashboard_page",
-      "target": "private_tmp_mvp_cntr_recovery_frontend_src_auth_config",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_auth_config",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/dashboard/page.tsx",
@@ -1949,7 +1901,7 @@
     },
     {
       "source": "app_layout",
-      "target": "private_tmp_mvp_cntr_recovery_frontend_src_app_globals_css",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_app_globals_css",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/layout.tsx",
@@ -1985,7 +1937,7 @@
     },
     {
       "source": "login_page",
-      "target": "navigation",
+      "target": "link",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/login/page.tsx",
@@ -1994,7 +1946,7 @@
     },
     {
       "source": "login_page",
-      "target": "link",
+      "target": "navigation",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/login/page.tsx",
@@ -2034,7 +1986,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/app/login/page.tsx",
-      "source_location": "L72",
+      "source_location": "L84",
       "weight": 1
     },
     {
@@ -2048,7 +2000,7 @@
     },
     {
       "source": "app_page",
-      "target": "private_tmp_mvp_cntr_recovery_frontend_src_auth_config",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_auth_config",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/app/page.tsx",
@@ -2779,7 +2731,7 @@
     },
     {
       "source": "src_middleware",
-      "target": "private_tmp_mvp_cntr_recovery_frontend_src_auth_config",
+      "target": "private_tmp_mvp_cntr_stage1_frontend_src_auth_config",
       "relation": "imports_from",
       "confidence": "EXTRACTED",
       "source_file": "src/middleware.ts",
