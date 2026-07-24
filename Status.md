@@ -25,6 +25,21 @@
   Agent Browser accessibility/error smoke, and Graphify review-delta passed.
   `npm audit` was network-blocked; the installer's three high-severity notices
   remain an explicit security follow-up rather than being force-fixed.
+- Iteration 4/25: a reproducible local test administrator was added through an
+  environment-only SQLAlchemy seed (`814d934`), not frontend hard-code. Backend
+  login returned HTTP 200 and Agent Browser completed the NextAuth redirect to
+  `/dashboard/cntr_admin`. Local access uses
+  `admin@demo.technozrelost.ru`; the password is supplied directly to the
+  Functional Validator and is intentionally not committed.
+- Iteration 5/25: scoped project-list vertical slice landed in backend
+  `814d934` and frontend `bbc853d`. `GET /api/v1/projects` returns all projects
+  only for a superuser and owned/member projects for other users. The shared
+  `/dashboard/projects` route uses a typed Bearer API client, `no-store`, a
+  five-second timeout, and explicit empty/error states. Gates: backend
+  `8 passed` + Ruff; frontend `5 passed` + ESLint + 23-route build. Browser
+  testing exposed and fixed an IPv4/timeout integration hang. Graphify exposed
+  the next security slice: existing project-detail authorization must be
+  narrowed from authenticated-only to project-scoped.
 
 ## Recovery session — 2026-07-22
 
