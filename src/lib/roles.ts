@@ -27,6 +27,17 @@ export const ROLE_DASHBOARD: Record<RoleSlug, string> = {
 
 // Какая роль вправе видеть какой кабинет.
 export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
+  "/dashboard/projects": [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "ugt_expert",
+    "auditor",
+    "investor",
+    "cntr_admin",
+    "cntr_manager",
+  ],
   "/dashboard/gk_customer": ["gk_customer"],
   "/dashboard/rd_executor": ["rd_executor"],
   "/dashboard/scientific_org": ["scientific_org"],

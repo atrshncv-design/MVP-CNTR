@@ -3,7 +3,7 @@ import { auth, signOut } from "@/auth.config";
 
 const navigation = [
   { href: "/dashboard", label: "Рабочий стол" },
-  { href: "/dashboard/gk_customer/projects", label: "Проекты" },
+  { href: "/dashboard/projects", label: "Проекты" },
   { href: "/dashboard/gk_customer/projects/new", label: "Заявки" },
   { href: "/dashboard/technologies", label: "Реестры" },
   { href: "/dashboard/ai-assistant", label: "Документы" },

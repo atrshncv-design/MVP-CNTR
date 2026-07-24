@@ -56,8 +56,8 @@
     "hash": "892b022720dc182d453682aab8fc3aa6"
   },
   "src/app/dashboard/layout.tsx": {
-    "mtime": 1784873249269.8616,
-    "hash": "9dcf8d6533ae3dd93261cde840492246"
+    "mtime": 1784875261473.8708,
+    "hash": "b32113619931563ff0e5092bee6f014a"
   },
   "src/app/dashboard/page.tsx": {
     "mtime": 1784872673229.6946,
@@ -132,8 +132,8 @@
     "hash": "f1c08d4fa30e6843ae7390709ed37b27"
   },
   "src/lib/roles.ts": {
-    "mtime": 1784872673235.1506,
-    "hash": "1f21a038aee8ef6349a7590d632f4661"
+    "mtime": 1784875261707.9602,
+    "hash": "0b1d20ced6c0febed7ebccfdf7c857fb"
   },
   "src/lib/ugt-data.ts": {
     "mtime": 1784872673235.4172,
@@ -180,7 +180,15 @@
     "hash": "a3fbec2ddba8d0a35825c242671b3655"
   },
   ".graphify/GRAPH_REPORT.md": {
-    "mtime": 1784872673220.2642,
-    "hash": "5045ab4f3c446cb3e0a4e414190686eb"
+    "mtime": 1784873391880.536,
+    "hash": "8f8b0e8f6c57d87179bf26f29c214cc6"
+  },
+  "tests/ui-shell.test.mjs": {
+    "mtime": 1784873358284.7402,
+    "hash": "bf6e3658474f6e1ecd9e2f7824bddedf"
+  },
+  "docs/testing/stage1-ui-shell.tdd.md": {
+    "mtime": 1784873415513.709,
+    "hash": "e90e008cc1afd9450e02376bb1d93150"
   }
 }

@@ -36,14 +36,16 @@
       "src/lib/questionnaire-data.ts",
       "src/lib/roles.ts",
       "src/lib/ugt-data.ts",
-      "src/middleware.ts"
+      "src/middleware.ts",
+      "tests/ui-shell.test.mjs"
     ],
     "document": [
       ".agents/skills/graphify/SKILL.md",
       ".graphify/GRAPH_REPORT.md",
       "AGENTS.md",
       "CLAUDE.md",
-      "README.md"
+      "README.md",
+      "docs/testing/stage1-ui-shell.tdd.md"
     ],
     "paper": [],
     "image": [
@@ -55,15 +57,15 @@
     ],
     "video": []
   },
-  "total_files": 46,
-  "total_words": 26405,
+  "total_files": 48,
+  "total_words": 27035,
   "needs_graph": false,
-  "warning": "Corpus is ~26,405 words - fits in a single context window. You may not need a graph.",
+  "warning": "Corpus is ~27,035 words - fits in a single context window. You may not need a graph.",
   "skipped_sensitive": [],
   "graphifyignore_patterns": 29,
   "git": {
     "source_owner": "git",
-    "source_hash": "34f958ee08e1873ef21a778b2c237f87a41afdc7",
+    "source_hash": "366dc36fb973cb52bad54e3f183313806c011422",
     "branches": [
       "codex/recovery-backend",
       "codex/recovery-docs",
@@ -81,11 +83,11 @@
     "source": "default-auto",
     "root": ".",
     "git_root": ".",
-    "head": "34f958ee08e1873ef21a778b2c237f87a41afdc7",
-    "candidate_count": 63,
-    "included_count": 46,
-    "excluded_untracked_count": 2,
-    "excluded_ignored_count": 33571,
+    "head": "366dc36fb973cb52bad54e3f183313806c011422",
+    "candidate_count": 65,
+    "included_count": 48,
+    "excluded_untracked_count": 11,
+    "excluded_ignored_count": 33589,
     "excluded_sensitive_count": 0,
     "missing_committed_count": 0,
     "warnings": [],
