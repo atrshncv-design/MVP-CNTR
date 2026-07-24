@@ -16,6 +16,15 @@
   `design/phase-1/direction-approved.md`; `DESIGN.md` now defines the approved
   tokens, shell hierarchy, process-first layout, API-only data rule, semantic
   states, and responsive/accessibility constraints. Huashu-gate is complete.
+- Iteration 3/25: first production UI slice landed in frontend commit
+  `366dc36`. TDD moved from `0/3` to `3/3`: login now carries the MVP 0 product
+  identity and accessible loading/error states; dashboard layout implements
+  direction B global navigation and skip link; the customer P0 workspace
+  replaces four fabricated KPI values with an honest empty state and first
+  application action. Frontend lint, TypeScript, 22-route production build,
+  Agent Browser accessibility/error smoke, and Graphify review-delta passed.
+  `npm audit` was network-blocked; the installer's three high-severity notices
+  remain an explicit security follow-up rather than being force-fixed.
 
 ## Recovery session — 2026-07-22
 
