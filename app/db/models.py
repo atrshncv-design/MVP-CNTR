@@ -266,3 +266,40 @@ class RagDocument(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
     )
+
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    short_name: Mapped[str | None] = mapped_column(Text)
+    ogrn: Mapped[str | None] = mapped_column(String(32))
+    org_type: Mapped[str | None] = mapped_column(String(64))
+    region: Mapped[str | None] = mapped_column(String(128))
+    competencies: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)
+    projects_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class Technology(Base):
+    __tablename__ = "technologies"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(100))
+    keywords: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)
+    current_level: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=1)
+    target_level: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=9)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    registration_number: Mapped[str | None] = mapped_column(String(64), unique=True)
+    organization_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.organizations.id"), nullable=True
+    )
+    source_uri: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
