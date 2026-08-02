@@ -27,6 +27,17 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 metadata = MetaData(schema="public")
 
+# Алфавит без неоднозначных символов (0/O, 1/I) — токены для людей.
+TOKEN_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def generate_join_token() -> str:
+    """Случайный join-токен вида TZ-XXXXXX (неугадываемый, secrets-источник)."""
+    import secrets
+
+    suffix = "".join(secrets.choice(TOKEN_ALPHABET) for _ in range(6))
+    return f"TZ-{suffix}"
+
 role_permissions_tbl = Table(
     "role_permissions",
     metadata,
@@ -131,6 +142,9 @@ class Project(Base):
     current_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     budget: Mapped[float | None] = mapped_column(Numeric(15, 2))
+    join_token: Mapped[str] = mapped_column(
+        String(16), nullable=False, unique=True, default=lambda: generate_join_token()
+    )
     created_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -169,6 +183,11 @@ class ProjectMember(Base):
         BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
     )
     role_in_project: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    invited_by: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.users.id"), nullable=True
+    )
+    is_priority: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
