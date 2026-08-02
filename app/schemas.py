@@ -37,6 +37,31 @@ class TokenOut(BaseModel):
     user: UserOut
 
 
+class UserUpdateIn(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=255)
+    organization: str | None = Field(default=None, max_length=255)
+
+
+class PasswordChangeIn(BaseModel):
+    old_password: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class UserAdminOut(BaseModel):
+    id: int
+    email: EmailStr
+    full_name: str
+    organization: str | None = None
+    is_active: bool
+    roles: list[RoleOut]
+    created_at: str | None = None
+
+
+class UserRoleUpdateIn(BaseModel):
+    roles: list[str] = []
+    is_active: bool | None = None
+
+
 # ─── Project & Questionnaire ─────────────────────────────────────────────────
 
 class ProjectOut(BaseModel):

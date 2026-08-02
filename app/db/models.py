@@ -237,8 +237,8 @@ class AuditTrailEntry(Base):
     __tablename__ = "audit_trail"
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
-    project_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    project_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=True
     )
     user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
     action: Mapped[str] = mapped_column(String(128), nullable=False)

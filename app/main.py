@@ -15,6 +15,7 @@ from app.api.v1.membership import router as membership_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.rag import router as rag_router
 from app.api.v1.technologies import router as technologies_router
+from app.api.v1.users import router as users_router
 from app.core.config import settings
 
 
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     app.include_router(executors_router, prefix="/api/v1")
     app.include_router(technologies_router, prefix="/api/v1")
     app.include_router(chat_router, prefix="/api/v1")
+    app.include_router(users_router, prefix="/api/v1")
     return app
 
 
