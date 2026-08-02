@@ -148,3 +148,36 @@ def test_generate_by_outsider_404(client: TestClient) -> None:
         headers=_auth(outsider_token),
     )
     assert response.status_code == 404
+
+
+def test_generate_with_empty_levels_resolves_defaults(client: TestClient) -> None:
+    """Паспорт с незаполненными уровнями не должен оставлять {{...}}."""
+    admin_token, _ = _register(client, "cntr_admin")
+    seeded = client.post(
+        "/api/v1/rag/templates",
+        json={
+            "title": "Паспорт — тест",
+            "doc_type": "passport",
+            "raw_text": (
+                "ПАСПОРТ\nУГТ 1: {{level_1_percentage}}\n"
+                "УГТ 2: {{level_2_percentage}}\nКритериев: {{level_2_items_count}}"
+            ),
+            "template_metadata": {"variables": []},
+        },
+        headers=_auth(admin_token),
+    )
+    assert seeded.status_code == 201
+
+    owner_token, _ = _register(client)
+    project = _create_project_with_data(client, owner_token)  # ответы только для уровня 1
+
+    response = client.post(
+        f"/api/v1/projects/{project['id']}/generate/passport",
+        headers=_auth(owner_token),
+    )
+    assert response.status_code == 200, response.text
+    content = response.json()["content"]
+    assert "{{" not in content
+    assert "УГТ 1: 90%" in content
+    assert "УГТ 2: 0%" in content
+    assert "Критериев: 0" in content

@@ -68,6 +68,14 @@ def _resolve_variable(
                             return str(items[idx])
                     except (ValueError, IndexError):
                         pass
+        # Уровень не заполнен в опроснике — возвращаем нейтральные значения
+        if field == "percentage":
+            return "0%"
+        if field == "items_count":
+            return "0"
+        if field == "items":
+            return "—"
+        return ""
 
     return f"{{{{{name}}}}}"
 

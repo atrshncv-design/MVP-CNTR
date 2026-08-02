@@ -9,6 +9,8 @@ from __future__ import annotations
 import asyncio
 import hashlib
 
+from sqlalchemy import select, text
+
 from app.core.database import SessionLocal
 from app.core.embeddings import embed_text
 from app.db.models import RagDocument
@@ -215,10 +217,8 @@ TEMPLATES = [
 async def seed() -> None:
     async with SessionLocal() as db:
         for tmpl in TEMPLATES:
-            text = tmpl["raw_text"]
-            content_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-            from sqlalchemy import select, text
+            raw = tmpl["raw_text"]
+            content_hash = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
             existing = await db.scalar(
                 select(RagDocument).where(
@@ -235,16 +235,15 @@ async def seed() -> None:
                 doc_type=tmpl["doc_type"],
                 ugt_level=tmpl["ugt_level"],
                 content_hash=content_hash,
-                raw_text=text,
+                raw_text=raw,
                 source_uri="seed",
                 template_metadata=tmpl["template_metadata"],
                 embedding=None,
             )
             db.add(doc)
-            await db.commit()
-            await db.refresh(doc)
+            await db.flush()
 
-            emb = embed_text(text)
+            emb = embed_text(raw)
             emb_str = "[" + ",".join(f"{v:.8f}" for v in emb) + "]"
 
             await db.execute(
