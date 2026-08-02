@@ -1,22 +1,64 @@
-from __future__ import annotations
+"""AI-ассистент платформы: RAG-контекст + OpenAI-совместимый LLM с fallback.
 
-from uuid import uuid4
+Конфигурация через переменные окружения (см. app.core.config):
+    LLM_API_BASE — базовый URL OpenAI-совместимого API (по умолчанию api.openai.com/v1)
+    LLM_API_KEY  — ключ (кладёт пользователь в .env; без ключа — fallback на RAG-контекст)
+    LLM_MODEL    — имя модели (по умолчанию gpt-4o-mini)
+"""
+
+from __future__ import annotations
 
 import httpx
 
 from app.core.config import settings
 from app.core.deps import CurrentUser, DBSession
-from app.schemas import ChatIn, ChatMessage
+from app.schemas import ChatIn, ChatMessage, ChatOut, RagDocumentOut, RagSearchIn
 from app.services.rag import search_documents
 
-GIGACHAT_API_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+LLM_TIMEOUT_SECONDS = 60
+
+
+def _llm_config() -> tuple[str | None, str, str]:
+    base = settings.llm_api_base.rstrip("/")
+    key = settings.llm_api_key
+    if key and key.strip() and key != "change_me":
+        return key, base, settings.llm_model
+    return None, base, settings.llm_model
+
+
+async def ask_llm(system_prompt: str, user_message: str) -> str | None:
+    """Вызов chat/completions OpenAI-совместимого API. None при отсутствии ключа/ошибке."""
+    api_key, base, model = _llm_config()
+    if api_key is None:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=LLM_TIMEOUT_SECONDS) as client:
+            response = await client.post(
+                f"{base}/chat/completions",
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 2000,
+                },
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+            )
+        if response.status_code != 200:
+            return None
+        payload = response.json()
+        return payload["choices"][0]["message"]["content"]
+    except Exception:  # noqa: BLE001 — ассистент не должен падать из-за LLM
+        return None
 
 
 async def build_rag_context(db: DBSession, query: str, top_k: int = 3) -> str:
-    results = await search_documents(
-        db,
-        type("", (), {"query": query, "doc_type": None, "ugt_level": None, "top_k": top_k})(),
-    )
+    results = await search_documents(db, RagSearchIn(query=query, top_k=top_k))
     if not results:
         return ""
     parts = []
@@ -25,53 +67,26 @@ async def build_rag_context(db: DBSession, query: str, top_k: int = 3) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-async def ask_gigachat(system_prompt: str, user_message: str) -> str | None:
-    if not settings.gigachat_credentials or settings.gigachat_credentials == "change_me":
-        return None
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            auth_response = await client.post(
-                "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
-                data={"scope": "GIGACHAT_API_PERS"},
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": f"Basic {settings.gigachat_credentials}",
-                    "RqUID": str(uuid4()),
-                },
-            )
-            auth_response.raise_for_status()
-            token = auth_response.json().get("access_token")
-            if not token:
-                return None
-
-            response = await client.post(
-                GIGACHAT_API_URL,
-                json={
-                    "model": "GigaChat",
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message},
-                    ],
-                    "temperature": 0.3,
-                    "max_tokens": 2000,
-                },
-                headers={"Authorization": f"Bearer {token}"},
-            )
-            response.raise_for_status()
-    except (httpx.HTTPError, ValueError, KeyError):
-        return None
-    return response.json()["choices"][0]["message"]["content"]
-
-
-async def process_chat(
-    db: DBSession,
-    payload: ChatIn,
-    user: CurrentUser,
-) -> ChatMessage:
+async def process_chat(db: DBSession, payload: ChatIn, user: CurrentUser) -> ChatOut:
     query = payload.message
 
-    rag_context = await build_rag_context(db, query)
+    results = await search_documents(db, RagSearchIn(query=query, top_k=3))
+    rag_context = "\n\n---\n\n".join(
+        f"[{r.document.doc_type}] {r.document.title}\n{r.document.raw_text[:500]}"
+        for r in results
+    )
+    sources = [
+        RagDocumentOut(
+            id=r.document.id,
+            title=r.document.title,
+            doc_type=r.document.doc_type,
+            ugt_level=r.document.ugt_level,
+            raw_text=r.document.raw_text[:200],
+            source_uri=r.document.source_uri,
+            template_metadata=r.document.template_metadata,
+        )
+        for r in results
+    ]
 
     system_prompt = (
         "Ты — AI-ассистент платформы «Технозрелость». "
@@ -90,19 +105,19 @@ async def process_chat(
     else:
         user_message = query
 
-    gigachat_response = await ask_gigachat(system_prompt, user_message)
+    llm_reply = await ask_llm(system_prompt, user_message)
 
-    if gigachat_response:
-        return ChatMessage(role="assistant", content=gigachat_response)
+    if llm_reply:
+        return ChatOut(reply=ChatMessage(role="assistant", content=llm_reply), sources=sources)
 
     if rag_context:
         fallback = (
             f"Нашёл в базе знаний следующие документы по вашему запросу:\n\n{rag_context}\n\n"
-            "Для более точного ответа подключите API (установите GIGACHAT_CREDENTIALS в .env)."
+            "Для более точного ответа подключите API (установите LLM_API_KEY в .env)."
         )
     else:
         fallback = (
             "К сожалению, по вашему запросу ничего не найдено в базе знаний. "
             "Попробуйте переформулировать вопрос или обратиться к документации ГОСТ Р 58048-2017."
         )
-    return ChatMessage(role="assistant", content=fallback)
+    return ChatOut(reply=ChatMessage(role="assistant", content=fallback), sources=sources)

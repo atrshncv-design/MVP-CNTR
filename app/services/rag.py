@@ -33,10 +33,10 @@ SELECT
     1 - (embedding <=> CAST(:query_vec AS vector)) AS similarity
 FROM public.rag_documents
 WHERE embedding IS NOT NULL
-  AND (:doc_type IS NULL OR doc_type = :doc_type)
-  AND (:ugt_level IS NULL OR ugt_level = :ugt_level)
+  AND (CAST(:doc_type AS text) IS NULL OR doc_type = CAST(:doc_type AS text))
+  AND (CAST(:ugt_level AS int) IS NULL OR ugt_level = CAST(:ugt_level AS int))
 ORDER BY embedding <=> CAST(:query_vec AS vector)
-LIMIT :top_k
+LIMIT CAST(:top_k AS int)
 """
 
 

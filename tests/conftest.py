@@ -90,7 +90,7 @@ def _clean_tables() -> Iterator[None]:
         conn.execute(
             "TRUNCATE TABLE public.audit_trail, public.project_documents, "
             "public.control_points, public.questionnaire_results, "
-            "public.project_members, public.projects, "
+            "public.project_members, public.projects, public.rag_documents, "
             "public.user_roles, public.users "
             "RESTART IDENTITY CASCADE"
         )

@@ -33,6 +33,11 @@ class Settings(BaseSettings):
 
     gigachat_credentials: str | None = None
 
+    # LLM (OpenAI-совместимый API; ключ кладёт пользователь в .env)
+    llm_api_base: str = "https://api.openai.com/v1"
+    llm_api_key: str | None = None
+    llm_model: str = "gpt-4o-mini"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
