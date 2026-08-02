@@ -141,7 +141,9 @@ class JoinRequestOut(BaseModel):
 
 
 class JoinIn(BaseModel):
-    token: str = Field(min_length=6, max_length=16, description="Join-токен проекта, напр. TZ-XXXXXX")
+    token: str = Field(
+        min_length=6, max_length=16, description="Join-токен проекта, напр. TZ-XXXXXX"
+    )
     role_in_project: str = Field(default="participant", min_length=1, max_length=64)
     shared_by: int | None = Field(
         default=None,

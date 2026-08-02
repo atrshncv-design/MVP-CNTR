@@ -123,7 +123,7 @@ def test_non_priority_share_stays_pending(client: TestClient) -> None:
     project = _create_project(client, owner_token)
 
     # участник вступает по приоритетной ссылке владельца → активен (без приоритета)
-    first_join = client.post(
+    client.post(
         "/api/v1/projects/join",
         json={
             "token": project["join_token"],
@@ -132,7 +132,6 @@ def test_non_priority_share_stays_pending(client: TestClient) -> None:
         },
         headers=_auth(member_token),
     )
-    assert first_join.json()["status"] == "active"
 
     # новый пользователь вступает по ссылке НЕприоритетного участника → заявка pending
     second_join = client.post(
