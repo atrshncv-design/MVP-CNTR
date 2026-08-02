@@ -70,7 +70,7 @@ def test_owner_approves_request(client: TestClient) -> None:
     member_token, member_id = _register(client, "rd_executor")
     project = _create_project(client, owner_token)
 
-    join = client.post(
+    client.post(
         "/api/v1/projects/join",
         json={"token": project["join_token"], "role_in_project": "rd_executor"},
         headers=_auth(member_token),
