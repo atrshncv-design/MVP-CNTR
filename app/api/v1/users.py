@@ -12,11 +12,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.v1.auth import _user_out
 from app.core.deps import CurrentUser, DBSession, require_role
-from app.db.models import AuditTrailEntry, Role, User, user_roles_tbl
 from app.core.security import hash_password, verify_password
+from app.db.models import AuditTrailEntry, Role, User, user_roles_tbl
 from app.schemas import (
     PasswordChangeIn,
     RoleOut,
@@ -110,7 +111,6 @@ async def update_user(
                     user_id=target.id, role_id=role.id, is_primary=(idx == 0)
                 )
             )
-        target.roles = list(roles)
     if payload.is_active is not None:
         target.is_active = payload.is_active
 
@@ -127,5 +127,13 @@ async def update_user(
         )
     )
     await db.commit()
-    await db.refresh(target, attribute_names=["roles"])
-    return _admin_out(target)
+    # Роли могли быть изменены напрямую (raw DML) — перечитываем свежим запросом,
+    # обходя identity-map (populate_existing), иначе вернётся старый объект.
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles))
+        .where(User.id == user_id)
+        .execution_options(populate_existing=True)
+    )
+    fresh = result.scalar_one()
+    return _admin_out(fresh)
