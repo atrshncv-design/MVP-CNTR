@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 
 from app.core.deps import DBSession, require_role
-from app.db.models import Project, ProjectMember, Role, User, user_roles_tbl
+from app.db.models import Organization, Project, ProjectMember, Role, User, user_roles_tbl
 from app.schemas import ExecutorOut
 
 EXECUTOR_ROLE_SLUGS = ["rd_executor", "scientific_org", "serial_manufacturer"]
@@ -16,8 +16,17 @@ ExecutorViewer = Annotated[User, Depends(require_role(*EXECUTOR_CATALOG_VIEWERS)
 
 router = APIRouter(prefix="/executors", tags=["executors"])
 
+# Организации из НИОКТР → роль в каталоге
+ORG_ROLE_SLUG = {"scientific_org": "scientific_org"}
+ORG_ROLE_DEFAULT = "rd_executor"
+ORG_ROLE_NAMES = {
+    "scientific_org": "Научная организация",
+    "rd_executor": "R&D-исполнитель",
+    "serial_manufacturer": "Серийный производитель",
+}
 
-async def get_executors(db: DBSession) -> list[ExecutorOut]:
+
+async def _users_as_executors(db: DBSession) -> list[ExecutorOut]:
     role_subq = (
         select(
             user_roles_tbl.c.user_id,
@@ -79,13 +88,35 @@ async def get_executors(db: DBSession) -> list[ExecutorOut]:
     ]
 
 
+async def _organizations_as_executors(db: DBSession) -> list[ExecutorOut]:
+    stmt = select(Organization).order_by(Organization.projects_count.desc())
+    rows = await db.execute(stmt)
+    result: list[ExecutorOut] = []
+    for org in rows.scalars().all():
+        role_slug = ORG_ROLE_SLUG.get(org.org_type or "", ORG_ROLE_DEFAULT)
+        # отрицательный id — организации не пересекаются с пользователями
+        result.append(
+            ExecutorOut(
+                id=-org.id,
+                full_name=org.short_name or org.name,
+                organization=org.name,
+                role_slug=role_slug,
+                role_name=ORG_ROLE_NAMES[role_slug],
+                competencies=list(org.competencies or []),
+                completed_projects=org.projects_count,
+            )
+        )
+    return result
+
+
 @router.get("", response_model=list[ExecutorOut])
 async def list_executors(
     db: DBSession,
     user: ExecutorViewer,
     role: str | None = Query(None),
 ) -> list[ExecutorOut]:
-    executors = await get_executors(db)
+    executors = await _users_as_executors(db)
+    executors.extend(await _organizations_as_executors(db))
     if role:
         executors = [e for e in executors if e.role_slug == role]
     return executors
