@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
@@ -9,12 +9,19 @@ import {
   ArrowUp,
   Award,
   BarChart3,
+  Check,
   CheckCircle,
   Clock,
+  Copy,
   DollarSign,
   FileText,
+  Loader2,
+  RefreshCw,
+  Share2,
   Shield,
+  UserPlus,
   Users,
+  X,
   XCircle,
 } from 'lucide-react';
 import {
@@ -26,7 +33,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 interface ProjectData {
   project: {
@@ -39,6 +46,7 @@ interface ProjectData {
     status: string;
     budget: number | null;
     created_by: number | null;
+    join_token: string | null;
   };
   questionnaire_results: Array<{
     id: number;
@@ -65,6 +73,7 @@ interface ProjectData {
     id: number;
     user_id: number;
     role_in_project: string;
+    is_priority: boolean;
   }>;
   audit_trail: Array<{
     id: number;
@@ -73,6 +82,28 @@ interface ProjectData {
     details: Record<string, unknown>;
     created_at: string | null;
   }>;
+}
+
+interface GeneratedDocument {
+  doc_type: string;
+  title: string;
+  content: string;
+  template_id: number | null;
+  variables: Record<string, string>;
+  document_id: number | null;
+}
+
+interface JoinRequest {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  role_in_project: string;
+  status: string;
+  invited_by: number | null;
+  invited_by_name: string | null;
+  is_priority: boolean;
+  joined_at: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -101,6 +132,16 @@ const UGT_LEVEL_NAMES = [
   'УГТ 9: Внедрение',
 ];
 
+/** Типы генерируемых документов: ТЗ / Паспорт / ТЭО */
+const DOC_TYPES = [
+  { type: 'tz', label: 'Техническое задание', shortLabel: 'ТЗ' },
+  { type: 'passport', label: 'Паспорт проекта', shortLabel: 'Паспорт' },
+  { type: 'teo', label: 'Технико-экономическое обоснование', shortLabel: 'ТЭО' },
+];
+
+/** Роли, дающие приоритетный доступ к управлению проектом */
+const PRIORITY_ROLES = new Set(['gk_customer', 'cntr_admin', 'cntr_manager']);
+
 export default function ProjectDashboardPage() {
   const params = useParams();
   const { data: session } = useSession();
@@ -108,38 +149,191 @@ export default function ProjectDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [radarData, setRadarData] = useState<Array<{ level: string; progress: number; target: number }>>([]);
 
-  useEffect(() => {
-    if (!session?.user?.accessToken) return;
+  // Генерация документов
+  const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
+  const [generatedDoc, setGeneratedDoc] = useState<GeneratedDocument | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
 
-    const fetchProject = async () => {
+  // Шаринг join-токена
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+
+  // Заявки на вступление
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [decidingId, setDecidingId] = useState<number | null>(null);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
+
+  const loadProject = useCallback(async () => {
+    if (!session?.user?.accessToken || !params.id) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/v1/projects/${params.id}`, {
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      });
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data: ProjectData = await res.json();
+      setProject(data);
+
+      setRadarData(
+        UGT_LEVEL_NAMES.map((name, i) => {
+          const level = i + 1;
+          const qr = data.questionnaire_results.find((r) => r.level_id === level);
+          return {
+            level: name.replace(/УГТ \d+:/, '').trim(),
+            progress: qr ? Math.round(qr.percentage) : 0,
+            target: level <= data.project.target_level ? 100 : 0,
+          };
+        }),
+      );
+    } catch {
+      setProject(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [session, params.id]);
+
+  useEffect(() => {
+    // setState внутри loadProject выполняется после await — не синхронно с телом эффекта
+    (async () => {
+      await loadProject();
+    })();
+  }, [loadProject]);
+
+  const loadJoinRequests = useCallback(async () => {
+    if (!session?.user?.accessToken || !params.id) return;
+    try {
+      const res = await fetch(`${API_URL}/api/v1/projects/${params.id}/join-requests`, {
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      });
+      if (res.ok) setJoinRequests((await res.json()) as JoinRequest[]);
+    } catch {
+      /* игнорируем — очередь просто останется пустой */
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [session, params.id]);
+
+  /**
+   * Приоритетный участник: роль gk_customer/cntr_admin/cntr_manager,
+   * либо создатель проекта, либо участник с is_priority === true.
+   */
+  const isPriorityUser = useMemo(() => {
+    if (!project || !session?.user?.id) return false;
+    const uid = Number(session.user.id);
+    const roles: string[] = (session.user.roles as string[]) ?? [];
+    const byRole = roles.some((r) => PRIORITY_ROLES.has(r));
+    const byCreator = project.project.created_by != null && project.project.created_by === uid;
+    const byMember = project.members.some((m) => m.user_id === uid && m.is_priority);
+    return byRole || byCreator || byMember;
+  }, [project, session]);
+
+  useEffect(() => {
+    if (!isPriorityUser) return;
+    // setState внутри loadJoinRequests выполняется после await
+    (async () => {
+      await loadJoinRequests();
+    })();
+  }, [isPriorityUser, loadJoinRequests]);
+
+  /** Генерация документа (ТЗ / Паспорт / ТЭО) — доступна всем участникам */
+  const generateDocument = useCallback(
+    async (docType: string) => {
+      if (!session?.user?.accessToken || !params.id) return;
+      setGeneratingDoc(docType);
+      setGenError(null);
       try {
-        const res = await fetch(`${API_URL}/api/v1/projects/${params.id}`, {
+        const res = await fetch(`${API_URL}/api/v1/projects/${params.id}/generate/${docType}`, {
+          method: 'POST',
           headers: { Authorization: `Bearer ${session.user.accessToken}` },
         });
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data: ProjectData = await res.json();
-        setProject(data);
-
-        setRadarData(
-          UGT_LEVEL_NAMES.map((name, i) => {
-            const level = i + 1;
-            const qr = data.questionnaire_results.find((r) => r.level_id === level);
-            return {
-              level: name.replace(/УГТ \d+:/, '').trim(),
-              progress: qr ? Math.round(qr.percentage) : 0,
-              target: level <= data.project.target_level ? 100 : 0,
-            };
-          }),
-        );
-      } catch {
-        setProject(null);
+        if (!res.ok) {
+          const detail = await res.text().catch(() => '');
+          throw new Error(
+            detail
+              ? `Ошибка генерации (${res.status}): ${detail.slice(0, 200)}`
+              : `Ошибка генерации (${res.status})`,
+          );
+        }
+        const data: GeneratedDocument = await res.json();
+        setGeneratedDoc(data);
+        // Обновляем список документов проекта
+        await loadProject();
+      } catch (e) {
+        setGenError(e instanceof Error ? e.message : 'Не удалось сгенерировать документ.');
       } finally {
-        setLoading(false);
+        setGeneratingDoc(null);
       }
-    };
+    },
+    [session, params.id, loadProject],
+  );
 
-    fetchProject();
+  /** Регенерация join-токена — только приоритетным участникам */
+  const regenerateToken = useCallback(async () => {
+    if (!session?.user?.accessToken || !params.id) return;
+    setRegenerating(true);
+    setShareError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/projects/${params.id}/regenerate-token`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      });
+      if (!res.ok) throw new Error(`Ошибка регенерации токена (${res.status})`);
+      const data = (await res.json()) as { join_token: string };
+      setProject((prev) => (prev ? { ...prev, project: { ...prev.project, join_token: data.join_token } } : prev));
+    } catch (e) {
+      setShareError(e instanceof Error ? e.message : 'Не удалось обновить токен.');
+    } finally {
+      setRegenerating(false);
+    }
   }, [session, params.id]);
+
+  /** Копирование ссылки для вступления по join-токену */
+  const copyJoinLink = useCallback(async () => {
+    const token = project?.project.join_token;
+    if (!token) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/join/${token}`);
+      setTokenCopied(true);
+      window.setTimeout(() => setTokenCopied(false), 2000);
+    } catch {
+      setShareError('Не удалось скопировать ссылку — скопируйте токен вручную.');
+    }
+  }, [project]);
+
+  /** Одобрение / отклонение заявки на вступление */
+  const decideJoinRequest = useCallback(
+    async (memberId: number, approve: boolean) => {
+      if (!session?.user?.accessToken || !params.id) return;
+      setDecidingId(memberId);
+      setRequestsError(null);
+      try {
+        const res = await fetch(`${API_URL}/api/v1/projects/${params.id}/join-requests/${memberId}/decide`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.user.accessToken}`,
+          },
+          body: JSON.stringify({ approve }),
+        });
+        if (!res.ok) {
+          const detail = await res.text().catch(() => '');
+          throw new Error(
+            detail
+              ? `Ошибка (${res.status}): ${detail.slice(0, 200)}`
+              : `Ошибка обработки заявки (${res.status})`,
+          );
+        }
+        await loadJoinRequests();
+      } catch (e) {
+        setRequestsError(e instanceof Error ? e.message : 'Не удалось обработать заявку.');
+      } finally {
+        setDecidingId(null);
+      }
+    },
+    [session, params.id, loadJoinRequests],
+  );
 
   if (loading) {
     return (
@@ -333,6 +527,28 @@ export default function ProjectDashboardPage() {
                 <FileText size={20} className="text-[#FF7A2E]" />
                 <h2 className="text-lg font-bold text-[#0F172A]">Документы</h2>
               </div>
+
+              {/* Генерация документов — доступна всем участникам */}
+              <div className="mb-4 flex flex-wrap gap-2">
+                {DOC_TYPES.map((doc) => (
+                  <button
+                    key={doc.type}
+                    onClick={() => generateDocument(doc.type)}
+                    disabled={generatingDoc !== null}
+                    title={doc.label}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#2E5BFF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#244BD9] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {generatingDoc === doc.type ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <FileText size={15} />
+                    )}
+                    Сгенерировать {doc.shortLabel}
+                  </button>
+                ))}
+              </div>
+              {genError && <p className="mb-4 text-sm font-medium text-red-600">{genError}</p>}
+
               {project.documents.length === 0 ? (
                 <p className="text-sm text-gray-400">Документы не загружены</p>
               ) : (
@@ -365,6 +581,69 @@ export default function ProjectDashboardPage() {
                 </div>
               )}
             </div>
+
+            {/* Join requests — только приоритетным участникам */}
+            {isPriorityUser && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <UserPlus size={20} className="text-[#10B981]" />
+                  <h2 className="text-lg font-bold text-[#0F172A]">Заявки на вступление</h2>
+                  {joinRequests.length > 0 && (
+                    <span className="ml-auto rounded-full bg-[#2E5BFF] px-2.5 py-0.5 text-xs font-semibold text-white">
+                      {joinRequests.length}
+                    </span>
+                  )}
+                </div>
+                {requestsError && <p className="mb-3 text-sm font-medium text-red-600">{requestsError}</p>}
+                {requestsLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 size={20} className="animate-spin text-[#2E5BFF]" />
+                  </div>
+                ) : joinRequests.length === 0 ? (
+                  <p className="text-sm text-gray-400">Новых заявок нет</p>
+                ) : (
+                  <div className="space-y-3">
+                    {joinRequests.map((req) => (
+                      <div
+                        key={req.id}
+                        className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[#0F172A]">{req.user_name}</p>
+                          <p className="text-xs text-gray-500">{req.user_email}</p>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                            <span className="inline-block rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
+                              {req.role_in_project}
+                            </span>
+                            {req.invited_by_name && (
+                              <span className="text-xs text-gray-400">
+                                пригласил: {req.invited_by_name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-shrink-0 gap-2">
+                          <button
+                            onClick={() => decideJoinRequest(req.id, true)}
+                            disabled={decidingId === req.id}
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#10B981] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0EA371] disabled:opacity-50"
+                          >
+                            <Check size={14} /> Одобрить
+                          </button>
+                          <button
+                            onClick={() => decideJoinRequest(req.id, false)}
+                            disabled={decidingId === req.id}
+                            className="inline-flex items-center gap-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
+                          >
+                            <XCircle size={14} /> Отклонить
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Audit Trail */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6">
@@ -458,6 +737,55 @@ export default function ProjectDashboardPage() {
               </div>
             )}
 
+            {/* Share project — только приоритетным участникам */}
+            {isPriorityUser && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Share2 size={20} className="text-[#2E5BFF]" />
+                  <h3 className="font-bold text-[#0F172A]">Поделиться проектом</h3>
+                </div>
+                {p.join_token ? (
+                  <>
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-[#2E5BFF]/40 bg-[#EAF0FF] px-3 py-2.5">
+                      <span className="font-mono text-sm font-bold text-[#2E5BFF]">{p.join_token}</span>
+                      <button
+                        onClick={copyJoinLink}
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-[#2E5BFF] transition hover:bg-[#2E5BFF]/10"
+                      >
+                        {tokenCopied ? (
+                          <>
+                            <Check size={13} /> Скопировано
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={13} /> Копировать
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="mt-2 break-all text-xs text-gray-400">
+                      Ссылка для вступления: /join/{p.join_token}
+                    </p>
+                    <button
+                      onClick={regenerateToken}
+                      disabled={regenerating}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {regenerating ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <RefreshCw size={14} />
+                      )}
+                      Сгенерировать новый токен
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-400">Токен ещё не выпущен</p>
+                )}
+                {shareError && <p className="mt-2 text-xs font-medium text-red-600">{shareError}</p>}
+              </div>
+            )}
+
             {/* Team */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6">
               <div className="flex items-center gap-2 mb-3">
@@ -531,6 +859,50 @@ export default function ProjectDashboardPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* Модалка с текстом сгенерированного документа */}
+      {generatedDoc && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-8"
+          onClick={() => setGeneratedDoc(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wide text-gray-400">
+                  Сгенерированный документ
+                </p>
+                <h3 className="mt-1 text-lg font-bold text-[#0F172A]">{generatedDoc.title}</h3>
+              </div>
+              <button
+                onClick={() => setGeneratedDoc(null)}
+                aria-label="Закрыть"
+                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-5">
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
+                {generatedDoc.content}
+              </pre>
+            </div>
+            <div className="flex justify-end border-t border-gray-100 p-4">
+              <button
+                onClick={() => setGeneratedDoc(null)}
+                className="rounded-lg bg-[#2E5BFF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#244BD9]"
+              >
+                Закрыть
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import {
   Check,
   ChevronRight,
@@ -19,6 +20,9 @@ import {
   ClipboardCheck,
   Zap,
   Info,
+  Save,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import {
   RadarChart,
@@ -37,6 +41,8 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { UGT_LEVELS } from '@/lib/ugt-data';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -326,9 +332,12 @@ function ChecklistItemCard({ item, isChecked, isExpanded, levelColor, onToggleCh
 /* ------------------------------------------------------------------ */
 export default function QuestionnaireWizardClient() {
   const router = useRouter();
+  const { data: session } = useSession();
 
   const [currentStep, setCurrentStep] = useState<WizardStep>('info');
   const [direction, setDirection] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [projectInfo, setProjectInfo] = useState<ProjectInfo>({
     name: '', description: '', category: '', targetLevel: 9,
@@ -418,6 +427,7 @@ export default function QuestionnaireWizardClient() {
     setCurrentStep('info');
     setDirection(1);
     setActiveCategory('all');
+    setSaveError(null);
   }, []);
 
   const results = useMemo(() => {
@@ -446,6 +456,71 @@ export default function QuestionnaireWizardClient() {
     const overallPct = levelScores.reduce((sum, s) => sum + s.percentage, 0) / levelScores.length;
     return { levelScores, determinedLevel, overallPct };
   }, [selections]);
+
+  /**
+   * Сохранение проекта: собирает данные опросника (название, описание,
+   * категория, целевой уровень, ответы по уровням с текстами выбранных
+   * пунктов и процентами) и отправляет POST /api/v1/projects.
+   * При успехе — редирект на карточку проекта.
+   */
+  const handleSaveProject = useCallback(async () => {
+    setSaveError(null);
+    if (!projectInfo.name.trim()) {
+      setSaveError('Укажите название проекта — оно обязательно для сохранения.');
+      return;
+    }
+    if (!session?.user?.accessToken) {
+      setSaveError('Сессия не активна. Войдите в систему и повторите попытку.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const questionnaireResults = STEP_CHECKLISTS.map((step) => {
+        const checked = selections.get(step.levelId) ?? new Set<string>();
+        const score = results.levelScores.find((s) => s.levelId === step.levelId);
+        return {
+          level_id: step.levelId,
+          // В checked_items передаём тексты выбранных пунктов (не id)
+          checked_items: step.items.filter((i) => checked.has(i.id)).map((i) => i.text),
+          percentage: score?.percentage ?? 0,
+        };
+      });
+
+      const body = {
+        name: projectInfo.name.trim(),
+        description: projectInfo.description.trim() || null,
+        category: projectInfo.category || null,
+        target_level: projectInfo.targetLevel,
+        questionnaire_results: questionnaireResults,
+      };
+
+      const res = await fetch(`${API_URL}/api/v1/projects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.user.accessToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        throw new Error(
+          detail
+            ? `Не удалось сохранить проект (${res.status}): ${detail.slice(0, 200)}`
+            : `Не удалось сохранить проект (${res.status})`,
+        );
+      }
+
+      const data = (await res.json()) as { id: number };
+      router.push(`/dashboard/project/${data.id}`);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Не удалось сохранить проект. Попробуйте ещё раз.');
+    } finally {
+      setSaving(false);
+    }
+  }, [projectInfo, session, selections, results.levelScores, router]);
 
   const totalSteps = 9;
   const completedSteps = currentStep === 'results' ? 9 : currentStep === 'info' ? 0 : (currentStep as number) + 1;
@@ -687,10 +762,12 @@ export default function QuestionnaireWizardClient() {
                   </motion.p>
                   <motion.div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
                     {results.determinedLevel > 0 && (
-                      <button onClick={() => router.push(`/dashboard/gk_customer/projects/${results.determinedLevel}`)}
-                        className="inline-flex items-center gap-2 rounded-[10px] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.03] hover:shadow-lg"
-                        style={{ background: 'linear-gradient(135deg, #2E5BFF, #4A82FF)' }}>
-                        Просмотреть детали УГТ {results.determinedLevel}<ArrowRight size={16} />
+                      <button
+                        onClick={() => document.getElementById('wizard-level-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        className="inline-flex items-center gap-2 rounded-[10px] px-5 py-3.5 text-sm font-medium transition-all hover:bg-[#2E5BFF]/5"
+                        style={{ color: '#2E5BFF' }}
+                      >
+                        Детали по уровням<ChevronDown size={16} />
                       </button>
                     )}
                     <button onClick={resetAssessment} className="inline-flex items-center gap-2 rounded-[10px] px-5 py-3.5 text-sm font-medium transition-all hover:bg-[#2E5BFF]/5"
@@ -748,7 +825,7 @@ export default function QuestionnaireWizardClient() {
                   )}
                 </motion.div>
 
-                <motion.div className="mt-12" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6, ease: EASE_OUT_EXPO }}>
+                <motion.div className="mt-12 scroll-mt-6" id="wizard-level-results" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6, ease: EASE_OUT_EXPO }}>
                   <h3 className="mb-6 text-center text-2xl font-bold" style={{ color: '#0F172A' }}>Результаты по уровням</h3>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {results.levelScores.map((s, idx) => (
@@ -809,8 +886,34 @@ export default function QuestionnaireWizardClient() {
                 </motion.div>
 
                 <div className="mt-10 text-center">
-                  <button onClick={resetAssessment} className="inline-flex items-center gap-2 rounded-[10px] px-5 py-3 text-sm font-medium transition-all hover:bg-[#2E5BFF]/5"
-                    style={{ color: '#2E5BFF' }}><RotateCcw size={16} />Пройти оценку заново</button>
+                  <p className="mb-4 text-sm" style={{ color: '#94A3B8' }}>
+                    Сохраните результаты оценки — проект появится в рабочем столе заказчика
+                  </p>
+                  {saveError && (
+                    <div
+                      className="mx-auto mb-5 flex max-w-[560px] items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left"
+                      role="alert"
+                    >
+                      <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+                      <p className="text-sm font-medium text-red-700">{saveError}</p>
+                    </div>
+                  )}
+                  <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <button
+                      onClick={handleSaveProject}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 rounded-[10px] px-7 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.03] hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                      style={{ background: 'linear-gradient(135deg, #2E5BFF, #4A82FF)' }}
+                    >
+                      {saving ? (
+                        <><Loader2 size={16} className="animate-spin" />Сохранение…</>
+                      ) : (
+                        <><Save size={16} />Сохранить проект</>
+                      )}
+                    </button>
+                    <button onClick={resetAssessment} className="inline-flex items-center gap-2 rounded-[10px] px-5 py-3 text-sm font-medium transition-all hover:bg-[#2E5BFF]/5"
+                      style={{ color: '#2E5BFF' }}><RotateCcw size={16} />Пройти оценку заново</button>
+                  </div>
                 </div>
               </motion.div>
             )}

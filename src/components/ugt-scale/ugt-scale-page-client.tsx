@@ -124,81 +124,72 @@ export default function UgtScalePageClient() {
             const kpiEntries = Object.entries(level.kpi);
             return (
               <motion.div key={level.id} variants={itemVariants}>
-                <Link
-                  href={`/dashboard/gk_customer/projects/${level.id}`}
-                  className="group block h-full"
+                <div
+                  className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E8ECF0] bg-white p-6 transition-all duration-300 sm:p-7"
+                  style={{
+                    boxShadow:
+                      '0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.04)',
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget;
+                    el.style.borderColor = level.color + '40';
+                    el.style.transform = 'translateY(-4px)';
+                    el.style.boxShadow =
+                      '0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget;
+                    el.style.borderColor = '#E8ECF0';
+                    el.style.transform = 'translateY(0)';
+                    el.style.boxShadow =
+                      '0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.04)';
+                  }}
                 >
                   <div
-                    className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E8ECF0] bg-white p-6 transition-all duration-300 sm:p-7"
-                    style={{
-                      boxShadow:
-                        '0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.04)',
-                    }}
-                    onMouseEnter={(e) => {
-                      const el = e.currentTarget;
-                      el.style.borderColor = level.color + '40';
-                      el.style.transform = 'translateY(-4px)';
-                      el.style.boxShadow =
-                        '0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04)';
-                    }}
-                    onMouseLeave={(e) => {
-                      const el = e.currentTarget;
-                      el.style.borderColor = '#E8ECF0';
-                      el.style.transform = 'translateY(0)';
-                      el.style.boxShadow =
-                        '0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.04)';
-                    }}
-                  >
-                    <div
-                      className="absolute left-0 right-0 top-0 h-[3px]"
-                      style={{ backgroundColor: level.color }}
-                    />
+                    className="absolute left-0 right-0 top-0 h-[3px]"
+                    style={{ backgroundColor: level.color }}
+                  />
 
-                    <div className="flex items-center justify-between">
-                      <span
-                        className="inline-block rounded-full px-3 py-1 font-mono text-sm font-semibold"
-                        style={{
-                          background: level.color + '18',
-                          color: level.color,
-                          border: `1px solid ${level.color}30`,
-                        }}
-                      >
-                        {level.code}
-                      </span>
-                      <ArrowRight
-                        size={18}
-                        className="text-[#94A3B8] transition-all duration-300 group-hover:translate-x-1"
-                      />
-                    </div>
-
-                    <h3 className="mt-4 text-xl font-semibold text-[#0F172A] sm:text-2xl">
-                      {level.name}
-                    </h3>
-
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-[#475569] sm:text-base">
-                      {level.short}
-                    </p>
-
-                    <div className="my-4 h-px w-full bg-[#E8ECF0]" />
-
-                    <div className="flex flex-wrap gap-3">
-                      {kpiEntries.map(([label, value]) => {
-                        const Icon = getKpiIcon(label);
-                        return (
-                          <div
-                            key={label}
-                            className="flex items-center gap-1.5 rounded-md bg-[#F5F7FA] px-2.5 py-1.5"
-                          >
-                            <Icon size={14} style={{ color: level.color }} />
-                            <span className="font-mono text-xs font-medium text-[#475569]">
-                              {value}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="inline-block rounded-full px-3 py-1 font-mono text-sm font-semibold"
+                      style={{
+                        background: level.color + '18',
+                        color: level.color,
+                        border: `1px solid ${level.color}30`,
+                      }}
+                    >
+                      {level.code}
+                    </span>
                   </div>
-                </Link>
+
+                  <h3 className="mt-4 text-xl font-semibold text-[#0F172A] sm:text-2xl">
+                    {level.name}
+                  </h3>
+
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[#475569] sm:text-base">
+                    {level.short}
+                  </p>
+
+                  <div className="my-4 h-px w-full bg-[#E8ECF0]" />
+
+                  <div className="flex flex-wrap gap-3">
+                    {kpiEntries.map(([label, value]) => {
+                      const Icon = getKpiIcon(label);
+                      return (
+                        <div
+                          key={label}
+                          className="flex items-center gap-1.5 rounded-md bg-[#F5F7FA] px-2.5 py-1.5"
+                        >
+                          <Icon size={14} style={{ color: level.color }} />
+                          <span className="font-mono text-xs font-medium text-[#475569]">
+                            {value}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </motion.div>
             );
           })}
