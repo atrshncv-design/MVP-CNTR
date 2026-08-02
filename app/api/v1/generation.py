@@ -25,7 +25,7 @@ async def generate_project_document(
         )
     await require_project_access(db, project_id, user)
     try:
-        result = await generate_document(db, project_id, doc_type)
+        result = await generate_document(db, project_id, doc_type, user_id=user.id)
     except ValueError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
     return result

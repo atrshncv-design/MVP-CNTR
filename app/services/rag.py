@@ -16,7 +16,7 @@ from app.schemas import (
 
 SQL_UPSERT_EMBEDDING = """
 UPDATE public.rag_documents
-SET embedding = :embedding::vector
+SET embedding = CAST(:embedding AS vector)
 WHERE id = :doc_id
 """
 
@@ -30,12 +30,12 @@ SELECT
     source_uri,
     template_metadata,
     created_at,
-    1 - (embedding <=> :query_vec::vector) AS similarity
+    1 - (embedding <=> CAST(:query_vec AS vector)) AS similarity
 FROM public.rag_documents
 WHERE embedding IS NOT NULL
   AND (:doc_type IS NULL OR doc_type = :doc_type)
   AND (:ugt_level IS NULL OR ugt_level = :ugt_level)
-ORDER BY embedding <=> :query_vec::vector
+ORDER BY embedding <=> CAST(:query_vec AS vector)
 LIMIT :top_k
 """
 

@@ -250,7 +250,7 @@ async def seed() -> None:
             await db.execute(
                 text(
                     "UPDATE public.rag_documents "
-                    "SET embedding = :emb::vector WHERE id = :did"
+                    "SET embedding = CAST(:emb AS vector) WHERE id = :did"
                 ),
                 {"emb": emb_str, "did": doc.id},
             )

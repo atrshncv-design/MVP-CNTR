@@ -231,6 +231,7 @@ class GeneratedDocumentOut(BaseModel):
     content: str
     template_id: int | None = None
     variables: dict[str, str] = {}
+    document_id: int | None = None
 
 
 # ─── Executors & Technologies (Реестры) ──────────────────────────────────────

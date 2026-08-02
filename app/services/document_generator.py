@@ -6,13 +6,18 @@ from sqlalchemy import select
 
 from app.core.deps import DBSession
 from app.db.models import (
+    AuditTrailEntry,
     Project,
+    ProjectDocument,
     QuestionnaireResult,
     RagDocument,
 )
 from app.schemas import GeneratedDocumentOut
 
 VARIABLE_RE = re.compile(r"\{\{(\w+)\}\}")
+
+# Распределение бюджета по этапам для ТЭО (30/40/30 — по умолчанию)
+BUDGET_STAGE_PERCENTS = (30, 40, 30)
 
 
 def _resolve_variable(
@@ -35,6 +40,12 @@ def _resolve_variable(
     if name_lower in project_fields:
         return project_fields[name_lower]
 
+    # {{project_budget_percent_30}} / _40 / _30 → доля бюджета по этапу
+    budget_match = re.match(r"project_budget_percent_(\d+)", name_lower)
+    if budget_match and project.budget is not None:
+        percent = int(budget_match.group(1))
+        return f"{project.budget * percent / 100:,.2f}".replace(",", " ")
+
     level_match = re.match(r"level_(\d+)_(.+)", name_lower)
     if level_match:
         level_id = int(level_match.group(1))
@@ -50,9 +61,9 @@ def _resolve_variable(
                     return str(len(items))
                 if field == "items":
                     return "\n".join(f"- {item}" for item in items)
-                if field == "checked":
+                if field.startswith("checked_"):
                     try:
-                        idx = int(field.replace("checked_", ""))
+                        idx = int(field.split("_", 1)[1])
                         if idx < len(items):
                             return str(items[idx])
                     except (ValueError, IndexError):
@@ -65,6 +76,7 @@ async def generate_document(
     db: DBSession,
     project_id: int,
     doc_type: str,
+    user_id: int | None = None,
 ) -> GeneratedDocumentOut:
     project = await db.get(Project, project_id)
     if project is None:
@@ -105,10 +117,32 @@ async def generate_document(
         "teo": "Технико-экономическое обоснование",
     }
 
+    # Сохраняем сгенерированный документ в реестр документов проекта + аудит
+    document = ProjectDocument(
+        project_id=project_id,
+        title=title_map.get(doc_type, doc_type),
+        doc_type=doc_type,
+        status="draft",
+        version=1,
+        uploaded_by=user_id,
+    )
+    db.add(document)
+    db.add(
+        AuditTrailEntry(
+            project_id=project_id,
+            user_id=user_id,
+            action="document.generated",
+            details={"doc_type": doc_type, "template_id": template.id},
+        )
+    )
+    await db.commit()
+    await db.refresh(document)
+
     return GeneratedDocumentOut(
         doc_type=doc_type,
         title=title_map.get(doc_type, doc_type),
         content=content,
         template_id=template.id,
         variables=variables,
+        document_id=document.id,
     )
