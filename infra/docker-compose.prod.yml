@@ -1,0 +1,74 @@
+# Production stack: frontend + backend + PostgreSQL + nginx (HTTPS)
+# Запуск: ./deploy.sh   (см. infra/README-DEPLOY.md)
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: tz-prod-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg-prod-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: .
+    container_name: tz-prod-backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_REPLICA_HOST: ""
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      LLM_API_BASE: ${LLM_API_BASE}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_MODEL: ${LLM_MODEL}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ../technozrelost-frontend
+      args:
+        NEXT_PUBLIC_API_URL: /api
+    container_name: tz-prod-frontend
+    restart: unless-stopped
+    environment:
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    depends_on:
+      - backend
+    expose:
+      - "3000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: tz-prod-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  pg-prod-data:
