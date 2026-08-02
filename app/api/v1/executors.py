@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 
-from app.core.deps import CurrentUser, DBSession
+from app.core.deps import DBSession, require_role
 from app.db.models import Project, ProjectMember, Role, User, user_roles_tbl
 from app.schemas import ExecutorOut
 
 EXECUTOR_ROLE_SLUGS = ["rd_executor", "scientific_org", "serial_manufacturer"]
+EXECUTOR_CATALOG_VIEWERS = (*EXECUTOR_ROLE_SLUGS, "gk_customer", "cntr_admin", "cntr_manager")
+
+ExecutorViewer = Annotated[User, Depends(require_role(*EXECUTOR_CATALOG_VIEWERS))]
 
 router = APIRouter(prefix="/executors", tags=["executors"])
 
@@ -47,7 +52,16 @@ async def get_executors(db: DBSession) -> list[ExecutorOut]:
         .join(role_subq, User.id == role_subq.c.user_id)
         .outerjoin(completed_subq, User.id == completed_subq.c.user_id)
         .where(User.is_active == True)  # noqa: E712
-        .distinct(User.id)
+        # DISTINCT ON несовместим с ORDER BY по другому столбцу в PostgreSQL —
+        # используем GROUP BY по всем выбранным столбцам.
+        .group_by(
+            User.id,
+            User.full_name,
+            User.organization,
+            role_subq.c.role_slug,
+            role_subq.c.role_name,
+            completed_subq.c.cnt,
+        )
         .order_by(User.full_name)
     )
 
@@ -68,7 +82,7 @@ async def get_executors(db: DBSession) -> list[ExecutorOut]:
 @router.get("", response_model=list[ExecutorOut])
 async def list_executors(
     db: DBSession,
-    user: CurrentUser,
+    user: ExecutorViewer,
     role: str | None = Query(None),
 ) -> list[ExecutorOut]:
     executors = await get_executors(db)

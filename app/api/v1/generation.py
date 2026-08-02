@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.api.v1.projects import require_project_access
 from app.core.deps import CurrentUser, DBSession
 from app.schemas import GeneratedDocumentOut
 from app.services.document_generator import generate_document
@@ -22,6 +23,7 @@ async def generate_project_document(
             status.HTTP_400_BAD_REQUEST,
             f"Неверный тип документа. Допустимые: {', '.join(valid_types)}",
         )
+    await require_project_access(db, project_id, user)
     try:
         result = await generate_document(db, project_id, doc_type)
     except ValueError as exc:

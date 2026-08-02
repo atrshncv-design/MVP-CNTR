@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import Select, or_, select
 
-from app.core.deps import CurrentUser, DBSession
+from app.core.deps import CurrentUser, DBSession, is_cntr_staff
 from app.db.models import (
     AuditTrailEntry,
     ControlPoint,
@@ -28,12 +28,46 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 
 def project_list_stmt(user: CurrentUser) -> Select[tuple[Project]]:
     statement = select(Project).order_by(Project.updated_at.desc(), Project.id.desc())
-    if user.is_superuser:
+    if user.is_superuser or is_cntr_staff(user):
         return statement
-    joined_projects = select(ProjectMember.project_id).where(ProjectMember.user_id == user.id)
+    joined_projects = select(ProjectMember.project_id).where(
+        ProjectMember.user_id == user.id,
+        ProjectMember.status == "active",
+    )
     return statement.where(
         or_(Project.created_by == user.id, Project.id.in_(joined_projects))
     )
+
+
+async def get_project_or_404(db: DBSession, project_id: int) -> Project:
+    project = await db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+    return project
+
+
+async def can_access_project(db: DBSession, project: Project, user: CurrentUser) -> bool:
+    """Доступ: суперпользователь, персонал ЦНТР, создатель или активный участник.
+
+    Возвращает 404 (а не 403) наружителю, чтобы не раскрывать существование проекта.
+    """
+    if user.is_superuser or is_cntr_staff(user) or project.created_by == user.id:
+        return True
+    membership = await db.scalar(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == user.id,
+            ProjectMember.status == "active",
+        )
+    )
+    return membership is not None
+
+
+async def require_project_access(db: DBSession, project_id: int, user: CurrentUser) -> Project:
+    project = await get_project_or_404(db, project_id)
+    if not await can_access_project(db, project, user):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+    return project
 
 
 @router.get("", response_model=list[ProjectOut])
@@ -48,9 +82,7 @@ async def get_project_detail(
     db: DBSession,
     user: CurrentUser,
 ) -> ProjectDetailOut:
-    project = await db.get(Project, project_id)
-    if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+    project = await require_project_access(db, project_id, user)
 
     # Fetch all related data
     qr_stmt = select(QuestionnaireResult).where(QuestionnaireResult.project_id == project_id)
@@ -93,9 +125,7 @@ async def save_questionnaire(
     db: DBSession,
     user: CurrentUser,
 ) -> QuestionnaireResultOut:
-    project = await db.get(Project, payload.project_id)
-    if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+    await require_project_access(db, payload.project_id, user)
 
     stmt = select(QuestionnaireResult).where(
         QuestionnaireResult.project_id == payload.project_id,

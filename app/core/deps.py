@@ -44,3 +44,18 @@ def require_role(*slugs: str) -> Any:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Недостаточно прав")
 
     return _checker
+
+
+def has_role(user: User, *slugs: str) -> bool:
+    """True, если у пользователя есть хотя бы одна из ролей (или он суперпользователь)."""
+    if user.is_superuser:
+        return True
+    user_slugs = {r.slug for r in user.roles}
+    return bool(user_slugs & set(slugs))
+
+
+CNTR_STAFF_SLUGS = ("cntr_admin", "cntr_manager")
+
+
+def is_cntr_staff(user: User) -> bool:
+    return has_role(user, *CNTR_STAFF_SLUGS)
