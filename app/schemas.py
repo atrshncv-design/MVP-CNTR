@@ -126,6 +126,11 @@ class ControlPointOut(BaseModel):
     created_at: str | None = None
 
 
+class ControlPointDecisionIn(BaseModel):
+    status: str = Field(pattern="^(approved|rejected)$")
+    decision: str | None = Field(default=None, max_length=255)
+
+
 class ProjectDocumentOut(BaseModel):
     id: int
     project_id: int

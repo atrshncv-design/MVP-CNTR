@@ -204,7 +204,7 @@ class ControlPoint(Base):
     description: Mapped[str | None] = mapped_column(Text)
     point_type: Mapped[str] = mapped_column(String(32), nullable=False, default="gate")
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
-    decision: Mapped[str | None] = mapped_column(String(16))
+    decision: Mapped[str | None] = mapped_column(String(255))
     decided_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(

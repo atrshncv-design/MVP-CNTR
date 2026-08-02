@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import Select, or_, select
 
-from app.core.deps import CurrentUser, DBSession, is_cntr_staff
+from app.core.deps import CurrentUser, DBSession, has_role, is_cntr_staff
 from app.db.models import (
     AuditTrailEntry,
     ControlPoint,
@@ -14,6 +14,7 @@ from app.db.models import (
 )
 from app.schemas import (
     AuditTrailEntryOut,
+    ControlPointDecisionIn,
     ControlPointOut,
     ProjectCreateIn,
     ProjectDetailOut,
@@ -28,6 +29,16 @@ from app.schemas import (
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 QUESTIONNAIRE_PASS_THRESHOLD = 70.0
+
+CONTROL_POINTS_TEMPLATE = [
+    (
+        "КТ-1: Старт проекта",
+        "Утверждение концепции, генерация Паспорта и ТЭО, решение аудитора Go/No-Go.",
+    ),
+    ("КТ-2: Завершение НИР", "Завершение научно-исследовательских работ, верификация УГТ 3."),
+    ("КТ-3: Создание прототипа", "Прототип готов к стендовым испытаниям, верификация УГТ 5-6."),
+    ("КТ-4: Внедрение", "Технология внедрена, верификация УГТ 8-9, передача в серию."),
+]
 
 
 def compute_current_level(results: list[QuestionnaireAnswerIn]) -> int:
@@ -79,6 +90,18 @@ async def create_project(
                 level_id=answer.level_id,
                 checked_items={"items": answer.checked_items},
                 percentage=answer.percentage,
+            )
+        )
+
+    # Стандартные контрольные точки проекта (КТ-1 … КТ-4 по методологии)
+    for cp_title, cp_desc in CONTROL_POINTS_TEMPLATE:
+        db.add(
+            ControlPoint(
+                project_id=project.id,
+                title=cp_title,
+                description=cp_desc,
+                point_type="gate" if cp_title.startswith("КТ-1") else "milestone",
+                status="pending",
             )
         )
 
@@ -220,6 +243,47 @@ async def save_questionnaire(
     await db.refresh(result)
 
     return _qr_out(result)
+
+
+@router.patch("/{project_id}/control-points/{cp_id}", response_model=ControlPointOut)
+async def decide_control_point(
+    project_id: int,
+    cp_id: int,
+    payload: ControlPointDecisionIn,
+    db: DBSession,
+    user: CurrentUser,
+) -> ControlPointOut:
+    """Решение по контрольной точке: эксперт УГТ (верификация) или аудитор (КТ-1 Go/No-Go)."""
+    await get_project_or_404(db, project_id)  # проверка существования проекта
+    is_verifier = (
+        user.is_superuser
+        or is_cntr_staff(user)
+        or has_role(user, "ugt_expert", "auditor")
+    )
+    if not is_verifier:
+        # Обычные роли — только участники проекта (иначе 404)
+        await require_project_access(db, project_id, user)
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Недостаточно прав для решения по КТ")
+
+    cp = await db.get(ControlPoint, cp_id)
+    if cp is None or cp.project_id != project_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Контрольная точка не найдена")
+
+    cp.status = payload.status
+    cp.decision = payload.decision
+    cp.decided_by = user.id
+
+    db.add(
+        AuditTrailEntry(
+            project_id=project_id,
+            user_id=user.id,
+            action=f"control_point.{payload.status}",
+            details={"cp_id": cp.id, "title": cp.title, "decision": payload.decision},
+        )
+    )
+    await db.commit()
+    await db.refresh(cp)
+    return _cp_out(cp)
 
 
 def _project_out(project: Project) -> ProjectOut:
