@@ -10,6 +10,26 @@
   --color-muted: #64748b;
   --app-font-sans: Arial, Helvetica, sans-serif;
   --app-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* ─── Семантические токены дизайн-системы (тикет 16) ───────────────────
+     Применяются в компонентах через var(--tz-*); значения совпадают с
+     текущими инлайн-цветами — визуально ничего не меняется. */
+  --tz-hero-bg: #0f172a;
+  --tz-hero-text: #f8fafc;
+  --tz-accent: #2e5bff;
+  --tz-accent-hover: #4a82ff;
+  --tz-accent-soft: #eef2ff;
+  --tz-card-border: #e8ecf0;
+  --tz-text-primary: #0f172a;
+  --tz-text-secondary: #475569;
+  --tz-text-muted: #64748b;
+  --tz-success: #10b981;
+  --tz-warning: #f59e0b;
+  --tz-danger: #ef4444;
+  --tz-info: #2e5bff;
+  --tz-radius-card: 1rem;
+  --tz-radius-btn: 0.625rem;
+  --tz-shadow-card: 0 1px 2px rgb(15 23 42 / 0.04);
 }
 
 @theme inline {
