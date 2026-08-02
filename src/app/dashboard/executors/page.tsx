@@ -8,9 +8,10 @@ import {
   Filter,
   Search,
   CheckCircle,
+  User,
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 interface Executor {
   id: number;
@@ -33,6 +34,19 @@ const ROLE_COLORS: Record<string, string> = {
   scientific_org: '#10B981',
   serial_manufacturer: '#FF7A2E',
 };
+
+/** Русская плюрализация: 1 проект, 2 проекта, 5 проектов */
+const pluralize = (n: number, one: string, few: string, many: string) => {
+  const abs = Math.abs(n) % 100;
+  const last = abs % 10;
+  if (abs > 10 && abs < 20) return many;
+  if (last > 1 && last < 5) return few;
+  if (last === 1) return one;
+  return many;
+};
+
+/** Максимум чипов компетенций на карточке */
+const MAX_COMPETENCIES = 5;
 
 export default function ExecutorsPage() {
   const { data: session } = useSession();
@@ -113,7 +127,14 @@ export default function ExecutorsPage() {
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
           <Building2 size={48} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-500">Исполнители не найдены</p>
+          <p className="font-medium text-[#0F172A]">
+            {executors.length === 0 ? 'Исполнители не найдены' : 'Ничего не найдено'}
+          </p>
+          <p className="mt-1 text-sm text-gray-400">
+            {executors.length === 0
+              ? 'В каталоге пока нет исполнителей'
+              : 'Попробуйте изменить запрос или фильтр по роли'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -131,15 +152,29 @@ export default function ExecutorsPage() {
                 >
                   {exec.full_name[0]?.toUpperCase() ?? '?'}
                 </div>
-                <span
-                  className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  style={{
-                    background: `${ROLE_COLORS[exec.role_slug] ?? '#2E5BFF'}15`,
-                    color: ROLE_COLORS[exec.role_slug] ?? '#2E5BFF',
-                  }}
-                >
-                  {exec.role_name}
-                </span>
+                <div className="flex flex-wrap items-center justify-end gap-1.5">
+                  {/* id<0 — организации НИОКТР, id>0 — пользователи */}
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      exec.id < 0
+                        ? 'bg-indigo-50 text-indigo-600'
+                        : 'bg-emerald-50 text-emerald-600'
+                    }`}
+                    title={exec.id < 0 ? 'Карточка организации' : 'Карточка пользователя'}
+                  >
+                    {exec.id < 0 ? <Building2 size={12} /> : <User size={12} />}
+                    {exec.id < 0 ? 'Организация' : 'Пользователь'}
+                  </span>
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    style={{
+                      background: `${ROLE_COLORS[exec.role_slug] ?? '#2E5BFF'}15`,
+                      color: ROLE_COLORS[exec.role_slug] ?? '#2E5BFF',
+                    }}
+                  >
+                    {exec.role_name}
+                  </span>
+                </div>
               </div>
               <h3 className="mt-4 font-bold text-[#0F172A]">{exec.full_name}</h3>
               {exec.organization && (
@@ -150,9 +185,30 @@ export default function ExecutorsPage() {
               <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
                 <span className="flex items-center gap-1">
                   <CheckCircle size={14} className="text-[#10B981]" />
-                  {exec.completed_projects} проектов
+                  {exec.completed_projects}{' '}
+                  {pluralize(exec.completed_projects, 'проект', 'проекта', 'проектов')}
                 </span>
               </div>
+              {exec.competencies && exec.competencies.length > 0 && (
+                <div className="mt-3 border-t border-gray-100 pt-3">
+                  <p className="mb-1.5 text-xs text-gray-400">Компетенции</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {exec.competencies.slice(0, MAX_COMPETENCIES).map((c) => (
+                      <span
+                        key={c}
+                        className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                    {exec.competencies.length > MAX_COMPETENCIES && (
+                      <span className="rounded-full bg-[#2E5BFF]/10 px-2 py-0.5 text-xs font-medium text-[#2E5BFF]">
+                        +{exec.competencies.length - MAX_COMPETENCIES}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
