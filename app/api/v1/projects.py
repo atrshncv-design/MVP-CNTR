@@ -15,15 +15,85 @@ from app.db.models import (
 from app.schemas import (
     AuditTrailEntryOut,
     ControlPointOut,
+    ProjectCreateIn,
     ProjectDetailOut,
     ProjectDocumentOut,
     ProjectMemberOut,
     ProjectOut,
+    QuestionnaireAnswerIn,
     QuestionnaireResultIn,
     QuestionnaireResultOut,
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+QUESTIONNAIRE_PASS_THRESHOLD = 70.0
+
+
+def compute_current_level(results: list[QuestionnaireAnswerIn]) -> int:
+    """Текущий УГТ = максимальный непрерывный уровень с процентом ≥ 70 (как в визарде)."""
+    by_level = {r.level_id: r.percentage for r in results}
+    level = 0
+    for i in range(1, 10):
+        if by_level.get(i, 0.0) >= QUESTIONNAIRE_PASS_THRESHOLD:
+            level = i
+        else:
+            break
+    return level
+
+
+@router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
+async def create_project(
+    payload: ProjectCreateIn,
+    db: DBSession,
+    user: CurrentUser,
+) -> ProjectOut:
+    project = Project(
+        name=payload.name,
+        description=payload.description,
+        category=payload.category,
+        target_level=payload.target_level,
+        current_level=compute_current_level(payload.questionnaire_results),
+        budget=payload.budget,
+        created_by=user.id,
+    )
+    db.add(project)
+    await db.flush()  # нужен project.id для вложенных записей
+
+    # Создатель — приоритетный участник с ролью из своей платформенной роли
+    primary_role = user.roles[0].slug if user.roles else "participant"
+    db.add(
+        ProjectMember(
+            project_id=project.id,
+            user_id=user.id,
+            role_in_project=primary_role,
+            status="active",
+            is_priority=True,
+        )
+    )
+
+    for answer in payload.questionnaire_results:
+        db.add(
+            QuestionnaireResult(
+                project_id=project.id,
+                level_id=answer.level_id,
+                checked_items={"items": answer.checked_items},
+                percentage=answer.percentage,
+            )
+        )
+
+    db.add(
+        AuditTrailEntry(
+            project_id=project.id,
+            user_id=user.id,
+            action="project.created",
+            details={"name": project.name, "target_level": project.target_level},
+        )
+    )
+
+    await db.commit()
+    await db.refresh(project)
+    return _project_out(project)
 
 
 def project_list_stmt(user: CurrentUser) -> Select[tuple[Project]]:
@@ -162,6 +232,7 @@ def _project_out(project: Project) -> ProjectOut:
         current_level=project.current_level,
         status=project.status,
         budget=project.budget,
+        join_token=project.join_token,
         created_by=project.created_by,
         created_at=project.created_at.isoformat() if project.created_at else None,
         updated_at=project.updated_at.isoformat() if project.updated_at else None,

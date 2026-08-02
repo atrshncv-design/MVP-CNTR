@@ -48,9 +48,27 @@ class ProjectOut(BaseModel):
     current_level: int = 0
     status: str = "draft"
     budget: float | None = None
+    join_token: str | None = None
     created_by: int | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class QuestionnaireAnswerIn(BaseModel):
+    """Ответы по одному уровню УГТ (без project_id — он известен из контекста)."""
+
+    level_id: int
+    checked_items: list[str] = []
+    percentage: float = 0.0
+
+
+class ProjectCreateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    description: str | None = None
+    category: str | None = None
+    target_level: int = Field(default=9, ge=1, le=9)
+    budget: float | None = Field(default=None, ge=0)
+    questionnaire_results: list[QuestionnaireAnswerIn] = []
 
 
 class QuestionnaireResultIn(BaseModel):
