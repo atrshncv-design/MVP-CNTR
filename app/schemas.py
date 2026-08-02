@@ -119,7 +119,52 @@ class ProjectMemberOut(BaseModel):
     project_id: int
     user_id: int
     role_in_project: str
+    status: str = "active"
+    invited_by: int | None = None
+    is_priority: bool = False
     joined_at: str | None = None
+
+
+class JoinRequestOut(BaseModel):
+    """Заявка на вступление (или участник) для очереди модерации."""
+
+    id: int
+    user_id: int
+    user_name: str
+    user_email: str
+    role_in_project: str
+    status: str
+    invited_by: int | None = None
+    invited_by_name: str | None = None
+    is_priority: bool = False
+    joined_at: str | None = None
+
+
+class JoinIn(BaseModel):
+    token: str = Field(min_length=6, max_length=16, description="Join-токен проекта, напр. TZ-XXXXXX")
+    role_in_project: str = Field(default="participant", min_length=1, max_length=64)
+    shared_by: int | None = Field(
+        default=None,
+        description="ID пользователя, чьей ссылкой вступают. None = ручной ввод токена.",
+    )
+
+
+class JoinResultOut(BaseModel):
+    status: str  # active | pending
+    project: ProjectOut
+
+
+class JoinDecisionIn(BaseModel):
+    approve: bool
+    role_in_project: str | None = None
+
+
+class RegenerateTokenOut(BaseModel):
+    join_token: str
+
+
+class MemberPriorityIn(BaseModel):
+    is_priority: bool
 
 
 class AuditTrailEntryOut(BaseModel):

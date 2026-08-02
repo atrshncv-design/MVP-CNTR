@@ -11,6 +11,7 @@ from app.api.v1.chat import router as chat_router
 from app.api.v1.executors import router as executors_router
 from app.api.v1.generation import router as generation_router
 from app.api.v1.health import router as health_router
+from app.api.v1.membership import router as membership_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.rag import router as rag_router
 from app.api.v1.technologies import router as technologies_router
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(projects_router, prefix="/api/v1")
+    app.include_router(membership_router, prefix="/api/v1")
     app.include_router(rag_router, prefix="/api/v1")
     app.include_router(generation_router, prefix="/api/v1")
     app.include_router(executors_router, prefix="/api/v1")
