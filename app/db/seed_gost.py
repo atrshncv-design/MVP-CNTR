@@ -159,10 +159,11 @@ async def ingest_document(db, doc_path: Path) -> int:
         await db.flush()
         emb = embed_text(chunk)
         emb_str = "[" + ",".join(f"{v:.8f}" for v in emb) + "]"
-        await db.execute(
-            text("UPDATE public.rag_documents SET embedding = CAST(:emb AS vector) WHERE id = :did"),
-            {"emb": emb_str, "did": doc.id},
+        sql = (
+            "UPDATE public.rag_documents "
+            "SET embedding = CAST(:emb AS vector) WHERE id = :did"
         )
+        await db.execute(text(sql), {"emb": emb_str, "did": doc.id})
         inserted += 1
     return inserted
 

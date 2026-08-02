@@ -10,6 +10,7 @@ import os
 
 os.environ["POSTGRES_DB"] = "technozrelost_test"
 os.environ["POSTGRES_REPLICA_HOST"] = ""  # disable replica checks in tests
+os.environ["LLM_API_KEY"] = ""  # tests must not depend on the external LLM API
 os.environ.setdefault("APP_ENV", "test")
 
 from collections.abc import Iterator  # noqa: E402
