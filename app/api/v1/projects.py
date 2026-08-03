@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import Select, or_, select
 
 from app.core.deps import CurrentUser, DBSession, has_role, is_cntr_staff
@@ -11,6 +11,8 @@ from app.db.models import (
     ProjectDocument,
     ProjectMember,
     QuestionnaireResult,
+    User,
+    VerificationDocument,
 )
 from app.schemas import (
     AuditTrailEntryOut,
@@ -24,6 +26,9 @@ from app.schemas import (
     QuestionnaireAnswerIn,
     QuestionnaireResultIn,
     QuestionnaireResultOut,
+    RegistryProjectOut,
+    VerificationDocIn,
+    VerificationDocOut,
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -169,6 +174,51 @@ async def list_projects(db: DBSession, user: CurrentUser) -> list[ProjectOut]:
     return [_project_out(project) for project in result.scalars().all()]
 
 
+@router.get("/registry", response_model=list[RegistryProjectOut])
+async def project_registry(
+    db: DBSession,
+    user: CurrentUser,
+    ugt_min: int | None = Query(None, ge=1, le=9),
+    ugt_max: int | None = Query(None, ge=1, le=9),
+    category: str | None = Query(None),
+    budget_min: float | None = Query(None, ge=0),
+    budget_max: float | None = Query(None, ge=0),
+) -> list[RegistryProjectOut]:
+    """Общий реестр проектов (только published). ?ugt_min=7 — реестр технологий."""
+    stmt = (
+        select(Project, User.organization)
+        .outerjoin(User, Project.created_by == User.id)
+        .where(Project.status == "published")
+        .order_by(Project.current_level.desc(), Project.updated_at.desc())
+    )
+    if ugt_min is not None:
+        stmt = stmt.where(Project.current_level >= ugt_min)
+    if ugt_max is not None:
+        stmt = stmt.where(Project.current_level <= ugt_max)
+    if category:
+        stmt = stmt.where(Project.category == category)
+    if budget_min is not None:
+        stmt = stmt.where(Project.budget >= budget_min)
+    if budget_max is not None:
+        stmt = stmt.where(Project.budget <= budget_max)
+
+    rows = await db.execute(stmt)
+    return [
+        RegistryProjectOut(
+            id=p.id,
+            name=p.name,
+            category=p.category,
+            current_level=p.current_level,
+            preliminary_level=p.preliminary_level,
+            target_level=p.target_level,
+            budget=float(p.budget) if p.budget is not None else None,
+            organization=org_name,
+            created_at=p.created_at.isoformat() if p.created_at else None,
+        )
+        for p, org_name in rows
+    ]
+
+
 @router.get("/{project_id}", response_model=ProjectDetailOut)
 async def get_project_detail(
     project_id: int,
@@ -258,7 +308,7 @@ async def decide_control_point(
     is_verifier = (
         user.is_superuser
         or is_cntr_staff(user)
-        or has_role(user, "ugt_expert", "auditor")
+        or has_role(user, "regulating_organization", "auditor")
     )
     if not is_verifier:
         # Обычные роли — только участники проекта (иначе 404)
@@ -284,6 +334,51 @@ async def decide_control_point(
     await db.commit()
     await db.refresh(cp)
     return _cp_out(cp)
+
+
+@router.post(
+    "/{project_id}/verification-docs",
+    response_model=VerificationDocOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_verification_doc(
+    project_id: int,
+    payload: VerificationDocIn,
+    db: DBSession,
+    user: CurrentUser,
+) -> VerificationDocOut:
+    """Верифицирующий документ («подтверждение УГТ»). Доступ — только активному участнику.
+
+    Специальный случай RBAC: до вступления по токену (в т.ч. для регулирующей
+    организации) возвращаем 403 с понятным сообщением, а не 404.
+    """
+    project = await get_project_or_404(db, project_id)
+    if not await can_access_project(db, project, user):
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Сначала присоединитесь к проекту по токену TZ-XXXXXX",
+        )
+    doc = VerificationDocument(
+        project_id=project.id,
+        uploader_id=user.id,
+        title=payload.title,
+        comment=payload.comment,
+        file_ref=payload.file_ref,
+    )
+    db.add(doc)
+    await db.commit()
+    await db.refresh(doc)
+    uploader = await db.get(User, doc.uploader_id)
+    return VerificationDocOut(
+        id=doc.id,
+        project_id=doc.project_id,
+        uploader_id=doc.uploader_id,
+        uploader_name=uploader.full_name if uploader else None,
+        title=doc.title,
+        comment=doc.comment,
+        file_ref=doc.file_ref,
+        created_at=doc.created_at.isoformat() if doc.created_at else None,
+    )
 
 
 def _project_out(project: Project) -> ProjectOut:
