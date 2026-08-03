@@ -13,8 +13,8 @@
 
 ## Push-контракт
 - Remote `origin` → `https://github.com/atrshncv-design/MVP-CNTR.git`
-- Backend: `codex/recovery-backend` — все тикеты запушены (последний: bb57d3d → 3af718f)
-- Frontend: `codex/recovery-frontend` — все тикеты запушены (4daf351 → 9c67ca9)
+- Backend: `codex/recovery-backend` — тикеты 20–25 запушены (последний: `de9923e`)
+- Frontend: `codex/recovery-frontend` — все тикеты запушены (`4daf351` → `9c67ca9`)
 - Документация: `main` — спека/журнал/статус (03.08)
 
 ## Прогресс тикетов (спека: `.scratch/mvp1-release/spec.md`)
