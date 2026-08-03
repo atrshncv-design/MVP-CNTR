@@ -18,6 +18,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import Reveal from "@/components/landing/reveal";
+import LivingRadar from "@/components/landing/living-radar";
 import { UGTScaleStrip } from "@/components/landing/ugt-card";
 import { UGT_LEVELS } from "@/lib/ugt-data";
 import { ROLES } from "@/lib/roles";
@@ -92,42 +93,56 @@ export default function LandingHome() {
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
-        <div className="max-w-3xl">
-          <Reveal>
-            <p className="tz-eyebrow">ЦНТР Удмуртии · Цифровая платформа трансфера технологий</p>
-          </Reveal>
-          <Reveal delay={0.05}>
-            <h1 className="mt-4 font-display text-[clamp(2rem,5vw+0.75rem,3.4rem)] font-extrabold leading-[1.06] tracking-tight text-tz-fg">
-              Путь технологии от идеи до серийного производства —{" "}
-              <span className="tz-grad-text">на одной платформе</span>
-            </h1>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-tz-secondary">
-              «Технозрелость» — цифровая инфраструктура Центра технологического развития
-              Удмуртской Республики. Оценивайте уровень готовности технологий (УГТ) по
-              ГОСТ Р 58048-2017, ведите проект уровнями N→N+1 и доводите разработку до
-              внедрения — с верификацией Центра и живыми реестрами проектов и технологий.
-            </p>
-          </Reveal>
-          <Reveal delay={0.15}>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/register" className="tz-btn tz-btn-primary tz-btn-lg">
-                Оценить УГТ своего проекта
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/login" className="tz-btn tz-btn-secondary tz-btn-lg">
-                Войти
-              </Link>
-            </div>
-          </Reveal>
-          <Reveal delay={0.2}>
-            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[11px] uppercase tracking-widest text-tz-muted">
-              <span>ГОСТ Р 58048-2017</span>
-              <span>9 уровней УГТ</span>
-              <span>9 ролей участников</span>
-              <span>4 категории готовности</span>
+      <section className="relative mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6 sm:pt-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_360px]">
+          <div className="max-w-2xl">
+            <Reveal>
+              <p className="tz-eyebrow">ЦНТР Удмуртии · Цифровая платформа трансфера технологий</p>
+            </Reveal>
+            <Reveal delay={0.05}>
+              <h1 className="mt-4 font-display text-[clamp(2rem,5vw+0.5rem,3.2rem)] font-extrabold leading-[1.08] tracking-tight text-tz-fg">
+                Путь технологии от идеи до серийного производства —{" "}
+                <span className="tz-grad-text">на одной платформе</span>
+              </h1>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <p className="mt-5 text-[15.5px] leading-relaxed text-tz-secondary">
+                «Технозрелость» — цифровая инфраструктура Центра технологического развития
+                Удмуртской Республики. Оценивайте уровень готовности технологий (УГТ) по
+                ГОСТ Р 58048-2017, ведите проект уровнями N→N+1 и доводите разработку до
+                внедрения — с верификацией Центра и живыми реестрами.
+              </p>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link href="/register" className="tz-btn tz-btn-primary tz-btn-lg">
+                  Оценить УГТ своего проекта
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link href="/login" className="tz-btn tz-btn-secondary tz-btn-lg">
+                  Войти
+                </Link>
+              </div>
+            </Reveal>
+            <Reveal delay={0.2}>
+              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[11px] uppercase tracking-widest text-tz-muted">
+                <span>ГОСТ Р 58048-2017</span>
+                <span>9 уровней УГТ</span>
+                <span>9 ролей</span>
+                <span>4 категории</span>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* Живой радар (D10) */}
+          <Reveal delay={0.15} className="hidden lg:block">
+            <div className="tz-glass relative flex aspect-square items-center justify-center rounded-3xl p-8 text-tz-accent">
+              <LivingRadar className="w-full max-w-[300px]" />
+              <div className="absolute bottom-6 left-6 right-6 text-center">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-tz-hero-muted">
+                  Радар зрелости · 4 категории
+                </p>
+              </div>
             </div>
           </Reveal>
         </div>

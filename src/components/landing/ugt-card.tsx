@@ -2,6 +2,24 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { UGT_LEVELS, type UGTLevel } from "@/lib/ugt-data";
 
+/** Правильное склонение слова «критерий» по числу. */
+export function pluralCriteria(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "критерий";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "критерия";
+  return "критериев";
+}
+
+/** Правильное склонение слова «документ» по числу. */
+export function pluralDocs(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "документ";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "документа";
+  return "документов";
+}
+
 /** Тёплая УГТ-шкала дизайн-системы 2.0: 1–3 низкие, 4–6 средние, 7–9 высокие. */
 export function ugtTone(level: number): string {
   if (level <= 3) return "var(--color-tz-ugt-low)";
@@ -48,7 +66,8 @@ export function UGTLevelCard({ level }: { level: UGTLevel }) {
         {level.short}
       </p>
       <p className="mt-3 font-mono text-[10px] uppercase tracking-widest tz-eyebrow">
-        {level.requirements.length} критериев
+        {level.requirements.length}{" "}
+        {pluralCriteria(level.requirements.length)}
       </p>
     </Link>
   );

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Reveal from "@/components/landing/reveal";
 import { UGT_LEVELS } from "@/lib/ugt-data";
-import { ugtTone, ugtToneClass } from "@/components/landing/ugt-card";
+import { ugtTone, ugtToneClass, pluralCriteria, pluralDocs } from "@/components/landing/ugt-card";
 
 export const metadata: Metadata = {
   title: "Уровни УГТ 1–9 — Технозрелость",
@@ -50,7 +50,7 @@ export default function LevelsPage() {
               </p>
               <div className="mt-4 flex items-center justify-between border-t border-tz-border/60 pt-3">
                 <span className="font-mono text-[10.5px] uppercase tracking-widest text-tz-muted">
-                  {lvl.requirements.length} критериев · {lvl.deliverables.length} документов
+                  {lvl.requirements.length} {pluralCriteria(lvl.requirements.length)} · {lvl.deliverables.length} {pluralDocs(lvl.deliverables.length)}
                 </span>
                 <ArrowRight className="h-4 w-4 text-tz-muted transition-transform group-hover:translate-x-0.5 group-hover:text-tz-fg" />
               </div>
