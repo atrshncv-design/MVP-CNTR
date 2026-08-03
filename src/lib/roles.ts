@@ -3,7 +3,7 @@ export const ROLES = [
   { slug: "rd_executor", name: "R&D-исполнитель", order: 2 },
   { slug: "scientific_org", name: "Научная организация", order: 3 },
   { slug: "serial_manufacturer", name: "Серийный производитель", order: 4 },
-  { slug: "ugt_expert", name: "Эксперт УГТ", order: 5 },
+  { slug: "ugt_expert", name: "Регулирующая организация", order: 5 },
   { slug: "auditor", name: "Аудитор", order: 6 },
   { slug: "investor", name: "Инвестор", order: 7 },
   { slug: "cntr_admin", name: "Администратор ЦНТР", order: 8 },
@@ -27,6 +27,18 @@ export const ROLE_DASHBOARD: Record<RoleSlug, string> = {
 
 // Какая роль вправе видеть какой кабинет.
 export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
+  // Универсальный опросник УГТ: доступен любой роли (решение №3 интервью 03.08)
+  "/dashboard/gk_customer/projects/new": [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "ugt_expert",
+    "auditor",
+    "investor",
+    "cntr_admin",
+    "cntr_manager",
+  ],
   "/dashboard/projects": [
     "gk_customer",
     "rd_executor",

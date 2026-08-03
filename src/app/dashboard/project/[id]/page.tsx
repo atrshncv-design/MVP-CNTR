@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import {
   Activity,
+  ArrowRight,
   ArrowUp,
   Award,
   BarChart3,
@@ -364,31 +365,41 @@ export default function ProjectDashboardPage() {
     <div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <span
-              className="inline-block rounded-full px-3 py-1 font-mono text-xs font-semibold"
-              style={{ background: `${statusColor}20`, color: statusColor }}
-            >
-              {STATUS_LABELS[p.status] ?? p.status}
-            </span>
-            {p.category && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 font-mono text-xs text-gray-500">
-                {p.category}
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-5">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span
+                className="tz-badge font-mono text-xs font-semibold"
+                style={{ background: `${statusColor}20`, color: statusColor }}
+              >
+                {STATUS_LABELS[p.status] ?? p.status}
               </span>
+              {p.category && (
+                <span className="tz-badge tz-badge-neutral">{p.category}</span>
+              )}
+              <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
+            </div>
+            <h1 className="tz-page-title">{p.name}</h1>
+            {p.description && (
+              <p className="mt-2 max-w-2xl text-tz-muted">{p.description}</p>
             )}
           </div>
-          <h1 className="text-3xl font-bold text-[#0F172A]">{p.name}</h1>
-          {p.description && (
-            <p className="mt-2 text-gray-500 max-w-2xl">{p.description}</p>
-          )}
+          <div className="tz-card shrink-0 px-4 py-3">
+            <div className="tz-eyebrow">Уровень УГТ</div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <span className="tz-ugt">УГТ {p.current_level}</span>
+              <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
+              <span className="tz-ugt tz-ugt-strong">{p.target_level}</span>
+            </div>
+            <p className="mt-1 text-xs text-tz-muted">по ГОСТ Р 58048-2017</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Radar chart */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="tz-card p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Activity size={20} className="text-[#2E5BFF]" />
                 <h2 className="text-lg font-bold text-[#0F172A]">УГТ-профиль</h2>
@@ -435,7 +446,7 @@ export default function ProjectDashboardPage() {
             </div>
 
             {/* UGT Levels progress */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="tz-card p-6">
               <h2 className="text-lg font-bold text-[#0F172A] mb-4">Прогресс по уровням УГТ</h2>
               <div className="space-y-3">
                 {UGT_LEVEL_NAMES.map((name, i) => {
@@ -447,7 +458,7 @@ export default function ProjectDashboardPage() {
 
                   return (
                     <div key={level} className="flex items-center gap-4">
-                      <span className={`w-8 text-xs font-bold ${isCurrent ? 'text-[#2E5BFF]' : 'text-gray-400'}`}>
+                      <span className={`w-9 font-mono text-xs font-bold ${isCurrent ? 'text-tz-accent' : 'text-tz-muted'}`}>
                         УГТ {level}
                       </span>
                       <div className="flex-1">
@@ -455,9 +466,9 @@ export default function ProjectDashboardPage() {
                           <span className="text-sm text-gray-600">{name.replace(/УГТ \d+: /, '')}</span>
                           <span className="text-xs text-gray-400">{progress}%</span>
                         </div>
-                        <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                        <div className="tz-progress">
                           <div
-                            className="h-full rounded-full transition-all duration-500"
+                            className="tz-progress-fill"
                             style={{
                               width: `${progress}%`,
                               background: progress >= 80 ? '#10B981' : progress >= 40 ? '#2E5BFF' : '#E5C840',

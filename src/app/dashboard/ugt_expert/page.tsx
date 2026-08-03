@@ -17,6 +17,7 @@ import {
 import JoinProjectForm from '@/components/join-project-form';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { AssessUgTCard } from "@/components/assess-ugt-card";
 
 interface ControlPoint {
   id: number;
@@ -102,7 +103,7 @@ export default function UgtExpertDashboard() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [deciding, setDeciding] = useState<{ projectId: number; cpId: number } | null>(null);
 
-  const displayName = session?.user?.name ?? session?.user?.email ?? 'Эксперт УГТ';
+  const displayName = session?.user?.name ?? session?.user?.email ?? 'Регулирующая организация';
 
   const loadProjects = useCallback(async () => {
     if (!session?.user?.accessToken) return;
@@ -204,14 +205,14 @@ export default function UgtExpertDashboard() {
       {/* Hero-блок в стиле ЛК ГК */}
       <div className="border-b border-[#DFE5EC] pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
-          Рабочий стол эксперта УГТ
+          Рабочий стол регулирующей организации
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-[#0F172A]">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
-          Проверяйте контрольные точки проектов по чек-листам ГОСТ Р 58048-2017 и
-          подтверждайте достигнутые уровни технологической готовности.
+          Присоединяйтесь к проектам по токену, верифицируйте контрольные точки по
+          чек-листам ГОСТ Р 58048-2017 и добавляйте документы подтверждения УГТ.
         </p>
       </div>
 
@@ -225,6 +226,11 @@ export default function UgtExpertDashboard() {
       </nav>
 
       {/* Статистика */}
+      {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
+      <div className="mt-6">
+        <AssessUgTCard />
+      </div>
+
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;

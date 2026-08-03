@@ -13,24 +13,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await auth();
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-tz-bg">
       <a
         href="#main-content"
-        className="fixed left-4 top-3 z-50 -translate-y-20 rounded bg-white px-3 py-2 font-semibold text-[#0F172A] shadow focus:translate-y-0"
+        className="fixed left-4 top-3 z-50 -translate-y-20 rounded bg-white px-3 py-2 font-semibold text-tz-fg shadow focus:translate-y-0"
       >
         Перейти к основному содержимому
       </a>
-      <header className="border-b border-slate-800 bg-[#0F172A] text-white">
+      <header className="border-b border-tz-hero-border bg-tz-hero text-white">
         <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center gap-8 px-5 sm:px-8">
-          <Link href="/dashboard" className="shrink-0 font-extrabold tracking-[0.08em]">
-            ТЕХНОЗРЕЛОСТЬ
+          <Link href="/dashboard" className="shrink-0 font-mono text-sm font-bold tracking-[0.08em]">
+            ТЕХНОЗРЕЛОСТЬ<span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-tz-accent" aria-hidden="true" />
           </Link>
           <nav aria-label="Основная навигация" className="hidden items-center gap-1 md:flex">
             {navigation.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7196FF]"
+                className="rounded-lg px-3 py-2 text-sm text-tz-hero-muted transition hover:bg-tz-hero-border hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tz-accent-hover"
               >
                 {item.label}
               </Link>
@@ -40,7 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {session?.user && (
               <div className="hidden text-right sm:block">
                 <div className="text-sm font-semibold">{session.user.name ?? session.user.email}</div>
-                <div className="text-xs text-slate-400">{session.user.roles.join(" · ")}</div>
+                <div className="text-xs text-tz-hero-muted">{session.user.roles.join(" · ")}</div>
               </div>
             )}
             <form
@@ -51,7 +51,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             >
               <button
                 type="submit"
-                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:border-slate-500 hover:text-white"
+                className="rounded-lg border border-tz-hero-border px-3 py-2 text-sm text-tz-hero-muted transition hover:border-tz-hero-muted hover:text-white"
               >
                 Выйти
               </button>

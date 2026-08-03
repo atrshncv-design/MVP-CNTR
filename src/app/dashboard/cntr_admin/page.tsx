@@ -17,6 +17,7 @@ import {
 import { ROLES } from '@/lib/roles';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { AssessUgTCard } from "@/components/assess-ugt-card";
 
 interface AdminUser {
   id: number;
@@ -243,6 +244,11 @@ export default function CntrAdminDashboard() {
           Реестр технологий
         </Link>
       </nav>
+
+      {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
+      <div className="mt-6">
+        <AssessUgTCard />
+      </div>
 
       {/* Статистика */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">

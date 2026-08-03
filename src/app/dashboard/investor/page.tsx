@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { AssessUgTCard } from "@/components/assess-ugt-card";
 
 interface Technology {
   id: number;
@@ -123,6 +124,11 @@ export default function InvestorDashboard() {
           Изучайте реестр технологий платформы: уровень зрелости УГТ, организация-
           разработчик и перспективы внедрения. Реестр доступен только для чтения.
         </p>
+      </div>
+
+      {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
+      <div className="mt-6">
+        <AssessUgTCard />
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-[#DFE5EC]">

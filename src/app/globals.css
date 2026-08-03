@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* ════════════════════════════════════════════════════════════════════════
+   ДИЗАЙН-СИСТЕМА «ТЕХНОЗРЕЛОСТЬ» — v1 (см. DESIGN.md)
+   Роллаут: 03.08. Палитра в OKLch на базе гаммы бренда (#0f172a / #2e5bff).
+   Правила: сериф — только заголовки; цифры/ID/УГТ — mono; один акцент на экран.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Легаси-токены тикета 16: сохранены как алиасы, чтобы не ломать страницы ── */
 :root {
   --background: #f5f7fa;
   --foreground: #0f172a;
@@ -11,9 +18,6 @@
   --app-font-sans: Arial, Helvetica, sans-serif;
   --app-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
-  /* ─── Семантические токены дизайн-системы (тикет 16) ───────────────────
-     Применяются в компонентах через var(--tz-*); значения совпадают с
-     текущими инлайн-цветами — визуально ничего не меняется. */
   --tz-hero-bg: #0f172a;
   --tz-hero-text: #f8fafc;
   --tz-accent: #2e5bff;
@@ -32,23 +36,440 @@
   --tz-shadow-card: 0 1px 2px rgb(15 23 42 / 0.04);
 }
 
+/* ─── Токены дизайн-системы (семантические утилиты: bg-tz-*, text-tz-*, …) ── */
+@theme {
+  /* Нейтраль */
+  --color-tz-bg: oklch(97.55% 0.005 258.3);        /* #f5f7fa */
+  --color-tz-surface: oklch(100% 0 0);             /* #ffffff */
+  --color-tz-fg: oklch(20.77% 0.04 265.8);         /* #0f172a */
+  --color-tz-secondary: oklch(44.55% 0.037 257.3); /* #475569 */
+  --color-tz-muted: oklch(55.44% 0.041 257.4);     /* #64748b */
+  --color-tz-border: oklch(91.94% 0.012 252.1);    /* #dfe5ec */
+  --color-tz-card-border: oklch(94.12% 0.007 247.9); /* #e8ecf0 */
+  --color-tz-soft: oklch(93.5% 0.008 255);
+
+  /* Бренд */
+  --color-tz-accent: oklch(55.16% 0.247 266);      /* #2e5bff */
+  --color-tz-accent-hover: oklch(63.47% 0.195 263.6); /* #4a82ff */
+  --color-tz-accent-soft: oklch(95.5% 0.021 268.4);   /* #eaf0ff */
+  --color-tz-hero: oklch(20.77% 0.04 265.8);       /* #0f172a */
+  --color-tz-hero-text: oklch(98.42% 0.003 247.9); /* #f8fafc */
+  --color-tz-hero-muted: oklch(71.07% 0.035 256.8); /* #94a3b8 */
+  --color-tz-hero-border: oklch(37.17% 0.039 257.3); /* #334155 */
+
+  /* Статусы */
+  --color-tz-success: oklch(69.59% 0.149 162.5);   /* #10b981 */
+  --color-tz-warning: oklch(76.86% 0.165 70.1);    /* #f59e0b */
+  --color-tz-review: oklch(83.43% 0.151 96.7);     /* #e5c840 */
+  --color-tz-danger: oklch(63.68% 0.208 25.3);     /* #ef4444 */
+  --color-tz-neutral: oklch(71.07% 0.035 256.8);   /* #94a3b8 */
+
+  /* Мягкие подложки статусов (бейджи, иконки) */
+  --color-tz-success-soft: color-mix(in oklch, var(--color-tz-success) 12%, white);
+  --color-tz-warning-soft: color-mix(in oklch, var(--color-tz-warning) 12%, white);
+  --color-tz-review-soft: color-mix(in oklch, var(--color-tz-review) 14%, white);
+  --color-tz-danger-soft: color-mix(in oklch, var(--color-tz-danger) 12%, white);
+  --color-tz-neutral-soft: color-mix(in oklch, var(--color-tz-neutral) 14%, white);
+
+  /* Геометрия и глубина */
+  --radius-tz-card: 1rem;
+  --radius-tz-btn: 0.625rem;
+  --shadow-tz-card: 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-tz-pop: 0 8px 24px rgb(15 23 42 / 0.08);
+}
+
+/* Шрифты задаются next/font (layout.tsx): --font-pt_serif / --font-inter / --font-jetbrains_mono */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--app-font-sans);
-  --font-mono: var(--app-font-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-pt_serif), "PT Serif", Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-jetbrains_mono), ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background: var(--color-tz-bg);
+    color: var(--color-tz-fg);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Сериф — только заголовки страниц (display) */
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--color-tz-accent) 22%, white);
+  }
+
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--color-tz-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
-button,
-a,
-input,
-select,
-textarea {
-  font: inherit;
+@layer components {
+  /* ── Типографика ─────────────────────────────────────────────── */
+  .tz-page-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 2.2vw + 1rem, 2.25rem);
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-tz-fg);
+  }
+
+  .tz-section-title {
+    font-size: 1.125rem;
+    line-height: 1.3;
+    font-weight: 700;
+    color: var(--color-tz-fg);
+  }
+
+  .tz-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-tz-muted);
+  }
+
+  /* ── Карточки ────────────────────────────────────────────────── */
+  .tz-card {
+    background: var(--color-tz-surface);
+    border: 1px solid var(--color-tz-card-border);
+    border-radius: var(--radius-tz-card);
+    box-shadow: var(--shadow-tz-card);
+  }
+
+  .tz-card-hover {
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  }
+  .tz-card-hover:hover {
+    border-color: var(--color-tz-accent);
+    box-shadow: var(--shadow-tz-pop);
+  }
+
+  /* ── Кнопки ──────────────────────────────────────────────────── */
+  .tz-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-tz-btn);
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+      box-shadow 0.15s ease, transform 0.1s ease;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tz-btn:active {
+    transform: translateY(1px);
+  }
+  .tz-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .tz-btn-primary {
+    background: var(--color-tz-accent);
+    color: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.12);
+  }
+  .tz-btn-primary:hover:not(:disabled) {
+    background: var(--color-tz-accent-hover);
+  }
+
+  .tz-btn-secondary {
+    background: var(--color-tz-surface);
+    border: 1px solid var(--color-tz-border);
+    color: var(--color-tz-fg);
+  }
+  .tz-btn-secondary:hover:not(:disabled) {
+    border-color: var(--color-tz-accent);
+    color: var(--color-tz-accent);
+  }
+
+  .tz-btn-ghost {
+    background: transparent;
+    color: var(--color-tz-muted);
+  }
+  .tz-btn-ghost:hover:not(:disabled) {
+    background: var(--color-tz-soft);
+    color: var(--color-tz-fg);
+  }
+
+  .tz-btn-danger {
+    background: var(--color-tz-danger);
+    color: #fff;
+  }
+  .tz-btn-danger:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+
+  .tz-btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    border-radius: 0.5rem;
+  }
+
+  /* ── Бейджи и уровни УГТ ─────────────────────────────────────── */
+  .tz-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+  .tz-badge-success { background: var(--color-tz-success-soft); color: var(--color-tz-success); }
+  .tz-badge-warning { background: var(--color-tz-warning-soft); color: var(--color-tz-warning); }
+  .tz-badge-review  { background: var(--color-tz-review-soft);  color: var(--color-tz-review); }
+  .tz-badge-danger  { background: var(--color-tz-danger-soft);  color: var(--color-tz-danger); }
+  .tz-badge-neutral { background: var(--color-tz-neutral-soft); color: var(--color-tz-muted); }
+  .tz-badge-accent  { background: var(--color-tz-accent-soft);  color: var(--color-tz-accent); }
+
+  .tz-ugt {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.5;
+    background: var(--color-tz-accent-soft);
+    color: var(--color-tz-accent);
+    white-space: nowrap;
+  }
+  .tz-ugt-strong {
+    background: var(--color-tz-hero);
+    color: var(--color-tz-hero-text);
+  }
+
+  .tz-token {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: var(--color-tz-soft);
+    color: var(--color-tz-fg);
+  }
+
+  /* ── Формы ───────────────────────────────────────────────────── */
+  .tz-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-tz-secondary);
+    margin-bottom: 0.375rem;
+  }
+
+  .tz-input,
+  .tz-select,
+  .tz-textarea {
+    width: 100%;
+    background: var(--color-tz-surface);
+    border: 1px solid var(--color-tz-border);
+    border-radius: var(--radius-tz-btn);
+    padding: 0.5625rem 0.8125rem;
+    font-size: 0.875rem;
+    color: var(--color-tz-fg);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .tz-input::placeholder,
+  .tz-textarea::placeholder {
+    color: var(--color-tz-muted);
+  }
+  .tz-input:focus,
+  .tz-select:focus,
+  .tz-textarea:focus {
+    outline: none;
+    border-color: var(--color-tz-accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-tz-accent) 14%, transparent);
+  }
+
+  /* ── Табы ────────────────────────────────────────────────────── */
+  .tz-tabs {
+    display: flex;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--color-tz-border);
+    overflow-x: auto;
+  }
+  .tz-tab {
+    position: relative;
+    padding: 0.875rem 0.125rem 0.75rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-tz-muted);
+    white-space: nowrap;
+    transition: color 0.15s ease;
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
+  .tz-tab:hover {
+    color: var(--color-tz-fg);
+  }
+  .tz-tab-active {
+    color: var(--color-tz-fg);
+    font-weight: 600;
+  }
+  .tz-tab-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--color-tz-accent);
+  }
+  .tz-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    margin-left: 0.375rem;
+    border-radius: 999px;
+    background: var(--color-tz-soft);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-tz-secondary);
+  }
+  .tz-tab-active .tz-tab-count {
+    background: var(--color-tz-accent-soft);
+    color: var(--color-tz-accent);
+  }
+
+  /* ── Стат-карта ──────────────────────────────────────────────── */
+  .tz-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .tz-stat-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-tz-muted);
+  }
+  .tz-stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.75rem;
+    flex-shrink: 0;
+  }
+  .tz-stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.75rem;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-tz-fg);
+  }
+
+  /* ── Пустое состояние ────────────────────────────────────────── */
+  .tz-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 3rem 1.5rem;
+  }
+  .tz-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.875rem;
+    background: var(--color-tz-accent-soft);
+    color: var(--color-tz-accent);
+  }
+  .tz-empty-title {
+    margin-top: 1.125rem;
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--color-tz-fg);
+  }
+  .tz-empty-text {
+    margin-top: 0.5rem;
+    max-width: 28rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--color-tz-muted);
+  }
+
+  /* ── Прогресс УГТ ────────────────────────────────────────────── */
+  .tz-progress {
+    height: 0.375rem;
+    border-radius: 999px;
+    background: var(--color-tz-soft);
+    overflow: hidden;
+  }
+  .tz-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--color-tz-accent);
+    transition: width 0.4s ease;
+  }
+
+  /* ── Чипы-фильтры ────────────────────────────────────────────── */
+  .tz-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 999px;
+    padding: 0.3125rem 0.8125rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: var(--color-tz-soft);
+    color: var(--color-tz-secondary);
+    transition: background-color 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .tz-chip:hover {
+    background: color-mix(in oklch, var(--color-tz-soft) 70%, white);
+    color: var(--color-tz-fg);
+  }
+  .tz-chip-active {
+    background: var(--color-tz-accent);
+    border-color: var(--color-tz-accent);
+    color: #fff;
+  }
+  .tz-chip-active:hover {
+    background: var(--color-tz-accent-hover);
+    color: #fff;
+  }
 }

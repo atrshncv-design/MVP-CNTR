@@ -8,6 +8,7 @@ import { AlertCircle, ArrowRight, FolderKanban, PlayCircle, FileClock, Graduatio
 import JoinProjectForm from '@/components/join-project-form';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { AssessUgTCard } from "@/components/assess-ugt-card";
 
 interface Project {
   id: number;
@@ -111,6 +112,11 @@ export default function ScientificOrgDashboard() {
       </nav>
 
       {/* Статистика из API */}
+      {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
+      <div className="mt-6">
+        <AssessUgTCard />
+      </div>
+
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
