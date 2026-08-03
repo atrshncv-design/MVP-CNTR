@@ -490,12 +490,10 @@ export default function QuestionnaireWizardClient() {
       const body = {
         name: projectInfo.name.trim(),
         description: projectInfo.description.trim() || null,
-        category: projectInfo.category || null,
-        target_level: projectInfo.targetLevel,
         questionnaire_results: questionnaireResults,
       };
 
-      const res = await fetch(`${API_URL}/api/v1/projects`, {
+      const res = await fetch(`${API_URL}/api/v1/assessments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

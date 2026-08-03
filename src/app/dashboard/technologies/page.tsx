@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
+  AlertCircle,
   Beaker,
   Briefcase,
   Building2,
@@ -91,6 +92,7 @@ export default function TechnologiesPage() {
   const [technologies, setTechnologies] = useState<Technology[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -101,25 +103,28 @@ export default function TechnologiesPage() {
     if (!session?.user?.accessToken) return;
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const params = new URLSearchParams();
         if (statusFilter !== "all") params.set("status", statusFilter);
         if (categoryFilter !== "all") params.set("category", categoryFilter);
-        if (minLevel !== "all") params.set("min_level", minLevel);
-        if (maxLevel !== "all") params.set("max_level", maxLevel);
+        if (minLevel !== "all") params.set("ugt_min", minLevel);
+        if (maxLevel !== "all") params.set("ugt_max", maxLevel);
 
-        const [projectsRes, techRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/projects`, {
-            headers: { Authorization: `Bearer ${session.user.accessToken}` },
-          }),
-          fetch(`${API_URL}/api/v1/technologies?${params}`, {
-            headers: { Authorization: `Bearer ${session.user.accessToken}` },
-          }),
-        ]);
-        if (projectsRes.ok) setProjects(await projectsRes.json());
-        if (techRes.ok) setTechnologies(await techRes.json());
-      } catch {
-        // При ошибке оставляем текущие данные
+        const response = await fetch(`${API_URL}/api/v1/projects/registry?${params}`, {
+          headers: { Authorization: `Bearer ${session.user.accessToken}` },
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(`Не удалось загрузить реестр (${response.status}).`);
+        const registry = data as Array<ProjectSummary & { organization: string | null; created_at: string | null }>;
+        setProjects(registry);
+        setTechnologies(registry.filter((p) => p.current_level >= 7).map((p) => ({
+          id: p.id, name: p.name, description: p.description, category: p.category, status: "published",
+          current_level: p.current_level, target_level: p.target_level, organization: p.organization,
+          created_by_name: p.organization, created_at: p.created_at,
+        })));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Не удалось загрузить реестр.");
       } finally {
         setLoading(false);
       }
@@ -282,6 +287,13 @@ export default function TechnologiesPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-tz-accent border-t-transparent" />
+        </div>
+      ) : error ? (
+        <div className="tz-card tz-empty mt-6">
+          <span className="tz-empty-icon"><AlertCircle size={22} aria-hidden="true" /></span>
+          <h2 className="tz-empty-title">Не удалось загрузить реестр</h2>
+          <p className="tz-empty-text">{error}</p>
+          <button className="tz-btn tz-btn-secondary" onClick={() => window.location.reload()}>Повторить</button>
         </div>
       ) : list.length === 0 ? (
         <div className="tz-card tz-empty mt-6">

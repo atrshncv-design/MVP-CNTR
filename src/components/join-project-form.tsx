@@ -12,7 +12,7 @@ const JOIN_ROLES = [
   { value: 'rd_executor', label: 'R&D-исполнитель' },
   { value: 'scientific_org', label: 'Научная организация' },
   { value: 'serial_manufacturer', label: 'Серийный производитель' },
-  { value: 'ugt_expert', label: 'Эксперт УГТ' },
+  { value: 'regulating_organization', label: 'Регулирующая организация' },
   { value: 'auditor', label: 'Аудитор' },
   { value: 'investor', label: 'Инвестор' },
   { value: 'participant', label: 'Участник проекта' },

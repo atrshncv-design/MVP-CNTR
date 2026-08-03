@@ -2,337 +2,79 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import {
-  AlertCircle,
-  ArrowRight,
-  Bot,
-  Briefcase,
-  FileClock,
-  FolderKanban,
-  GitPullRequest,
-  Inbox,
-  Layers,
-  PlayCircle,
-  RefreshCw,
-  ShieldCheck,
-  Wallet,
-} from "lucide-react";
-import JoinProjectForm from "@/components/join-project-form";
-import { AssessUgTCard } from "@/components/assess-ugt-card";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, ArrowRight, Check, FileClock, FolderKanban, GitPullRequest, Inbox, Loader2, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+type Tab = "new" | "upgrades" | "all";
+type Draft = { id: number; name: string; description: string | null; preliminary_level: number | null; current_level: number; target_level: number; status: string; rejection_reason: string | null };
+type Project = { id: number; name: string; description: string | null; category: string | null; current_level: number; target_level: number; status: string; budget: number | null };
+type Promotion = { id: number; project_id: number; project_name: string; from_level: number; to_level: number; status: string; rejection_reason: string | null; attempt_no: number; evaluation_result: { success?: boolean; missing?: string[]; summary?: string }; verification_docs: Array<{ id: number; title: string }> };
 
-interface Project {
-  id: number;
-  name: string;
-  description: string | null;
-  category: string | null;
-  target_level: number;
-  current_level: number;
-  status: string;
-  budget: number | null;
-  created_by: number | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Черновик",
-  active: "В работе",
-  review: "На проверке",
-  completed: "Завершён",
-  rejected: "Отклонён",
-};
-
-/** Статусные бейджи в токенах дизайн-системы (DESIGN.md §5) */
-const STATUS_BADGE: Record<string, string> = {
-  draft: "tz-badge-neutral",
-  active: "tz-badge-accent",
-  review: "tz-badge-review",
-  completed: "tz-badge-success",
-  rejected: "tz-badge-danger",
-};
-
-/** Статусы карточек, ожидающих апрува менеджера (очередь «Новые проекты») */
-const PENDING_STATUSES = new Set(["draft", "review"]);
-
-type QueueTab = "new" | "upgrades" | "all";
-
-function formatBudget(budget: number | null): string {
-  if (budget == null) return "Бюджет не указан";
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "RUB",
-    maximumFractionDigits: 0,
-  }).format(budget);
-}
+const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
+const statusLabels: Record<string, string> = { draft: "Черновик", published: "Опубликован", active: "В работе", rejected: "Отклонён" };
+const badge: Record<string, string> = { draft: "tz-badge-review", published: "tz-badge-success", active: "tz-badge-accent", rejected: "tz-badge-danger" };
+function budget(value: number | null) { return value == null ? "Бюджет не указан" : new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(value); }
+function detail(data: unknown, fallback: string) { return data && typeof data === "object" && typeof (data as { detail?: unknown }).detail === "string" ? (data as { detail: string }).detail : fallback; }
 
 export default function CntrManagerDashboard() {
   const { data: session } = useSession();
+  const token = session?.user?.accessToken;
+  const [tab, setTab] = useState<Tab>("new");
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<QueueTab>("new");
 
-  const displayName = session?.user?.name ?? session?.user?.email ?? "Менеджер ЦНТР";
-
-  const loadProjects = useCallback(async () => {
-    if (!session?.user?.accessToken) return;
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true); setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
-      });
-      if (!res.ok) {
-        throw new Error(`Не удалось загрузить проекты (${res.status}).`);
-      }
-      setProjects((await res.json()) as Project[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить проекты.");
-    } finally {
-      setLoading(false);
-    }
-  }, [session]);
-
+      const [draftRes, promotionRes, projectRes] = await Promise.all([
+        fetch(`${API_URL}/api/v1/manager/queue/drafts`, { headers: auth(token) }),
+        fetch(`${API_URL}/api/v1/manager/queue/promotions`, { headers: auth(token) }),
+        fetch(`${API_URL}/api/v1/projects`, { headers: auth(token) }),
+      ]);
+      const responses = [draftRes, promotionRes, projectRes];
+      const failed = responses.find((r) => !r.ok);
+      if (failed) throw new Error(`Не удалось загрузить очередь (${failed.status}).`);
+      setDrafts(await draftRes.json()); setPromotions(await promotionRes.json()); setProjects(await projectRes.json());
+    } catch (e) { setError(e instanceof Error ? e.message : "Не удалось загрузить очередь."); }
+    finally { setLoading(false); }
+  }, [token]);
   useEffect(() => {
-    (async () => {
-      await loadProjects();
-    })();
-  }, [loadProjects]);
+    (async () => { await load(); })();
+  }, [load]);
 
-  const active = projects.filter((p) => p.status === "active").length;
-  const pending = projects.filter((p) => PENDING_STATUSES.has(p.status)).length;
-  const totalBudget = projects.reduce((acc, p) => acc + (p.budget ?? 0), 0);
-
-  // Очередь «Новые проекты»: черновики и проекты на проверке ждут апрува менеджера
-  // (присвоение официального УГТ — решение №7). Верификация — тикет 22 (бэкенд).
-  const newQueue = projects.filter((p) => PENDING_STATUSES.has(p.status));
-
-  // Очередь «Заявки на повышение УГТ»: формируются автоматически при полноте
-  // комплекта документов этапа (решение №15, тикет 23). До бэкенда счётчик честно 0.
-  const upgradeQueue: Project[] = [];
-
-  const statCards = [
-    { label: "Все проекты", value: projects.length, icon: FolderKanban, color: "#2E5BFF" },
-    { label: "Активные", value: active, icon: PlayCircle, color: "#10B981" },
-    { label: "Ожидают апрува", value: pending, icon: FileClock, color: "#E5C840" },
-    { label: "Бюджет портфеля", value: totalBudget > 0 ? `${Math.round(totalBudget / 1_000_000)} млн ₽` : "—", icon: Wallet, color: "#FF7A2E" },
-  ];
-
-  const renderProjectCard = (project: Project, withPendingChip: boolean) => {
-    const badge = STATUS_BADGE[project.status] ?? "tz-badge-neutral";
-    return (
-      <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <Link
-          href={`/dashboard/project/${project.id}`}
-          className="tz-card tz-card-hover grid gap-4 p-5 md:grid-cols-[1fr_auto_auto]"
-        >
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</span>
-              <span className={`tz-badge ${badge}`}>{STATUS_LABELS[project.status] ?? project.status}</span>
-              {project.category && (
-                <span className="tz-badge tz-badge-accent">{project.category}</span>
-              )}
-              {withPendingChip && (
-                <span className="tz-badge tz-badge-review">
-                  <ShieldCheck size={11} aria-hidden="true" />
-                  Ожидает верификации
-                </span>
-              )}
-            </div>
-            <h3 className="mt-1 text-lg font-bold text-tz-fg">{project.name}</h3>
-            {project.description && (
-              <p className="mt-1 text-sm text-tz-secondary line-clamp-2">{project.description}</p>
-            )}
-            <p className="mt-1.5 text-xs text-tz-muted">
-              <Briefcase size={12} className="mr-1 inline" aria-hidden="true" />
-              {formatBudget(project.budget)}
-            </p>
-          </div>
-          <div className="md:text-right">
-            <div className="tz-eyebrow">Уровень УГТ</div>
-            <div className="mt-1.5 flex items-center gap-1.5 md:justify-end">
-              <span className="tz-ugt">УГТ {project.current_level}</span>
-              <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
-              <span className="tz-ugt">{project.target_level}</span>
-            </div>
-          </div>
-          <div className="flex items-center md:min-w-28 md:justify-end">
-            <ArrowRight size={18} className="text-tz-border transition group-hover:translate-x-1" aria-hidden="true" />
-          </div>
-        </Link>
-      </motion.div>
-    );
+  const decideDraft = async (id: number, approve: boolean) => {
+    if (!token) return;
+    const reason = approve ? undefined : window.prompt("Причина отклонения карточки")?.trim();
+    if (!approve && !reason) return;
+    setBusy(id);
+    try { const res = await fetch(`${API_URL}/api/v1/manager/queue/drafts/${id}/decide`, { method: "POST", headers: { ...auth(token), "Content-Type": "application/json" }, body: JSON.stringify({ approve, level: approve ? drafts.find((d) => d.id === id)?.preliminary_level : undefined, reason }) }); if (!res.ok) throw new Error(detail(await res.json().catch(() => null), `Ошибка решения (${res.status}).`)); await load(); }
+    catch (e) { setError(e instanceof Error ? e.message : "Не удалось обработать карточку."); } finally { setBusy(null); }
+  };
+  const decidePromotion = async (id: number, approve: boolean) => {
+    if (!token) return;
+    const reason = approve ? undefined : window.prompt("Причина отклонения заявки")?.trim();
+    if (!approve && !reason) return;
+    setBusy(id);
+    try { const res = await fetch(`${API_URL}/api/v1/manager/queue/promotions/${id}/decide`, { method: "POST", headers: { ...auth(token), "Content-Type": "application/json" }, body: JSON.stringify({ approve, reason }) }); if (!res.ok) throw new Error(detail(await res.json().catch(() => null), `Ошибка решения (${res.status}).`)); await load(); }
+    catch (e) { setError(e instanceof Error ? e.message : "Не удалось обработать заявку."); } finally { setBusy(null); }
   };
 
-  return (
-    <section data-od-id="manager-dashboard">
-      {/* Hero */}
-      <div className="border-b border-tz-border pb-6">
-        <p className="tz-eyebrow">Рабочий стол менеджера ЦНТР</p>
-        <h1 className="tz-page-title mt-2">Добро пожаловать, {displayName}</h1>
-        <p className="mt-2 max-w-2xl text-tz-secondary">
-          Единый авторитет по УГТ: апрув карточек-черновиков с присвоением официального
-          уровня и верификация заявок на повышение УГТ.
-        </p>
-      </div>
+  const active = projects.filter((p) => p.status === "published" || p.status === "active").length;
+  const totalBudget = projects.reduce((sum, p) => sum + (p.budget ?? 0), 0);
+  const cards = [{ label: "Все проекты", value: projects.length, icon: FolderKanban }, { label: "Активные", value: active, icon: ShieldCheck }, { label: "Новые проекты", value: drafts.length, icon: FileClock }, { label: "Бюджет портфеля", value: totalBudget ? budget(totalBudget) : "—", icon: Wallet }];
+  const visibleProjects = useMemo(() => tab === "all" ? projects : [], [projects, tab]);
 
-      {/* Статистика */}
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <motion.div
-              key={card.label}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 * idx, duration: 0.4 }}
-              className="tz-card tz-stat p-5"
-            >
-              <div className="tz-stat-label">
-                {card.label}
-                <span
-                  className="tz-stat-icon"
-                  style={{ background: `${card.color}15`, color: card.color }}
-                >
-                  <Icon size={18} aria-hidden="true" />
-                </span>
-              </div>
-              {loading ? (
-                <div className="h-8 w-16 animate-pulse rounded-lg bg-tz-soft" />
-              ) : (
-                <p className="tz-stat-value">{card.value}</p>
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Очереди верификации — тикет 28 */}
-      <div className="mt-10">
-        <div className="tz-tabs" role="tablist" aria-label="Очереди верификации">
-          <button
-            role="tab"
-            aria-selected={tab === "new"}
-            onClick={() => setTab("new")}
-            className={`tz-tab ${tab === "new" ? "tz-tab-active" : ""}`}
-          >
-            Новые проекты
-            <span className="tz-tab-count">{loading ? "…" : newQueue.length}</span>
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "upgrades"}
-            onClick={() => setTab("upgrades")}
-            className={`tz-tab ${tab === "upgrades" ? "tz-tab-active" : ""}`}
-          >
-            Заявки на повышение УГТ
-            <span className="tz-tab-count">{upgradeQueue.length}</span>
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "all"}
-            onClick={() => setTab("all")}
-            className={`tz-tab ${tab === "all" ? "tz-tab-active" : ""}`}
-          >
-            Все проекты
-            <span className="tz-tab-count">{loading ? "…" : projects.length}</span>
-          </button>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-          <div>
-            {loading ? (
-              <div className="tz-card p-6">
-                <div className="h-5 w-48 animate-pulse rounded bg-tz-soft" />
-                <div className="mt-4 h-16 animate-pulse rounded bg-tz-bg" />
-              </div>
-            ) : error ? (
-              <div className="tz-card flex flex-col items-center p-8 text-center">
-                <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} aria-hidden="true" />
-                <p className="font-semibold text-tz-danger">{error}</p>
-                <button
-                  onClick={() => loadProjects()}
-                  className="tz-btn tz-btn-secondary mt-4"
-                >
-                  <RefreshCw size={14} aria-hidden="true" /> Повторить
-                </button>
-              </div>
-            ) : tab === "upgrades" ? (
-              <div className="tz-card tz-empty">
-                <span className="tz-empty-icon">
-                  <GitPullRequest size={22} aria-hidden="true" />
-                </span>
-                <h2 className="tz-empty-title">Заявок на повышение пока нет</h2>
-                <p className="tz-empty-text">
-                  Заявка формируется автоматически, как только в карточке проекта собран полный
-                  комплект документов текущего этапа (N→N+1), и система даёт предварительную
-                  оценку по ГОСТам. Здесь вы будете верифицировать эти заявки и подтверждать
-                  переход проекта на следующий уровень УГТ.
-                </p>
-              </div>
-            ) : newQueue.length === 0 && tab === "new" ? (
-              <div className="tz-card tz-empty">
-                <span className="tz-empty-icon">
-                  <Inbox size={22} aria-hidden="true" />
-                </span>
-                <h2 className="tz-empty-title">Новых проектов на апрув нет</h2>
-                <p className="tz-empty-text">
-                  Карточки-черновики появляются здесь после экспресс-оценки УГТ любым участником
-                  платформы. Апрувните карточку, чтобы присвоить проекту официальный уровень УГТ
-                  и опубликовать его в общем реестре.
-                </p>
-              </div>
-            ) : projects.length === 0 ? (
-              <div className="tz-card tz-empty">
-                <span className="tz-empty-icon">
-                  <Layers size={22} aria-hidden="true" />
-                </span>
-                <h2 className="tz-empty-title">Проектов пока нет</h2>
-                <p className="tz-empty-text">
-                  Новые заявки заказчиков и проекты участников появятся в этом списке
-                  автоматически. Присоединитесь по токену, чтобы следить за проектом.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {tab === "new"
-                  ? newQueue.map((p) => renderProjectCard(p, true))
-                  : projects.map((p) => renderProjectCard(p, false))}
-              </div>
-            )}
-          </div>
-
-          {/* Вступление по токену + экспресс-оценка + ассистент */}
-          <aside className="space-y-4 lg:sticky lg:top-8 lg:self-start">
-            <AssessUgTCard />
-            <JoinProjectForm />
-            <Link
-              href="/dashboard/ai-assistant"
-              className="tz-card tz-card-hover group flex items-center justify-between p-5"
-            >
-              <div className="flex items-center gap-3">
-                <span className="tz-stat-icon bg-tz-accent-soft text-tz-accent">
-                  <Bot size={20} aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="font-bold text-tz-fg">ИИ-ассистент</p>
-                  <p className="text-sm text-tz-muted">Генерация документов и отчётов</p>
-                </div>
-              </div>
-              <ArrowRight
-                size={18}
-                className="text-tz-border transition group-hover:translate-x-1 group-hover:text-tz-accent"
-                aria-hidden="true"
-              />
-            </Link>
-          </aside>
-        </div>
-      </div>
-    </section>
-  );
+  return <section data-od-id="manager-dashboard">
+    <div className="border-b border-tz-border pb-6"><p className="tz-eyebrow">Рабочий стол менеджера ЦНТР</p><h1 className="tz-page-title mt-2">Очереди верификации</h1><p className="mt-2 max-w-2xl text-tz-secondary">Проверяйте карточки проектов и заявки на повышение УГТ. Финальное решение по уровню остаётся за менеджером ЦНТР.</p></div>
+    <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">{cards.map(({ label, value, icon: Icon }) => <div className="tz-card tz-stat p-5" key={label}><div className="tz-stat-label">{label}<span className="tz-stat-icon bg-tz-accent-soft text-tz-accent"><Icon size={18} /></span></div>{loading ? <div className="h-8 w-16 animate-pulse rounded bg-tz-soft" /> : <p className="tz-stat-value">{value}</p>}</div>)}</div>
+    <div className="mt-10"><div className="tz-tabs" role="tablist"><button className={`tz-tab ${tab === "new" ? "tz-tab-active" : ""}`} onClick={() => setTab("new")}>Новые проекты <span className="tz-tab-count">{drafts.length}</span></button><button className={`tz-tab ${tab === "upgrades" ? "tz-tab-active" : ""}`} onClick={() => setTab("upgrades")}>Заявки на повышение УГТ <span className="tz-tab-count">{promotions.length}</span></button><button className={`tz-tab ${tab === "all" ? "tz-tab-active" : ""}`} onClick={() => setTab("all")}>Все проекты <span className="tz-tab-count">{projects.length}</span></button></div>
+      <div className="mt-6">{loading ? <div className="tz-card h-32 animate-pulse bg-tz-soft" /> : error ? <div className="tz-card tz-empty"><AlertCircle className="text-tz-danger" size={32} /><p className="tz-empty-title">{error}</p><button className="tz-btn tz-btn-secondary" onClick={() => void load()}><RefreshCw size={15} /> Повторить</button></div> : tab === "new" ? <div className="space-y-4">{drafts.length === 0 ? <Empty icon={<Inbox size={22} />} title="Новых проектов на апрув нет" text="Черновики появляются здесь после экспресс-оценки УГТ. После апрува карточка публикуется в общем реестре." /> : drafts.map((draft) => <div className="tz-card p-5" key={draft.id}><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-xs text-tz-muted">ЦНТР-{draft.id}</span><span className={`tz-badge ${badge.draft}`}>{statusLabels.draft}</span></div><h2 className="mt-2 text-lg font-bold text-tz-fg">{draft.name}</h2><p className="mt-1 text-sm text-tz-muted">Предварительный уровень: <span className="font-mono font-semibold">УГТ {draft.preliminary_level ?? "—"}</span></p>{draft.description && <p className="mt-2 text-sm text-tz-secondary">{draft.description}</p>}</div><div className="flex gap-2"><button className="tz-btn tz-btn-primary" disabled={busy === draft.id} onClick={() => void decideDraft(draft.id, true)}>{busy === draft.id ? <Loader2 className="animate-spin" size={15} /> : <Check size={15} />} Апрувнуть и присвоить УГТ</button><button className="tz-btn tz-btn-danger" disabled={busy === draft.id} onClick={() => void decideDraft(draft.id, false)}><X size={15} /> Отклонить</button></div></div></div>)}</div> : tab === "upgrades" ? <div className="space-y-4">{promotions.length === 0 ? <Empty icon={<GitPullRequest size={22} />} title="Заявок на повышение пока нет" text="Заявка формируется автоматически после полного комплекта документов этапа и успешной предварительной оценки." /> : promotions.map((request) => <div className="tz-card p-5" key={request.id}><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex items-center gap-2"><span className="font-mono text-xs text-tz-muted">Заявка #{request.id} · попытка {request.attempt_no}</span><span className="tz-badge tz-badge-review">На проверке</span></div><h2 className="mt-2 text-lg font-bold text-tz-fg">{request.project_name}</h2><p className="mt-1 text-sm text-tz-secondary">УГТ {request.from_level} <ArrowRight className="mx-1 inline" size={14} /> УГТ {request.to_level}</p><p className="mt-2 text-sm text-tz-muted">{request.evaluation_result.summary || "Предварительная оценка успешно пройдена."}</p>{request.verification_docs.length > 0 && <p className="mt-1 text-xs text-tz-accent">Верифицирующих документов: {request.verification_docs.length}</p>}</div><div className="flex gap-2"><button className="tz-btn tz-btn-primary" disabled={busy === request.id} onClick={() => void decidePromotion(request.id, true)}><Check size={15} /> Подтвердить</button><button className="tz-btn tz-btn-danger" disabled={busy === request.id} onClick={() => void decidePromotion(request.id, false)}><X size={15} /> Отклонить</button></div></div></div>)}</div> : <div className="space-y-4">{visibleProjects.length === 0 ? <Empty icon={<FolderKanban size={22} />} title="Опубликованных проектов пока нет" text="После апрува карточки появятся здесь и в общем реестре." /> : visibleProjects.map((p) => <Link className="tz-card tz-card-hover block p-5" href={`/dashboard/project/${p.id}`} key={p.id}><div className="flex items-center justify-between"><div><span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span><h2 className="mt-1 font-bold text-tz-fg">{p.name}</h2><p className="text-sm text-tz-muted">УГТ {p.current_level} · {budget(p.budget)}</p></div><ArrowRight className="text-tz-muted" size={18} /></div></Link>)}</div>}</div></div>
+  </section>;
 }
+function Empty({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) { return <div className="tz-card tz-empty"><span className="tz-empty-icon">{icon}</span><h2 className="tz-empty-title">{title}</h2><p className="tz-empty-text">{text}</p></div>; }

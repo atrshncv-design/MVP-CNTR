@@ -33,6 +33,7 @@ import {
   Radar,
   ResponsiveContainer,
 } from 'recharts';
+import StageProgressPanel from '@/components/stage-progress-panel';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
@@ -44,6 +45,7 @@ interface ProjectData {
     category: string | null;
     target_level: number;
     current_level: number;
+    preliminary_level?: number | null;
     status: string;
     budget: number | null;
     created_by: number | null;
@@ -175,6 +177,16 @@ export default function ProjectDashboardPage() {
       });
       if (!res.ok) throw new Error('Failed to fetch');
       const data: ProjectData = await res.json();
+      if (data.project.status === 'draft') {
+        const assessmentRes = await fetch(`${API_URL}/api/v1/assessments/mine`, {
+          headers: { Authorization: `Bearer ${session.user.accessToken}` },
+        });
+        if (assessmentRes.ok) {
+          const drafts = (await assessmentRes.json()) as Array<{ id: number; preliminary_level: number | null }>;
+          const draft = drafts.find((item) => item.id === data.project.id);
+          if (draft) data.project.preliminary_level = draft.preliminary_level;
+        }
+      }
       setProject(data);
 
       setRadarData(
@@ -387,7 +399,7 @@ export default function ProjectDashboardPage() {
           <div className="tz-card shrink-0 px-4 py-3">
             <div className="tz-eyebrow">Уровень УГТ</div>
             <div className="mt-1.5 flex items-center gap-1.5">
-              <span className="tz-ugt">УГТ {p.current_level}</span>
+              <span className="tz-ugt">{p.status === 'draft' ? `Предварительный УГТ ${p.preliminary_level ?? '—'}` : `УГТ ${p.current_level}`}</span>
               <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
               <span className="tz-ugt tz-ugt-strong">{p.target_level}</span>
             </div>
@@ -398,6 +410,7 @@ export default function ProjectDashboardPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main column */}
           <div className="lg:col-span-2 space-y-6">
+            <StageProgressPanel projectId={p.id} currentLevel={p.current_level} status={p.status} />
             {/* Radar chart */}
             <div className="tz-card p-6">
               <div className="flex items-center gap-2 mb-4">

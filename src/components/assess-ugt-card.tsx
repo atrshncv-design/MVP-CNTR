@@ -19,12 +19,12 @@ export function AssessUgTCard() {
   useEffect(() => {
     if (!session?.user?.accessToken) return;
     let cancelled = false;
-    fetch(`${API_URL}/api/v1/projects`, {
+    fetch(`${API_URL}/api/v1/assessments/mine`, {
       headers: { Authorization: `Bearer ${session.user.accessToken}` },
     })
       .then((r) => (r.ok ? r.json() : []))
       .then((list: Array<{ status: string }>) => {
-        if (!cancelled) setDrafts(list.filter((p) => p.status === "draft").length);
+        if (!cancelled) setDrafts(list.length);
       })
       .catch(() => {
         if (!cancelled) setDrafts(0);
