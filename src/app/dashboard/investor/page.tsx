@@ -113,11 +113,11 @@ export default function InvestorDashboard() {
   return (
     <section>
       {/* Hero-блок в стиле ЛК ГК */}
-      <div className="border-b border-[#DFE5EC] pb-6">
+      <div className="border-b border-tz-border pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
           Рабочий стол инвестора
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-[#0F172A]">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
@@ -131,14 +131,14 @@ export default function InvestorDashboard() {
         <AssessUgTCard />
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-[#DFE5EC]">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-[#0F172A]">
+      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Реестр технологий
         </span>
       </nav>
 
       {/* Фильтры */}
-      <div className="mt-8 rounded-2xl border border-[#E8ECF0] bg-white p-4 sm:p-5">
+      <div className="mt-8 rounded-2xl border border-tz-card-border bg-tz-surface p-4 sm:p-5">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -147,7 +147,7 @@ export default function InvestorDashboard() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по названию…"
-              className="w-full rounded-xl border border-[#DFE5EC] bg-white py-2.5 pl-9 pr-3 text-sm text-[#0F172A] outline-none transition placeholder:text-slate-400 focus:border-[#2E5BFF]"
+              className="w-full rounded-xl border border-tz-border bg-white py-2.5 pl-9 pr-3 text-sm text-tz-fg outline-none transition placeholder:text-slate-400 focus:border-[#2E5BFF]"
             />
           </div>
           <div>
@@ -158,7 +158,7 @@ export default function InvestorDashboard() {
               id="inv-category"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full rounded-xl border border-[#DFE5EC] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none transition focus:border-[#2E5BFF]"
+              className="w-full rounded-xl border border-tz-border bg-white px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
               <option value="all">Все категории</option>
               {categories.map((c) => (
@@ -176,7 +176,7 @@ export default function InvestorDashboard() {
               id="inv-level"
               value={minLevel}
               onChange={(e) => setMinLevel(Number(e.target.value))}
-              className="w-full rounded-xl border border-[#DFE5EC] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none transition focus:border-[#2E5BFF]"
+              className="w-full rounded-xl border border-tz-border bg-white px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
               {UGT_LEVELS.map((l) => (
                 <option key={l} value={l}>
@@ -193,7 +193,7 @@ export default function InvestorDashboard() {
               id="inv-status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-xl border border-[#DFE5EC] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none transition focus:border-[#2E5BFF]"
+              className="w-full rounded-xl border border-tz-border bg-white px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
               <option value="all">Любой</option>
               {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -208,12 +208,12 @@ export default function InvestorDashboard() {
 
       {/* Реестр */}
       <div className="mt-6">
-        <h2 className="mb-4 text-lg font-bold text-[#0F172A]">
+        <h2 className="mb-4 text-lg font-bold text-tz-fg">
           Реестр технологий <span className="text-sm font-normal text-slate-400">({filtered.length})</span>
         </h2>
 
         {loading ? (
-          <div className="rounded-[14px] border border-[#DFE5EC] bg-white p-6">
+          <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
             <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
             <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
           </div>
@@ -229,11 +229,11 @@ export default function InvestorDashboard() {
             </button>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-[14px] border border-[#DFE5EC] bg-white px-6 py-14 text-center sm:px-10">
+          <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
               <TrendingUp size={22} className="text-[#2E5BFF]" />
             </div>
-            <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-[#0F172A]">
+            <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
               Технологии не найдены
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-slate-600">
@@ -253,10 +253,10 @@ export default function InvestorDashboard() {
                   key={tech.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl border border-[#E8ECF0] bg-white p-5 transition-all hover:shadow-md"
+                  className="rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition-all hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-bold text-[#0F172A]">{tech.name}</h3>
+                    <h3 className="font-bold text-tz-fg">{tech.name}</h3>
                     <span
                       className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium"
                       style={{ background: `${color}15`, color }}
@@ -286,7 +286,7 @@ export default function InvestorDashboard() {
                           style={{ width: `${progress}%` }}
                         />
                       </div>
-                      <span className="text-xs font-bold text-[#0F172A]">{progress}%</span>
+                      <span className="text-xs font-bold text-tz-fg">{progress}%</span>
                     </div>
                   </div>
 

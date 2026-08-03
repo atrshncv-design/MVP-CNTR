@@ -282,7 +282,7 @@ function ChecklistItemCard({ item, isChecked, isExpanded, levelColor, onToggleCh
       layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.35, delay: index * 0.05, ease: EASE_OUT_EXPO, layout: { duration: 0.3, ease: EASE_SMOOTH } }}
-      className="group cursor-pointer select-none overflow-hidden rounded-2xl border bg-white transition-all duration-200"
+      className="group cursor-pointer select-none overflow-hidden rounded-2xl border bg-tz-surface transition-all duration-200"
       style={{
         borderColor: isChecked ? `${levelColor}40` : '#E8ECF0',
         borderLeftWidth: isChecked ? 3 : 1,
@@ -704,7 +704,7 @@ export default function QuestionnaireWizardClient() {
                   </AnimatePresence>
                 </div>
 
-                <div className="mt-6 rounded-2xl bg-white p-4 sm:p-5" style={{ border: '1px solid #E8ECF0', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
+                <div className="mt-6 rounded-2xl bg-tz-surface p-4 sm:p-5" style={{ border: '1px solid #E8ECF0', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm" style={{ color: '#475569' }}>Выполнено: {currentSelections.size}/{currentChecklist.items.length}</span>
                     <span className="font-mono text-xl font-semibold" style={{ color: currentLevel.color }}>{Math.round((currentSelections.size / currentChecklist.items.length) * 100)}%</span>
@@ -716,7 +716,7 @@ export default function QuestionnaireWizardClient() {
                 </div>
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <button onClick={goBack} className="inline-flex items-center justify-center gap-2 rounded-[10px] border px-5 py-3 text-sm font-medium transition-all duration-200 hover:bg-[#EEF1F5]"
+                  <button onClick={goBack} className="inline-flex items-center justify-center gap-2 rounded-[10px] border px-5 py-3 text-sm font-medium transition-all duration-200 hover:bg-tz-soft"
                     style={{ borderColor: '#DEE2E8', color: '#0F172A' }}><ChevronLeft size={16} />Назад</button>
                   <div className="flex gap-3">
                     <button onClick={skipStep} className="inline-flex items-center justify-center gap-2 rounded-[10px] px-5 py-3 text-sm font-medium transition-all duration-200 hover:bg-[#2E5BFF]/5"
@@ -737,7 +737,7 @@ export default function QuestionnaireWizardClient() {
                   <h2 className="text-3xl font-bold sm:text-[40px]" style={{ color: '#0F172A', lineHeight: 1.15 }}>Уровень готовности вашего проекта</h2>
                 </motion.div>
 
-                <motion.div className="relative mx-auto max-w-[700px] overflow-hidden rounded-2xl bg-white p-8 text-center shadow-xl sm:p-12"
+                <motion.div className="relative mx-auto max-w-[700px] overflow-hidden rounded-2xl bg-tz-surface p-8 text-center shadow-xl sm:p-12"
                   style={{ border: `2px solid ${getLevelColor(results.determinedLevel)}`, boxShadow: `0 16px 40px rgba(15,23,42,0.08), 0 0 40px ${getLevelColor(results.determinedLevel)}18` }}
                   initial={{ opacity: 0, y: 40, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}>
                   <div className="flex justify-center">
@@ -789,7 +789,7 @@ export default function QuestionnaireWizardClient() {
                   </div>
 
                   {chartView === 'bars' && (
-                    <div className="rounded-2xl bg-white p-4 shadow-md sm:p-6" style={{ border: '1px solid #E8ECF0' }}>
+                    <div className="rounded-2xl bg-tz-surface p-4 shadow-md sm:p-6" style={{ border: '1px solid #E8ECF0' }}>
                       <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
                           <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="#E8ECF0" />
@@ -807,7 +807,7 @@ export default function QuestionnaireWizardClient() {
                   )}
 
                   {chartView === 'radar' && (
-                    <div className="rounded-2xl bg-white p-4 shadow-md sm:p-6" style={{ border: '1px solid #E8ECF0' }}>
+                    <div className="rounded-2xl bg-tz-surface p-4 shadow-md sm:p-6" style={{ border: '1px solid #E8ECF0' }}>
                       <ResponsiveContainer width="100%" height={450}>
                         <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
                           <PolarGrid stroke="#E8ECF0" />
@@ -827,7 +827,7 @@ export default function QuestionnaireWizardClient() {
                   <h3 className="mb-6 text-center text-2xl font-bold" style={{ color: '#0F172A' }}>Результаты по уровням</h3>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {results.levelScores.map((s, idx) => (
-                      <motion.div key={s.levelId} className="rounded-2xl bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                      <motion.div key={s.levelId} className="rounded-2xl bg-tz-surface p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
                         style={{ border: '1px solid', borderColor: s.achieved ? `${s.level.color}66` : '#E8ECF0', borderLeftWidth: s.achieved ? 3 : 1, borderLeftColor: s.achieved ? s.level.color : '#E8ECF0', boxShadow: s.levelId === results.determinedLevel ? `0 0 20px ${s.level.color}18` : '0 2px 8px rgba(15,23,42,0.04)' }}
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + idx * 0.06, duration: 0.4, ease: EASE_OUT_EXPO }}>
                         <div className="mb-3 flex items-center justify-between">

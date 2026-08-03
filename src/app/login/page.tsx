@@ -48,7 +48,7 @@ function LoginForm() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
+          className="w-full rounded-lg border border-slate-300 bg-tz-surface px-4 py-3 text-slate-950 outline-none transition focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
           placeholder="name@company.ru"
         />
       </div>
@@ -64,7 +64,7 @@ function LoginForm() {
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-950 outline-none transition focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
+          className="w-full rounded-lg border border-slate-300 bg-tz-surface px-4 py-3 text-slate-950 outline-none transition focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
         />
       </div>
       <p aria-live="polite" className="min-h-5 text-sm text-red-700">
@@ -83,8 +83,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="grid min-h-screen bg-[#F5F7FA] lg:grid-cols-[1.1fr_0.9fr]">
-      <section className="relative hidden overflow-hidden bg-[#0F172A] px-12 py-14 text-white lg:flex lg:flex-col">
+    <main className="grid min-h-screen bg-tz-bg lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="relative hidden overflow-hidden bg-tz-hero px-12 py-14 text-white lg:flex lg:flex-col">
         <div className="text-lg font-extrabold tracking-[0.08em]">ТЕХНОЗРЕЛОСТЬ</div>
         <div className="mt-1 font-mono text-xs text-slate-500">ГОСТ Р 58048-2017</div>
         <div className="my-auto max-w-xl">
@@ -112,13 +112,13 @@ export default function LoginPage() {
       <section className="flex items-center justify-center px-5 py-12 sm:px-10">
         <div className="w-full max-w-md">
           <div className="mb-10 lg:hidden">
-            <div className="font-extrabold tracking-[0.08em] text-[#0F172A]">ТЕХНОЗРЕЛОСТЬ</div>
+            <div className="font-extrabold tracking-[0.08em] text-tz-fg">ТЕХНОЗРЕЛОСТЬ</div>
             <div className="mt-1 font-mono text-xs text-slate-500">ГОСТ Р 58048-2017</div>
           </div>
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
             Защищённый вход
           </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-[#0F172A]">
+          <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
             Вход в платформу
           </h2>
           <p className="mt-3 text-slate-600">

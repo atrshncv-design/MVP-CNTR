@@ -1,93 +1,199 @@
 @import "tailwindcss";
 
 /* ════════════════════════════════════════════════════════════════════════
-   ДИЗАЙН-СИСТЕМА «ТЕХНОЗРЕЛОСТЬ» — v1 (см. DESIGN.md)
-   Роллаут: 03.08. Палитра в OKLch на базе гаммы бренда (#0f172a / #2e5bff).
-   Правила: сериф — только заголовки; цифры/ID/УГТ — mono; один акцент на экран.
+   ДИЗАЙН-СИСТЕМА «ТЕХНОЗРЕЛОСТЬ 2.0» — тёмная тема инновационного центра
+   Роллаут: 03.08.2. Концепция:
+   • Глубокий navy-фон со свечениями (синий→фиолетовый→бирюза) + инженерная сетка
+   • Фирменный градиент: #2E5BFF → #7C5CFF → #00D4C8 (инновации/технологии)
+   • УГТ-шкала (тёплая, из MVP0): 1–3 красный/оранжевый → 4–6 жёлтый → 7–9 зелёный
+   • Glass-карточки, свечения (glow), анимации появления и hover-подъём
+   • Один фирменный градиент на экран; статусные цвета — приглушённые
    ════════════════════════════════════════════════════════════════════════ */
 
-/* ─── Легаси-токены тикета 16: сохранены как алиасы, чтобы не ломать страницы ── */
+/* ─── Легаси-токены тикета 16: сохранены как алиасы (не ломаем страницы) ── */
 :root {
-  --background: #f5f7fa;
-  --foreground: #0f172a;
-  --color-primary: #0f172a;
+  --background: #070b16;
+  --foreground: #e8edf7;
+  --color-primary: #0b1220;
   --color-accent: #2e5bff;
-  --color-surface: #ffffff;
-  --color-border: #dfe5ec;
-  --color-muted: #64748b;
-  --app-font-sans: Arial, Helvetica, sans-serif;
-  --app-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --color-surface: #101830;
+  --color-border: #232f4d;
+  --color-muted: #8a99b8;
+  --app-font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --app-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 
-  --tz-hero-bg: #0f172a;
-  --tz-hero-text: #f8fafc;
+  --tz-hero-bg: #0b1220;
+  --tz-hero-text: #f2f6ff;
   --tz-accent: #2e5bff;
-  --tz-accent-hover: #4a82ff;
-  --tz-accent-soft: #eef2ff;
-  --tz-card-border: #e8ecf0;
-  --tz-text-primary: #0f172a;
-  --tz-text-secondary: #475569;
-  --tz-text-muted: #64748b;
-  --tz-success: #10b981;
-  --tz-warning: #f59e0b;
-  --tz-danger: #ef4444;
-  --tz-info: #2e5bff;
+  --tz-accent-hover: #5b8cff;
+  --tz-accent-soft: #16224a;
+  --tz-card-border: #243050;
+  --tz-text-primary: #e8edf7;
+  --tz-text-secondary: #a9b7d0;
+  --tz-text-muted: #8a99b8;
+  --tz-success: #34d399;
+  --tz-warning: #fbbf24;
+  --tz-danger: #f87171;
+  --tz-info: #5b8cff;
   --tz-radius-card: 1rem;
   --tz-radius-btn: 0.625rem;
-  --tz-shadow-card: 0 1px 2px rgb(15 23 42 / 0.04);
+  --tz-shadow-card: 0 10px 30px rgb(0 0 0 / 0.35);
 }
 
-/* ─── Токены дизайн-системы (семантические утилиты: bg-tz-*, text-tz-*, …) ── */
+/* ════════════════════════════════════════════════════════════════════════
+   ПЕРЕОПРЕДЕЛЕНИЕ ПАЛИТРЫ TAILWIND — тёмная тема для всего хардкода.
+   bg-white / text-white НЕ трогаем (нужны для текста на цветных кнопках).
+   ════════════════════════════════════════════════════════════════════════ */
 @theme {
-  /* Нейтраль */
-  --color-tz-bg: oklch(97.55% 0.005 258.3);        /* #f5f7fa */
-  --color-tz-surface: oklch(100% 0 0);             /* #ffffff */
-  --color-tz-fg: oklch(20.77% 0.04 265.8);         /* #0f172a */
-  --color-tz-secondary: oklch(44.55% 0.037 257.3); /* #475569 */
-  --color-tz-muted: oklch(55.44% 0.041 257.4);     /* #64748b */
-  --color-tz-border: oklch(91.94% 0.012 252.1);    /* #dfe5ec */
-  --color-tz-card-border: oklch(94.12% 0.007 247.9); /* #e8ecf0 */
-  --color-tz-soft: oklch(93.5% 0.008 255);
+  /* Серые (фоны, границы, текст — инвертированы под тёмный фон) */
+  --color-gray-50: #131b30;
+  --color-gray-100: #171f38;
+  --color-gray-200: #1d2742;
+  --color-gray-300: #263252;
+  --color-gray-400: #45557a;
+  --color-gray-500: #6d7fa3;
+  --color-gray-600: #8a9abf;
+  --color-gray-700: #a3b2d4;
+  --color-gray-800: #c3cfe6;
+  --color-gray-900: #dde5f3;
+  --color-gray-950: #eef2fa;
 
-  /* Бренд */
-  --color-tz-accent: oklch(55.16% 0.247 266);      /* #2e5bff */
-  --color-tz-accent-hover: oklch(63.47% 0.195 263.6); /* #4a82ff */
-  --color-tz-accent-soft: oklch(95.5% 0.021 268.4);   /* #eaf0ff */
-  --color-tz-hero: oklch(20.77% 0.04 265.8);       /* #0f172a */
-  --color-tz-hero-text: oklch(98.42% 0.003 247.9); /* #f8fafc */
-  --color-tz-hero-muted: oklch(71.07% 0.035 256.8); /* #94a3b8 */
-  --color-tz-hero-border: oklch(37.17% 0.039 257.3); /* #334155 */
+  --color-slate-50: #10172b;
+  --color-slate-100: #141d34;
+  --color-slate-200: #1b2642;
+  --color-slate-300: #253350;
+  --color-slate-400: #42547a;
+  --color-slate-500: #687ba3;
+  --color-slate-600: #8699c0;
+  --color-slate-700: #a5b5d8;
+  --color-slate-800: #c6d3ea;
+  --color-slate-900: #dfe7f5;
+  --color-slate-950: #f0f4fb;
+
+  /* Красный — статус/опасность на тёмном */
+  --color-red-50: #2a1520;
+  --color-red-100: #351a28;
+  --color-red-200: #4e2336;
+  --color-red-300: #6e2f45;
+  --color-red-400: #b0405f;
+  --color-red-500: #ef4444;
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-900: #fee2e2;
+
+  /* Зелёный / изумрудный — успех на тёмном */
+  --color-emerald-50: #0d241d;
+  --color-emerald-100: #123229;
+  --color-emerald-200: #17473a;
+  --color-emerald-300: #1e5c4a;
+  --color-emerald-400: #10b981;
+  --color-emerald-500: #34d399;
+  --color-emerald-600: #6ee7b7;
+  --color-emerald-700: #a7f3d0;
+
+  --color-green-50: #0d241d;
+  --color-green-100: #123229;
+  --color-green-200: #17473a;
+  --color-green-300: #1e5c4a;
+  --color-green-400: #10b981;
+  --color-green-500: #34d399;
+  --color-green-600: #6ee7b7;
+  --color-green-700: #a7f3d0;
+
+  /* Жёлтый — предупреждение на тёмном */
+  --color-yellow-50: #2a220e;
+  --color-yellow-100: #362b12;
+  --color-yellow-200: #4a3a16;
+  --color-yellow-300: #6b551c;
+  --color-yellow-400: #f59e0b;
+  --color-yellow-500: #fbbf24;
+  --color-yellow-600: #fcd34d;
+  --color-yellow-700: #fde68a;
+
+  /* Синий / индиго — бренд на тёмном */
+  --color-blue-50: #101a3d;
+  --color-blue-100: #14224d;
+  --color-blue-200: #1b2d63;
+  --color-blue-300: #233a80;
+  --color-blue-400: #2e5bff;
+  --color-blue-500: #4a82ff;
+  --color-blue-600: #7aa5ff;
+  --color-blue-700: #a9c4ff;
+
+  --color-indigo-50: #131a3a;
+  --color-indigo-100: #182147;
+  --color-indigo-200: #202c5e;
+  --color-indigo-300: #29397c;
+  --color-indigo-400: #6366f1;
+  --color-indigo-500: #818cf8;
+  --color-indigo-600: #a5b4fc;
+  --color-indigo-700: #c7d2fe;
+
+  /* Фирменная палитра (семантические утилиты: bg-tz-*, text-tz-*, …) */
+  --color-tz-bg: #070b16;
+  --color-tz-surface: #0f1729;
+  --color-tz-surface-2: #131d36;
+  --color-tz-fg: #e8edf7;
+  --color-tz-secondary: #a9b7d0;
+  --color-tz-muted: #7f90b3;
+  --color-tz-border: #223050;
+  --color-tz-card-border: #243050;
+  --color-tz-soft: #182340;
+
+  /* Бренд-градиент: синий → фиолетовый → бирюза */
+  --color-tz-accent: #2e5bff;
+  --color-tz-accent-hover: #5b8cff;
+  --color-tz-accent-soft: #16224a;
+  --color-tz-violet: #7c5cff;
+  --color-tz-teal: #00d4c8;
+  --color-tz-hero: #0b1220;
+  --color-tz-hero-text: #f2f6ff;
+  --color-tz-hero-muted: #93a5c8;
+  --color-tz-hero-border: #223050;
+
+  /* УГТ-шкала (тёплая — наследие MVP0): низкие → красный, средние → жёлтый, высокие → зелёный */
+  --color-tz-ugt-low: #ff7a2e;
+  --color-tz-ugt-mid: #e5c840;
+  --color-tz-ugt-high: #a8d65a;
+  --color-tz-ugt-soft: #2a2238;
 
   /* Статусы */
-  --color-tz-success: oklch(69.59% 0.149 162.5);   /* #10b981 */
-  --color-tz-warning: oklch(76.86% 0.165 70.1);    /* #f59e0b */
-  --color-tz-review: oklch(83.43% 0.151 96.7);     /* #e5c840 */
-  --color-tz-danger: oklch(63.68% 0.208 25.3);     /* #ef4444 */
-  --color-tz-neutral: oklch(71.07% 0.035 256.8);   /* #94a3b8 */
+  --color-tz-success: #34d399;
+  --color-tz-warning: #fbbf24;
+  --color-tz-review: #fbbf24;
+  --color-tz-danger: #f87171;
+  --color-tz-neutral: #7f90b3;
 
-  /* Мягкие подложки статусов (бейджи, иконки) */
-  --color-tz-success-soft: color-mix(in oklch, var(--color-tz-success) 12%, white);
-  --color-tz-warning-soft: color-mix(in oklch, var(--color-tz-warning) 12%, white);
-  --color-tz-review-soft: color-mix(in oklch, var(--color-tz-review) 14%, white);
-  --color-tz-danger-soft: color-mix(in oklch, var(--color-tz-danger) 12%, white);
-  --color-tz-neutral-soft: color-mix(in oklch, var(--color-tz-neutral) 14%, white);
+  /* Мягкие подложки статусов */
+  --color-tz-success-soft: rgba(52, 211, 153, 0.12);
+  --color-tz-warning-soft: rgba(251, 191, 36, 0.12);
+  --color-tz-review-soft: rgba(251, 191, 36, 0.14);
+  --color-tz-danger-soft: rgba(248, 113, 113, 0.12);
+  --color-tz-neutral-soft: rgba(127, 144, 179, 0.14);
 
   /* Геометрия и глубина */
-  --radius-tz-card: 1rem;
+  --radius-tz-card: 1.125rem;
   --radius-tz-btn: 0.625rem;
-  --shadow-tz-card: 0 1px 2px rgb(15 23 42 / 0.04);
-  --shadow-tz-pop: 0 8px 24px rgb(15 23 42 / 0.08);
+  --shadow-tz-card: 0 10px 30px rgb(0 0 0 / 0.35);
+  --shadow-tz-pop: 0 18px 50px rgb(0 0 0 / 0.5);
+  --shadow-tz-glow: 0 0 0 1px rgba(90, 120, 255, 0.35), 0 8px 40px rgba(46, 91, 255, 0.28);
 }
 
-/* Шрифты задаются next/font (layout.tsx): --font-pt_serif / --font-inter / --font-jetbrains_mono */
+/* Шрифты задаются next/font (layout.tsx): --font-inter / --font-jetbrains_mono */
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-pt_serif), "PT Serif", Georgia, "Times New Roman", serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains_mono), ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   БАЗА — фон со свечениями и инженерной сеткой
+   ════════════════════════════════════════════════════════════════════════ */
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
+    color-scheme: dark;
   }
 
   body {
@@ -96,34 +202,173 @@
     font-family: var(--font-sans);
     font-size: 15px;
     font-variant-numeric: tabular-nums;
+    position: relative;
   }
 
-  /* Сериф — только заголовки страниц (display) */
-  h1 {
-    font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.01em;
+  /* Свечения фирменного градиента */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(1100px 520px at 88% -12%, rgba(124, 92, 255, 0.16), transparent 62%),
+      radial-gradient(950px 520px at -12% 18%, rgba(46, 91, 255, 0.18), transparent 62%),
+      radial-gradient(900px 640px at 55% 112%, rgba(0, 212, 200, 0.1), transparent 60%),
+      var(--color-tz-bg);
+  }
+
+  /* Инженерная сетка (техно-текстура) */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image:
+      linear-gradient(rgba(148, 170, 220, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 170, 220, 0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
   }
 
   ::selection {
-    background: color-mix(in oklch, var(--color-tz-accent) 22%, white);
+    background: rgba(46, 91, 255, 0.4);
+    color: #fff;
   }
 
   :where(a, button, input, select, textarea, summary):focus-visible {
-    outline: 2px solid var(--color-tz-accent);
+    outline: 2px solid var(--color-tz-accent-hover);
     outline-offset: 2px;
     border-radius: 4px;
   }
+
+  /* Скроллбар под тёмную тему */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2b3a63 transparent;
+  }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   АНИМАЦИИ — появление секций (fade-up + stagger), свечение, shimmer
+   ════════════════════════════════════════════════════════════════════════ */
+@keyframes tz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tz-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(90, 120, 255, 0.3), 0 6px 30px rgba(46, 91, 255, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(90, 120, 255, 0.55), 0 8px 44px rgba(46, 91, 255, 0.4);
+  }
+}
+
+@keyframes tz-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes tz-gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes tz-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Появление секций демо-маршрута: каждая секция ЛК «всплывает» с задержкой */
+#main-content > * {
+  animation: tz-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+#main-content > *:nth-child(2) {
+  animation-delay: 0.06s;
+}
+#main-content > *:nth-child(3) {
+  animation-delay: 0.12s;
+}
+#main-content > *:nth-child(4) {
+  animation-delay: 0.18s;
+}
+#main-content > *:nth-child(5) {
+  animation-delay: 0.24s;
+}
+#main-content > *:nth-child(6) {
+  animation-delay: 0.3s;
+}
+#main-content > *:nth-child(n + 7) {
+  animation-delay: 0.36s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #main-content > * {
+    animation: none;
+  }
+}
+
+/* Фирменный градиентный текст */
+.tz-grad-text {
+  background: linear-gradient(100deg, #5b8cff 0%, #7c5cff 45%, #00d4c8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Фирменная градиентная плашка */
+.tz-grad-bg {
+  background: linear-gradient(120deg, #2e5bff 0%, #7c5cff 55%, #00d4c8 130%);
+  background-size: 160% 160%;
+  animation: tz-gradient-pan 8s ease infinite;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   КОМПОНЕНТЫ
+   ════════════════════════════════════════════════════════════════════════ */
 @layer components {
   /* ── Типографика ─────────────────────────────────────────────── */
   .tz-page-title {
     font-family: var(--font-display);
     font-size: clamp(1.75rem, 2.2vw + 1rem, 2.25rem);
-    line-height: 1.15;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    line-height: 1.12;
+    font-weight: 800;
+    letter-spacing: -0.025em;
     color: var(--color-tz-fg);
   }
 
@@ -139,24 +384,27 @@
     font-size: 0.6875rem;
     line-height: 1.3;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     color: var(--color-tz-muted);
   }
 
-  /* ── Карточки ────────────────────────────────────────────────── */
+  /* ── Карточки: glass с тонкой градиентной рамкой ────────────── */
   .tz-card {
-    background: var(--color-tz-surface);
+    position: relative;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02) 55%),
+      var(--color-tz-surface);
     border: 1px solid var(--color-tz-card-border);
     border-radius: var(--radius-tz-card);
     box-shadow: var(--shadow-tz-card);
   }
 
   .tz-card-hover {
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    transition: border-color 0.2s ease, box-shadow 0.25s ease, transform 0.25s ease;
   }
   .tz-card-hover:hover {
-    border-color: var(--color-tz-accent);
-    box-shadow: var(--shadow-tz-pop);
+    border-color: rgba(120, 150, 255, 0.45);
+    box-shadow: 0 0 0 1px rgba(90, 120, 255, 0.18), 0 18px 44px rgb(0 0 0 / 0.45);
+    transform: translateY(-2px);
   }
 
   /* ── Кнопки ──────────────────────────────────────────────────── */
@@ -171,36 +419,40 @@
     font-weight: 600;
     line-height: 1.2;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
-      box-shadow 0.15s ease, transform 0.1s ease;
+      box-shadow 0.2s ease, transform 0.12s ease;
     cursor: pointer;
     white-space: nowrap;
   }
   .tz-btn:active {
-    transform: translateY(1px);
+    transform: translateY(1px) scale(0.99);
   }
   .tz-btn:disabled {
-    opacity: 0.55;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
   }
 
   .tz-btn-primary {
-    background: var(--color-tz-accent);
+    background: linear-gradient(120deg, #2e5bff 0%, #4a5fff 60%, #7c5cff 130%);
+    background-size: 150% 150%;
     color: #fff;
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.12);
+    box-shadow: 0 4px 20px rgba(46, 91, 255, 0.32);
   }
   .tz-btn-primary:hover:not(:disabled) {
-    background: var(--color-tz-accent-hover);
+    background-position: 90% 50%;
+    box-shadow: 0 6px 30px rgba(84, 100, 255, 0.45);
+    transform: translateY(-1px);
   }
 
   .tz-btn-secondary {
-    background: var(--color-tz-surface);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--color-tz-border);
     color: var(--color-tz-fg);
   }
   .tz-btn-secondary:hover:not(:disabled) {
-    border-color: var(--color-tz-accent);
-    color: var(--color-tz-accent);
+    border-color: rgba(120, 150, 255, 0.5);
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
   }
 
   .tz-btn-ghost {
@@ -208,16 +460,18 @@
     color: var(--color-tz-muted);
   }
   .tz-btn-ghost:hover:not(:disabled) {
-    background: var(--color-tz-soft);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--color-tz-fg);
   }
 
   .tz-btn-danger {
-    background: var(--color-tz-danger);
+    background: linear-gradient(120deg, #ef4444, #f87171);
     color: #fff;
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.25);
   }
   .tz-btn-danger:hover:not(:disabled) {
-    filter: brightness(1.06);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 26px rgba(239, 68, 68, 0.35);
   }
 
   .tz-btn-sm {
@@ -243,8 +497,9 @@
   .tz-badge-review  { background: var(--color-tz-review-soft);  color: var(--color-tz-review); }
   .tz-badge-danger  { background: var(--color-tz-danger-soft);  color: var(--color-tz-danger); }
   .tz-badge-neutral { background: var(--color-tz-neutral-soft); color: var(--color-tz-muted); }
-  .tz-badge-accent  { background: var(--color-tz-accent-soft);  color: var(--color-tz-accent); }
+  .tz-badge-accent  { background: var(--color-tz-accent-soft);  color: #9db8ff; }
 
+  /* УГТ-бейдж: цвет по уровню (низкие — тёплый, высокие — холодный) */
   .tz-ugt {
     display: inline-flex;
     align-items: center;
@@ -254,13 +509,17 @@
     font-size: 0.75rem;
     font-weight: 700;
     line-height: 1.5;
-    background: var(--color-tz-accent-soft);
-    color: var(--color-tz-accent);
+    background: var(--color-tz-ugt-soft);
+    color: var(--color-tz-ugt-mid);
+    border: 1px solid rgba(229, 200, 64, 0.25);
     white-space: nowrap;
   }
+
   .tz-ugt-strong {
-    background: var(--color-tz-hero);
-    color: var(--color-tz-hero-text);
+    background: linear-gradient(120deg, rgba(255, 122, 46, 0.16), rgba(229, 200, 64, 0.16) 60%, rgba(168, 214, 90, 0.14));
+    border-color: rgba(229, 200, 64, 0.45);
+    color: #f5d76e;
+    box-shadow: 0 0 18px rgba(229, 200, 64, 0.12);
   }
 
   .tz-token {
@@ -272,8 +531,9 @@
     font-size: 0.8125rem;
     font-weight: 700;
     letter-spacing: 0.02em;
-    background: var(--color-tz-soft);
-    color: var(--color-tz-fg);
+    background: rgba(46, 91, 255, 0.12);
+    border: 1px solid rgba(46, 91, 255, 0.3);
+    color: #9db8ff;
   }
 
   /* ── Формы ───────────────────────────────────────────────────── */
@@ -289,24 +549,34 @@
   .tz-select,
   .tz-textarea {
     width: 100%;
-    background: var(--color-tz-surface);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--color-tz-border);
     border-radius: var(--radius-tz-btn);
     padding: 0.5625rem 0.8125rem;
     font-size: 0.875rem;
     color: var(--color-tz-fg);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   }
   .tz-input::placeholder,
   .tz-textarea::placeholder {
     color: var(--color-tz-muted);
+  }
+  .tz-input:hover,
+  .tz-select:hover,
+  .tz-textarea:hover {
+    border-color: #32426b;
   }
   .tz-input:focus,
   .tz-select:focus,
   .tz-textarea:focus {
     outline: none;
     border-color: var(--color-tz-accent);
-    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-tz-accent) 14%, transparent);
+    box-shadow: 0 0 0 3px rgba(46, 91, 255, 0.22);
+    background: rgba(255, 255, 255, 0.055);
+  }
+  .tz-select option {
+    background: var(--color-tz-surface);
+    color: var(--color-tz-fg);
   }
 
   /* ── Табы ────────────────────────────────────────────────────── */
@@ -332,7 +602,7 @@
     color: var(--color-tz-fg);
   }
   .tz-tab-active {
-    color: var(--color-tz-fg);
+    color: #fff;
     font-weight: 600;
   }
   .tz-tab-active::after {
@@ -343,7 +613,8 @@
     bottom: -1px;
     height: 2px;
     border-radius: 2px 2px 0 0;
-    background: var(--color-tz-accent);
+    background: linear-gradient(90deg, #2e5bff, #7c5cff, #00d4c8);
+    box-shadow: 0 0 12px rgba(94, 110, 255, 0.6);
   }
   .tz-tab-count {
     display: inline-flex;
@@ -360,8 +631,8 @@
     color: var(--color-tz-secondary);
   }
   .tz-tab-active .tz-tab-count {
-    background: var(--color-tz-accent-soft);
-    color: var(--color-tz-accent);
+    background: rgba(46, 91, 255, 0.25);
+    color: #9db8ff;
   }
 
   /* ── Стат-карта ──────────────────────────────────────────────── */
@@ -387,6 +658,8 @@
     height: 2.25rem;
     border-radius: 0.75rem;
     flex-shrink: 0;
+    background: rgba(46, 91, 255, 0.14);
+    color: #9db8ff;
   }
   .tz-stat-value {
     font-family: var(--font-mono);
@@ -411,12 +684,11 @@
     width: 3rem;
     height: 3rem;
     border-radius: 0.875rem;
-    background: var(--color-tz-accent-soft);
-    color: var(--color-tz-accent);
+    background: rgba(46, 91, 255, 0.14);
+    color: #9db8ff;
   }
   .tz-empty-title {
     margin-top: 1.125rem;
-    font-family: var(--font-display);
     font-size: 1.375rem;
     font-weight: 700;
     color: var(--color-tz-fg);
@@ -429,7 +701,7 @@
     color: var(--color-tz-muted);
   }
 
-  /* ── Прогресс УГТ ────────────────────────────────────────────── */
+  /* ── Прогресс УГТ (градиент + shimmer) ───────────────────────── */
   .tz-progress {
     height: 0.375rem;
     border-radius: 999px;
@@ -439,8 +711,10 @@
   .tz-progress-fill {
     height: 100%;
     border-radius: 999px;
-    background: var(--color-tz-accent);
-    transition: width 0.4s ease;
+    background: linear-gradient(90deg, #2e5bff, #7c5cff, #00d4c8);
+    background-size: 200% 100%;
+    animation: tz-shimmer 3.5s linear infinite;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* ── Чипы-фильтры ────────────────────────────────────────────── */
@@ -452,24 +726,41 @@
     padding: 0.3125rem 0.8125rem;
     font-size: 0.75rem;
     font-weight: 500;
-    background: var(--color-tz-soft);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--color-tz-secondary);
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     cursor: pointer;
-    border: 1px solid transparent;
+    border: 1px solid var(--color-tz-border);
     white-space: nowrap;
   }
   .tz-chip:hover {
-    background: color-mix(in oklch, var(--color-tz-soft) 70%, white);
+    background: rgba(255, 255, 255, 0.09);
     color: var(--color-tz-fg);
+    border-color: #32426b;
   }
   .tz-chip-active {
-    background: var(--color-tz-accent);
-    border-color: var(--color-tz-accent);
+    background: linear-gradient(120deg, rgba(46, 91, 255, 0.9), rgba(124, 92, 255, 0.85));
+    border-color: transparent;
     color: #fff;
+    box-shadow: 0 4px 16px rgba(46, 91, 255, 0.35);
   }
   .tz-chip-active:hover {
-    background: var(--color-tz-accent-hover);
+    background: linear-gradient(120deg, rgba(70, 110, 255, 0.95), rgba(140, 110, 255, 0.9));
     color: #fff;
+  }
+
+  /* ── Таблицы ─────────────────────────────────────────────────── */
+  .tz-table th {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-tz-muted);
+    font-weight: 600;
+  }
+  .tz-table td {
+    border-top: 1px solid var(--color-tz-border);
+  }
+  .tz-table tr:hover td {
+    background: rgba(255, 255, 255, 0.025);
   }
 }

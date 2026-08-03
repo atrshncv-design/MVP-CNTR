@@ -91,11 +91,11 @@ export default function GkCustomerDashboard() {
 
   return (
     <section>
-      <div className="border-b border-[#DFE5EC] pb-6">
+      <div className="border-b border-tz-border pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
           Рабочий стол заказчика
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-[#0F172A]">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
@@ -104,17 +104,17 @@ export default function GkCustomerDashboard() {
         </p>
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-[#DFE5EC]">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-[#0F172A]">
+      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Проекты
         </span>
-        <Link href="/dashboard/gk_customer/projects/new" className="py-4 text-slate-600 hover:text-[#0F172A]">
+        <Link href="/dashboard/gk_customer/projects/new" className="py-4 text-slate-600 hover:text-tz-fg">
           Новая заявка
         </Link>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-[#0F172A]">
+        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
           Реестр технологий
         </Link>
-        <Link href="/dashboard/executors" className="py-4 text-slate-600 hover:text-[#0F172A]">
+        <Link href="/dashboard/executors" className="py-4 text-slate-600 hover:text-tz-fg">
           Каталог исполнителей
         </Link>
       </nav>
@@ -134,7 +134,7 @@ export default function GkCustomerDashboard() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 * idx, duration: 0.4 }}
-              className="rounded-2xl border border-[#E8ECF0] bg-white p-5"
+              className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-500">{card.label}</span>
@@ -148,7 +148,7 @@ export default function GkCustomerDashboard() {
               {loading ? (
                 <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
               ) : (
-                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-[#0F172A]">
+                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">
                   {card.value}
                 </p>
               )}
@@ -161,14 +161,14 @@ export default function GkCustomerDashboard() {
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         <Link
           href="/dashboard/gk_customer/projects/new"
-          className="group flex items-center justify-between rounded-2xl border border-[#E8ECF0] bg-white p-5 transition hover:border-[#2E5BFF]"
+          className="group flex items-center justify-between rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition hover:border-[#2E5BFF]"
         >
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF0FF] text-[#2E5BFF]">
               <PlusCircle size={20} />
             </span>
             <div>
-              <p className="font-bold text-[#0F172A]">Новая заявка</p>
+              <p className="font-bold text-tz-fg">Новая заявка</p>
               <p className="text-sm text-slate-500">Оценить и подать проект</p>
             </div>
           </div>
@@ -176,14 +176,14 @@ export default function GkCustomerDashboard() {
         </Link>
         <Link
           href="/dashboard/executors"
-          className="group flex items-center justify-between rounded-2xl border border-[#E8ECF0] bg-white p-5 transition hover:border-[#2E5BFF]"
+          className="group flex items-center justify-between rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition hover:border-[#2E5BFF]"
         >
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF0FF] text-[#2E5BFF]">
               <Building2 size={20} />
             </span>
             <div>
-              <p className="font-bold text-[#0F172A]">Каталог исполнителей</p>
+              <p className="font-bold text-tz-fg">Каталог исполнителей</p>
               <p className="text-sm text-slate-500">Найти R&D-партнёра</p>
             </div>
           </div>
@@ -191,14 +191,14 @@ export default function GkCustomerDashboard() {
         </Link>
         <Link
           href="/dashboard/technologies"
-          className="group flex items-center justify-between rounded-2xl border border-[#E8ECF0] bg-white p-5 transition hover:border-[#2E5BFF]"
+          className="group flex items-center justify-between rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition hover:border-[#2E5BFF]"
         >
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF0FF] text-[#2E5BFF]">
               <Database size={20} />
             </span>
             <div>
-              <p className="font-bold text-[#0F172A]">Реестр технологий</p>
+              <p className="font-bold text-tz-fg">Реестр технологий</p>
               <p className="text-sm text-slate-500">Каталог готовых решений</p>
             </div>
           </div>
@@ -209,16 +209,16 @@ export default function GkCustomerDashboard() {
       {/* Список проектов */}
       <div className="mt-8">
         {loading ? (
-          <div className="rounded-[14px] border border-[#DFE5EC] bg-white p-6">
+          <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
             <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
             <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
           </div>
         ) : projects.length === 0 ? (
-          <div className="rounded-[14px] border border-[#DFE5EC] bg-white px-6 py-14 text-center sm:px-10">
+          <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF] font-mono font-bold text-[#2E5BFF]">
               01
             </div>
-            <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-[#0F172A]">
+            <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
               Проектов пока нет
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-slate-600">
@@ -234,17 +234,17 @@ export default function GkCustomerDashboard() {
           </div>
         ) : (
           <div>
-            <h2 className="mb-4 text-lg font-bold text-[#0F172A]">Мои проекты</h2>
+            <h2 className="mb-4 text-lg font-bold text-tz-fg">Мои проекты</h2>
             <div className="grid gap-4">
               {projects.map((project) => (
                 <Link
                   key={project.id}
                   href={`/dashboard/project/${project.id}`}
-                  className="grid gap-4 rounded-[14px] border border-[#DFE5EC] bg-white p-5 transition hover:border-[#2E5BFF] md:grid-cols-[1fr_auto_auto]"
+                  className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-[#2E5BFF] md:grid-cols-[1fr_auto_auto]"
                 >
                   <div>
                     <div className="font-mono text-xs text-slate-500">ЦНТР-{project.id}</div>
-                    <h3 className="mt-1 text-lg font-bold text-[#0F172A]">{project.name}</h3>
+                    <h3 className="mt-1 text-lg font-bold text-tz-fg">{project.name}</h3>
                     <p className="mt-1 text-sm text-slate-600">
                       {project.category ?? "Категория не указана"}
                     </p>
@@ -255,7 +255,7 @@ export default function GkCustomerDashboard() {
                   </div>
                   <div className="md:min-w-28 md:text-right">
                     <div className="text-xs text-slate-500">Статус</div>
-                    <div className="mt-1 font-semibold text-[#0F172A]">
+                    <div className="mt-1 font-semibold text-tz-fg">
                       {STATUS_LABELS[project.status] ?? project.status}
                     </div>
                   </div>

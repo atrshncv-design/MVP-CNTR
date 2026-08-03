@@ -86,11 +86,11 @@ export default function SerialManufacturerDashboard() {
   return (
     <section>
       {/* Hero-блок в стиле ЛК ГК */}
-      <div className="border-b border-[#DFE5EC] pb-6">
+      <div className="border-b border-tz-border pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
           Рабочий стол серийного производителя
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-[#0F172A]">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
@@ -104,14 +104,14 @@ export default function SerialManufacturerDashboard() {
         <AssessUgTCard />
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-[#DFE5EC]">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-[#0F172A]">
+      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Технологии УГТ 7+
         </span>
-        <a href="#join" className="py-4 text-slate-600 hover:text-[#0F172A]">
+        <a href="#join" className="py-4 text-slate-600 hover:text-tz-fg">
           Присоединиться к проекту
         </a>
-        <a href="#registry" className="py-4 text-slate-600 hover:text-[#0F172A]">
+        <a href="#registry" className="py-4 text-slate-600 hover:text-tz-fg">
           Каталог исполнителей
         </a>
       </nav>
@@ -121,7 +121,7 @@ export default function SerialManufacturerDashboard() {
         <div id="registry">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-[#0F172A]">Технологии УГТ 7+</h2>
+              <h2 className="text-lg font-bold text-tz-fg">Технологии УГТ 7+</h2>
               <p className="text-sm text-slate-500">Опытные образцы, готовые к квалификации и серии</p>
             </div>
             <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export default function SerialManufacturerDashboard() {
           </div>
 
           {loading ? (
-            <div className="rounded-[14px] border border-[#DFE5EC] bg-white p-6">
+            <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
               <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
               <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
             </div>
@@ -159,11 +159,11 @@ export default function SerialManufacturerDashboard() {
               </button>
             </div>
           ) : technologies.length === 0 ? (
-            <div className="rounded-[14px] border border-[#DFE5EC] bg-white px-6 py-14 text-center sm:px-10">
+            <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
               <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
                 <Factory size={22} className="text-[#2E5BFF]" />
               </div>
-              <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-[#0F172A]">
+              <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
                 Технологий УГТ 7+ пока нет
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-slate-600">
@@ -184,7 +184,7 @@ export default function SerialManufacturerDashboard() {
                     key={tech.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border border-[#E8ECF0] bg-white p-5 transition-all hover:shadow-md"
+                    className="rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition-all hover:shadow-md"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -202,7 +202,7 @@ export default function SerialManufacturerDashboard() {
                             </span>
                           )}
                         </div>
-                        <h3 className="mt-1.5 text-lg font-bold text-[#0F172A]">{tech.name}</h3>
+                        <h3 className="mt-1.5 text-lg font-bold text-tz-fg">{tech.name}</h3>
                         {tech.description && (
                           <p className="mt-1 text-sm text-slate-600 line-clamp-2">{tech.description}</p>
                         )}
@@ -242,7 +242,7 @@ export default function SerialManufacturerDashboard() {
         {/* Вступление по токену */}
         <aside id="join" className="lg:sticky lg:top-8 lg:self-start">
           {loading ? (
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-[#E8ECF0] bg-white">
+            <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
               <Loader2 size={22} className="animate-spin text-[#2E5BFF]" />
             </div>
           ) : (

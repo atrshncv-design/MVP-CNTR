@@ -125,7 +125,7 @@ export default function UgtScalePageClient() {
             return (
               <motion.div key={level.id} variants={itemVariants}>
                 <div
-                  className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#E8ECF0] bg-white p-6 transition-all duration-300 sm:p-7"
+                  className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-tz-card-border bg-tz-surface p-6 transition-all duration-300 sm:p-7"
                   style={{
                     boxShadow:
                       '0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.04)',
@@ -163,15 +163,15 @@ export default function UgtScalePageClient() {
                     </span>
                   </div>
 
-                  <h3 className="mt-4 text-xl font-semibold text-[#0F172A] sm:text-2xl">
+                  <h3 className="mt-4 text-xl font-semibold text-tz-fg sm:text-2xl">
                     {level.name}
                   </h3>
 
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[#475569] sm:text-base">
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-tz-secondary sm:text-base">
                     {level.short}
                   </p>
 
-                  <div className="my-4 h-px w-full bg-[#E8ECF0]" />
+                  <div className="my-4 h-px w-full bg-tz-soft" />
 
                   <div className="flex flex-wrap gap-3">
                     {kpiEntries.map(([label, value]) => {
@@ -179,10 +179,10 @@ export default function UgtScalePageClient() {
                       return (
                         <div
                           key={label}
-                          className="flex items-center gap-1.5 rounded-md bg-[#F5F7FA] px-2.5 py-1.5"
+                          className="flex items-center gap-1.5 rounded-md bg-tz-bg px-2.5 py-1.5"
                         >
                           <Icon size={14} style={{ color: level.color }} />
-                          <span className="font-mono text-xs font-medium text-[#475569]">
+                          <span className="font-mono text-xs font-medium text-tz-secondary">
                             {value}
                           </span>
                         </div>
@@ -205,7 +205,7 @@ export default function UgtScalePageClient() {
           }}
           className="mt-16 text-center"
         >
-          <p className="text-base text-[#475569]">
+          <p className="text-base text-tz-secondary">
             Не знаете, какой уровень соответствует вашему проекту?{' '}
             <Link
               href="/dashboard/gk_customer/projects/new"

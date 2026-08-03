@@ -23,7 +23,7 @@ export default async function ProjectsPage() {
           Проекты
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em]">Не удалось загрузить проекты</h1>
-        <div className="mt-7 rounded-[14px] border border-red-200 bg-white p-6">
+        <div className="mt-7 rounded-[14px] border border-red-200 bg-tz-surface p-6">
           <p className="font-semibold text-red-800">
             {unavailable ? "Сервис проектов временно недоступен" : "Нет доступа к данным проектов"}
           </p>
@@ -37,7 +37,7 @@ export default async function ProjectsPage() {
 
   return (
     <section>
-      <div className="flex flex-wrap items-end justify-between gap-5 border-b border-[#DFE5EC] pb-6">
+      <div className="flex flex-wrap items-end justify-between gap-5 border-b border-tz-border pb-6">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
             Единый рабочий контур
@@ -56,7 +56,7 @@ export default async function ProjectsPage() {
       </div>
 
       {projects.length === 0 ? (
-        <div className="mt-8 rounded-[14px] border border-[#DFE5EC] bg-white px-6 py-14 text-center">
+        <div className="mt-8 rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center">
           <h2 className="text-2xl font-bold">Проектов пока нет</h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-600">
             В вашей области доступа ещё нет созданных проектов.
@@ -68,7 +68,7 @@ export default async function ProjectsPage() {
             <Link
               key={project.id}
               href={`/dashboard/project/${project.id}`}
-              className="grid gap-4 rounded-[14px] border border-[#DFE5EC] bg-white p-5 transition hover:border-[#2E5BFF] md:grid-cols-[1fr_auto_auto]"
+              className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-[#2E5BFF] md:grid-cols-[1fr_auto_auto]"
             >
               <div>
                 <div className="font-mono text-xs text-slate-500">ЦНТР-{project.id}</div>

@@ -86,9 +86,9 @@ function UserRow({ user }: { user: AdminUser }) {
   };
 
   return (
-    <tr className="border-b border-[#E8ECF0] align-top last:border-0 hover:bg-[#FAFBFD]">
+    <tr className="border-b border-tz-card-border align-top last:border-0 hover:bg-[#FAFBFD]">
       <td className="px-4 py-4">
-        <p className="font-semibold text-[#0F172A]">{user.full_name || '—'}</p>
+        <p className="font-semibold text-tz-fg">{user.full_name || '—'}</p>
         <p className="mt-0.5 text-sm text-slate-500">{user.email}</p>
       </td>
       <td className="px-4 py-4 text-sm text-slate-600">{user.organization ?? '—'}</td>
@@ -118,7 +118,7 @@ function UserRow({ user }: { user: AdminUser }) {
             setSaved(false);
             setRoles(selected);
           }}
-          className="w-full max-w-[280px] rounded-xl border border-[#DFE5EC] bg-white px-2 py-1.5 text-xs text-[#0F172A] outline-none transition focus:border-[#2E5BFF]"
+          className="w-full max-w-[280px] rounded-xl border border-tz-border bg-tz-surface px-2 py-1.5 text-xs text-tz-fg outline-none transition focus:border-[#2E5BFF]"
         >
           {ROLES.map((r) => (
             <option key={r.slug} value={r.slug} className="py-0.5">
@@ -145,7 +145,7 @@ function UserRow({ user }: { user: AdminUser }) {
           }`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-tz-surface shadow transition-transform ${
               isActive ? 'translate-x-6' : 'translate-x-1'
             }`}
           />
@@ -223,11 +223,11 @@ export default function CntrAdminDashboard() {
   return (
     <section>
       {/* Hero-блок в стиле ЛК ГК */}
-      <div className="border-b border-[#DFE5EC] pb-6">
+      <div className="border-b border-tz-border pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
           Рабочий стол администратора ЦНТР
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-[#0F172A]">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
@@ -236,11 +236,11 @@ export default function CntrAdminDashboard() {
         </p>
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-[#DFE5EC]">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-[#0F172A]">
+      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Пользователи
         </span>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-[#0F172A]">
+        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
           Реестр технологий
         </Link>
       </nav>
@@ -260,7 +260,7 @@ export default function CntrAdminDashboard() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 * idx, duration: 0.4 }}
-              className="rounded-2xl border border-[#E8ECF0] bg-white p-5"
+              className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-500">{card.label}</span>
@@ -274,7 +274,7 @@ export default function CntrAdminDashboard() {
               {loading ? (
                 <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
               ) : (
-                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-[#0F172A]">{card.value}</p>
+                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">{card.value}</p>
               )}
             </motion.div>
           );
@@ -283,10 +283,10 @@ export default function CntrAdminDashboard() {
 
       {/* Таблица пользователей */}
       <div className="mt-8">
-        <h2 className="mb-4 text-lg font-bold text-[#0F172A]">Пользователи и роли</h2>
+        <h2 className="mb-4 text-lg font-bold text-tz-fg">Пользователи и роли</h2>
 
         {loading ? (
-          <div className="rounded-[14px] border border-[#DFE5EC] bg-white p-6">
+          <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
             <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
             <div className="mt-4 h-24 animate-pulse rounded bg-gray-50" />
           </div>
@@ -302,11 +302,11 @@ export default function CntrAdminDashboard() {
             </button>
           </div>
         ) : users.length === 0 ? (
-          <div className="rounded-[14px] border border-[#DFE5EC] bg-white px-6 py-14 text-center sm:px-10">
+          <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
             <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
               <Users size={22} className="text-[#2E5BFF]" />
             </div>
-            <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-[#0F172A]">
+            <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
               Пользователи не найдены
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-slate-600">
@@ -314,10 +314,10 @@ export default function CntrAdminDashboard() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-[#E8ECF0] bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-tz-card-border bg-tz-surface">
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#E8ECF0] bg-[#FAFBFD] text-xs uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-tz-card-border bg-[#FAFBFD] text-xs uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3 font-semibold">Пользователь</th>
                   <th className="px-4 py-3 font-semibold">Организация</th>
                   <th className="px-4 py-3 font-semibold">Роли</th>

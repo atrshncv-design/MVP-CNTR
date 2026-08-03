@@ -89,7 +89,7 @@ export default function ExecutorsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#0F172A]">Каталог исполнителей</h1>
+        <h1 className="text-3xl font-bold text-tz-fg">Каталог исполнителей</h1>
         <p className="mt-2 text-gray-500">
           R&D-стартапы, научные организации и производители
         </p>
@@ -103,7 +103,7 @@ export default function ExecutorsPage() {
             placeholder="Поиск по названию или организации..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#2E5BFF]"
+            className="w-full rounded-xl border border-gray-200 bg-tz-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#2E5BFF]"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -125,9 +125,9 @@ export default function ExecutorsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+        <div className="rounded-2xl border border-gray-200 bg-tz-surface p-12 text-center">
           <Building2 size={48} className="mx-auto mb-3 text-gray-300" />
-          <p className="font-medium text-[#0F172A]">
+          <p className="font-medium text-tz-fg">
             {executors.length === 0 ? 'Исполнители не найдены' : 'Ничего не найдено'}
           </p>
           <p className="mt-1 text-sm text-gray-400">
@@ -143,7 +143,7 @@ export default function ExecutorsPage() {
               key={exec.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-gray-200 bg-white p-5 transition-all hover:shadow-md"
+              className="rounded-2xl border border-gray-200 bg-tz-surface p-5 transition-all hover:shadow-md"
             >
               <div className="flex items-start justify-between">
                 <div
@@ -176,7 +176,7 @@ export default function ExecutorsPage() {
                   </span>
                 </div>
               </div>
-              <h3 className="mt-4 font-bold text-[#0F172A]">{exec.full_name}</h3>
+              <h3 className="mt-4 font-bold text-tz-fg">{exec.full_name}</h3>
               {exec.organization && (
                 <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
                   <Building2 size={14} /> {exec.organization}

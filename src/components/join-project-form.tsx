@@ -102,7 +102,7 @@ export default function JoinProjectForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-[#E8ECF0] bg-white p-5 sm:p-6"
+      className="rounded-2xl border border-tz-card-border bg-tz-surface p-5 sm:p-6"
       style={{ boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}
     >
       <div className="flex items-center gap-3">
@@ -110,7 +110,7 @@ export default function JoinProjectForm() {
           <KeyRound size={20} />
         </span>
         <div>
-          <h3 className="font-bold text-[#0F172A]">Присоединиться к проекту</h3>
+          <h3 className="font-bold text-tz-fg">Присоединиться к проекту</h3>
           <p className="text-sm text-slate-500">Введите токен, выданный заказчиком или ЦНТР</p>
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function JoinProjectForm() {
           onChange={(e) => setToken(e.target.value)}
           placeholder="TZ-XXXXXX"
           disabled={loading}
-          className="w-full rounded-xl border border-[#DFE5EC] bg-white px-4 py-2.5 font-mono text-sm text-[#0F172A] outline-none transition placeholder:text-slate-400 focus:border-[#2E5BFF] disabled:opacity-60"
+          className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-2.5 font-mono text-sm text-tz-fg outline-none transition placeholder:text-slate-400 focus:border-[#2E5BFF] disabled:opacity-60"
         />
         <div>
           <label htmlFor="join-role" className="mb-1 block text-xs font-medium text-slate-500">
@@ -133,7 +133,7 @@ export default function JoinProjectForm() {
             value={role}
             onChange={(e) => setRole(e.target.value)}
             disabled={loading}
-            className="w-full rounded-xl border border-[#DFE5EC] bg-white px-3 py-2.5 text-sm text-[#0F172A] outline-none transition focus:border-[#2E5BFF] disabled:opacity-60"
+            className="w-full rounded-xl border border-tz-border bg-white px-3 py-2.5 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF] disabled:opacity-60"
           >
             {JOIN_ROLES.map((r) => (
               <option key={r.value} value={r.value}>

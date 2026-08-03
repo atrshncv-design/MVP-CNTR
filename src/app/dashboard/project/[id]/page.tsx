@@ -424,7 +424,7 @@ export default function ProjectDashboardPage() {
             <div className="tz-card p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Activity size={20} className="text-[#2E5BFF]" />
-                <h2 className="text-lg font-bold text-[#0F172A]">УГТ-профиль</h2>
+                <h2 className="text-lg font-bold text-tz-fg">УГТ-профиль</h2>
               </div>
               <div className="flex items-center justify-center">
                 <ResponsiveContainer width="100%" height={320}>
@@ -469,7 +469,7 @@ export default function ProjectDashboardPage() {
 
             {/* UGT Levels progress */}
             <div className="tz-card p-6">
-              <h2 className="text-lg font-bold text-[#0F172A] mb-4">Прогресс по уровням УГТ</h2>
+              <h2 className="text-lg font-bold text-tz-fg mb-4">Прогресс по уровням УГТ</h2>
               <div className="space-y-3">
                 {UGT_LEVEL_NAMES.map((name, i) => {
                   const level = i + 1;
@@ -507,10 +507,10 @@ export default function ProjectDashboardPage() {
             </div>
 
             {/* Control Points */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Shield size={20} className="text-[#E5C840]" />
-                <h2 className="text-lg font-bold text-[#0F172A]">Контрольные точки (КТ)</h2>
+                <h2 className="text-lg font-bold text-tz-fg">Контрольные точки (КТ)</h2>
               </div>
               {project.control_points.length === 0 ? (
                 <p className="text-sm text-gray-400">Контрольные точки не заданы</p>
@@ -522,7 +522,7 @@ export default function ProjectDashboardPage() {
                       className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-4"
                     >
                       <div>
-                        <p className="font-semibold text-[#0F172A]">{cp.title}</p>
+                        <p className="font-semibold text-tz-fg">{cp.title}</p>
                         {cp.description && (
                           <p className="mt-1 text-sm text-gray-500">{cp.description}</p>
                         )}
@@ -555,10 +555,10 @@ export default function ProjectDashboardPage() {
             </div>
 
             {/* Documents */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <FileText size={20} className="text-[#FF7A2E]" />
-                <h2 className="text-lg font-bold text-[#0F172A]">Документы</h2>
+                <h2 className="text-lg font-bold text-tz-fg">Документы</h2>
               </div>
 
               {/* Генерация документов — доступна всем участникам */}
@@ -594,7 +594,7 @@ export default function ProjectDashboardPage() {
                       <div className="flex items-center gap-3">
                         <FileText size={18} className="text-gray-400" />
                         <div>
-                          <p className="font-medium text-[#0F172A]">{doc.title}</p>
+                          <p className="font-medium text-tz-fg">{doc.title}</p>
                           <p className="text-xs text-gray-400">
                             {doc.doc_type} · v{doc.version}
                           </p>
@@ -616,10 +616,10 @@ export default function ProjectDashboardPage() {
             </div>
 
             {/* Верифицирующие документы (подтверждение УГТ от регулирующей организации / участников) */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <ShieldCheck size={20} className="text-[#10B981]" />
-                <h2 className="text-lg font-bold text-[#0F172A]">Верифицирующие документы</h2>
+                <h2 className="text-lg font-bold text-tz-fg">Верифицирующие документы</h2>
                 {project.verification_documents.length > 0 && (
                   <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
                     {project.verification_documents.length}
@@ -641,7 +641,7 @@ export default function ProjectDashboardPage() {
                       <div className="flex items-start gap-3">
                         <ShieldCheck size={18} className="mt-0.5 shrink-0 text-emerald-600" />
                         <div>
-                          <p className="font-medium text-[#0F172A]">{v.title}</p>
+                          <p className="font-medium text-tz-fg">{v.title}</p>
                           <p className="text-xs text-gray-500">
                             {v.uploader_name ?? 'Пользователь'}
                             {v.created_at ? ` · ${new Date(v.created_at).toLocaleDateString('ru-RU')}` : ''}
@@ -663,10 +663,10 @@ export default function ProjectDashboardPage() {
 
             {/* Join requests — только приоритетным участникам */}
             {isPriorityUser && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <UserPlus size={20} className="text-[#10B981]" />
-                  <h2 className="text-lg font-bold text-[#0F172A]">Заявки на вступление</h2>
+                  <h2 className="text-lg font-bold text-tz-fg">Заявки на вступление</h2>
                   {joinRequests.length > 0 && (
                     <span className="ml-auto rounded-full bg-[#2E5BFF] px-2.5 py-0.5 text-xs font-semibold text-white">
                       {joinRequests.length}
@@ -688,7 +688,7 @@ export default function ProjectDashboardPage() {
                         className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4"
                       >
                         <div className="min-w-0">
-                          <p className="font-semibold text-[#0F172A]">{req.user_name}</p>
+                          <p className="font-semibold text-tz-fg">{req.user_name}</p>
                           <p className="text-xs text-gray-500">{req.user_email}</p>
                           <div className="mt-1.5 flex flex-wrap items-center gap-2">
                             <span className="inline-block rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
@@ -725,10 +725,10 @@ export default function ProjectDashboardPage() {
             )}
 
             {/* Audit Trail */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={20} className="text-gray-400" />
-                <h2 className="text-lg font-bold text-[#0F172A]">Аудит изменений</h2>
+                <h2 className="text-lg font-bold text-tz-fg">Аудит изменений</h2>
               </div>
               {project.audit_trail.length === 0 ? (
                 <p className="text-sm text-gray-400">История изменений пуста</p>
@@ -741,7 +741,7 @@ export default function ProjectDashboardPage() {
                     >
                       <div className="h-2 w-2 rounded-full bg-[#2E5BFF]" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-[#0F172A]">{entry.action}</p>
+                        <p className="text-sm font-medium text-tz-fg">{entry.action}</p>
                         {entry.created_at && (
                           <p className="text-xs text-gray-400">
                             {new Date(entry.created_at).toLocaleString('ru-RU')}
@@ -758,10 +758,10 @@ export default function ProjectDashboardPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Current level */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Award size={20} className="text-[#2E5BFF]" />
-                <h3 className="font-bold text-[#0F172A]">Уровень УГТ</h3>
+                <h3 className="font-bold text-tz-fg">Уровень УГТ</h3>
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-[#2E5BFF]">{p.current_level}</span>
@@ -777,10 +777,10 @@ export default function ProjectDashboardPage() {
 
             {/* KТ-1 Control Point */}
             {kt1 && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield size={20} className="text-[#E5C840]" />
-                  <h3 className="font-bold text-[#0F172A]">КТ-1: Старт проекта</h3>
+                  <h3 className="font-bold text-tz-fg">КТ-1: Старт проекта</h3>
                 </div>
                 <div
                   className={`rounded-xl p-4 ${
@@ -818,10 +818,10 @@ export default function ProjectDashboardPage() {
 
             {/* Share project — только приоритетным участникам */}
             {isPriorityUser && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Share2 size={20} className="text-[#2E5BFF]" />
-                  <h3 className="font-bold text-[#0F172A]">Поделиться проектом</h3>
+                  <h3 className="font-bold text-tz-fg">Поделиться проектом</h3>
                 </div>
                 {p.join_token ? (
                   <>
@@ -866,10 +866,10 @@ export default function ProjectDashboardPage() {
             )}
 
             {/* Team */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Users size={20} className="text-[#10B981]" />
-                <h3 className="font-bold text-[#0F172A]">Команда</h3>
+                <h3 className="font-bold text-tz-fg">Команда</h3>
               </div>
               {project.members.length === 0 ? (
                 <p className="text-sm text-gray-400">Участники не назначены</p>
@@ -884,7 +884,7 @@ export default function ProjectDashboardPage() {
                         {m.role_in_project[0].toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-[#0F172A]">
+                        <p className="text-sm font-medium text-tz-fg">
                           {m.role_in_project}
                         </p>
                         <p className="text-xs text-gray-400">ID: {m.user_id}</p>
@@ -897,12 +897,12 @@ export default function ProjectDashboardPage() {
 
             {/* Budget */}
             {canSeeBudget && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign size={20} className="text-[#10B981]" />
-                  <h3 className="font-bold text-[#0F172A]">Бюджет</h3>
+                  <h3 className="font-bold text-tz-fg">Бюджет</h3>
                 </div>
-                <p className="text-2xl font-bold text-[#0F172A]">
+                <p className="text-2xl font-bold text-tz-fg">
                   {p.budget != null
                     ? `${p.budget.toLocaleString('ru-RU')} ₽`
                     : 'Не указан'}
@@ -911,10 +911,10 @@ export default function ProjectDashboardPage() {
             )}
 
             {/* Radar mini summary */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart3 size={20} className="text-[#E5C840]" />
-                <h3 className="font-bold text-[#0F172A]">Общий прогресс</h3>
+                <h3 className="font-bold text-tz-fg">Общий прогресс</h3>
               </div>
               {project.questionnaire_results.length > 0 ? (
                 <div className="space-y-2">
@@ -948,7 +948,7 @@ export default function ProjectDashboardPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl"
+            className="w-full max-w-3xl rounded-2xl bg-tz-surface shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
@@ -956,7 +956,7 @@ export default function ProjectDashboardPage() {
                 <p className="font-mono text-xs uppercase tracking-wide text-gray-400">
                   Сгенерированный документ
                 </p>
-                <h3 className="mt-1 text-lg font-bold text-[#0F172A]">{generatedDoc.title}</h3>
+                <h3 className="mt-1 text-lg font-bold text-tz-fg">{generatedDoc.title}</h3>
               </div>
               <button
                 onClick={() => setGeneratedDoc(null)}

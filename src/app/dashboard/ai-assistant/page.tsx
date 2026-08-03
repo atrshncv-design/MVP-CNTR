@@ -98,7 +98,7 @@ export default function AiAssistantPage() {
     <div className="flex h-[calc(100vh-100px)] flex-col">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">AI-ассистент</h1>
+          <h1 className="text-2xl font-bold text-tz-fg">AI-ассистент</h1>
           <p className="text-sm text-gray-500">
             Задавайте вопросы по ГОСТ Р 58048-2017, уровням УГТ и документации
           </p>
@@ -106,7 +106,7 @@ export default function AiAssistantPage() {
         <button
           onClick={clearChat}
           disabled={messages.length <= 1 || sending}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-500"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 bg-tz-surface px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-500"
           title="Удалить все сообщения"
         >
           <Trash2 size={14} />
@@ -114,7 +114,7 @@ export default function AiAssistantPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-tz-surface p-4 space-y-4">
         {messages.map((msg, i) => (
           <motion.div
             key={i}
@@ -138,7 +138,7 @@ export default function AiAssistantPage() {
               className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                 msg.role === 'user'
                   ? 'bg-[#2E5BFF] text-white'
-                  : 'bg-gray-50 text-[#0F172A]'
+                  : 'bg-gray-50 text-tz-fg'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
@@ -151,7 +151,7 @@ export default function AiAssistantPage() {
                     <div key={s.id} className="flex items-start gap-2">
                       <FileText size={14} className="mt-0.5 shrink-0 text-[#2E5BFF]" />
                       <div className="min-w-0">
-                        <p className="text-xs leading-snug text-[#0F172A]">{s.title}</p>
+                        <p className="text-xs leading-snug text-tz-fg">{s.title}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           {typeof s.ugt_level === 'number' && s.ugt_level > 0 && (
                             <span className="rounded bg-[#2E5BFF]/10 px-1.5 py-px text-[10px] font-medium text-[#2E5BFF]">
@@ -200,7 +200,7 @@ export default function AiAssistantPage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Введите вопрос по ГОСТ Р 58048-2017..."
-          className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#2E5BFF]"
+          className="flex-1 rounded-xl border border-gray-200 bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[#2E5BFF]"
         />
         <button
           onClick={sendMessage}

@@ -96,11 +96,11 @@ export default function RegulatingOrganizationDashboard() {
   return (
     <section>
       {/* Hero-блок */}
-      <div className="border-b border-[#DFE5EC] pb-6">
+      <div className="border-b border-tz-border pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
           Рабочий стол регулирующей организации
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-[#0F172A]">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
@@ -109,11 +109,11 @@ export default function RegulatingOrganizationDashboard() {
         </p>
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-[#DFE5EC]">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-[#0F172A]">
+      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Документы подтверждения
         </span>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-[#0F172A]">
+        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
           Реестр технологий
         </Link>
       </nav>
@@ -133,7 +133,7 @@ export default function RegulatingOrganizationDashboard() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 * idx, duration: 0.4 }}
-              className="rounded-2xl border border-[#E8ECF0] bg-white p-5"
+              className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-500">{card.label}</span>
@@ -147,7 +147,7 @@ export default function RegulatingOrganizationDashboard() {
               {loading ? (
                 <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
               ) : (
-                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-[#0F172A]">
+                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">
                   {card.value}
                 </p>
               )}
@@ -172,10 +172,10 @@ export default function RegulatingOrganizationDashboard() {
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         {/* Проекты, к которым присоединилась организация */}
         <div>
-          <h2 className="mb-4 text-lg font-bold text-[#0F172A]">Мои проекты</h2>
+          <h2 className="mb-4 text-lg font-bold text-tz-fg">Мои проекты</h2>
 
           {loading ? (
-            <div className="rounded-[14px] border border-[#DFE5EC] bg-white p-6">
+            <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
               <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
               <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
             </div>
@@ -191,11 +191,11 @@ export default function RegulatingOrganizationDashboard() {
               </button>
             </div>
           ) : projects.length === 0 ? (
-            <div className="rounded-[14px] border border-[#DFE5EC] bg-white px-6 py-14 text-center sm:px-10">
+            <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
               <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
                 <FolderKanban size={22} className="text-[#2E5BFF]" />
               </div>
-              <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-[#0F172A]">
+              <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
                 Пока нет проектов
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-slate-600">
@@ -211,7 +211,7 @@ export default function RegulatingOrganizationDashboard() {
                   key={p.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl border border-[#E8ECF0] bg-white p-5 sm:p-6"
+                  className="rounded-2xl border border-tz-card-border bg-tz-surface p-5 sm:p-6"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -226,7 +226,7 @@ export default function RegulatingOrganizationDashboard() {
                       </div>
                       <Link
                         href={`/dashboard/project/${p.id}`}
-                        className="mt-1 block text-lg font-bold text-[#0F172A] transition hover:text-[#2E5BFF]"
+                        className="mt-1 block text-lg font-bold text-tz-fg transition hover:text-[#2E5BFF]"
                       >
                         {p.name}
                       </Link>
@@ -251,7 +251,7 @@ export default function RegulatingOrganizationDashboard() {
         {/* Вступление по токену */}
         <aside className="lg:sticky lg:top-8 lg:self-start">
           {loading ? (
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-[#E8ECF0] bg-white">
+            <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
               <Loader2 size={22} className="animate-spin text-[#2E5BFF]" />
             </div>
           ) : (
