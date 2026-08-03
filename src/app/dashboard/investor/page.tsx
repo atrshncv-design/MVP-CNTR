@@ -7,45 +7,31 @@ import {
   Activity,
   AlertCircle,
   Building2,
-  Clock,
   RefreshCw,
   Search,
   TrendingUp,
+  Wallet,
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 import { AssessUgTCard } from "@/components/assess-ugt-card";
 
+/** Реестр технологий = опубликованные проекты УГТ 7+ (решение №14): RegistryProjectOut. */
 interface Technology {
   id: number;
   name: string;
-  description: string | null;
   category: string | null;
-  status: string;
   current_level: number;
+  preliminary_level: number | null;
   target_level: number;
+  budget: number | null;
   organization: string | null;
-  created_by_name: string | null;
   created_at: string | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Черновик',
-  active: 'Активна',
-  review: 'На проверке',
-  completed: 'Завершена',
-  rejected: 'Отклонена',
-};
+const PUBLISHED_COLOR = '#10B981';
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: '#94A3B8',
-  active: '#2E5BFF',
-  review: '#E5C840',
-  completed: '#10B981',
-  rejected: '#EF4444',
-};
-
-const UGT_LEVELS = Array.from({ length: 9 }, (_, i) => i + 1);
+const UGT_OPTIONS = [7, 8, 9];
 
 export default function InvestorDashboard() {
   const { data: session } = useSession();
@@ -55,8 +41,7 @@ export default function InvestorDashboard() {
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [minLevel, setMinLevel] = useState<number>(1);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [minLevel, setMinLevel] = useState<number>(7);
 
   const displayName = session?.user?.name ?? session?.user?.email ?? 'Инвестор';
 
@@ -65,7 +50,8 @@ export default function InvestorDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/technologies`, {
+      const params = new URLSearchParams({ ugt_min: String(minLevel) });
+      const res = await fetch(`${API_URL}/api/v1/projects/registry?${params}`, {
         headers: { Authorization: `Bearer ${session.user.accessToken}` },
       });
       if (!res.ok) {
@@ -77,7 +63,7 @@ export default function InvestorDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, minLevel]);
 
   useEffect(() => {
     // setState внутри loadTechnologies выполняется после await — не синхронно с телом эффекта
@@ -98,17 +84,14 @@ export default function InvestorDashboard() {
   const filtered = useMemo(() => {
     return technologies.filter((t) => {
       if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
-      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
-      if (t.current_level < minLevel) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (
         t.name.toLowerCase().includes(q) ||
-        (t.description?.toLowerCase().includes(q) ?? false) ||
         (t.organization?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [technologies, categoryFilter, statusFilter, minLevel, search]);
+  }, [technologies, categoryFilter, search]);
 
   return (
     <section>
@@ -139,7 +122,7 @@ export default function InvestorDashboard() {
 
       {/* Фильтры */}
       <div className="mt-8 rounded-2xl border border-tz-card-border bg-tz-surface p-4 sm:p-5">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -178,27 +161,9 @@ export default function InvestorDashboard() {
               onChange={(e) => setMinLevel(Number(e.target.value))}
               className="w-full rounded-xl border border-tz-border bg-white px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
-              {UGT_LEVELS.map((l) => (
+              {UGT_OPTIONS.map((l) => (
                 <option key={l} value={l}>
                   УГТ {l}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="inv-status" className="mb-1 block text-xs font-medium text-slate-500">
-              Статус
-            </label>
-            <select
-              id="inv-status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-xl border border-tz-border bg-white px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
-            >
-              <option value="all">Любой</option>
-              {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
                 </option>
               ))}
             </select>
@@ -243,7 +208,6 @@ export default function InvestorDashboard() {
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {filtered.map((tech) => {
-              const color = STATUS_COLORS[tech.status] ?? '#94A3B8';
               const progress =
                 tech.target_level > 0
                   ? Math.min(100, Math.round((tech.current_level / tech.target_level) * 100))
@@ -259,14 +223,11 @@ export default function InvestorDashboard() {
                     <h3 className="font-bold text-tz-fg">{tech.name}</h3>
                     <span
                       className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                      style={{ background: `${color}15`, color }}
+                      style={{ background: `${PUBLISHED_COLOR}15`, color: PUBLISHED_COLOR }}
                     >
-                      {STATUS_LABELS[tech.status] ?? tech.status}
+                      В реестре
                     </span>
                   </div>
-                  {tech.description && (
-                    <p className="mt-2 text-sm text-slate-500 line-clamp-2">{tech.description}</p>
-                  )}
 
                   {/* Радар зрелости: прогресс current → target */}
                   <div className="mt-4">
@@ -302,10 +263,10 @@ export default function InvestorDashboard() {
                         {tech.category}
                       </span>
                     )}
-                    {tech.created_by_name && (
+                    {tech.budget != null && (
                       <span className="flex items-center gap-1.5">
-                        <Clock size={14} className="text-gray-400" />
-                        {tech.created_by_name}
+                        <Wallet size={14} className="text-gray-400" />
+                        {tech.budget.toLocaleString('ru-RU')} млн ₽
                       </span>
                     )}
                   </div>

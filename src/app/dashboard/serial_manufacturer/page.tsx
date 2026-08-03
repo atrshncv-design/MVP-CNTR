@@ -8,50 +8,35 @@ import {
   AlertCircle,
   Building2,
   Factory,
-  Filter,
   Loader2,
   RefreshCw,
+  Wallet,
 } from 'lucide-react';
 import JoinProjectForm from '@/components/join-project-form';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 import { AssessUgTCard } from "@/components/assess-ugt-card";
 
+/** Реестр технологий = опубликованные проекты УГТ 7+ (решение №14): RegistryProjectOut. */
 interface Technology {
   id: number;
   name: string;
-  description: string | null;
   category: string | null;
-  status: string;
   current_level: number;
+  preliminary_level: number | null;
   target_level: number;
+  budget: number | null;
   organization: string | null;
-  created_by_name: string | null;
   created_at: string | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Черновик',
-  active: 'Активна',
-  review: 'На проверке',
-  completed: 'Завершена',
-  rejected: 'Отклонена',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  draft: '#94A3B8',
-  active: '#2E5BFF',
-  review: '#E5C840',
-  completed: '#10B981',
-  rejected: '#EF4444',
-};
+const PUBLISHED_COLOR = '#10B981';
 
 export default function SerialManufacturerDashboard() {
   const { data: session } = useSession();
   const [technologies, setTechnologies] = useState<Technology[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const displayName = session?.user?.name ?? session?.user?.email ?? 'Серийный производитель';
 
@@ -60,9 +45,7 @@ export default function SerialManufacturerDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ min_level: '7' });
-      if (statusFilter !== 'all') params.set('status', statusFilter);
-      const res = await fetch(`${API_URL}/api/v1/technologies?${params}`, {
+      const res = await fetch(`${API_URL}/api/v1/projects/registry?ugt_min=7`, {
         headers: { Authorization: `Bearer ${session.user.accessToken}` },
       });
       if (!res.ok) {
@@ -74,7 +57,7 @@ export default function SerialManufacturerDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [session, statusFilter]);
+  }, [session]);
 
   useEffect(() => {
     // setState внутри loadTechnologies выполняется после await — не синхронно с телом эффекта
@@ -122,23 +105,7 @@ export default function SerialManufacturerDashboard() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-tz-fg">Технологии УГТ 7+</h2>
-              <p className="text-sm text-slate-500">Опытные образцы, готовые к квалификации и серии</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter size={16} className="text-gray-400" />
-              {['all', 'active', 'completed'].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
-                    statusFilter === s
-                      ? 'bg-[#2E5BFF] text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {s === 'all' ? 'Все' : STATUS_LABELS[s] ?? s}
-                </button>
-              ))}
+              <p className="text-sm text-slate-500">Опубликованные проекты, подтверждённые менеджером ЦНТР</p>
             </div>
           </div>
 
@@ -174,7 +141,6 @@ export default function SerialManufacturerDashboard() {
           ) : (
             <div className="grid gap-4">
               {technologies.map((tech) => {
-                const color = STATUS_COLORS[tech.status] ?? '#94A3B8';
                 const progress =
                   tech.target_level > 0
                     ? Math.round((tech.current_level / tech.target_level) * 100)
@@ -192,9 +158,9 @@ export default function SerialManufacturerDashboard() {
                           <span className="font-mono text-xs text-slate-500">Т-{tech.id}</span>
                           <span
                             className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                            style={{ background: `${color}15`, color }}
+                            style={{ background: `${PUBLISHED_COLOR}15`, color: PUBLISHED_COLOR }}
                           >
-                            {STATUS_LABELS[tech.status] ?? tech.status}
+                            В реестре
                           </span>
                           {tech.category && (
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
@@ -203,9 +169,6 @@ export default function SerialManufacturerDashboard() {
                           )}
                         </div>
                         <h3 className="mt-1.5 text-lg font-bold text-tz-fg">{tech.name}</h3>
-                        {tech.description && (
-                          <p className="mt-1 text-sm text-slate-600 line-clamp-2">{tech.description}</p>
-                        )}
                         <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
                           {tech.organization && (
                             <span className="flex items-center gap-1.5">
@@ -217,6 +180,12 @@ export default function SerialManufacturerDashboard() {
                             <Activity size={14} className="text-[#2E5BFF]" />
                             УГТ {tech.current_level} / {tech.target_level}
                           </span>
+                          {tech.budget != null && (
+                            <span className="flex items-center gap-1.5">
+                              <Wallet size={14} className="text-gray-400" />
+                              {tech.budget.toLocaleString('ru-RU')} млн ₽
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="w-36 shrink-0">
