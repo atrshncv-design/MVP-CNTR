@@ -240,6 +240,12 @@ async def get_project_detail(
     doc_result = await db.execute(doc_stmt)
     documents = doc_result.scalars().all()
 
+    vdoc_stmt = select(VerificationDocument).where(
+        VerificationDocument.project_id == project_id
+    )
+    vdoc_result = await db.execute(vdoc_stmt)
+    verification_documents = vdoc_result.scalars().all()
+
     mem_stmt = select(ProjectMember).where(ProjectMember.project_id == project_id)
     mem_result = await db.execute(mem_stmt)
     members = mem_result.scalars().all()
@@ -253,6 +259,7 @@ async def get_project_detail(
         questionnaire_results=[_qr_out(r) for r in questionnaire_results],
         control_points=[_cp_out(cp) for cp in control_points],
         documents=[_doc_out(d) for d in documents],
+        verification_documents=[await _vdoc_out(db, v) for v in verification_documents],
         members=[_mem_out(m) for m in members],
         audit_trail=[_at_out(a) for a in audit_trail],
     )
@@ -431,6 +438,20 @@ def _doc_out(d: ProjectDocument) -> ProjectDocumentOut:
         status=d.status,
         version=d.version,
         uploaded_by=d.uploaded_by,
+    )
+
+
+async def _vdoc_out(db: DBSession, v: VerificationDocument) -> VerificationDocOut:
+    uploader = await db.get(User, v.uploader_id)
+    return VerificationDocOut(
+        id=v.id,
+        project_id=v.project_id,
+        uploader_id=v.uploader_id,
+        uploader_name=uploader.full_name if uploader else None,
+        title=v.title,
+        comment=v.comment,
+        file_ref=v.file_ref,
+        created_at=v.created_at.isoformat() if v.created_at else None,
     )
 
 

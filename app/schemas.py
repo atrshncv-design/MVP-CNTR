@@ -213,6 +213,7 @@ class ProjectDetailOut(BaseModel):
     questionnaire_results: list[QuestionnaireResultOut] = []
     control_points: list[ControlPointOut] = []
     documents: list[ProjectDocumentOut] = []
+    verification_documents: list[VerificationDocOut] = []
     members: list[ProjectMemberOut] = []
     audit_trail: list[AuditTrailEntryOut] = []
 

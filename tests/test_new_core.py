@@ -379,6 +379,25 @@ def test_verification_docs_before_and_after_join(client: TestClient) -> None:
     assert after.status_code == 201
     assert after.json()["uploader_name"] == "Core regulating_organization"
 
+    # Верифицирующий документ виден владельцу в карточке проекта
+    card = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))
+    assert card.status_code == 200
+    vdocs = card.json()["verification_documents"]
+    assert len(vdocs) == 1
+    assert vdocs[0]["title"] == "Подтверждение УГТ 1"
+    assert vdocs[0]["uploader_name"] == "Core regulating_organization"
+    assert vdocs[0]["project_id"] == project_id
+
+
+def test_verification_docs_empty_list_in_card(client: TestClient) -> None:
+    owner_token, _ = _register(client)
+    manager_token, _ = _register(client, "cntr_manager")
+    project_id = _published_project(client, owner_token, manager_token, level=1)
+
+    card = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))
+    assert card.status_code == 200
+    assert card.json()["verification_documents"] == []
+
 
 def test_regular_participant_can_upload_verification_doc(client: TestClient) -> None:
     owner_token, owner_id = _register(client)
