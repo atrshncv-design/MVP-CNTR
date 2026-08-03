@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Share2,
   Shield,
+  ShieldCheck,
   UserPlus,
   Users,
   X,
@@ -71,6 +72,14 @@ interface ProjectData {
     doc_type: string;
     status: string;
     version: number;
+  }>;
+  verification_documents: Array<{
+    id: number;
+    title: string;
+    comment: string | null;
+    file_ref: string | null;
+    uploader_name: string | null;
+    created_at: string | null;
   }>;
   members: Array<{
     id: number;
@@ -599,6 +608,52 @@ export default function ProjectDashboardPage() {
                         }}
                       >
                         {doc.status === 'approved' ? 'Утверждён' : doc.status === 'draft' ? 'Черновик' : doc.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Верифицирующие документы (подтверждение УГТ от регулирующей организации / участников) */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck size={20} className="text-[#10B981]" />
+                <h2 className="text-lg font-bold text-[#0F172A]">Верифицирующие документы</h2>
+                {project.verification_documents.length > 0 && (
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
+                    {project.verification_documents.length}
+                  </span>
+                )}
+              </div>
+              {project.verification_documents.length === 0 ? (
+                <p className="text-sm text-gray-400">
+                  Документы подтверждения УГТ не загружены. Регулирующая организация
+                  или участники могут добавить их после вступления в проект.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {project.verification_documents.map((v) => (
+                    <div
+                      key={v.id}
+                      className="flex items-start justify-between gap-4 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <ShieldCheck size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                        <div>
+                          <p className="font-medium text-[#0F172A]">{v.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {v.uploader_name ?? 'Пользователь'}
+                            {v.created_at ? ` · ${new Date(v.created_at).toLocaleDateString('ru-RU')}` : ''}
+                          </p>
+                          {v.comment && <p className="mt-1 text-xs text-gray-500">{v.comment}</p>}
+                          {v.file_ref && (
+                            <p className="mt-1 break-all font-mono text-xs text-gray-400">{v.file_ref}</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                        Подтверждение УГТ
                       </span>
                     </div>
                   ))}

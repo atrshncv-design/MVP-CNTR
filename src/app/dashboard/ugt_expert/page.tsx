@@ -4,84 +4,20 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  AlertCircle,
-  Check,
-  CheckCircle2,
-  ClipboardCheck,
-  Loader2,
-  RefreshCw,
-  Shield,
-  X,
-} from 'lucide-react';
+import { AlertCircle, FileCheck, FolderKanban, Loader2, RefreshCw } from 'lucide-react';
 import JoinProjectForm from '@/components/join-project-form';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
-import { AssessUgTCard } from "@/components/assess-ugt-card";
+import { AssessUgTCard } from '@/components/assess-ugt-card';
 import VerificationDocsPanel from '@/components/verification-docs-panel';
 
-interface ControlPoint {
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+
+interface JoinedProject {
   id: number;
-  title: string;
-  description: string | null;
-  point_type: string;
-  status: string;
-  decision: string | null;
+  name: string;
+  current_level: number;
+  target_level: number;
+  docs_count: number;
 }
-
-interface ProjectDetail {
-  project: {
-    id: number;
-    name: string;
-    description: string | null;
-    category: string | null;
-    target_level: number;
-    current_level: number;
-    status: string;
-    budget: number | null;
-    created_by: number | null;
-  };
-  control_points: ControlPoint[];
-  documents: Array<{ id: number; title: string; doc_type: string; status: string; version: number }>;
-  members: Array<{ id: number; user_id: number; role_in_project: string; is_priority: boolean }>;
-}
-
-const PROJECT_STATUS_LABELS: Record<string, string> = {
-  draft: 'Черновик',
-  active: 'В работе',
-  review: 'На проверке',
-  completed: 'Завершён',
-  rejected: 'Отклонён',
-};
-
-const PROJECT_STATUS_COLORS: Record<string, string> = {
-  draft: '#94A3B8',
-  active: '#2E5BFF',
-  review: '#E5C840',
-  completed: '#10B981',
-  rejected: '#EF4444',
-};
-
-const CP_STATUS_LABELS: Record<string, string> = {
-  pending: 'Ожидает решения',
-  in_review: 'На проверке',
-  approved: 'Подтверждена',
-  rejected: 'Отклонена',
-  verified: 'Верифицирована',
-  closed: 'Закрыта',
-};
-
-const CP_STATUS_COLORS: Record<string, string> = {
-  pending: '#E5C840',
-  in_review: '#2E5BFF',
-  approved: '#10B981',
-  rejected: '#EF4444',
-  verified: '#10B981',
-  closed: '#94A3B8',
-};
-
-/** Точки, по которым решение уже принято — кнопки не показываем */
-const DECIDED_STATUSES = new Set(['approved', 'rejected', 'verified', 'closed']);
 
 /** Достаёт человекочитаемое сообщение об ошибке из ответа FastAPI */
 function extractError(data: unknown, fallback: string): string {
@@ -96,13 +32,11 @@ function extractError(data: unknown, fallback: string): string {
   return fallback;
 }
 
-export default function UgtExpertDashboard() {
+export default function RegulatingOrganizationDashboard() {
   const { data: session } = useSession();
-  const [projects, setProjects] = useState<ProjectDetail[]>([]);
+  const [projects, setProjects] = useState<JoinedProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [deciding, setDeciding] = useState<{ projectId: number; cpId: number } | null>(null);
 
   const displayName = session?.user?.name ?? session?.user?.email ?? 'Регулирующая организация';
 
@@ -118,92 +52,50 @@ export default function UgtExpertDashboard() {
         throw new Error(`Не удалось загрузить проекты (${res.status}).`);
       }
       const list = (await res.json()) as Array<{ id: number }>;
-      // Загружаем детали параллельно, чтобы получить контрольные точки
+      // Параллельно берём карточки, чтобы посчитать верифицирующие документы по каждому проекту
       const details = await Promise.all(
         list.map(async (p) => {
           const dres = await fetch(`${API_URL}/api/v1/projects/${p.id}`, {
             headers: { Authorization: `Bearer ${session.user.accessToken}` },
           });
           if (!dres.ok) return null;
-          return (await dres.json()) as ProjectDetail;
+          const data = (await dres.json()) as {
+            project: { id: number; name: string; current_level: number; target_level: number };
+            verification_documents?: Array<{ id: number }>;
+          };
+          return {
+            id: data.project.id,
+            name: data.project.name,
+            current_level: data.project.current_level,
+            target_level: data.project.target_level,
+            docs_count: (data.verification_documents ?? []).length,
+          };
         }),
       );
-      setProjects(details.filter((d): d is ProjectDetail => d !== null));
+      setProjects(details.filter((d): d is JoinedProject => d !== null));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты.');
+      setError(extractError(e, 'Не удалось загрузить проекты.'));
     } finally {
       setLoading(false);
     }
   }, [session]);
 
   useEffect(() => {
-    // setState внутри loadProjects выполняется после await — не синхронно с телом эффекта
     (async () => {
       await loadProjects();
     })();
   }, [loadProjects]);
 
-  /** Верификация контрольной точки экспертом УГТ */
-  const decideControlPoint = useCallback(
-    async (projectId: number, cpId: number, status: 'approved' | 'rejected') => {
-      if (!session?.user?.accessToken) return;
-      setDeciding({ projectId, cpId });
-      setActionError(null);
-      try {
-        const decision =
-          status === 'approved' ? 'Критерии подтверждены' : 'Критерии не подтверждены';
-        const res = await fetch(
-          `${API_URL}/api/v1/projects/${projectId}/control-points/${cpId}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${session.user.accessToken}`,
-            },
-            body: JSON.stringify({ status, decision }),
-          },
-        );
-        if (!res.ok) {
-          const data = await res.json().catch(() => null);
-          throw new Error(extractError(data, `Ошибка верификации точки (${res.status}).`));
-        }
-        // Обновляем локальное состояние
-        setProjects((prev) =>
-          prev.map((d) =>
-            d.project.id === projectId
-              ? {
-                  ...d,
-                  control_points: d.control_points.map((cp) =>
-                    cp.id === cpId ? { ...cp, status, decision } : cp,
-                  ),
-                }
-              : d,
-          ),
-        );
-      } catch (e) {
-        setActionError(e instanceof Error ? e.message : 'Не удалось верифицировать точку.');
-      } finally {
-        setDeciding(null);
-      }
-    },
-    [session],
-  );
-
-  const pendingPoints = projects.reduce(
-    (acc, d) => acc + d.control_points.filter((cp) => !DECIDED_STATUSES.has(cp.status)).length,
-    0,
-  );
+  const totalDocs = projects.reduce((acc, p) => acc + p.docs_count, 0);
 
   const statCards = [
-    { label: 'Проекты на верификации', value: projects.length, icon: ClipboardCheck, color: '#2E5BFF' },
-    { label: 'Точки ожидают решения', value: pendingPoints, icon: Shield, color: '#E5C840' },
-    { label: 'Подтверждено', value: projects.reduce((acc, d) => acc + d.control_points.filter((cp) => cp.status === 'approved' || cp.status === 'verified').length, 0), icon: CheckCircle2, color: '#10B981' },
-    { label: 'Отклонено', value: projects.reduce((acc, d) => acc + d.control_points.filter((cp) => cp.status === 'rejected').length, 0), icon: X, color: '#EF4444' },
+    { label: 'Проекты', value: projects.length, icon: FolderKanban, color: '#2E5BFF' },
+    { label: 'Верифицирующие документы', value: totalDocs, icon: FileCheck, color: '#10B981' },
   ];
 
   return (
     <section>
-      {/* Hero-блок в стиле ЛК ГК */}
+      {/* Hero-блок */}
       <div className="border-b border-[#DFE5EC] pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
           Рабочий стол регулирующей организации
@@ -212,30 +104,26 @@ export default function UgtExpertDashboard() {
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-slate-600">
-          Присоединяйтесь к проектам по токену, верифицируйте контрольные точки по
-          чек-листам ГОСТ Р 58048-2017 и добавляйте документы подтверждения УГТ.
+          Присоединяйтесь к карточке проекта по токену TZ-XXXXXX и добавляйте
+          документы подтверждения УГТ — они станут основанием для решения менеджера ЦНТР.
         </p>
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-[#DFE5EC]">
         <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-[#0F172A]">
-          Верификация
+          Документы подтверждения
         </span>
         <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-[#0F172A]">
           Реестр технологий
         </Link>
       </nav>
 
-      {/* Статистика */}
       {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
       <div className="mt-6">
         <AssessUgTCard />
       </div>
-      <div className="mt-6">
-        <JoinProjectForm />
-        <div className="mt-4"><VerificationDocsPanel /></div>
-      </div>
 
+      {/* Статистика */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
@@ -259,24 +147,32 @@ export default function UgtExpertDashboard() {
               {loading ? (
                 <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
               ) : (
-                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-[#0F172A]">{card.value}</p>
+                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-[#0F172A]">
+                  {card.value}
+                </p>
               )}
             </motion.div>
           );
         })}
       </div>
 
-      {actionError && (
+      {error && (
         <div className="mt-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          {actionError}
+          {error}
+          <button
+            onClick={() => loadProjects()}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+          >
+            <RefreshCw size={13} /> Повторить
+          </button>
         </div>
       )}
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Проекты на верификацию */}
+        {/* Проекты, к которым присоединилась организация */}
         <div>
-          <h2 className="mb-4 text-lg font-bold text-[#0F172A]">Проекты на верификацию</h2>
+          <h2 className="mb-4 text-lg font-bold text-[#0F172A]">Мои проекты</h2>
 
           {loading ? (
             <div className="rounded-[14px] border border-[#DFE5EC] bg-white p-6">
@@ -297,118 +193,59 @@ export default function UgtExpertDashboard() {
           ) : projects.length === 0 ? (
             <div className="rounded-[14px] border border-[#DFE5EC] bg-white px-6 py-14 text-center sm:px-10">
               <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
-                <ClipboardCheck size={22} className="text-[#2E5BFF]" />
+                <FolderKanban size={22} className="text-[#2E5BFF]" />
               </div>
               <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-[#0F172A]">
-                Проектов на верификации нет
+                Пока нет проектов
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-slate-600">
-                Присоединитесь по токену к проекту, контрольные точки которого нужно
-                проверить, — и они появятся в этом списке.
+                Присоединитесь к карточке проекта по токену TZ — и она появится
+                в этом списке. После вступления вам станет доступна загрузка
+                верифицирующих документов.
               </p>
             </div>
           ) : (
             <div className="grid gap-5">
-              {projects.map((detail) => {
-                const p = detail.project;
-                const color = PROJECT_STATUS_COLORS[p.status] ?? '#94A3B8';
-                return (
-                  <motion.div
-                    key={p.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border border-[#E8ECF0] bg-white p-5 sm:p-6"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-slate-500">ЦНТР-{p.id}</span>
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                            style={{ background: `${color}15`, color }}
-                          >
-                            {PROJECT_STATUS_LABELS[p.status] ?? p.status}
-                          </span>
-                        </div>
-                        <Link
-                          href={`/dashboard/project/${p.id}`}
-                          className="mt-1 block text-lg font-bold text-[#0F172A] transition hover:text-[#2E5BFF]"
-                        >
-                          {p.name}
-                        </Link>
-                        <p className="mt-1 text-sm text-slate-600">
-                          {p.category ?? 'Категория не указана'} · УГТ {p.current_level} → {p.target_level}
-                        </p>
+              {projects.map((p) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border border-[#E8ECF0] bg-white p-5 sm:p-6"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-slate-500">ЦНТР-{p.id}</span>
+                        <span className="rounded-full bg-[#EAF0FF] px-2 py-0.5 text-[11px] font-medium text-[#2E5BFF]">
+                          УГТ {p.current_level} → {p.target_level}
+                        </span>
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                          {p.docs_count} доказ.
+                      </span>
                       </div>
+                      <Link
+                        href={`/dashboard/project/${p.id}`}
+                        className="mt-1 block text-lg font-bold text-[#0F172A] transition hover:text-[#2E5BFF]"
+                      >
+                        {p.name}
+                      </Link>
                     </div>
-
-                    <div className="mt-4 space-y-3">
-                      {detail.control_points.length === 0 ? (
-                        <p className="text-sm text-slate-400">Контрольные точки не заданы</p>
-                      ) : (
-                        detail.control_points.map((cp) => {
-                          const cpColor = CP_STATUS_COLORS[cp.status] ?? '#94A3B8';
-                          const isDecided = DECIDED_STATUSES.has(cp.status);
-                          const isBusy = deciding?.projectId === p.id && deciding?.cpId === cp.id;
-                          return (
-                            <div
-                              key={cp.id}
-                              className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
-                                cp.point_type === 'gate' ? 'border-[#E5C840]/50 bg-[#FFFDF5]' : 'border-gray-100 bg-gray-50'
-                              }`}
-                            >
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <p className="font-semibold text-[#0F172A]">{cp.title}</p>
-                                  <span className="rounded bg-gray-200 px-2 py-0.5 text-[11px] text-gray-600">
-                                    {cp.point_type === 'gate' ? 'Ворота' : cp.point_type}
-                                  </span>
-                                  <span
-                                    className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                                    style={{ background: `${cpColor}15`, color: cpColor }}
-                                  >
-                                    {CP_STATUS_LABELS[cp.status] ?? cp.status}
-                                  </span>
-                                </div>
-                                {cp.description && (
-                                  <p className="mt-1 text-sm text-slate-500">{cp.description}</p>
-                                )}
-                                {cp.decision && (
-                                  <p className="mt-1 text-xs font-medium text-slate-500">
-                                    Решение: {cp.decision}
-                                  </p>
-                                )}
-                              </div>
-                              {!isDecided && (
-                                <div className="flex shrink-0 gap-2">
-                                  <button
-                                    onClick={() => decideControlPoint(p.id, cp.id, 'approved')}
-                                    disabled={deciding !== null}
-                                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#10B981] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0EA371] disabled:opacity-50"
-                                  >
-                                    {isBusy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                                    Подтвердить
-                                  </button>
-                                  <button
-                                    onClick={() => decideControlPoint(p.id, cp.id, 'rejected')}
-                                    disabled={deciding !== null}
-                                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-                                  >
-                                    <X size={13} />
-                                    Отклонить
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    <Link
+                      href={`/dashboard/project/${p.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#2E5BFF] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1E4BD8]"
+                    >
+                      <FileCheck size={15} /> Документы проекта
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           )}
+
+          <div className="mt-6">
+            <VerificationDocsPanel />
+          </div>
         </div>
 
         {/* Вступление по токену */}
