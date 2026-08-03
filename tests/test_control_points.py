@@ -51,7 +51,7 @@ def test_project_creation_seeds_control_points(client: TestClient) -> None:
 
 def test_expert_can_decide_control_point(client: TestClient) -> None:
     owner_token = _register(client)
-    expert_token = _register(client, "ugt_expert")
+    expert_token = _register(client, "regulating_organization")
     project_id = _create_project(client, owner_token)
 
     detail = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))

@@ -140,6 +140,8 @@ class Project(Base):
     category: Mapped[str | None] = mapped_column(String(100))
     target_level: Mapped[int] = mapped_column(Integer, nullable=False, default=9)
     current_level: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    preliminary_level: Mapped[int | None] = mapped_column(SmallInteger)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     budget: Mapped[float | None] = mapped_column(Numeric(15, 2))
     join_token: Mapped[str] = mapped_column(
@@ -222,6 +224,9 @@ class ProjectDocument(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     doc_type: Mapped[str] = mapped_column(String(64), nullable=False)
     file_url: Mapped[str | None] = mapped_column(Text)
+    stage_requirement_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.stage_requirements.id"), nullable=True
+    )
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     uploaded_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
@@ -279,6 +284,75 @@ class Organization(Base):
     region: Mapped[str | None] = mapped_column(String(128))
     competencies: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)
     projects_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class StageRequirement(Base):
+    __tablename__ = "stage_requirements"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    from_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    to_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class PromotionRequest(Base):
+    __tablename__ = "promotion_requests"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    from_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    to_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="docs_uploaded")
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    manager_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    evaluation_result: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class VerificationDocument(Base):
+    __tablename__ = "verification_documents"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    uploader_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text)
+    file_ref: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
+    )
+    type: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

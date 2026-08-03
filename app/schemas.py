@@ -306,3 +306,112 @@ class ChatMessage(BaseModel):
 class ChatOut(BaseModel):
     reply: ChatMessage
     sources: list[RagDocumentOut] = []
+
+
+# ─── Новое ядро (тикеты 20-25) ───────────────────────────────────────────────
+
+
+class AssessmentIn(BaseModel):
+    name: str | None = Field(default=None, max_length=255)
+    description: str | None = None
+    questionnaire_results: list[QuestionnaireAnswerIn] = Field(min_length=1)
+
+
+class DraftProjectOut(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+    category: str | None = None
+    preliminary_level: int | None = None
+    current_level: int = 0
+    target_level: int = 9
+    status: str
+    rejection_reason: str | None = None
+    created_at: str | None = None
+    questionnaire_results: list[QuestionnaireResultOut] = []
+
+
+class DraftDecisionIn(BaseModel):
+    approve: bool
+    level: int | None = Field(default=None, ge=1, le=9)
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class PromotionRequestOut(BaseModel):
+    id: int
+    project_id: int
+    project_name: str
+    from_level: int
+    to_level: int
+    status: str
+    rejection_reason: str | None = None
+    attempt_no: int = 1
+    evaluation_result: dict = {}
+    created_at: str | None = None
+    stage_docs: list[dict] = []
+    verification_docs: list[dict] = []
+
+
+class PromotionDecisionIn(BaseModel):
+    approve: bool
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class StageRequirementOut(BaseModel):
+    id: int
+    from_level: int
+    to_level: int
+    title: str
+    description: str
+    uploaded: bool = False
+
+
+class StageDocumentIn(BaseModel):
+    stage_requirement_id: int
+    title: str = Field(min_length=1, max_length=255)
+    content: str = Field(min_length=1, max_length=20000)
+
+
+class StageEvaluateOut(BaseModel):
+    request_id: int | None = None
+    success: bool
+    missing: list[str] = []
+    summary: str = ""
+
+
+class VerificationDocIn(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    comment: str | None = None
+    file_ref: str | None = None
+
+
+class VerificationDocOut(BaseModel):
+    id: int
+    project_id: int
+    uploader_id: int
+    uploader_name: str | None = None
+    title: str
+    comment: str | None = None
+    file_ref: str | None = None
+    created_at: str | None = None
+
+
+class RegistryProjectOut(BaseModel):
+    id: int
+    name: str
+    category: str | None = None
+    current_level: int = 0
+    preliminary_level: int | None = None
+    target_level: int = 9
+    budget: float | None = None
+    organization: str | None = None
+    created_at: str | None = None
+
+
+class NotificationOut(BaseModel):
+    id: int
+    type: str
+    title: str
+    payload: dict = {}
+    is_read: bool = False
+    created_at: str | None = None
