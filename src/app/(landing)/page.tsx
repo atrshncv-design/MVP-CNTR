@@ -129,11 +129,6 @@ export default function LandingHome() {
           <Reveal delay={0.15} className="hidden lg:block">
             <div className="tz-glass relative flex aspect-square items-center justify-center rounded-3xl p-8 text-tz-accent">
               <LivingRadar className="w-full max-w-[300px]" />
-              <div className="absolute bottom-6 left-6 right-6 text-center">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-tz-hero-muted">
-                  Радар зрелости · 4 категории
-                </p>
-              </div>
             </div>
           </Reveal>
         </div>

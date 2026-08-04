@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 /**
  * LivingRadar — анимированный «дышащий» радар.
  * Симметричный 4-осевой радар с вращающимся по часовой стрелке сканером.
+ * Метки осей — HTML-элементы вокруг SVG (не обрезаются и не «плывут»).
  */
 const AXES = [
   { label: "Научная", angle: 0 },
@@ -30,8 +31,13 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
 
   const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(" ");
 
-  // Метки на осях (снаружи круга)
-  const labelDist = r + 16;
+  // Позиции HTML-меток (север/восток/юг/запад) — текст по центру оси, без обрезки
+  const LABEL_POSITIONS = [
+    "left-1/2 top-0 -translate-x-1/2",
+    "right-1 top-1/2 -translate-y-1/2 text-right",
+    "bottom-0 left-1/2 -translate-x-1/2",
+    "left-1 top-1/2 -translate-y-1/2",
+  ];
 
   return (
     <div className={`relative ${className}`}>
@@ -121,32 +127,17 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
 
         {/* Центральная точка */}
         <circle cx={cx} cy={cy} r="2.5" fill="currentColor" />
-
-        {/* Метки осей */}
-        {AXES.map((axis, i) => {
-          const angle = (axis.angle - 90) * (Math.PI / 180);
-          const lx = cx + Math.cos(angle) * labelDist;
-          const ly = cy + Math.sin(angle) * labelDist;
-          return (
-            <text
-              key={i}
-              x={lx}
-              y={ly}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="fill-current"
-              style={{
-                fontSize: "8px",
-                fontWeight: 600,
-                opacity: 0.5,
-                fontFamily: "var(--font-mono)",
-              }}
-            >
-              {axis.label}
-            </text>
-          );
-        })}
       </svg>
+
+      {/* Метки осей — HTML, центрируются и не обрезаются */}
+      {AXES.map((axis, i) => (
+        <span
+          key={axis.label}
+          className={`absolute whitespace-nowrap font-mono text-[10px] font-semibold opacity-60 ${LABEL_POSITIONS[i]}`}
+        >
+          {axis.label}
+        </span>
+      ))}
     </div>
   );
 }
