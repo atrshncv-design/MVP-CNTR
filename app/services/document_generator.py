@@ -133,6 +133,7 @@ async def generate_document(
         status="draft",
         version=1,
         uploaded_by=user_id,
+        file_url=content,  # сохраняем сгенерированный контент (BE-LOGIC-004)
     )
     db.add(document)
     db.add(
