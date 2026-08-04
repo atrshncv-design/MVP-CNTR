@@ -15,7 +15,6 @@ dependencies = [
     "pgvector>=0.3.6",
     "psycopg[binary]>=3.2",
     "python-dotenv>=1.0",
-    "structlog>=24.4",
     "greenlet>=3.5.3",
     "passlib[bcrypt]>=1.7.4",
     "python-jose[cryptography]>=3.5.0",
