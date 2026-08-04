@@ -434,10 +434,10 @@ export default function ProjectDashboardPage() {
               <div className="flex items-center justify-center">
                 <ResponsiveContainer width="100%" height={320}>
                   <RadarChart data={radarData}>
-                    <PolarGrid stroke="#E8ECF0" />
+                    <PolarGrid stroke="var(--tz-border)" />
                     <PolarAngleAxis
                       dataKey="level"
-                      tick={{ fontSize: 11, fill: '#64748B' }}
+                      tick={{ fontSize: 11, fill: 'var(--tz-muted)' }}
                     />
                     <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                     <Radar
@@ -537,7 +537,7 @@ export default function ProjectDashboardPage() {
                       </div>
                       <div className="text-right">
                         {cp.status === 'approved' ? (
-                          <span className="flex items-center gap-1 text-sm font-semibold text-green-600">
+                          <span className="flex items-center gap-1 text-sm font-semibold text-tz-success">
                             <CheckCircle size={16} /> Одобрено
                           </span>
                         ) : cp.status === 'rejected' ? (
@@ -545,7 +545,7 @@ export default function ProjectDashboardPage() {
                             <XCircle size={16} /> Отклонено
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 text-sm font-semibold text-yellow-600">
+                          <span className="flex items-center gap-1 text-sm font-semibold text-tz-warning">
                             <Clock size={16} /> Ожидает
                           </span>
                         )}
@@ -800,17 +800,17 @@ export default function ProjectDashboardPage() {
                 <div
                   className={`rounded-xl p-4 ${
                     kt1.status === 'approved'
-                      ? 'bg-green-50 border border-green-200'
+                      ? 'bg-tz-success-soft border border-tz-success/30'
                       : kt1.status === 'rejected'
                         ? 'bg-tz-danger-soft border border-tz-danger'
-                        : 'bg-yellow-50 border border-yellow-200'
+                        : 'bg-tz-warning-soft border border-tz-warning/30'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {kt1.status === 'approved' ? (
                       <>
-                        <CheckCircle size={20} className="text-green-600" />
-                        <span className="font-semibold text-green-700">Go: Проект одобрен</span>
+                        <CheckCircle size={20} className="text-tz-success" />
+                        <span className="font-semibold text-tz-success">Go: Проект одобрен</span>
                       </>
                     ) : kt1.status === 'rejected' ? (
                       <>
@@ -819,8 +819,8 @@ export default function ProjectDashboardPage() {
                       </>
                     ) : (
                       <>
-                        <Clock size={20} className="text-yellow-600" />
-                        <span className="font-semibold text-yellow-700">Ожидает решения</span>
+                        <Clock size={20} className="text-tz-warning" />
+                        <span className="font-semibold text-tz-warning">Ожидает решения</span>
                       </>
                     )}
                   </div>

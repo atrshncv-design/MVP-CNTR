@@ -157,7 +157,7 @@ export default function ExecutorsPage() {
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       exec.id < 0
-                        ? 'bg-indigo-50 text-indigo-600'
+                        ? 'bg-tz-accent-soft text-tz-accent'
                         : 'bg-tz-success-soft text-tz-success'
                     }`}
                     title={exec.id < 0 ? 'Карточка организации' : 'Карточка пользователя'}
