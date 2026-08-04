@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 /**
  * LivingRadar — анимированный «дышащий» радар.
  * Симметричный 4-осевой радар с вращающимся по часовой стрелке сканером.
- * Метки осей — HTML-элементы вокруг SVG (не обрезаются и не «плывут»).
+ * Метки осей — в отдельных ячейках CSS-сетки (никогда не налезают на SVG).
  */
 const AXES = [
   { label: "Научная", angle: 0 },
@@ -31,17 +31,33 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
 
   const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(" ");
 
-  // Позиции HTML-меток (север/восток/юг/запад) — текст по центру оси, без обрезки
-  const LABEL_POSITIONS = [
-    "left-1/2 top-0 -translate-x-1/2",
-    "right-1 top-1/2 -translate-y-1/2 text-right",
-    "bottom-0 left-1/2 -translate-x-1/2",
-    "left-1 top-1/2 -translate-y-1/2",
-  ];
-
   return (
-    <div className={`relative ${className}`}>
-      <svg viewBox="0 0 200 200" className="h-full w-full">
+    <div className={`grid grid-cols-[auto_1fr_auto] grid-rows-[auto_1fr_auto] items-center justify-items-center gap-1 ${className}`}>
+      {/* Метка сверху (Научная) */}
+      <span className="col-start-2 row-start-1 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
+        {AXES[0].label}
+      </span>
+
+      {/* Метка справа (Техническая) */}
+      <span className="col-start-3 row-start-2 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
+        {AXES[1].label}
+      </span>
+
+      {/* Метка снизу (Организационная) */}
+      <span className="col-start-2 row-start-3 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
+        {AXES[2].label}
+      </span>
+
+      {/* Метка слева (Производственная) */}
+      <span className="col-start-1 row-start-2 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
+        {AXES[3].label}
+      </span>
+
+      {/* Радар (центр сетки) */}
+      <svg
+        viewBox="0 0 200 200"
+        className="col-start-2 row-start-2 aspect-square w-full"
+      >
         {/* Кольца */}
         {[0.33, 0.66, 1].map((scale) => (
           <circle
@@ -128,16 +144,6 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
         {/* Центральная точка */}
         <circle cx={cx} cy={cy} r="2.5" fill="currentColor" />
       </svg>
-
-      {/* Метки осей — HTML, центрируются и не обрезаются */}
-      {AXES.map((axis, i) => (
-        <span
-          key={axis.label}
-          className={`absolute whitespace-nowrap font-mono text-[10px] font-semibold opacity-60 ${LABEL_POSITIONS[i]}`}
-        >
-          {axis.label}
-        </span>
-      ))}
     </div>
   );
 }
