@@ -57,9 +57,6 @@ export default function LandingNav({
           <span className="font-display text-[15px] font-bold tracking-tight text-tz-fg">
             Технозрелость
           </span>
-          <span className="hidden font-mono text-[10px] uppercase tracking-widest text-tz-muted sm:inline">
-            ЦНТР УР
-          </span>
         </Link>
 
         {/* Навигация (десктоп) */}

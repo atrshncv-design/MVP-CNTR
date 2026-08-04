@@ -124,14 +124,6 @@ export default function LandingHome() {
                 </Link>
               </div>
             </Reveal>
-            <Reveal delay={0.2}>
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[11px] uppercase tracking-widest text-tz-muted">
-                <span>ГОСТ Р 58048-2017</span>
-                <span>9 уровней УГТ</span>
-                <span>9 ролей</span>
-                <span>4 категории</span>
-              </div>
-            </Reveal>
           </div>
 
           {/* Живой радар (D10) */}
@@ -327,7 +319,7 @@ export default function LandingHome() {
               <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-tz-bg transition-transform hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 rounded-xl bg-tz-accent px-5 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
                 >
                   Зарегистрироваться <ArrowRight className="h-4 w-4" />
                 </Link>
