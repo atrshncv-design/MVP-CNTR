@@ -89,7 +89,9 @@ def _clean_tables() -> Iterator[None]:
     )
     try:
         conn.execute(
-            "TRUNCATE TABLE public.audit_trail, public.project_documents, "
+            "TRUNCATE TABLE public.assessment_answers, public.project_assessments, "
+            "public.assessment_checkpoints, public.assessment_templates, "
+            "public.audit_trail, public.project_documents, "
             "public.control_points, public.questionnaire_results, "
             "public.project_members, public.projects, public.rag_documents, "
             "public.technologies, public.organizations, "

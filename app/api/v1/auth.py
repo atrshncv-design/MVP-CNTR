@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
-from app.core.deps import CurrentUser, DBSession
+from app.core.deps import CNTR_STAFF_SLUGS, CurrentUser, DBSession
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.models import User, stmt_role_by_slug, stmt_user_by_email
 from app.schemas import LoginIn, RegisterIn, RoleOut, TokenOut, UserOut
@@ -13,6 +13,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
 async def register(payload: RegisterIn, db: DBSession) -> TokenOut:
+    if payload.role_slug in CNTR_STAFF_SLUGS:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Роли работников ЦНТР назначаются администратором центра",
+        )
+
     role = await db.scalar(stmt_role_by_slug(payload.role_slug))
     if role is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Неизвестная роль: {payload.role_slug}")

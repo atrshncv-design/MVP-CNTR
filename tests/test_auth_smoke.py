@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -104,3 +105,17 @@ def test_unknown_role_rejected(client: TestClient) -> None:
         },
     )
     assert response.status_code == 400
+
+
+@pytest.mark.parametrize("role", ["cntr_admin", "cntr_manager"])
+def test_cntr_staff_role_cannot_be_self_registered(client: TestClient, role: str) -> None:
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": _unique_email(),
+            "password": "Probe12345",
+            "full_name": "Untrusted User",
+            "role_slug": role,
+        },
+    )
+    assert response.status_code == 403

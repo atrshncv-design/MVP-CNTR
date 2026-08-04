@@ -7,21 +7,17 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.services import ai_assistant
+from tests.support import register_test_user
 
 
 def _register(client: TestClient, role: str = "rd_executor") -> str:
     email = f"chat-{uuid.uuid4().hex[:8]}@example.com"
-    response = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": email,
-            "password": "Probe12345",
-            "full_name": "Chat User",
-            "role_slug": role,
-        },
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["access_token"]
+    return register_test_user(
+        client,
+        email=email,
+        full_name="Chat User",
+        role_slug=role,
+    )["access_token"]
 
 
 def _auth(token: str) -> dict[str, str]:

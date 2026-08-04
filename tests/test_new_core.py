@@ -8,22 +8,18 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.api.v1 import stages as stages_module
+from tests.support import register_test_user
 
 
 def _register(client: TestClient, role: str = "gk_customer") -> tuple[str, int]:
     email = f"core-{uuid.uuid4().hex[:8]}@example.com"
-    response = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": email,
-            "password": "Probe12345",
-            "full_name": f"Core {role}",
-            "organization": "Орг",
-            "role_slug": role,
-        },
+    data = register_test_user(
+        client,
+        email=email,
+        full_name=f"Core {role}",
+        organization="Орг",
+        role_slug=role,
     )
-    assert response.status_code == 201, response.text
-    data = response.json()
     return data["access_token"], data["user"]["id"]
 
 

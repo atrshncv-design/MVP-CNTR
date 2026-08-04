@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field
+from typing import Literal
+
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class RoleOut(BaseModel):
@@ -111,6 +113,46 @@ class QuestionnaireResultOut(BaseModel):
     percentage: float
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class ReadinessEvidenceIn(BaseModel):
+    evidence_code: str = Field(min_length=1, max_length=64)
+    status: Literal["missing", "draft", "ready", "verified"] = "missing"
+
+
+class ReadinessAnswerIn(BaseModel):
+    checkpoint_code: str = Field(min_length=3, max_length=16)
+    status: Literal[
+        "not_started",
+        "in_progress",
+        "formed",
+        "documented",
+        "verified",
+        "not_applicable",
+    ] = "not_started"
+    applicable: bool = True
+    comment: str | None = Field(default=None, max_length=2000)
+    evidence: list[ReadinessEvidenceIn] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_not_applicable_reason(self) -> ReadinessAnswerIn:
+        if self.status == "not_applicable" and not (self.comment or "").strip():
+            raise ValueError("Для ответа «Неприменимо» нужно указать обоснование.")
+        return self
+
+
+class ReadinessResultOut(BaseModel):
+    template_version: str
+    preliminary_ugt: int
+    completion_pct: float
+    evidence_pct: float
+    confidence_pct: float
+    latest_checkpoint: int
+    not_applicable_count: int
+    dimension_scores: dict[str, float] = {}
+    level_scores: list[dict] = []
+    blockers: list[dict] = []
+    checkpoint_results: list[dict] = []
 
 
 class ControlPointOut(BaseModel):
@@ -315,7 +357,11 @@ class ChatOut(BaseModel):
 class AssessmentIn(BaseModel):
     name: str | None = Field(default=None, max_length=255)
     description: str | None = None
-    questionnaire_results: list[QuestionnaireAnswerIn] = Field(min_length=1)
+    category: str | None = Field(default=None, max_length=100)
+    target_level: int = Field(default=9, ge=1, le=9)
+    questionnaire_results: list[QuestionnaireAnswerIn] = Field(default_factory=list)
+    answers: list[ReadinessAnswerIn] = Field(default_factory=list)
+    template_version: str | None = Field(default=None, max_length=64)
 
 
 class DraftProjectOut(BaseModel):
@@ -330,6 +376,8 @@ class DraftProjectOut(BaseModel):
     rejection_reason: str | None = None
     created_at: str | None = None
     questionnaire_results: list[QuestionnaireResultOut] = []
+    readiness_result: ReadinessResultOut | None = None
+    assessment_version: str | None = None
 
 
 class DraftDecisionIn(BaseModel):

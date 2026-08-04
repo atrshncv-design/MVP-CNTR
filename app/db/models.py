@@ -174,6 +174,87 @@ class QuestionnaireResult(Base):
     )
 
 
+class AssessmentTemplate(Base):
+    __tablename__ = "assessment_templates"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    version: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class AssessmentCheckpoint(Base):
+    __tablename__ = "assessment_checkpoints"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    template_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.assessment_templates.id", ondelete="CASCADE"), nullable=False
+    )
+    code: Mapped[str] = mapped_column(String(16), nullable=False)
+    order_no: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    ugt_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    dimensions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    critical: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    evidence: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+
+
+class ProjectAssessment(Base):
+    __tablename__ = "project_assessments"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("public.projects.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    template_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.assessment_templates.id"), nullable=False
+    )
+    template_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    preliminary_ugt: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    completion_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    evidence_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    confidence_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    latest_checkpoint: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    not_applicable_count: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
+    dimension_scores: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    level_scores: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    blockers: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class AssessmentAnswer(Base):
+    __tablename__ = "assessment_answers"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    assessment_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.project_assessments.id", ondelete="CASCADE"), nullable=False
+    )
+    checkpoint_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.assessment_checkpoints.id"), nullable=False
+    )
+    checkpoint_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    applicable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    comment: Mapped[str | None] = mapped_column(Text)
+    evidence: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    score_pct: Mapped[float | None] = mapped_column(Float)
+    evidence_pct: Mapped[float | None] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class ProjectMember(Base):
     __tablename__ = "project_members"
 
