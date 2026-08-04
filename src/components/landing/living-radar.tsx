@@ -4,8 +4,11 @@ import { motion } from "framer-motion";
 
 /**
  * LivingRadar — анимированный «дышащий» радар.
- * Симметричный 4-осевой радар с вращающимся по часовой стрелке сканером.
- * Метки осей — в отдельных ячейках CSS-сетки (никогда не налезают на SVG).
+ * Симметричный 4-осевой радар с лучом-сканером, вращающимся по часовой стрелке.
+ *
+ * Ключевой трюк луча: обёртка translate(100 100) + геометрия от (0,0),
+ * вращение вокруг собственного origin (0,0) = центр радара.
+ * Иначе framer-motion вращает вокруг центра bounding-box луча — «хаос».
  */
 const AXES = [
   { label: "Научная", angle: 0 },
@@ -31,33 +34,13 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
 
   const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(" ");
 
+  // Конец сектора луча: 45° вниз от оси +x (по часовой стрелке в экранных координатах)
+  const sweepEndX = r * Math.cos(Math.PI / 4);
+  const sweepEndY = r * Math.sin(Math.PI / 4);
+
   return (
-    <div className={`grid grid-cols-[auto_1fr_auto] grid-rows-[auto_1fr_auto] items-center justify-items-center gap-1 ${className}`}>
-      {/* Метка сверху (Научная) */}
-      <span className="col-start-2 row-start-1 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
-        {AXES[0].label}
-      </span>
-
-      {/* Метка справа (Техническая) */}
-      <span className="col-start-3 row-start-2 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
-        {AXES[1].label}
-      </span>
-
-      {/* Метка снизу (Организационная) */}
-      <span className="col-start-2 row-start-3 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
-        {AXES[2].label}
-      </span>
-
-      {/* Метка слева (Производственная) */}
-      <span className="col-start-1 row-start-2 whitespace-nowrap font-mono text-[10px] font-semibold opacity-60">
-        {AXES[3].label}
-      </span>
-
-      {/* Радар (центр сетки) */}
-      <svg
-        viewBox="0 0 200 200"
-        className="col-start-2 row-start-2 aspect-square w-full"
-      >
+    <div className={`relative ${className}`}>
+      <svg viewBox="0 0 200 200" className="aspect-square w-full">
         {/* Кольца */}
         {[0.33, 0.66, 1].map((scale) => (
           <circle
@@ -108,42 +91,55 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
           <circle key={i} cx={p.x} cy={p.y} r="3" fill="currentColor" />
         ))}
 
-        {/* Вращающийся луч-сканер: закреплён в центре, вращается по часовой стрелке */}
+        {/* Луч-сканер: центр радара в (0,0) через translate, вращение вокруг (0,0) */}
         <defs>
           <linearGradient id="radar-sweep" x1="0%" y1="50%" x2="100%" y2="50%">
             <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
             <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <motion.g
-          style={{ transformOrigin: `${cx}px ${cy}px` }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        >
-          {/* Сектор-заливка (широкий конец — внешний край) */}
-          <path
-            d={`M ${cx} ${cy}
-                L ${cx + r} ${cy}
-                A ${r} ${r} 0 0 0 ${cx + r * Math.cos(-Math.PI / 4)} ${cy + r * Math.sin(-Math.PI / 4)}
-                Z`}
-            fill="url(#radar-sweep)"
-            opacity="0.6"
-          />
-          {/* Сам луч (линия от центра к краю) */}
-          <line
-            x1={cx}
-            y1={cy}
-            x2={cx + r}
-            y2={cy}
-            stroke="currentColor"
-            strokeWidth="1.5"
-            opacity="0.5"
-          />
-        </motion.g>
+        <g transform={`translate(${cx} ${cy})`}>
+          <motion.g
+            style={{ originX: 0, originY: 0 }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          >
+            {/* Сектор-заливка (широкий конец — внешний край, 45° по часовой стрелке) */}
+            <path
+              d={`M 0 0 L ${r} 0 A ${r} ${r} 0 0 1 ${sweepEndX} ${sweepEndY} Z`}
+              fill="url(#radar-sweep)"
+              opacity="0.6"
+            />
+            {/* Сам луч (линия от центра к краю) */}
+            <line
+              x1={0}
+              y1={0}
+              x2={r}
+              y2={0}
+              stroke="currentColor"
+              strokeWidth="1.5"
+              opacity="0.5"
+            />
+          </motion.g>
+        </g>
 
         {/* Центральная точка */}
         <circle cx={cx} cy={cy} r="2.5" fill="currentColor" />
       </svg>
+
+      {/* Метки осей — в паддинг-желобе контейнера (не пересекаются с кольцами) */}
+      <span className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap font-mono text-[9px] font-semibold opacity-60">
+        {AXES[0].label}
+      </span>
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-right font-mono text-[9px] font-semibold opacity-60">
+        {AXES[1].label}
+      </span>
+      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[9px] font-semibold opacity-60">
+        {AXES[2].label}
+      </span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 whitespace-nowrap font-mono text-[9px] font-semibold opacity-60">
+        {AXES[3].label}
+      </span>
     </div>
   );
 }

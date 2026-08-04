@@ -128,7 +128,7 @@ export default function LandingHome() {
           {/* Живой радар (D10) */}
           <Reveal delay={0.15} className="hidden lg:block">
             <div className="tz-glass relative flex aspect-square items-center justify-center rounded-3xl p-8 text-tz-accent">
-              <LivingRadar className="w-full max-w-[340px]" />
+              <LivingRadar className="w-full max-w-[420px] px-12 py-3" />
             </div>
           </Reveal>
         </div>
