@@ -423,7 +423,7 @@ class StageDocumentIn(BaseModel):
 
 class StageEvaluateOut(BaseModel):
     request_id: int | None = None
-    success: bool
+    success: bool | None = None  # None = LLM unavailable
     missing: list[str] = []
     summary: str = ""
 

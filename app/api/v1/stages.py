@@ -86,8 +86,8 @@ async def _stage_reqs_with_status(
 
 async def _evaluate(
     project: Project, stage: StageRequirement, docs: list[ProjectDocument]
-) -> tuple[bool, list[str], str]:
-    """Предварительная оценка комплекта LLM по ГОСТам (RAG). Fallback без LLM — по полноте."""
+) -> tuple[bool | None, list[str], str]:
+    """Оценка комплекта LLM по ГОСТам (RAG). При отсутствии LLM — unavailable (None)."""
     if not docs:
         return False, [stage.title], "Комплект документов этапа не собран."
 
@@ -111,8 +111,8 @@ async def _evaluate(
 
     answer = await ask_llm(system, user_msg)
     if not answer:
-        # Без LLM-ключа: считаем комплект принятым при полном покрытии требований
-        return True, [], "Предварительная оценка: комплект документов принят (без LLM)."
+        # LLM недоступна — не пропускаем молча
+        return None, [], "Оценка недоступна: языковая модель не настроена."
 
     success = "SUCCESS" in answer.upper()
     missing = [
@@ -189,22 +189,38 @@ async def upload_stage_document(
 
     result: dict = {"doc_id": doc.id, "request_id": None, "request_status": None}
 
-    # Автотриггер: комплект полон → создаём заявку на повышение
+    # Автотриггер: комплект полон → создаём или обновляем заявку на повышение
     stage = await _current_stage(db, project)
     if stage is not None:
         reqs = await _stage_reqs_with_status(db, project, stage)
         if all(r.uploaded for r in reqs):
-            previous = await _latest_request(db, project.id)
-            attempt = (previous.attempt_no + 1) if previous else 1
-            request = PromotionRequest(
-                project_id=project.id,
-                from_level=project.current_level,
-                to_level=project.current_level + 1,
-                status="docs_uploaded",
-                attempt_no=attempt,
+            # Проверяем, нет ли уже активной заявки для этого уровня
+            active = await db.scalar(
+                select(PromotionRequest)
+                .where(
+                    PromotionRequest.project_id == project.id,
+                    PromotionRequest.from_level == project.current_level,
+                    PromotionRequest.status.in_(
+                        ["docs_uploaded", "pre_evaluated",
+                         "evaluation_unavailable", "pending_manager"]
+                    ),
+                )
             )
-            db.add(request)
-            await db.flush()
+            if active is not None:
+                request = active
+                attempt = active.attempt_no
+            else:
+                previous = await _latest_request(db, project.id)
+                attempt = (previous.attempt_no + 1) if previous else 1
+                request = PromotionRequest(
+                    project_id=project.id,
+                    from_level=project.current_level,
+                    to_level=project.current_level + 1,
+                    status="docs_uploaded",
+                    attempt_no=attempt,
+                )
+                db.add(request)
+                await db.flush()
 
             docs = list(
                 (
@@ -224,7 +240,7 @@ async def upload_stage_document(
                 "missing": missing,
                 "summary": summary,
             }
-            if success:
+            if success is True:
                 request.status = "pending_manager"
                 await notify_managers(
                     db,
@@ -232,6 +248,8 @@ async def upload_stage_document(
                     f"Автозаявка на повышение УГТ {project.name}",
                     {"project_id": project.id, "request_id": request.id},
                 )
+            elif success is None:
+                request.status = "evaluation_unavailable"
             db.add(
                 AuditTrailEntry(
                     project_id=project.id,
