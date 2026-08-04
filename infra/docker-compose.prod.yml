@@ -43,7 +43,7 @@ services:
 
   frontend:
     build:
-      context: ../technozrelost-frontend
+      context: ../../technozrelost-frontend
       args:
         NEXT_PUBLIC_API_URL: /api
     container_name: tz-prod-frontend
