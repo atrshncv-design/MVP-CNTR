@@ -192,6 +192,12 @@ export default function AiAssistantPage() {
         )}
         <div ref={bottomRef} />
       </div>
+      <div className="mx-4 mb-3 rounded-lg border border-tz-warning/30 bg-tz-warning-soft px-4 py-2.5 text-sm text-tz-fg">
+        <strong>Поиск по ГОСТам временно недоступен.</strong> Ассистент отвечает
+        на основе общих знаний модели, без цитирования разделов ГОСТов из базы
+        платформы. Цитирование будет восстановлено после подключения
+        эмбеддинг-модели.
+      </div>
 
       <div className="mt-4 flex gap-2">
         <input
