@@ -15,6 +15,7 @@ import {
   Clock,
   Copy,
   DollarSign,
+  Eye,
   FileText,
   Loader2,
   RefreshCw,
@@ -72,6 +73,7 @@ interface ProjectData {
     doc_type: string;
     status: string;
     version: number;
+    file_url: string | null;
   }>;
   verification_documents: Array<{
     id: number;
@@ -165,6 +167,9 @@ export default function ProjectDashboardPage() {
   const [generatingDoc, setGeneratingDoc] = useState<string | null>(null);
   const [generatedDoc, setGeneratedDoc] = useState<GeneratedDocument | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+
+  // Просмотр сохранённого контента документа (BE-LOGIC-004)
+  const [viewingDoc, setViewingDoc] = useState<{ title: string; content: string } | null>(null);
 
   // Шаринг join-токена
   const [tokenCopied, setTokenCopied] = useState(false);
@@ -600,6 +605,16 @@ export default function ProjectDashboardPage() {
                           </p>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        {doc.file_url && (
+                          <button
+                            onClick={() => setViewingDoc({ title: doc.title, content: doc.file_url ?? '' })}
+                            className="inline-flex items-center gap-1 rounded-lg border border-tz-border bg-tz-bg px-2.5 py-1.5 text-xs font-medium text-tz-secondary transition hover:border-tz-accent hover:text-tz-accent"
+                          >
+                            <Eye size={14} /> Просмотр
+                          </button>
+                        )}
+                      </div>
                       <span
                         className="rounded-full px-2 py-0.5 text-xs font-medium"
                         style={{
@@ -940,6 +955,49 @@ export default function ProjectDashboardPage() {
       </motion.div>
 
       {/* Модалка с текстом сгенерированного документа */}
+      {viewingDoc && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-8"
+          onClick={() => setViewingDoc(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-3xl rounded-2xl bg-tz-surface shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-tz-border p-5">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wide text-tz-muted">
+                  Документ проекта
+                </p>
+                <h3 className="mt-1 text-lg font-bold text-tz-fg">{viewingDoc.title}</h3>
+              </div>
+              <button
+                onClick={() => setViewingDoc(null)}
+                aria-label="Закрыть"
+                className="rounded-lg p-2 text-tz-muted transition hover:bg-tz-surface-2 hover:text-tz-secondary"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-5">
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-tz-secondary">
+                {viewingDoc.content}
+              </pre>
+            </div>
+            <div className="flex justify-end border-t border-tz-border p-4">
+              <button
+                onClick={() => setViewingDoc(null)}
+                className="rounded-lg bg-[#2E5BFF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#244BD9]"
+              >
+                Закрыть
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {generatedDoc && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-8"
