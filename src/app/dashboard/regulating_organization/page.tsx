@@ -51,28 +51,23 @@ export default function RegulatingOrganizationDashboard() {
       if (!res.ok) {
         throw new Error(`Не удалось загрузить проекты (${res.status}).`);
       }
-      const list = (await res.json()) as Array<{ id: number }>;
-      // Параллельно берём карточки, чтобы посчитать верифицирующие документы по каждому проекту
-      const details = await Promise.all(
-        list.map(async (p) => {
-          const dres = await fetch(`${API_URL}/api/v1/projects/${p.id}`, {
-            headers: { Authorization: `Bearer ${session.user.accessToken}` },
-          });
-          if (!dres.ok) return null;
-          const data = (await dres.json()) as {
-            project: { id: number; name: string; current_level: number; target_level: number };
-            verification_documents?: Array<{ id: number }>;
-          };
-          return {
-            id: data.project.id,
-            name: data.project.name,
-            current_level: data.project.current_level,
-            target_level: data.project.target_level,
-            docs_count: (data.verification_documents ?? []).length,
-          };
-        }),
+      const list = (await res.json()) as Array<{
+        id: number;
+        name: string;
+        current_level: number;
+        target_level: number;
+        verification_documents_count: number;
+      }>;
+      // Список проектов включает verification_documents_count (FE-004) — без N+1
+      setProjects(
+        list.map((p) => ({
+          id: p.id,
+          name: p.name,
+          current_level: p.current_level,
+          target_level: p.target_level,
+          docs_count: p.verification_documents_count ?? 0,
+        })),
       );
-      setProjects(details.filter((d): d is JoinedProject => d !== null));
     } catch (e) {
       setError(extractError(e, 'Не удалось загрузить проекты.'));
     } finally {

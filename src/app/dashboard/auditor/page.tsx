@@ -118,18 +118,9 @@ export default function AuditorDashboard() {
       if (!res.ok) {
         throw new Error(`Не удалось загрузить проекты (${res.status}).`);
       }
-      const list = (await res.json()) as Array<{ id: number }>;
-      // Загружаем детали параллельно, чтобы получить контрольные точки и документы
-      const details = await Promise.all(
-        list.map(async (p) => {
-          const dres = await fetch(`${API_URL}/api/v1/projects/${p.id}`, {
-            headers: { Authorization: `Bearer ${session.user.accessToken}` },
-          });
-          if (!dres.ok) return null;
-          return (await dres.json()) as ProjectDetail;
-        }),
-      );
-      setProjects(details.filter((d): d is ProjectDetail => d !== null));
+      // Список проектов теперь включает control_points (FE-004) — без N+1
+      const list = (await res.json()) as ProjectDetail[];
+      setProjects(list);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты.');
     } finally {
