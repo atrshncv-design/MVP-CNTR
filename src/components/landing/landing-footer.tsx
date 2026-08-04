@@ -22,7 +22,7 @@ export default function LandingFooter() {
           </div>
           <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-tz-muted">
             Цифровая платформа трансфера технологий Центра технологического развития
-            Удмуртской Республики. Оценка уровня готовности технологий по ГОСТ Р 58048-2017.
+            Удмуртской Республики.
           </p>
         </div>
 
@@ -54,9 +54,6 @@ export default function LandingFooter() {
               <Link href="/login" className="transition-colors hover:text-tz-fg">
                 Вход в личный кабинет
               </Link>
-            </li>
-            <li className="pt-2 font-mono text-[11px] text-tz-muted">
-              ГОСТ Р 58048-2017 · 9 уровней УГТ · 9 ролей
             </li>
           </ul>
         </div>

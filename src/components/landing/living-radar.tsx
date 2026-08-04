@@ -3,9 +3,8 @@
 import { motion } from "framer-motion";
 
 /**
- * LivingRadar — анимированный «дышащий» радар (D10).
- * Декоративный элемент hero лендинга: оси → заливка по 4 категориям,
- * плавно «дышит» (scale 1↔1.04), при наведении — вращение сканера.
+ * LivingRadar — анимированный «дышащий» радар.
+ * Симметричный 4-осевой радар с вращающимся по часовой стрелке сканером.
  */
 const AXES = [
   { label: "Научная", angle: 0 },
@@ -19,10 +18,10 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
   const cy = 100;
   const r = 72;
 
-  // Точки многоугольника (4 категории, асимметрично для «живого» вида)
-  const points = AXES.map((_, i) => {
-    const angle = (AXES[i].angle - 90) * (Math.PI / 180);
-    const dist = r * (0.55 + (i % 2) * 0.2 + (i === 0 ? 0.15 : 0));
+  // Симметричный многоугольник: все вершины на одинаковом расстоянии (0.82*r)
+  const dist = r * 0.82;
+  const points = AXES.map((axis) => {
+    const angle = (axis.angle - 90) * (Math.PI / 180);
     return {
       x: cx + Math.cos(angle) * dist,
       y: cy + Math.sin(angle) * dist,
@@ -31,14 +30,12 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
 
   const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(" ");
 
+  // Метки на осях (снаружи круга)
+  const labelDist = r + 16;
+
   return (
     <div className={`relative ${className}`}>
-      <motion.svg
-        viewBox="0 0 200 200"
-        className="w-full h-full"
-        animate={{ scale: [1, 1.04, 1] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      >
+      <svg viewBox="0 0 200 200" className="h-full w-full">
         {/* Кольца */}
         {[0.33, 0.66, 1].map((scale) => (
           <circle
@@ -72,56 +69,84 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
           );
         })}
 
-        {/* Заливка многоугольника (анимированное появление) */}
+        {/* Многоугольник (симметричный, дышащий) */}
         <motion.polygon
           points={polygonPoints}
           fill="currentColor"
-          fillOpacity="0.15"
+          fillOpacity="0.12"
           stroke="currentColor"
           strokeWidth="1.5"
-          initial={{ opacity: 0, scale: 0.3 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
           style={{ transformOrigin: `${cx}px ${cy}px` }}
+          animate={{ scale: [1, 1.04, 1], opacity: [0.85, 1, 0.85] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* Точки вершин */}
         {points.map((p, i) => (
-          <motion.circle
-            key={i}
-            cx={p.x}
-            cy={p.y}
-            r="3"
-            fill="currentColor"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 + i * 0.15, duration: 0.4 }}
-          />
+          <circle key={i} cx={p.x} cy={p.y} r="3" fill="currentColor" />
         ))}
 
-        {/* Вращающийся сканер */}
+        {/* Вращающийся луч-сканер: закреплён в центре, вращается по часовой стрелке */}
+        <defs>
+          <linearGradient id="radar-sweep" x1="0%" y1="50%" x2="100%" y2="50%">
+            <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
         <motion.g
           style={{ transformOrigin: `${cx}px ${cy}px` }}
           animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
         >
-          <defs>
-            <linearGradient id="radar-scan" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
-              <stop offset="100%" stopColor="currentColor" stopOpacity="0.25" />
-            </linearGradient>
-          </defs>
+          {/* Сектор-заливка (широкий конец — внешний край) */}
           <path
-            d={`M ${cx} ${cy} L ${cx + r} ${cy} A ${r} ${r} 0 0 1 ${
-              cx + r * Math.cos(Math.PI / 4)
-            } ${cy + r * Math.sin(Math.PI / 4)} Z`}
-            fill="url(#radar-scan)"
+            d={`M ${cx} ${cy}
+                L ${cx + r} ${cy}
+                A ${r} ${r} 0 0 0 ${cx + r * Math.cos(-Math.PI / 4)} ${cy + r * Math.sin(-Math.PI / 4)}
+                Z`}
+            fill="url(#radar-sweep)"
+            opacity="0.6"
+          />
+          {/* Сам луч (линия от центра к краю) */}
+          <line
+            x1={cx}
+            y1={cy}
+            x2={cx + r}
+            y2={cy}
+            stroke="currentColor"
+            strokeWidth="1.5"
+            opacity="0.5"
           />
         </motion.g>
 
         {/* Центральная точка */}
         <circle cx={cx} cy={cy} r="2.5" fill="currentColor" />
-      </motion.svg>
+
+        {/* Метки осей */}
+        {AXES.map((axis, i) => {
+          const angle = (axis.angle - 90) * (Math.PI / 180);
+          const lx = cx + Math.cos(angle) * labelDist;
+          const ly = cy + Math.sin(angle) * labelDist;
+          return (
+            <text
+              key={i}
+              x={lx}
+              y={ly}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="fill-current"
+              style={{
+                fontSize: "8px",
+                fontWeight: 600,
+                opacity: 0.5,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {axis.label}
+            </text>
+          );
+        })}
+      </svg>
     </div>
   );
 }

@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import {
   ArrowRight,
   ClipboardCheck,
-  Gauge,
   Layers,
   Route,
   ShieldCheck,
@@ -200,10 +199,6 @@ export default function LandingHome() {
           <h2 className="mt-3 max-w-2xl tz-page-title">
             Девять ролей — каждый участник работает в своём кабинете
           </h2>
-          <p className="mt-3 max-w-2xl text-[14px] text-tz-secondary">
-            Живая регистрация: выберите роль при входе и получите полностью рабочий
-            личный кабинет — без заглушек и демо-данных.
-          </p>
         </Reveal>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ROLES.map((r, i) => {
@@ -277,31 +272,6 @@ export default function LandingHome() {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* ── Дорожная карта (анонс) ───────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <Reveal>
-          <div className="tz-card flex flex-col items-start gap-5 p-8 md:flex-row md:items-center md:justify-between">
-            <div className="max-w-xl">
-              <div className="flex items-center gap-2">
-                <Gauge className="h-4 w-4 text-tz-accent-hover" />
-                <p className="tz-eyebrow">Развитие платформы</p>
-              </div>
-              <h2 className="mt-3 font-display text-xl font-bold text-tz-fg">
-                От MVP1 к промышленной эксплуатации
-              </h2>
-              <p className="mt-2 text-[13.5px] leading-relaxed text-tz-secondary">
-                Сдача рабочего MVP — 31.08.2026. Дальше: пилотные проекты, верификация
-                словаря документов этапов методологами Центра и деплой на сервер
-                организации.
-              </p>
-            </div>
-            <Link href="/roadmap" className="tz-btn tz-btn-primary">
-              Дорожная карта <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </Reveal>
       </section>
 
       {/* ── Финальный CTA ────────────────────────────────────────── */}
