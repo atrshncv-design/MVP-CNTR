@@ -93,7 +93,7 @@ export default function LandingHome() {
     <>
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <section className="relative mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6 sm:pt-20">
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_360px]">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_560px]">
           <div className="max-w-2xl">
             <Reveal>
               <p className="tz-eyebrow">ЦНТР Удмуртии · Цифровая платформа трансфера технологий</p>
@@ -128,7 +128,7 @@ export default function LandingHome() {
           {/* Живой радар (D10) */}
           <Reveal delay={0.15} className="hidden lg:block">
             <div className="tz-glass relative flex aspect-square items-center justify-center rounded-3xl p-8 text-tz-accent">
-              <LivingRadar className="w-full max-w-[420px] px-12 py-3" />
+              <LivingRadar className="w-full max-w-[560px] px-14 py-3" />
             </div>
           </Reveal>
         </div>
