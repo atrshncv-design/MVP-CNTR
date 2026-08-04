@@ -128,16 +128,16 @@ export default function LivingRadar({ className = "" }: { className?: string }) 
       </svg>
 
       {/* Метки осей — в паддинг-желобе контейнера (не пересекаются с кольцами) */}
-      <span className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap font-mono text-[11px] font-semibold opacity-60">
+      <span className="absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap font-mono text-[12px] font-semibold opacity-60">
         {AXES[0].label}
       </span>
-      <span className="absolute right-4 top-1/2 -translate-y-1/2 whitespace-nowrap text-right font-mono text-[11px] font-semibold opacity-60">
+      <span className="absolute right-4 top-1/2 -translate-y-1/2 whitespace-nowrap text-right font-mono text-[12px] font-semibold opacity-60">
         {AXES[1].label}
       </span>
-      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[11px] font-semibold opacity-60">
+      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[12px] font-semibold opacity-60">
         {AXES[2].label}
       </span>
-      <span className="absolute left-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-mono text-[11px] font-semibold opacity-60">
+      <span className="absolute left-4 top-1/2 -translate-y-1/2 whitespace-nowrap font-mono text-[12px] font-semibold opacity-60">
         {AXES[3].label}
       </span>
     </div>
