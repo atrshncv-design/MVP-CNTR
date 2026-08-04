@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import Select, or_, select
+from sqlalchemy import Select, func, or_, select
 
 from app.core.deps import CurrentUser, DBSession, has_role, is_cntr_staff
 from app.db.models import (
@@ -171,7 +171,31 @@ async def require_project_access(db: DBSession, project_id: int, user: CurrentUs
 @router.get("", response_model=list[ProjectOut])
 async def list_projects(db: DBSession, user: CurrentUser) -> list[ProjectOut]:
     result = await db.execute(project_list_stmt(user))
-    return [_project_out(project) for project in result.scalars().all()]
+    projects = list(result.scalars().all())
+    if not projects:
+        return []
+    # Один пакетный запрос вместо N+1 (FE-004): control_points для всех проектов разом
+    cp_rows = await db.execute(
+        select(ControlPoint)
+        .where(ControlPoint.project_id.in_([p.id for p in projects]))
+        .order_by(ControlPoint.project_id, ControlPoint.id)
+    )
+    by_project: dict[int, list[ControlPoint]] = {}
+    for cp in cp_rows.scalars().all():
+        by_project.setdefault(cp.project_id, []).append(cp)
+    # Счётчики верифицирующих документов одним запросом (FE-004)
+    vd_rows = await db.execute(
+        select(VerificationDocument.project_id, func.count(VerificationDocument.id))
+        .where(VerificationDocument.project_id.in_([p.id for p in projects]))
+        .group_by(VerificationDocument.project_id)
+    )
+    vd_counts: dict[int, int] = {}
+    for pid, cnt in vd_rows.all():
+        vd_counts[pid] = cnt
+    return [
+        _project_out(p, by_project.get(p.id, []), vd_counts.get(p.id, 0))
+        for p in projects
+    ]
 
 
 @router.get("/registry", response_model=list[RegistryProjectOut])
@@ -388,7 +412,11 @@ async def upload_verification_doc(
     )
 
 
-def _project_out(project: Project) -> ProjectOut:
+def _project_out(
+    project: Project,
+    control_points: list[ControlPoint] | None = None,
+    verification_documents_count: int = 0,
+) -> ProjectOut:
     return ProjectOut(
         id=project.id,
         name=project.name,
@@ -402,6 +430,8 @@ def _project_out(project: Project) -> ProjectOut:
         created_by=project.created_by,
         created_at=project.created_at.isoformat() if project.created_at else None,
         updated_at=project.updated_at.isoformat() if project.updated_at else None,
+        control_points=[_cp_out(cp) for cp in (control_points or [])],
+        verification_documents_count=verification_documents_count,
     )
 
 

@@ -79,6 +79,8 @@ class ProjectOut(BaseModel):
     created_by: int | None = None
     created_at: str | None = None
     updated_at: str | None = None
+    control_points: list[ControlPointOut] = []
+    verification_documents_count: int = 0
 
 
 class QuestionnaireAnswerIn(BaseModel):
