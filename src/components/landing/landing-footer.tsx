@@ -61,7 +61,6 @@ export default function LandingFooter() {
       <div className="border-t border-tz-border/50">
         <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-4 text-[12px] text-tz-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span>© 2026 Центр технологического развития Удмуртской Республики</span>
-          <span className="font-mono">MVP1 · сдача 31.08.2026</span>
         </div>
       </div>
     </footer>
