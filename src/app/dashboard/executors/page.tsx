@@ -90,24 +90,24 @@ export default function ExecutorsPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-tz-fg">Каталог исполнителей</h1>
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-tz-muted">
           R&D-стартапы, научные организации и производители
         </p>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" />
           <input
             type="text"
             placeholder="Поиск по названию или организации..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-tz-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#2E5BFF]"
+            className="w-full rounded-xl border border-tz-border bg-tz-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#2E5BFF]"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={16} className="text-gray-400" />
+          <Filter size={16} className="text-tz-muted" />
           {['all', 'rd_executor', 'scientific_org', 'serial_manufacturer'].map((slug) => (
             <button
               key={slug}
@@ -115,7 +115,7 @@ export default function ExecutorsPage() {
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 roleFilter === slug
                   ? 'bg-[#2E5BFF] text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-tz-surface-2 text-tz-secondary hover:bg-tz-soft'
               }`}
             >
               {slug === 'all' ? 'Все' : ROLE_NAMES[slug] ?? slug}
@@ -125,12 +125,12 @@ export default function ExecutorsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-tz-surface p-12 text-center">
-          <Building2 size={48} className="mx-auto mb-3 text-gray-300" />
+        <div className="rounded-2xl border border-tz-border bg-tz-surface p-12 text-center">
+          <Building2 size={48} className="mx-auto mb-3 text-tz-muted" />
           <p className="font-medium text-tz-fg">
             {executors.length === 0 ? 'Исполнители не найдены' : 'Ничего не найдено'}
           </p>
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-tz-muted">
             {executors.length === 0
               ? 'В каталоге пока нет исполнителей'
               : 'Попробуйте изменить запрос или фильтр по роли'}
@@ -143,7 +143,7 @@ export default function ExecutorsPage() {
               key={exec.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-gray-200 bg-tz-surface p-5 transition-all hover:shadow-md"
+              className="rounded-2xl border border-tz-border bg-tz-surface p-5 transition-all hover:shadow-md"
             >
               <div className="flex items-start justify-between">
                 <div
@@ -158,7 +158,7 @@ export default function ExecutorsPage() {
                     className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       exec.id < 0
                         ? 'bg-indigo-50 text-indigo-600'
-                        : 'bg-emerald-50 text-emerald-600'
+                        : 'bg-tz-success-soft text-tz-success'
                     }`}
                     title={exec.id < 0 ? 'Карточка организации' : 'Карточка пользователя'}
                   >
@@ -178,11 +178,11 @@ export default function ExecutorsPage() {
               </div>
               <h3 className="mt-4 font-bold text-tz-fg">{exec.full_name}</h3>
               {exec.organization && (
-                <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                <p className="mt-1 flex items-center gap-1 text-sm text-tz-muted">
                   <Building2 size={14} /> {exec.organization}
                 </p>
               )}
-              <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+              <div className="mt-3 flex items-center gap-4 text-sm text-tz-muted">
                 <span className="flex items-center gap-1">
                   <CheckCircle size={14} className="text-[#10B981]" />
                   {exec.completed_projects}{' '}
@@ -190,13 +190,13 @@ export default function ExecutorsPage() {
                 </span>
               </div>
               {exec.competencies && exec.competencies.length > 0 && (
-                <div className="mt-3 border-t border-gray-100 pt-3">
-                  <p className="mb-1.5 text-xs text-gray-400">Компетенции</p>
+                <div className="mt-3 border-t border-tz-border pt-3">
+                  <p className="mb-1.5 text-xs text-tz-muted">Компетенции</p>
                   <div className="flex flex-wrap gap-1.5">
                     {exec.competencies.slice(0, MAX_COMPETENCIES).map((c) => (
                       <span
                         key={c}
-                        className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                        className="rounded-full bg-tz-surface-2 px-2 py-0.5 text-xs text-tz-secondary"
                       >
                         {c}
                       </span>

@@ -99,14 +99,14 @@ export default function AiAssistantPage() {
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-tz-fg">AI-ассистент</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-tz-muted">
             Задавайте вопросы по ГОСТ Р 58048-2017, уровням УГТ и документации
           </p>
         </div>
         <button
           onClick={clearChat}
           disabled={messages.length <= 1 || sending}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 bg-tz-surface px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-500"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-xs font-medium text-tz-muted transition-colors hover:border-tz-danger hover:bg-tz-danger-soft hover:text-tz-danger disabled:opacity-50 disabled:hover:border-tz-border disabled:hover:bg-tz-surface disabled:hover:text-tz-muted"
           title="Удалить все сообщения"
         >
           <Trash2 size={14} />
@@ -114,7 +114,7 @@ export default function AiAssistantPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-tz-surface p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-tz-border bg-tz-surface p-4 space-y-4">
         {messages.map((msg, i) => (
           <motion.div
             key={i}
@@ -126,7 +126,7 @@ export default function AiAssistantPage() {
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
                 msg.role === 'user'
                   ? 'bg-[#2E5BFF]'
-                  : 'bg-gray-100'
+                  : 'bg-tz-surface-2'
               }`}
             >
               {msg.role === 'user'
@@ -138,13 +138,13 @@ export default function AiAssistantPage() {
               className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                 msg.role === 'user'
                   ? 'bg-[#2E5BFF] text-white'
-                  : 'bg-gray-50 text-tz-fg'
+                  : 'bg-tz-soft text-tz-fg'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
               {msg.sources && msg.sources.length > 0 && (
-                <div className="mt-2 space-y-2 border-t border-gray-200 pt-2">
-                  <p className="flex items-center gap-1 text-xs text-gray-400">
+                <div className="mt-2 space-y-2 border-t border-tz-border pt-2">
+                  <p className="flex items-center gap-1 text-xs text-tz-muted">
                     <FileText size={12} /> Источники:
                   </p>
                   {msg.sources.map((s) => (
@@ -163,13 +163,13 @@ export default function AiAssistantPage() {
                               href={s.source_uri}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-0.5 text-[10px] text-gray-400 underline decoration-gray-300 underline-offset-2 hover:text-[#2E5BFF]"
+                              className="inline-flex items-center gap-0.5 text-[10px] text-tz-muted underline decoration-gray-300 underline-offset-2 hover:text-[#2E5BFF]"
                             >
                               раздел ГОСТа <ExternalLink size={10} />
                             </a>
                           )}
                           {s.doc_type && (
-                            <span className="text-[10px] text-gray-400">{s.doc_type}</span>
+                            <span className="text-[10px] text-tz-muted">{s.doc_type}</span>
                           )}
                         </div>
                       </div>
@@ -182,10 +182,10 @@ export default function AiAssistantPage() {
         ))}
         {sending && (
           <div className="flex gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-tz-surface-2">
               <Bot size={16} className="text-[#2E5BFF]" />
             </div>
-            <div className="rounded-2xl bg-gray-50 px-4 py-3">
+            <div className="rounded-2xl bg-tz-soft px-4 py-3">
               <Loader2 size={16} className="animate-spin text-[#2E5BFF]" />
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function AiAssistantPage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Введите вопрос по ГОСТ Р 58048-2017..."
-          className="flex-1 rounded-xl border border-gray-200 bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[#2E5BFF]"
+          className="flex-1 rounded-xl border border-tz-border bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[#2E5BFF]"
         />
         <button
           onClick={sendMessage}

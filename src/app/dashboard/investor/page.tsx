@@ -97,13 +97,13 @@ export default function InvestorDashboard() {
     <section>
       {/* Hero-блок в стиле ЛК ГК */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол инвестора
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-tz-secondary">
           Изучайте реестр технологий платформы: уровень зрелости УГТ, организация-
           разработчик и перспективы внедрения. Реестр доступен только для чтения.
         </p>
@@ -124,24 +124,24 @@ export default function InvestorDashboard() {
       <div className="mt-8 rounded-2xl border border-tz-card-border bg-tz-surface p-4 sm:p-5">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по названию…"
-              className="w-full rounded-xl border border-tz-border bg-white py-2.5 pl-9 pr-3 text-sm text-tz-fg outline-none transition placeholder:text-slate-400 focus:border-[#2E5BFF]"
+              className="w-full rounded-xl border border-tz-border bg-tz-surface py-2.5 pl-9 pr-3 text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-[#2E5BFF]"
             />
           </div>
           <div>
-            <label htmlFor="inv-category" className="mb-1 block text-xs font-medium text-slate-500">
+            <label htmlFor="inv-category" className="mb-1 block text-xs font-medium text-tz-muted">
               Категория
             </label>
             <select
               id="inv-category"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full rounded-xl border border-tz-border bg-white px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
+              className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
               <option value="all">Все категории</option>
               {categories.map((c) => (
@@ -152,14 +152,14 @@ export default function InvestorDashboard() {
             </select>
           </div>
           <div>
-            <label htmlFor="inv-level" className="mb-1 block text-xs font-medium text-slate-500">
+            <label htmlFor="inv-level" className="mb-1 block text-xs font-medium text-tz-muted">
               Уровень УГТ не ниже
             </label>
             <select
               id="inv-level"
               value={minLevel}
               onChange={(e) => setMinLevel(Number(e.target.value))}
-              className="w-full rounded-xl border border-tz-border bg-white px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
+              className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
               {UGT_OPTIONS.map((l) => (
                 <option key={l} value={l}>
@@ -174,18 +174,18 @@ export default function InvestorDashboard() {
       {/* Реестр */}
       <div className="mt-6">
         <h2 className="mb-4 text-lg font-bold text-tz-fg">
-          Реестр технологий <span className="text-sm font-normal text-slate-400">({filtered.length})</span>
+          Реестр технологий <span className="text-sm font-normal text-tz-muted">({filtered.length})</span>
         </h2>
 
         {loading ? (
           <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-            <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
-            <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
+            <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+            <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-            <AlertCircle className="mx-auto mb-2 text-red-500" size={36} />
-            <p className="font-semibold text-red-700">{error}</p>
+          <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
+            <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
+            <p className="font-semibold text-tz-danger">{error}</p>
             <button
               onClick={() => loadTechnologies()}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
@@ -201,7 +201,7 @@ export default function InvestorDashboard() {
             <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
               Технологии не найдены
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">
+            <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
               Измените параметры фильтров или дождитесь появления новых технологий в реестре.
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function InvestorDashboard() {
                   {/* Радар зрелости: прогресс current → target */}
                   <div className="mt-4">
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1 text-slate-400">
+                      <span className="flex items-center gap-1 text-tz-muted">
                         <Activity size={13} className="text-[#2E5BFF]" />
                         Зрелость УГТ
                       </span>
@@ -241,7 +241,7 @@ export default function InvestorDashboard() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-tz-surface-2">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-[#2E5BFF] to-[#10B981] transition-all duration-500"
                           style={{ width: `${progress}%` }}
@@ -251,7 +251,7 @@ export default function InvestorDashboard() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-slate-500">
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-tz-muted">
                     {tech.organization && (
                       <span className="flex items-center gap-1.5">
                         <Building2 size={14} className="text-[#FF7A2E]" />
@@ -259,13 +259,13 @@ export default function InvestorDashboard() {
                       </span>
                     )}
                     {tech.category && (
-                      <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                      <span className="rounded-md bg-tz-surface-2 px-2 py-0.5 text-xs text-tz-secondary">
                         {tech.category}
                       </span>
                     )}
                     {tech.budget != null && (
                       <span className="flex items-center gap-1.5">
-                        <Wallet size={14} className="text-gray-400" />
+                        <Wallet size={14} className="text-tz-muted" />
                         {tech.budget.toLocaleString('ru-RU')} млн ₽
                       </span>
                     )}

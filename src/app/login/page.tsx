@@ -37,7 +37,7 @@ function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="mt-8 space-y-5">
       <div>
-        <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-800">
+        <label htmlFor="email" className="mb-2 block text-sm font-semibold text-tz-fg">
           Рабочий email
         </label>
         <input
@@ -48,12 +48,12 @@ function LoginForm() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-tz-surface px-4 py-3 text-slate-950 outline-none transition placeholder:text-tz-secondary focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
+          className="w-full rounded-lg border border-tz-border bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
           placeholder="name@company.ru"
         />
       </div>
       <div>
-        <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-800">
+        <label htmlFor="password" className="mb-2 block text-sm font-semibold text-tz-fg">
           Пароль
         </label>
         <input
@@ -64,10 +64,10 @@ function LoginForm() {
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-tz-surface px-4 py-3 text-slate-950 outline-none transition placeholder:text-tz-secondary focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
+          className="w-full rounded-lg border border-tz-border bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
         />
       </div>
-      <p aria-live="polite" className="min-h-5 text-sm text-red-700">
+      <p aria-live="polite" className="min-h-5 text-sm text-tz-danger">
         {status === "error" ? error : ""}
       </p>
       <button

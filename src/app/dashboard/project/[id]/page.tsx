@@ -367,9 +367,9 @@ export default function ProjectDashboardPage() {
 
   if (!project) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-        <XCircle className="mx-auto mb-2 text-red-500" size={40} />
-        <p className="text-lg font-semibold text-red-700">Проект не найден</p>
+      <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
+        <XCircle className="mx-auto mb-2 text-tz-danger" size={40} />
+        <p className="text-lg font-semibold text-tz-danger">Проект не найден</p>
       </div>
     );
   }
@@ -458,11 +458,11 @@ export default function ProjectDashboardPage() {
               <div className="flex justify-center gap-6 mt-2 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-6 rounded bg-[#2E5BFF]" />
-                  <span className="text-gray-500">Текущий</span>
+                  <span className="text-tz-muted">Текущий</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-6 rounded border-2 border-dashed border-[#E5C840]" />
-                  <span className="text-gray-500">Цель</span>
+                  <span className="text-tz-muted">Цель</span>
                 </div>
               </div>
             </div>
@@ -485,8 +485,8 @@ export default function ProjectDashboardPage() {
                       </span>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-gray-600">{name.replace(/УГТ \d+: /, '')}</span>
-                          <span className="text-xs text-gray-400">{progress}%</span>
+                          <span className="text-sm text-tz-secondary">{name.replace(/УГТ \d+: /, '')}</span>
+                          <span className="text-xs text-tz-muted">{progress}%</span>
                         </div>
                         <div className="tz-progress">
                           <div
@@ -499,7 +499,7 @@ export default function ProjectDashboardPage() {
                         </div>
                       </div>
                       {isCurrent && <ArrowUp size={16} className="text-[#2E5BFF]" />}
-                      {!isTarget && <XCircle size={14} className="text-gray-300" />}
+                      {!isTarget && <XCircle size={14} className="text-tz-muted" />}
                     </div>
                   );
                 })}
@@ -507,26 +507,26 @@ export default function ProjectDashboardPage() {
             </div>
 
             {/* Control Points */}
-            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Shield size={20} className="text-[#E5C840]" />
                 <h2 className="text-lg font-bold text-tz-fg">Контрольные точки (КТ)</h2>
               </div>
               {project.control_points.length === 0 ? (
-                <p className="text-sm text-gray-400">Контрольные точки не заданы</p>
+                <p className="text-sm text-tz-muted">Контрольные точки не заданы</p>
               ) : (
                 <div className="space-y-3">
                   {project.control_points.map((cp) => (
                     <div
                       key={cp.id}
-                      className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-4"
+                      className="flex items-center justify-between rounded-xl border border-tz-border bg-tz-soft p-4"
                     >
                       <div>
                         <p className="font-semibold text-tz-fg">{cp.title}</p>
                         {cp.description && (
-                          <p className="mt-1 text-sm text-gray-500">{cp.description}</p>
+                          <p className="mt-1 text-sm text-tz-muted">{cp.description}</p>
                         )}
-                        <span className="mt-1 inline-block rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
+                        <span className="mt-1 inline-block rounded bg-tz-soft px-2 py-0.5 text-xs text-tz-secondary">
                           {cp.point_type === 'gate' ? 'Ворота' : cp.point_type}
                         </span>
                       </div>
@@ -536,7 +536,7 @@ export default function ProjectDashboardPage() {
                             <CheckCircle size={16} /> Одобрено
                           </span>
                         ) : cp.status === 'rejected' ? (
-                          <span className="flex items-center gap-1 text-sm font-semibold text-red-600">
+                          <span className="flex items-center gap-1 text-sm font-semibold text-tz-danger">
                             <XCircle size={16} /> Отклонено
                           </span>
                         ) : (
@@ -545,7 +545,7 @@ export default function ProjectDashboardPage() {
                           </span>
                         )}
                         {cp.decision && (
-                          <p className="mt-1 text-xs text-gray-500">Решение: {cp.decision}</p>
+                          <p className="mt-1 text-xs text-tz-muted">Решение: {cp.decision}</p>
                         )}
                       </div>
                     </div>
@@ -555,7 +555,7 @@ export default function ProjectDashboardPage() {
             </div>
 
             {/* Documents */}
-            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <FileText size={20} className="text-[#FF7A2E]" />
                 <h2 className="text-lg font-bold text-tz-fg">Документы</h2>
@@ -580,22 +580,22 @@ export default function ProjectDashboardPage() {
                   </button>
                 ))}
               </div>
-              {genError && <p className="mb-4 text-sm font-medium text-red-600">{genError}</p>}
+              {genError && <p className="mb-4 text-sm font-medium text-tz-danger">{genError}</p>}
 
               {project.documents.length === 0 ? (
-                <p className="text-sm text-gray-400">Документы не загружены</p>
+                <p className="text-sm text-tz-muted">Документы не загружены</p>
               ) : (
                 <div className="space-y-2">
                   {project.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-100 p-3"
+                      className="flex items-center justify-between rounded-lg border border-tz-border p-3"
                     >
                       <div className="flex items-center gap-3">
-                        <FileText size={18} className="text-gray-400" />
+                        <FileText size={18} className="text-tz-muted" />
                         <div>
                           <p className="font-medium text-tz-fg">{doc.title}</p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-tz-muted">
                             {doc.doc_type} · v{doc.version}
                           </p>
                         </div>
@@ -616,18 +616,18 @@ export default function ProjectDashboardPage() {
             </div>
 
             {/* Верифицирующие документы (подтверждение УГТ от регулирующей организации / участников) */}
-            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <ShieldCheck size={20} className="text-[#10B981]" />
                 <h2 className="text-lg font-bold text-tz-fg">Верифицирующие документы</h2>
                 {project.verification_documents.length > 0 && (
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-600">
+                  <span className="rounded-full bg-tz-success-soft px-2.5 py-0.5 text-xs font-semibold text-tz-success">
                     {project.verification_documents.length}
                   </span>
                 )}
               </div>
               {project.verification_documents.length === 0 ? (
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-tz-muted">
                   Документы подтверждения УГТ не загружены. Регулирующая организация
                   или участники могут добавить их после вступления в проект.
                 </p>
@@ -636,23 +636,23 @@ export default function ProjectDashboardPage() {
                   {project.verification_documents.map((v) => (
                     <div
                       key={v.id}
-                      className="flex items-start justify-between gap-4 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3"
+                      className="flex items-start justify-between gap-4 rounded-lg border border-tz-success bg-tz-success-soft/40 p-3"
                     >
                       <div className="flex items-start gap-3">
-                        <ShieldCheck size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                        <ShieldCheck size={18} className="mt-0.5 shrink-0 text-tz-success" />
                         <div>
                           <p className="font-medium text-tz-fg">{v.title}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-tz-muted">
                             {v.uploader_name ?? 'Пользователь'}
                             {v.created_at ? ` · ${new Date(v.created_at).toLocaleDateString('ru-RU')}` : ''}
                           </p>
-                          {v.comment && <p className="mt-1 text-xs text-gray-500">{v.comment}</p>}
+                          {v.comment && <p className="mt-1 text-xs text-tz-muted">{v.comment}</p>}
                           {v.file_ref && (
-                            <p className="mt-1 break-all font-mono text-xs text-gray-400">{v.file_ref}</p>
+                            <p className="mt-1 break-all font-mono text-xs text-tz-muted">{v.file_ref}</p>
                           )}
                         </div>
                       </div>
-                      <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                      <span className="shrink-0 rounded-full bg-tz-success-soft px-2 py-0.5 text-xs font-medium text-tz-success">
                         Подтверждение УГТ
                       </span>
                     </div>
@@ -663,7 +663,7 @@ export default function ProjectDashboardPage() {
 
             {/* Join requests — только приоритетным участникам */}
             {isPriorityUser && (
-              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <UserPlus size={20} className="text-[#10B981]" />
                   <h2 className="text-lg font-bold text-tz-fg">Заявки на вступление</h2>
@@ -673,29 +673,29 @@ export default function ProjectDashboardPage() {
                     </span>
                   )}
                 </div>
-                {requestsError && <p className="mb-3 text-sm font-medium text-red-600">{requestsError}</p>}
+                {requestsError && <p className="mb-3 text-sm font-medium text-tz-danger">{requestsError}</p>}
                 {requestsLoading ? (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 size={20} className="animate-spin text-[#2E5BFF]" />
                   </div>
                 ) : joinRequests.length === 0 ? (
-                  <p className="text-sm text-gray-400">Новых заявок нет</p>
+                  <p className="text-sm text-tz-muted">Новых заявок нет</p>
                 ) : (
                   <div className="space-y-3">
                     {joinRequests.map((req) => (
                       <div
                         key={req.id}
-                        className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4"
+                        className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-tz-border bg-tz-soft p-4"
                       >
                         <div className="min-w-0">
                           <p className="font-semibold text-tz-fg">{req.user_name}</p>
-                          <p className="text-xs text-gray-500">{req.user_email}</p>
+                          <p className="text-xs text-tz-muted">{req.user_email}</p>
                           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                            <span className="inline-block rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
+                            <span className="inline-block rounded bg-tz-soft px-2 py-0.5 text-xs text-tz-secondary">
                               {req.role_in_project}
                             </span>
                             {req.invited_by_name && (
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-tz-muted">
                                 пригласил: {req.invited_by_name}
                               </span>
                             )}
@@ -712,7 +712,7 @@ export default function ProjectDashboardPage() {
                           <button
                             onClick={() => decideJoinRequest(req.id, false)}
                             disabled={decidingId === req.id}
-                            className="inline-flex items-center gap-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg bg-tz-danger-soft0 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
                           >
                             <XCircle size={14} /> Отклонить
                           </button>
@@ -725,25 +725,25 @@ export default function ProjectDashboardPage() {
             )}
 
             {/* Audit Trail */}
-            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Clock size={20} className="text-gray-400" />
+                <Clock size={20} className="text-tz-muted" />
                 <h2 className="text-lg font-bold text-tz-fg">Аудит изменений</h2>
               </div>
               {project.audit_trail.length === 0 ? (
-                <p className="text-sm text-gray-400">История изменений пуста</p>
+                <p className="text-sm text-tz-muted">История изменений пуста</p>
               ) : (
                 <div className="space-y-2">
                   {project.audit_trail.map((entry) => (
                     <div
                       key={entry.id}
-                      className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
+                      className="flex items-center gap-3 rounded-lg border border-tz-border p-3"
                     >
                       <div className="h-2 w-2 rounded-full bg-[#2E5BFF]" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-tz-fg">{entry.action}</p>
                         {entry.created_at && (
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-tz-muted">
                             {new Date(entry.created_at).toLocaleString('ru-RU')}
                           </p>
                         )}
@@ -758,16 +758,16 @@ export default function ProjectDashboardPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Current level */}
-            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Award size={20} className="text-[#2E5BFF]" />
                 <h3 className="font-bold text-tz-fg">Уровень УГТ</h3>
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-[#2E5BFF]">{p.current_level}</span>
-                <span className="text-gray-400">/ {p.target_level}</span>
+                <span className="text-tz-muted">/ {p.target_level}</span>
               </div>
-              <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div className="mt-3 h-2 rounded-full bg-tz-surface-2 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-[#2E5BFF]"
                   style={{ width: `${(p.current_level / p.target_level) * 100}%` }}
@@ -777,7 +777,7 @@ export default function ProjectDashboardPage() {
 
             {/* KТ-1 Control Point */}
             {kt1 && (
-              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield size={20} className="text-[#E5C840]" />
                   <h3 className="font-bold text-tz-fg">КТ-1: Старт проекта</h3>
@@ -787,7 +787,7 @@ export default function ProjectDashboardPage() {
                     kt1.status === 'approved'
                       ? 'bg-green-50 border border-green-200'
                       : kt1.status === 'rejected'
-                        ? 'bg-red-50 border border-red-200'
+                        ? 'bg-tz-danger-soft border border-tz-danger'
                         : 'bg-yellow-50 border border-yellow-200'
                   }`}
                 >
@@ -799,8 +799,8 @@ export default function ProjectDashboardPage() {
                       </>
                     ) : kt1.status === 'rejected' ? (
                       <>
-                        <XCircle size={20} className="text-red-600" />
-                        <span className="font-semibold text-red-700">No-Go: Проект отклонён</span>
+                        <XCircle size={20} className="text-tz-danger" />
+                        <span className="font-semibold text-tz-danger">No-Go: Проект отклонён</span>
                       </>
                     ) : (
                       <>
@@ -810,7 +810,7 @@ export default function ProjectDashboardPage() {
                     )}
                   </div>
                   {kt1.description && (
-                    <p className="mt-2 text-sm text-gray-600">{kt1.description}</p>
+                    <p className="mt-2 text-sm text-tz-secondary">{kt1.description}</p>
                   )}
                 </div>
               </div>
@@ -818,7 +818,7 @@ export default function ProjectDashboardPage() {
 
             {/* Share project — только приоритетным участникам */}
             {isPriorityUser && (
-              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Share2 size={20} className="text-[#2E5BFF]" />
                   <h3 className="font-bold text-tz-fg">Поделиться проектом</h3>
@@ -842,13 +842,13 @@ export default function ProjectDashboardPage() {
                         )}
                       </button>
                     </div>
-                    <p className="mt-2 break-all text-xs text-gray-400">
+                    <p className="mt-2 break-all text-xs text-tz-muted">
                       Ссылка для вступления: /join/{p.join_token}
                     </p>
                     <button
                       onClick={regenerateToken}
                       disabled={regenerating}
-                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-tz-border px-3 py-2 text-sm font-medium text-tz-secondary transition hover:bg-tz-soft disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {regenerating ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -859,26 +859,26 @@ export default function ProjectDashboardPage() {
                     </button>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-400">Токен ещё не выпущен</p>
+                  <p className="text-sm text-tz-muted">Токен ещё не выпущен</p>
                 )}
-                {shareError && <p className="mt-2 text-xs font-medium text-red-600">{shareError}</p>}
+                {shareError && <p className="mt-2 text-xs font-medium text-tz-danger">{shareError}</p>}
               </div>
             )}
 
             {/* Team */}
-            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Users size={20} className="text-[#10B981]" />
                 <h3 className="font-bold text-tz-fg">Команда</h3>
               </div>
               {project.members.length === 0 ? (
-                <p className="text-sm text-gray-400">Участники не назначены</p>
+                <p className="text-sm text-tz-muted">Участники не назначены</p>
               ) : (
                 <div className="space-y-2">
                   {project.members.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
+                      className="flex items-center gap-3 rounded-lg border border-tz-border p-3"
                     >
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2E5BFF] text-sm font-bold text-white">
                         {m.role_in_project[0].toUpperCase()}
@@ -887,7 +887,7 @@ export default function ProjectDashboardPage() {
                         <p className="text-sm font-medium text-tz-fg">
                           {m.role_in_project}
                         </p>
-                        <p className="text-xs text-gray-400">ID: {m.user_id}</p>
+                        <p className="text-xs text-tz-muted">ID: {m.user_id}</p>
                       </div>
                     </div>
                   ))}
@@ -897,7 +897,7 @@ export default function ProjectDashboardPage() {
 
             {/* Budget */}
             {canSeeBudget && (
-              <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign size={20} className="text-[#10B981]" />
                   <h3 className="font-bold text-tz-fg">Бюджет</h3>
@@ -911,7 +911,7 @@ export default function ProjectDashboardPage() {
             )}
 
             {/* Radar mini summary */}
-            <div className="rounded-2xl border border-gray-200 bg-tz-surface p-6">
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart3 size={20} className="text-[#E5C840]" />
                 <h3 className="font-bold text-tz-fg">Общий прогресс</h3>
@@ -920,19 +920,19 @@ export default function ProjectDashboardPage() {
                 <div className="space-y-2">
                   {project.questionnaire_results.map((qr) => (
                     <div key={qr.id} className="flex items-center gap-2">
-                      <span className="w-16 text-xs text-gray-500">УГТ {qr.level_id}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <span className="w-16 text-xs text-tz-muted">УГТ {qr.level_id}</span>
+                      <div className="flex-1 h-1.5 rounded-full bg-tz-surface-2 overflow-hidden">
                         <div
                           className="h-full rounded-full bg-[#10B981]"
                           style={{ width: `${Math.round(qr.percentage)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-400">{Math.round(qr.percentage)}%</span>
+                      <span className="text-xs text-tz-muted">{Math.round(qr.percentage)}%</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">Нет данных</p>
+                <p className="text-sm text-tz-muted">Нет данных</p>
               )}
             </div>
           </div>
@@ -951,9 +951,9 @@ export default function ProjectDashboardPage() {
             className="w-full max-w-3xl rounded-2xl bg-tz-surface shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-gray-100 p-5">
+            <div className="flex items-start justify-between gap-4 border-b border-tz-border p-5">
               <div>
-                <p className="font-mono text-xs uppercase tracking-wide text-gray-400">
+                <p className="font-mono text-xs uppercase tracking-wide text-tz-muted">
                   Сгенерированный документ
                 </p>
                 <h3 className="mt-1 text-lg font-bold text-tz-fg">{generatedDoc.title}</h3>
@@ -961,17 +961,17 @@ export default function ProjectDashboardPage() {
               <button
                 onClick={() => setGeneratedDoc(null)}
                 aria-label="Закрыть"
-                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-lg p-2 text-tz-muted transition hover:bg-tz-surface-2 hover:text-tz-secondary"
               >
                 <X size={20} />
               </button>
             </div>
             <div className="max-h-[70vh] overflow-y-auto p-5">
-              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-tz-secondary">
                 {generatedDoc.content}
               </pre>
             </div>
-            <div className="flex justify-end border-t border-gray-100 p-4">
+            <div className="flex justify-end border-t border-tz-border p-4">
               <button
                 onClick={() => setGeneratedDoc(null)}
                 className="rounded-lg bg-[#2E5BFF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#244BD9]"

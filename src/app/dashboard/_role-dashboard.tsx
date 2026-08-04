@@ -15,9 +15,9 @@ export function RoleDashboard({
       <h1 className="text-2xl font-bold">
         Личный кабинет: {ROLES.find((r) => r.slug === slug)?.name}
       </h1>
-      <p className="mt-2 text-gray-700">{description}</p>
+      <p className="mt-2 text-tz-secondary">{description}</p>
       <h2 className="mt-6 text-lg font-semibold">Доступные действия (RBAC)</h2>
-      <ul className="mt-2 list-disc pl-6 text-gray-800">
+      <ul className="mt-2 list-disc pl-6 text-tz-fg">
         {permissions.map((p) => (
           <li key={p}>{p}</li>
         ))}

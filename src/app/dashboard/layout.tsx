@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-tz-bg">
       <a
         href="#main-content"
-        className="fixed left-4 top-3 z-50 -translate-y-20 rounded bg-white px-3 py-2 font-semibold text-slate-900 shadow focus:translate-y-0"
+        className="fixed left-4 top-3 z-50 -translate-y-20 rounded bg-tz-surface px-3 py-2 font-semibold text-tz-fg shadow focus:translate-y-0"
       >
         Перейти к основному содержимому
       </a>
@@ -38,7 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-tz-surface/[0.06] hover:text-white"
+                className="rounded-lg px-3 py-2 text-sm text-tz-muted transition hover:bg-tz-surface/[0.06] hover:text-white"
               >
                 {item.label}
               </Link>
@@ -50,7 +50,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <div className="text-sm font-semibold text-white">
                   {session.user.name ?? session.user.email}
                 </div>
-                <div className="font-mono text-[11px] uppercase tracking-wider text-slate-500">
+                <div className="font-mono text-[11px] uppercase tracking-wider text-tz-muted">
                   {session.user.roles.join(" · ")}
                 </div>
               </div>
@@ -63,7 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             >
               <button
                 type="submit"
-                className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-400 transition hover:border-white/25 hover:text-white"
+                className="rounded-lg border border-white/10 px-3 py-2 text-sm text-tz-muted transition hover:border-white/25 hover:text-white"
               >
                 Выйти
               </button>

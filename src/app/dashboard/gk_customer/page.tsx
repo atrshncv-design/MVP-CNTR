@@ -92,13 +92,13 @@ export default function GkCustomerDashboard() {
   return (
     <section>
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол заказчика
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-tz-secondary">
           Здесь появятся проекты вашей организации и их путь от заявки до
           внедрения технологии.
         </p>
@@ -108,13 +108,13 @@ export default function GkCustomerDashboard() {
         <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Проекты
         </span>
-        <Link href="/dashboard/gk_customer/projects/new" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/gk_customer/projects/new" className="py-4 text-tz-secondary hover:text-tz-fg">
           Новая заявка
         </Link>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
           Реестр технологий
         </Link>
-        <Link href="/dashboard/executors" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/executors" className="py-4 text-tz-secondary hover:text-tz-fg">
           Каталог исполнителей
         </Link>
       </nav>
@@ -137,7 +137,7 @@ export default function GkCustomerDashboard() {
               className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-500">{card.label}</span>
+                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{ background: `${card.color}15`, color: card.color }}
@@ -146,7 +146,7 @@ export default function GkCustomerDashboard() {
                 </span>
               </div>
               {loading ? (
-                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-tz-surface-2" />
               ) : (
                 <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">
                   {card.value}
@@ -169,10 +169,10 @@ export default function GkCustomerDashboard() {
             </span>
             <div>
               <p className="font-bold text-tz-fg">Новая заявка</p>
-              <p className="text-sm text-slate-500">Оценить и подать проект</p>
+              <p className="text-sm text-tz-muted">Оценить и подать проект</p>
             </div>
           </div>
-          <ArrowRight size={18} className="text-slate-300 transition group-hover:translate-x-1 group-hover:text-[#2E5BFF]" />
+          <ArrowRight size={18} className="text-tz-muted transition group-hover:translate-x-1 group-hover:text-[#2E5BFF]" />
         </Link>
         <Link
           href="/dashboard/executors"
@@ -184,10 +184,10 @@ export default function GkCustomerDashboard() {
             </span>
             <div>
               <p className="font-bold text-tz-fg">Каталог исполнителей</p>
-              <p className="text-sm text-slate-500">Найти R&D-партнёра</p>
+              <p className="text-sm text-tz-muted">Найти R&D-партнёра</p>
             </div>
           </div>
-          <ArrowRight size={18} className="text-slate-300 transition group-hover:translate-x-1 group-hover:text-[#2E5BFF]" />
+          <ArrowRight size={18} className="text-tz-muted transition group-hover:translate-x-1 group-hover:text-[#2E5BFF]" />
         </Link>
         <Link
           href="/dashboard/technologies"
@@ -199,10 +199,10 @@ export default function GkCustomerDashboard() {
             </span>
             <div>
               <p className="font-bold text-tz-fg">Реестр технологий</p>
-              <p className="text-sm text-slate-500">Каталог готовых решений</p>
+              <p className="text-sm text-tz-muted">Каталог готовых решений</p>
             </div>
           </div>
-          <ArrowRight size={18} className="text-slate-300 transition group-hover:translate-x-1 group-hover:text-[#2E5BFF]" />
+          <ArrowRight size={18} className="text-tz-muted transition group-hover:translate-x-1 group-hover:text-[#2E5BFF]" />
         </Link>
       </div>
 
@@ -210,8 +210,8 @@ export default function GkCustomerDashboard() {
       <div className="mt-8">
         {loading ? (
           <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-            <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
-            <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
+            <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+            <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
           </div>
         ) : projects.length === 0 ? (
           <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
@@ -221,7 +221,7 @@ export default function GkCustomerDashboard() {
             <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
               Проектов пока нет
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">
+            <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
               Начните с фиксированной заявки. После сохранения она станет карточкой
               проекта и будет передана менеджеру ЦНТР на рассмотрение.
             </p>
@@ -243,18 +243,18 @@ export default function GkCustomerDashboard() {
                   className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-[#2E5BFF] md:grid-cols-[1fr_auto_auto]"
                 >
                   <div>
-                    <div className="font-mono text-xs text-slate-500">ЦНТР-{project.id}</div>
+                    <div className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</div>
                     <h3 className="mt-1 text-lg font-bold text-tz-fg">{project.name}</h3>
-                    <p className="mt-1 text-sm text-slate-600">
+                    <p className="mt-1 text-sm text-tz-secondary">
                       {project.category ?? "Категория не указана"}
                     </p>
                   </div>
                   <div className="md:text-right">
-                    <div className="text-xs text-slate-500">Текущий уровень</div>
+                    <div className="text-xs text-tz-muted">Текущий уровень</div>
                     <div className="mt-1 font-bold text-[#2E5BFF]">УГТ {project.current_level}</div>
                   </div>
                   <div className="md:min-w-28 md:text-right">
-                    <div className="text-xs text-slate-500">Статус</div>
+                    <div className="text-xs text-tz-muted">Статус</div>
                     <div className="mt-1 font-semibold text-tz-fg">
                       {STATUS_LABELS[project.status] ?? project.status}
                     </div>

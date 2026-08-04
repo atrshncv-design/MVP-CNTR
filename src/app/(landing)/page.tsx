@@ -290,7 +290,7 @@ export default function LandingHome() {
                 </Link>
                 <Link
                   href="/methodology"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/40 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/40 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-tz-surface/10"
                 >
                   Изучить методику
                 </Link>

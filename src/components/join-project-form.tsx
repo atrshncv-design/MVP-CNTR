@@ -111,7 +111,7 @@ export default function JoinProjectForm() {
         </span>
         <div>
           <h3 className="font-bold text-tz-fg">Присоединиться к проекту</h3>
-          <p className="text-sm text-slate-500">Введите токен, выданный заказчиком или ЦНТР</p>
+          <p className="text-sm text-tz-muted">Введите токен, выданный заказчиком или ЦНТР</p>
         </div>
       </div>
 
@@ -122,10 +122,10 @@ export default function JoinProjectForm() {
           onChange={(e) => setToken(e.target.value)}
           placeholder="TZ-XXXXXX"
           disabled={loading}
-          className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-2.5 font-mono text-sm text-tz-fg outline-none transition placeholder:text-slate-400 focus:border-[#2E5BFF] disabled:opacity-60"
+          className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-2.5 font-mono text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-[#2E5BFF] disabled:opacity-60"
         />
         <div>
-          <label htmlFor="join-role" className="mb-1 block text-xs font-medium text-slate-500">
+          <label htmlFor="join-role" className="mb-1 block text-xs font-medium text-tz-muted">
             Роль в проекте
           </label>
           <select
@@ -133,7 +133,7 @@ export default function JoinProjectForm() {
             value={role}
             onChange={(e) => setRole(e.target.value)}
             disabled={loading}
-            className="w-full rounded-xl border border-tz-border bg-white px-3 py-2.5 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF] disabled:opacity-60"
+            className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2.5 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF] disabled:opacity-60"
           >
             {JOIN_ROLES.map((r) => (
               <option key={r.value} value={r.value}>
@@ -144,13 +144,13 @@ export default function JoinProjectForm() {
         </div>
 
         {error && (
-          <p className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          <p className="flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-3 py-2.5 text-sm text-tz-danger">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
             {error}
           </p>
         )}
         {info && (
-          <p className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">
+          <p className="flex items-start gap-2 rounded-xl border border-tz-success bg-tz-success-soft px-3 py-2.5 text-sm text-tz-success">
             <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
             {info}
           </p>

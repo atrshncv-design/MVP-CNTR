@@ -357,8 +357,8 @@ export default function QuestionnaireWizardClient() {
           <p className="mb-3 text-sm text-tz-muted">Главная → Оценка проекта</p>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Экспресс-оценка готовности проекта</h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-[color:var(--tz-hero-muted)]">Не просто «да/нет»: оцените 22 контрольных рубежа по степени достижения и готовности подтверждающих материалов.</p>
-          <div className="mt-8 h-2 overflow-hidden rounded-full bg-tz-surface/10"><div className="h-full rounded-full bg-tz-accent-soft0 transition-all duration-500" style={{ width: `${progress}%` }} /></div>
-          <div className="mt-3 flex justify-between text-xs text-tz-muted"><span>{answeredCount} из {template.checkpoints.length} рубежей заполнено</span><span>Версия анкеты {template.version}</span></div>
+          <div className="mt-8 h-2 overflow-hidden rounded-full bg-tz-surface/10"><div className="h-full rounded-full bg-tz-accent transition-all duration-500" style={{ width: `${progress}%` }} /></div>
+          <div className="mt-3 flex justify-between text-xs text-tz-muted"><span>{answeredCount} из {template.checkpoints.length} рубежей заполнено</span></div>
         </div>
       </header>
 

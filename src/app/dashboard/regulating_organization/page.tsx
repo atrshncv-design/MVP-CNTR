@@ -97,13 +97,13 @@ export default function RegulatingOrganizationDashboard() {
     <section>
       {/* Hero-блок */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол регулирующей организации
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-tz-secondary">
           Присоединяйтесь к карточке проекта по токену TZ-XXXXXX и добавляйте
           документы подтверждения УГТ — они станут основанием для решения менеджера ЦНТР.
         </p>
@@ -113,7 +113,7 @@ export default function RegulatingOrganizationDashboard() {
         <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Документы подтверждения
         </span>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
           Реестр технологий
         </Link>
       </nav>
@@ -136,7 +136,7 @@ export default function RegulatingOrganizationDashboard() {
               className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-500">{card.label}</span>
+                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{ background: `${card.color}15`, color: card.color }}
@@ -145,7 +145,7 @@ export default function RegulatingOrganizationDashboard() {
                 </span>
               </div>
               {loading ? (
-                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-tz-surface-2" />
               ) : (
                 <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">
                   {card.value}
@@ -157,7 +157,7 @@ export default function RegulatingOrganizationDashboard() {
       </div>
 
       {error && (
-        <div className="mt-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-6 flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           {error}
           <button
@@ -176,13 +176,13 @@ export default function RegulatingOrganizationDashboard() {
 
           {loading ? (
             <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-              <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
-              <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
+              <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+              <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-              <AlertCircle className="mx-auto mb-2 text-red-500" size={36} />
-              <p className="font-semibold text-red-700">{error}</p>
+            <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
+              <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
+              <p className="font-semibold text-tz-danger">{error}</p>
               <button
                 onClick={() => loadProjects()}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
@@ -198,7 +198,7 @@ export default function RegulatingOrganizationDashboard() {
               <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
                 Пока нет проектов
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-slate-600">
+              <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
                 Присоединитесь к карточке проекта по токену TZ — и она появится
                 в этом списке. После вступления вам станет доступна загрузка
                 верифицирующих документов.
@@ -216,11 +216,11 @@ export default function RegulatingOrganizationDashboard() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-slate-500">ЦНТР-{p.id}</span>
+                        <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
                         <span className="rounded-full bg-[#EAF0FF] px-2 py-0.5 text-[11px] font-medium text-[#2E5BFF]">
                           УГТ {p.current_level} → {p.target_level}
                         </span>
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                        <span className="rounded-full bg-tz-success-soft px-2 py-0.5 text-[11px] font-medium text-tz-success">
                           {p.docs_count} доказ.
                       </span>
                       </div>

@@ -89,14 +89,14 @@ function UserRow({ user }: { user: AdminUser }) {
     <tr className="border-b border-tz-card-border align-top last:border-0 hover:bg-[#FAFBFD]">
       <td className="px-4 py-4">
         <p className="font-semibold text-tz-fg">{user.full_name || '—'}</p>
-        <p className="mt-0.5 text-sm text-slate-500">{user.email}</p>
+        <p className="mt-0.5 text-sm text-tz-muted">{user.email}</p>
       </td>
-      <td className="px-4 py-4 text-sm text-slate-600">{user.organization ?? '—'}</td>
+      <td className="px-4 py-4 text-sm text-tz-secondary">{user.organization ?? '—'}</td>
       <td className="px-4 py-4">
         {/* Текущий набор ролей */}
         <div className="mb-2 flex max-w-[280px] flex-wrap gap-1">
           {roles.length === 0 ? (
-            <span className="text-xs text-slate-400">Роли не назначены</span>
+            <span className="text-xs text-tz-muted">Роли не назначены</span>
           ) : (
             roles.map((slug) => (
               <span
@@ -126,7 +126,7 @@ function UserRow({ user }: { user: AdminUser }) {
             </option>
           ))}
         </select>
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className="mt-1 text-[11px] text-tz-muted">
           Cmd/Ctrl + клик — выбрать несколько ролей
         </p>
       </td>
@@ -141,7 +141,7 @@ function UserRow({ user }: { user: AdminUser }) {
             setIsActive((prev) => !prev);
           }}
           className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-            isActive ? 'bg-[#10B981]' : 'bg-gray-300'
+            isActive ? 'bg-[#10B981]' : 'bg-tz-border'
           }`}
         >
           <span
@@ -150,14 +150,14 @@ function UserRow({ user }: { user: AdminUser }) {
             }`}
           />
         </button>
-        <p className={`mt-1 text-xs ${isActive ? 'text-emerald-600' : 'text-slate-400'}`}>
+        <p className={`mt-1 text-xs ${isActive ? 'text-tz-success' : 'text-tz-muted'}`}>
           {isActive ? 'Активен' : 'Неактивен'}
         </p>
       </td>
       <td className="px-4 py-4 text-right">
-        {error && <p className="mb-2 max-w-[220px] text-xs text-red-600">{error}</p>}
+        {error && <p className="mb-2 max-w-[220px] text-xs text-tz-danger">{error}</p>}
         {saved && (
-          <p className="mb-2 flex items-center justify-end gap-1 text-xs font-medium text-emerald-600">
+          <p className="mb-2 flex items-center justify-end gap-1 text-xs font-medium text-tz-success">
             <Check size={13} /> Сохранено
           </p>
         )}
@@ -224,13 +224,13 @@ export default function CntrAdminDashboard() {
     <section>
       {/* Hero-блок в стиле ЛК ГК */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол администратора ЦНТР
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-tz-secondary">
           Управляйте учётными записями и ролями пользователей платформы. Изменения
           применяются после нажатия «Сохранить» в строке пользователя.
         </p>
@@ -240,7 +240,7 @@ export default function CntrAdminDashboard() {
         <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Пользователи
         </span>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
           Реестр технологий
         </Link>
       </nav>
@@ -263,7 +263,7 @@ export default function CntrAdminDashboard() {
               className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-500">{card.label}</span>
+                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{ background: `${card.color}15`, color: card.color }}
@@ -272,7 +272,7 @@ export default function CntrAdminDashboard() {
                 </span>
               </div>
               {loading ? (
-                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-tz-surface-2" />
               ) : (
                 <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">{card.value}</p>
               )}
@@ -287,13 +287,13 @@ export default function CntrAdminDashboard() {
 
         {loading ? (
           <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-            <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
-            <div className="mt-4 h-24 animate-pulse rounded bg-gray-50" />
+            <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+            <div className="mt-4 h-24 animate-pulse rounded bg-tz-soft" />
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-            <AlertCircle className="mx-auto mb-2 text-red-500" size={36} />
-            <p className="font-semibold text-red-700">{error}</p>
+          <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
+            <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
+            <p className="font-semibold text-tz-danger">{error}</p>
             <button
               onClick={() => loadUsers()}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
@@ -309,7 +309,7 @@ export default function CntrAdminDashboard() {
             <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
               Пользователи не найдены
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-slate-600">
+            <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
               Зарегистрированные пользователи платформы появятся в этой таблице.
             </p>
           </div>
@@ -317,7 +317,7 @@ export default function CntrAdminDashboard() {
           <div className="overflow-x-auto rounded-2xl border border-tz-card-border bg-tz-surface">
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-tz-card-border bg-[#FAFBFD] text-xs uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-tz-card-border bg-[#FAFBFD] text-xs uppercase tracking-wider text-tz-muted">
                   <th className="px-4 py-3 font-semibold">Пользователь</th>
                   <th className="px-4 py-3 font-semibold">Организация</th>
                   <th className="px-4 py-3 font-semibold">Роли</th>

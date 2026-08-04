@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 type Status = "idle" | "loading" | "error";
 
 const fieldClassName =
-  "w-full rounded-lg border border-slate-300 bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20";
+  "w-full rounded-lg border border-tz-border bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20";
 const PUBLIC_REGISTRATION_ROLES = ROLES.filter((role) => !role.slug.startsWith("cntr_"));
 
 export default function RegisterPage() {

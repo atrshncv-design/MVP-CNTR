@@ -89,13 +89,13 @@ export default function RdExecutorDashboard() {
     <section>
       {/* Hero-блок в стиле ЛК ГК */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол R&D-исполнителя
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-tz-secondary">
           Здесь отображаются проекты вашей организации: от вступления по токену до
           верификации контрольных точек и передачи технологии в серию.
         </p>
@@ -103,10 +103,10 @@ export default function RdExecutorDashboard() {
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
         <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">Проекты</span>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
           Реестр технологий
         </Link>
-        <Link href="/dashboard/executors" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/executors" className="py-4 text-tz-secondary hover:text-tz-fg">
           Каталог исполнителей
         </Link>
       </nav>
@@ -129,7 +129,7 @@ export default function RdExecutorDashboard() {
               className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-500">{card.label}</span>
+                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{ background: `${card.color}15`, color: card.color }}
@@ -138,7 +138,7 @@ export default function RdExecutorDashboard() {
                 </span>
               </div>
               {loading ? (
-                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-tz-surface-2" />
               ) : (
                 <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">{card.value}</p>
               )}
@@ -154,13 +154,13 @@ export default function RdExecutorDashboard() {
 
           {loading ? (
             <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-              <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
-              <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
+              <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+              <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-              <AlertCircle className="mx-auto mb-2 text-red-500" size={36} />
-              <p className="font-semibold text-red-700">{error}</p>
+            <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
+              <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
+              <p className="font-semibold text-tz-danger">{error}</p>
               <button
                 onClick={() => loadProjects()}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
@@ -176,7 +176,7 @@ export default function RdExecutorDashboard() {
               <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
                 Проектов пока нет
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-slate-600">
+              <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
                 Присоединитесь по токену, выданному заказчиком или менеджером ЦНТР, —
                 проект сразу появится в этом списке.
               </p>
@@ -193,7 +193,7 @@ export default function RdExecutorDashboard() {
                     >
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-slate-500">ЦНТР-{project.id}</span>
+                          <span className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</span>
                           <span
                             className="rounded-full px-2 py-0.5 text-[11px] font-medium"
                             style={{ background: `${color}15`, color }}
@@ -202,19 +202,19 @@ export default function RdExecutorDashboard() {
                           </span>
                         </div>
                         <h3 className="mt-1 text-lg font-bold text-tz-fg">{project.name}</h3>
-                        <p className="mt-1 text-sm text-slate-600">
+                        <p className="mt-1 text-sm text-tz-secondary">
                           {project.category ?? 'Категория не указана'}
                           {project.description ? ` — ${project.description}` : ''}
                         </p>
                       </div>
                       <div className="md:text-right">
-                        <div className="text-xs text-slate-500">Уровень УГТ</div>
+                        <div className="text-xs text-tz-muted">Уровень УГТ</div>
                         <div className="mt-1 font-bold text-[#2E5BFF]">
                           УГТ {project.current_level} → {project.target_level}
                         </div>
                       </div>
                       <div className="flex items-center md:min-w-28 md:justify-end">
-                        <ArrowRight size={18} className="text-slate-300 transition group-hover:translate-x-1" />
+                        <ArrowRight size={18} className="text-tz-muted transition group-hover:translate-x-1" />
                       </div>
                     </Link>
                   </motion.div>

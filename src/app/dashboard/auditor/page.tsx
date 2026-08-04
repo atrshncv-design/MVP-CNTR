@@ -212,13 +212,13 @@ export default function AuditorDashboard() {
     <section>
       {/* Hero-блок в стиле ЛК ГК */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-slate-500">
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол аудитора
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
-        <p className="mt-2 max-w-2xl text-slate-600">
+        <p className="mt-2 max-w-2xl text-tz-secondary">
           Оценивайте контрольные точки проектов (в первую очередь КТ-1) и принимайте
           решение Go/No-Go по технико-экономическому обоснованию.
         </p>
@@ -228,7 +228,7 @@ export default function AuditorDashboard() {
         <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Аудит проектов
         </span>
-        <Link href="/dashboard/technologies" className="py-4 text-slate-600 hover:text-tz-fg">
+        <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
           Реестр технологий
         </Link>
       </nav>
@@ -251,7 +251,7 @@ export default function AuditorDashboard() {
               className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-500">{card.label}</span>
+                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{ background: `${card.color}15`, color: card.color }}
@@ -260,7 +260,7 @@ export default function AuditorDashboard() {
                 </span>
               </div>
               {loading ? (
-                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-gray-100" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-tz-surface-2" />
               ) : (
                 <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">{card.value}</p>
               )}
@@ -270,7 +270,7 @@ export default function AuditorDashboard() {
       </div>
 
       {actionError && (
-        <div className="mt-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-6 flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           {actionError}
         </div>
@@ -283,13 +283,13 @@ export default function AuditorDashboard() {
 
           {loading ? (
             <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-              <div className="h-5 w-48 animate-pulse rounded bg-gray-100" />
-              <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
+              <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+              <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-              <AlertCircle className="mx-auto mb-2 text-red-500" size={36} />
-              <p className="font-semibold text-red-700">{error}</p>
+            <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
+              <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
+              <p className="font-semibold text-tz-danger">{error}</p>
               <button
                 onClick={() => loadProjects()}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
@@ -305,7 +305,7 @@ export default function AuditorDashboard() {
               <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
                 Проектов на аудите нет
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-slate-600">
+              <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
                 Присоединитесь по токену к проекту, контрольные точки которого нужно
                 проверить, — и они появятся в этом списке.
               </p>
@@ -325,7 +325,7 @@ export default function AuditorDashboard() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-slate-500">ЦНТР-{p.id}</span>
+                          <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
                           <span
                             className="rounded-full px-2 py-0.5 text-[11px] font-medium"
                             style={{ background: `${color}15`, color }}
@@ -339,11 +339,11 @@ export default function AuditorDashboard() {
                         >
                           {p.name}
                         </Link>
-                        <p className="mt-1 text-sm text-slate-600">
+                        <p className="mt-1 text-sm text-tz-secondary">
                           {p.category ?? 'Категория не указана'} · УГТ {p.current_level} → {p.target_level}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                      <div className="flex items-center gap-1.5 text-sm text-tz-muted">
                         <FileText size={14} className="text-[#FF7A2E]" />
                         {detail.documents.length} док.
                       </div>
@@ -351,7 +351,7 @@ export default function AuditorDashboard() {
 
                     <div className="mt-4 space-y-3">
                       {detail.control_points.length === 0 ? (
-                        <p className="text-sm text-slate-400">Контрольные точки не заданы</p>
+                        <p className="text-sm text-tz-muted">Контрольные точки не заданы</p>
                       ) : (
                         detail.control_points.map((cp) => {
                           const isGate = cp.point_type === 'gate' && cp.title.includes('КТ-1');
@@ -364,7 +364,7 @@ export default function AuditorDashboard() {
                               className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
                                 isGate
                                   ? 'border-[#2E5BFF]/40 bg-[#F5F8FF]'
-                                  : 'border-gray-100 bg-gray-50'
+                                  : 'border-tz-border bg-tz-soft'
                               }`}
                             >
                               <div className="min-w-0">
@@ -375,7 +375,7 @@ export default function AuditorDashboard() {
                                       КТ-1 · Ворота
                                     </span>
                                   ) : (
-                                    <span className="rounded bg-gray-200 px-2 py-0.5 text-[11px] text-gray-600">
+                                    <span className="rounded bg-tz-soft px-2 py-0.5 text-[11px] text-tz-secondary">
                                       {cp.point_type === 'gate' ? 'Ворота' : cp.point_type}
                                     </span>
                                   )}
@@ -387,10 +387,10 @@ export default function AuditorDashboard() {
                                   </span>
                                 </div>
                                 {cp.description && (
-                                  <p className="mt-1 text-sm text-slate-500">{cp.description}</p>
+                                  <p className="mt-1 text-sm text-tz-muted">{cp.description}</p>
                                 )}
                                 {cp.decision && (
-                                  <p className="mt-1 text-xs font-medium text-slate-500">
+                                  <p className="mt-1 text-xs font-medium text-tz-muted">
                                     Решение: {cp.decision}
                                   </p>
                                 )}
@@ -412,7 +412,7 @@ export default function AuditorDashboard() {
                                   <button
                                     onClick={() => decideControlPoint(p.id, cp.id, 'rejected')}
                                     disabled={deciding !== null}
-                                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-tz-danger-soft px-3.5 py-2 text-xs font-semibold text-tz-danger transition hover:bg-tz-danger-soft disabled:opacity-50"
                                   >
                                     <XCircle size={13} />
                                     No-Go
