@@ -1,62 +1,79 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
-  Check,
-  ChevronRight,
-  ChevronLeft,
-  ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  RotateCcw,
-  Lightbulb,
-  ArrowRight,
-  FileText,
-  Beaker,
-  Factory,
-  ClipboardCheck,
-  Zap,
-  Info,
-  Save,
-  Loader2,
   AlertCircle,
+  ArrowRight,
+  Beaker,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  FileCheck2,
+  Factory,
+  Info,
+  Loader2,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Wrench,
 } from 'lucide-react';
 import {
-  RadarChart,
-  PolarGrid,
   PolarAngleAxis,
+  PolarGrid,
   PolarRadiusAxis,
   Radar,
+  RadarChart,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
-  Cell,
-  ReferenceLine,
 } from 'recharts';
 import { UGT_LEVELS } from '@/lib/ugt-data';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-interface ChecklistItem {
-  id: string;
-  text: string;
-  category: 'scientific' | 'technical' | 'organizational' | 'production';
-  description: string;
+type Dimension = 'scientific' | 'technical' | 'organizational' | 'production';
+type AnswerStatus = 'not_started' | 'in_progress' | 'formed' | 'documented' | 'verified' | 'not_applicable';
+type EvidenceStatus = 'missing' | 'draft' | 'ready' | 'verified';
+
+interface EvidenceRequirement {
+  code: string;
+  title: string;
+  required: boolean;
 }
 
-interface StepData {
-  levelId: number;
-  items: ChecklistItem[];
+interface Checkpoint {
+  code: string;
+  number: number;
+  ugt_level: number;
+  title: string;
+  explanation: string;
+  dimensions: Dimension[];
+  critical: boolean;
+  evidence: EvidenceRequirement[];
+}
+
+interface TemplateOption {
+  value: string;
+  label: string;
+  score_pct: number;
+}
+
+interface AssessmentTemplate {
+  version: string;
+  answer_statuses: TemplateOption[];
+  evidence_statuses: TemplateOption[];
+  checkpoints: Checkpoint[];
+}
+
+interface AnswerState {
+  status: AnswerStatus;
+  applicable: boolean;
+  comment: string;
+  evidence: Record<string, EvidenceStatus>;
 }
 
 interface ProjectInfo {
@@ -66,405 +83,210 @@ interface ProjectInfo {
   targetLevel: number;
 }
 
-type WizardStep = 'info' | number | 'results';
-
-/* ------------------------------------------------------------------ */
-/*  Category config                                                    */
-/* ------------------------------------------------------------------ */
-const CATEGORY_CONFIG = {
-  scientific: { label: 'Научные', color: '#4A82FF', icon: Beaker },
-  technical: { label: 'Технические', color: '#10B981', icon: Zap },
-  organizational: { label: 'Организационные', color: '#E5C840', icon: ClipboardCheck },
-  production: { label: 'Производственные', color: '#FF7A2E', icon: Factory },
-} as const;
-
-/* ------------------------------------------------------------------ */
-/*  Checklist data per UGT level                                       */
-/* ------------------------------------------------------------------ */
-const STEP_CHECKLISTS: StepData[] = [
-  {
-    levelId: 1,
-    items: [
-      { id: 'ugt1_1', text: 'Сформулирована идея разработки новой технологии', category: 'scientific', description: 'На этом этапе формируется первоначальная научная гипотеза или инженерная идея, которая может стать основой для новой технологии.' },
-      { id: 'ugt1_2', text: 'Определены используемые физические законы и допущения', category: 'scientific', description: 'Необходимо чётко указать, какие фундаментальные физические принципы лежат в основе технологии, а также какие упрощения и допущения принимаются.' },
-      { id: 'ugt1_3', text: 'Существует концепция для реализации в ПО', category: 'technical', description: 'Разработана архитектурная концепция программного обеспечения, включающая выбор технологического стека, базовые алгоритмы и структуру данных.' },
-      { id: 'ugt1_4', text: 'Известно в общих чертах, что должно делать ПО', category: 'technical', description: 'Сформулированы ключевые функциональные требования к программному обеспечению на уровне общего описания.' },
-      { id: 'ugt1_5', text: 'Предварительные расчёты подтверждают базовые принципы', category: 'scientific', description: 'Проведены аналитические расчёты или компьютерное моделирование, результаты которых подтверждают работоспособность предложенных принципов.' },
-      { id: 'ugt1_6', text: 'Подготовлены математические формулировки концепций', category: 'technical', description: 'Разработаны математические модели и формулы, описывающие работу технологии.' },
-      { id: 'ugt1_7', text: 'Имеется идея с базовыми принципами алгоритма', category: 'technical', description: 'Сформировано описание базового алгоритма, лежащего в основе технологии.' },
-      { id: 'ugt1_8', text: 'Опубликованы научные обзоры/результаты', category: 'scientific', description: 'Результаты исследований опубликованы в рецензируемых научных журналах.' },
-      { id: 'ugt1_9', text: 'Опубликованы базовые научные принципы', category: 'scientific', description: 'Фундаментальные научные принципы представлены в виде научных статей или патентных заявок.' },
-    ],
-  },
-  {
-    levelId: 2,
-    items: [
-      { id: 'ugt2_1', text: 'Определена спецификация концепции', category: 'organizational', description: 'Разработан документ, детально описывающий технологическую концепцию, включая цели, задачи и ограничения.' },
-      { id: 'ugt2_2', text: 'Обоснована необходимость создания новой технологии', category: 'technical', description: 'Проведён анализ существующих решений на рынке, обосновывающий необходимость новой технологии.' },
-      { id: 'ugt2_3', text: 'Проведены расчётные исследования и моделирование', category: 'technical', description: 'Выполнены детальные инженерные расчёты и компьютерное моделирование отдельных компонентов системы.' },
-      { id: 'ugt2_4', text: 'Доказана эффективность использования идеи', category: 'technical', description: 'Получены убедительные доказательства эффективности предложенного подхода.' },
-      { id: 'ugt2_5', text: 'Подготовлено техническое задание', category: 'organizational', description: 'Разработан комплект технического задания в соответствии с ГОСТ.' },
-      { id: 'ugt2_6', text: 'Оценены производственные риски', category: 'organizational', description: 'Проведён анализ рисков, связанных с разработкой и внедрением технологии.' },
-    ],
-  },
-  {
-    levelId: 3,
-    items: [
-      { id: 'ugt3_1', text: 'Подтверждены ключевые функциональные характеристики', category: 'technical', description: 'КФХ — критические параметры, определяющие пригодность технологии. Проведены эксперименты, подтверждающие достижимость целевых значений.' },
-      { id: 'ugt3_2', text: 'Проведены лабораторные эксперименты на мелкомасштабных моделях', category: 'technical', description: 'В контролируемых лабораторных условиях проведены эксперименты на уменьшенных моделях системы.' },
-      { id: 'ugt3_3', text: 'Детальные комплексные расчётные исследования выполнены', category: 'technical', description: 'Выполнен полный комплекс инженерных расчётов с детальным моделированием всех ключевых процессов.' },
-      { id: 'ugt3_4', text: 'Отобраны работы для дальнейшей разработки', category: 'organizational', description: 'На основе результатов исследований принято решение о продолжении разработки.' },
-      { id: 'ugt3_5', text: 'Подготовлен отчёт об исследованиях', category: 'organizational', description: 'Оформлен полный отчёт о научно-исследовательских работах.' },
-      { id: 'ugt3_6', text: 'Определены ключевые риски', category: 'organizational', description: 'Идентифицированы наиболее значимые технические, организационные и внешние риски.' },
-    ],
-  },
-  {
-    levelId: 4,
-    items: [
-      { id: 'ugt4_1', text: 'Макеты проверены в лабораторных условиях', category: 'technical', description: 'Созданы и испытаны лабораторные макеты отдельных компонентов в контролируемых условиях.' },
-      { id: 'ugt4_2', text: 'Продемонстрирована работоспособность компонентов', category: 'technical', description: 'Каждый ключевой компонент прошёл функциональные испытания.' },
-      { id: 'ugt4_3', text: 'Проверена совместимость технологий', category: 'technical', description: 'Проведены интеграционные испытания, подтверждающие корректную совместную работу всех компонентов.' },
-      { id: 'ugt4_4', text: 'Определены ключевые параметры дизайна', category: 'organizational', description: 'Установлены ключевые конструктивные параметры системы.' },
-      { id: 'ugt4_5', text: 'Подготовлены протоколы испытаний', category: 'organizational', description: 'Разработаны и утверждены программы и методики испытаний.' },
-      { id: 'ugt4_6', text: 'Техническая документация оформлена', category: 'organizational', description: 'Подготовлен комплект конструкторской и программной документации.' },
-    ],
-  },
-  {
-    levelId: 5,
-    items: [
-      { id: 'ugt5_1', text: 'Компоненты интегрированы с поддерживающими элементами', category: 'technical', description: 'Основные компоненты собраны в единый комплекс со всеми вспомогательными системами.' },
-      { id: 'ugt5_2', text: 'Испытания в моделируемых условиях проведены', category: 'technical', description: 'Система прошла испытания на стендовом оборудовании.' },
-      { id: 'ugt5_3', text: 'Достигнут уровень промежуточных/полных масштабов', category: 'technical', description: 'Произведён переход к опытным образцам, близким к серийному производству.' },
-      { id: 'ugt5_4', text: 'Стендовые испытания пройдены', category: 'technical', description: 'Проведён полный цикл стендовых испытаний.' },
-      { id: 'ugt5_5', text: 'Отчёт по интеграции подготовлен', category: 'organizational', description: 'Оформлен отчёт о проведении интеграции компонентов.' },
-      { id: 'ugt5_6', text: 'Оценена готовность производства', category: 'production', description: 'Проведена предварительная оценка готовности производственной базы.' },
-    ],
-  },
-  {
-    levelId: 6,
-    items: [
-      { id: 'ugt6_1', text: 'Прототип содержит все детали системы', category: 'technical', description: 'Собран полнофункциональный прототип системы, приближённый к серийному образцу.' },
-      { id: 'ugt6_2', text: 'Демонстрация в релевантном окружении проведена', category: 'technical', description: 'Проведена успешная демонстрация работы прототипа в условиях, адекватных реальной эксплуатации.' },
-      { id: 'ugt6_3', text: 'Продемонстрирована работоспособность', category: 'technical', description: 'Подтверждена способность системы выполнять все заявленные функции.' },
-      { id: 'ugt6_4', text: 'Подтверждены ключевые функции системы', category: 'technical', description: 'Каждая ключевая функция проверена в составе комплексных испытаний.' },
-      { id: 'ugt6_5', text: 'Демонстрационный отчёт подготовлен', category: 'organizational', description: 'Оформлен отчёт о проведении демонстрационных испытаний.' },
-      { id: 'ugt6_6', text: 'Документация прототипа оформлена', category: 'organizational', description: 'Подготовлен полный комплект технической документации на прототип.' },
-    ],
-  },
-  {
-    levelId: 7,
-    items: [
-      { id: 'ugt7_1', text: 'Прототип испытан в полевых условиях', category: 'technical', description: 'Проведены испытания прототипа в реальных условиях эксплуатации.' },
-      { id: 'ugt7_2', text: 'Демонстрация в эксплуатационной среде проведена', category: 'technical', description: 'Выполнена успешная демонстрация работы системы в присутствии заказчика.' },
-      { id: 'ugt7_3', text: 'Успешные полевые испытания подтверждены', category: 'technical', description: 'По результатам полевых испытаний подготовлен акт, подтверждающий успешное прохождение тестирования.' },
-      { id: 'ugt7_4', text: 'Готов к мелкосерийному производству', category: 'production', description: 'Выполнены все подготовительные работы для запуска LRIP.' },
-      { id: 'ugt7_5', text: 'Протоколы полевых тестов оформлены', category: 'organizational', description: 'Оформлены протоколы полевых испытаний установленной формы.' },
-      { id: 'ugt7_6', text: 'Акт готовности оформлен', category: 'organizational', description: 'Подготовлен акт готовности технологии к переходу на этап квалификации.' },
-    ],
-  },
-  {
-    levelId: 8,
-    items: [
-      { id: 'ugt8_1', text: 'Система квалифицирована после испытаний', category: 'technical', description: 'Система успешно прошла полный комплекс квалификационных испытаний.' },
-      { id: 'ugt8_2', text: 'Соответствие спецификации подтверждено', category: 'technical', description: 'Проведено сопоставление фактических характеристик с требованиями спецификации.' },
-      { id: 'ugt8_3', text: 'DT&E завершены', category: 'organizational', description: 'Завершены разработка, испытание и оценка системы.' },
-      { id: 'ugt8_4', text: 'Пилотная линия работает', category: 'production', description: 'Развёрнута пилотная производственная линия.' },
-      { id: 'ugt8_5', text: 'Документация под контролем конфигурации', category: 'organizational', description: 'Внедрена система управления конфигурацией.' },
-      { id: 'ugt8_6', text: 'Производственные процессы на LRIP налажены', category: 'production', description: 'Процессы мелкосерийного выпуска отлажены.' },
-      { id: 'ugt8_7', text: 'Поставщики квалифицированы', category: 'production', description: 'Проведён аудит всех ключевых поставщиков.' },
-      { id: 'ugt8_8', text: 'Сертификация ПО получена', category: 'technical', description: 'ПО прошло сертификацию в соответствии с требованиями.' },
-    ],
-  },
-  {
-    levelId: 9,
-    items: [
-      { id: 'ugt9_1', text: 'Система в успешной эксплуатации', category: 'technical', description: 'Система успешно эксплуатируется в течение гарантийного срока.' },
-      { id: 'ugt9_2', text: 'OT&E завершены', category: 'organizational', description: 'Завершены эксплуатационные испытания и оценка.' },
-      { id: 'ugt9_3', text: 'Концепция использования реализована', category: 'technical', description: 'Реализованы все элементы концепции применения системы.' },
-      { id: 'ugt9_4', text: 'Производство стабильное (6-сигма)', category: 'production', description: 'Процесс достиг уровня Six Sigma.' },
-      { id: 'ugt9_5', text: 'Целевая стоимость достигнута', category: 'production', description: 'Достигнута целевая себестоимость единицы продукции.' },
-      { id: 'ugt9_6', text: 'План обучения реализован', category: 'organizational', description: 'Весь персонал прошёл обучение и аттестован.' },
-      { id: 'ugt9_7', text: 'План поддержки реализован', category: 'organizational', description: 'Создана и функционирует система технической поддержки.' },
-      { id: 'ugt9_8', text: 'Вся документация завершена', category: 'organizational', description: 'Подготовлен полный комплект эксплуатационной документации.' },
-    ],
-  },
-];
-
-const TECH_CATEGORIES = [
-  'Программное обеспечение', 'Аппаратные средства', 'Информационные системы',
-  'Промышленные технологии', 'Биотехнологии', 'Энергетические технологии',
-  'Материаловедение', 'Робототехника', 'Другое',
-];
-
-/* ------------------------------------------------------------------ */
-/*  Animation variants                                                 */
-/* ------------------------------------------------------------------ */
-const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
-const EASE_SMOOTH = [0.4, 0, 0.2, 1] as const;
-const EASE_BOUNCE = [0.34, 1.56, 0.64, 1] as const;
-
-const stepTransition = {
-  enter: (dir: number) => ({ x: dir > 0 ? 30 : -30, opacity: 0 }),
-  center: { x: 0, opacity: 1, transition: { duration: 0.3, ease: EASE_SMOOTH } },
-  exit: (dir: number) => ({
-    x: dir > 0 ? -30 : 30,
-    opacity: 0,
-    transition: { duration: 0.25, ease: EASE_SMOOTH },
-  }),
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (d: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, delay: d, ease: EASE_OUT_EXPO },
-  }),
-};
-
-function getLevelColor(levelId: number): string {
-  return UGT_LEVELS[levelId - 1]?.color ?? '#2E5BFF';
+interface PreviewResult {
+  preliminary_ugt: number;
+  completion_pct: number;
+  evidence_pct: number;
+  confidence_pct: number;
+  latest_checkpoint: number;
+  not_applicable_count: number;
+  dimension_scores: Record<Dimension, number>;
+  level_scores: Array<{ ugt_level: number; percentage: number; achieved: boolean; checkpoint_codes: string[] }>;
+  blockers: Array<{ checkpoint_code: string; title: string; status: AnswerStatus; critical: boolean }>;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Circular Progress                                                   */
-/* ------------------------------------------------------------------ */
-function CircularProgress({ percentage, color, size = 180, label, sublabel }: {
-  percentage: number; color: string; size?: number; label: string; sublabel: string;
-}) {
-  const stroke = 8;
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (percentage / 100) * circ;
+const STATUS_LABELS: Record<AnswerStatus, string> = {
+  not_started: 'Не начато',
+  in_progress: 'В работе',
+  formed: 'Сформировано',
+  documented: 'Выполнено и документировано',
+  verified: 'Подтверждено',
+  not_applicable: 'Неприменимо',
+};
+
+const STATUS_SCORE: Record<AnswerStatus, number> = {
+  not_started: 0,
+  in_progress: 0.25,
+  formed: 0.5,
+  documented: 0.75,
+  verified: 1,
+  not_applicable: 0,
+};
+
+const EVIDENCE_SCORE: Record<EvidenceStatus, number> = {
+  missing: 0,
+  draft: 0.25,
+  ready: 0.75,
+  verified: 1,
+};
+
+const DIMENSION_CONFIG: Record<Dimension, { label: string; color: string; icon: typeof Beaker }> = {
+  scientific: { label: 'Научная', color: '#4A82FF', icon: Beaker },
+  technical: { label: 'Техническая', color: '#10B981', icon: Wrench },
+  organizational: { label: 'Организационная', color: '#C49A00', icon: ClipboardCheck },
+  production: { label: 'Производственная', color: '#F97316', icon: Factory },
+};
+
+const TECH_CATEGORIES = [
+  'Программное обеспечение',
+  'Аппаратные средства',
+  'Информационные системы',
+  'Промышленные технологии',
+  'Биотехнологии',
+  'Энергетические технологии',
+  'Материаловедение',
+  'Робототехника',
+  'Другое',
+];
+
+function getLevelColor(level: number): string {
+  return UGT_LEVELS[level - 1]?.color ?? '#2563EB';
+}
+
+function emptyAnswer(checkpoint: Checkpoint): AnswerState {
+  return {
+    status: 'not_started',
+    applicable: true,
+    comment: '',
+    evidence: Object.fromEntries(checkpoint.evidence.map((item) => [item.code, 'missing'])) as Record<string, EvidenceStatus>,
+  };
+}
+
+function calculatePreview(template: AssessmentTemplate, answers: Record<string, AnswerState>): PreviewResult {
+  const applicable = template.checkpoints.filter((checkpoint) => answers[checkpoint.code]?.status !== 'not_applicable');
+  const scoreFor = (checkpoint: Checkpoint) => STATUS_SCORE[answers[checkpoint.code]?.status ?? 'not_started'];
+  const evidenceFor = (checkpoint: Checkpoint) => {
+    if (!checkpoint.evidence.length) return scoreFor(checkpoint);
+    return checkpoint.evidence.reduce((sum, requirement) => (
+      sum + EVIDENCE_SCORE[answers[checkpoint.code]?.evidence[requirement.code] ?? 'missing']
+    ), 0) / checkpoint.evidence.length;
+  };
+  const average = (items: Checkpoint[], getter: (checkpoint: Checkpoint) => number) => (
+    items.length ? items.reduce((sum, item) => sum + getter(item), 0) / items.length : 0
+  );
+  const levelScores = Array.from({ length: 9 }, (_, index) => {
+    const level = index + 1;
+    const items = applicable.filter((checkpoint) => checkpoint.ugt_level === level);
+    const critical = items.filter((checkpoint) => checkpoint.critical);
+    const percentage = Math.round(average(items, scoreFor) * 1000) / 10;
+    return {
+      ugt_level: level,
+      percentage,
+      achieved: items.length > 0 && percentage >= 70 && critical.every((checkpoint) => scoreFor(checkpoint) >= 0.75),
+      checkpoint_codes: items.map((checkpoint) => checkpoint.code),
+    };
+  });
+  let preliminary_ugt = 0;
+  for (const level of levelScores) {
+    if (!level.achieved) break;
+    preliminary_ugt = level.ugt_level;
+  }
+  const dimension_scores = Object.fromEntries(
+    (Object.keys(DIMENSION_CONFIG) as Dimension[]).map((dimension) => [
+      dimension,
+      Math.round(average(applicable.filter((checkpoint) => checkpoint.dimensions.includes(dimension)), scoreFor) * 1000) / 10,
+    ]),
+  ) as Record<Dimension, number>;
+  const completion_pct = Math.round(average(applicable, scoreFor) * 1000) / 10;
+  const evidence_pct = Math.round(average(applicable, evidenceFor) * 1000) / 10;
+  const confidence_pct = Math.round(average(applicable, (checkpoint) => scoreFor(checkpoint) * 0.4 + evidenceFor(checkpoint) * 0.6) * 1000) / 10;
+  const nextLevel = Math.min(preliminary_ugt + 1, 9);
+  const blockers = template.checkpoints
+    .filter((checkpoint) => checkpoint.ugt_level === nextLevel && answers[checkpoint.code]?.status !== 'not_applicable')
+    .filter((checkpoint) => scoreFor(checkpoint) < 0.75)
+    .map((checkpoint) => ({
+      checkpoint_code: checkpoint.code,
+      title: checkpoint.title,
+      status: answers[checkpoint.code]?.status ?? 'not_started',
+      critical: checkpoint.critical,
+    }));
+  return {
+    preliminary_ugt,
+    completion_pct,
+    evidence_pct,
+    confidence_pct,
+    latest_checkpoint: Math.max(0, ...applicable.filter((checkpoint) => scoreFor(checkpoint) >= 0.5).map((checkpoint) => checkpoint.number)),
+    not_applicable_count: template.checkpoints.length - applicable.length,
+    dimension_scores,
+    level_scores: levelScores,
+    blockers,
+  };
+}
+
+function MetricCard({ label, value, hint, color }: { label: string; value: string; hint: string; color: string }) {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E8ECF0" strokeWidth={stroke} />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color}
-          strokeWidth={stroke} strokeLinecap="round" strokeDasharray={circ}
-          initial={{ strokeDashoffset: circ }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.2, ease: EASE_OUT_EXPO, delay: 0.3 }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="font-mono text-4xl font-bold" style={{ color }}>{label}</span>
-        <span className="mt-1 max-w-[120px] text-xs leading-tight" style={{ color: '#475569' }}>{sublabel}</span>
-      </div>
+    <div className="rounded-2xl border border-tz-border bg-tz-surface p-4 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-tz-muted">{label}</p>
+      <p className="mt-2 font-mono text-3xl font-bold" style={{ color }}>{value}</p>
+      <p className="mt-1 text-xs text-tz-muted">{hint}</p>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Category Badge                                                      */
-/* ------------------------------------------------------------------ */
-function CategoryBadge({ category }: { category: keyof typeof CATEGORY_CONFIG }) {
-  const cfg = CATEGORY_CONFIG[category];
-  const Icon = cfg.icon;
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium"
-      style={{ backgroundColor: `${cfg.color}18`, color: cfg.color, boxShadow: `0 1px 4px ${cfg.color}15` }}>
-      <Icon size={11} />{cfg.label}
-    </span>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Checklist Item Card                                                 */
-/* ------------------------------------------------------------------ */
-function ChecklistItemCard({ item, isChecked, isExpanded, levelColor, onToggleCheck, onToggleExpand, index }: {
-  item: ChecklistItem; isChecked: boolean; isExpanded: boolean; levelColor: string;
-  onToggleCheck: () => void; onToggleExpand: () => void; index: number;
-}) {
-  return (
-    <motion.div
-      layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.35, delay: index * 0.05, ease: EASE_OUT_EXPO, layout: { duration: 0.3, ease: EASE_SMOOTH } }}
-      className="group cursor-pointer select-none overflow-hidden rounded-2xl border bg-tz-surface transition-all duration-200"
-      style={{
-        borderColor: isChecked ? `${levelColor}40` : '#E8ECF0',
-        borderLeftWidth: isChecked ? 3 : 1,
-        borderLeftColor: isChecked ? levelColor : '#E8ECF0',
-        background: isChecked ? `${levelColor}05` : '#FFFFFF',
-        boxShadow: isChecked ? `0 4px 20px ${levelColor}12, 0 1px 4px rgba(15,23,42,0.06)` : '0 2px 8px rgba(15,23,42,0.04)',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
-    >
-      <div className="flex items-start gap-4 p-5 sm:p-6" onClick={(e) => { e.stopPropagation(); onToggleCheck(); }}>
-        <motion.div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-2"
-          style={{ borderColor: isChecked ? levelColor : '#DEE2E8', background: isChecked ? levelColor : 'transparent' }}
-          animate={isChecked ? { scale: [1, 1.15, 1.05] } : { scale: 1 }}
-          transition={{ duration: 0.3, ease: EASE_BOUNCE }}>
-          {isChecked && <Check size={14} className="text-white" strokeWidth={3} />}
-        </motion.div>
-        <div className="flex-1">
-          <p className="text-base font-medium leading-snug" style={{ color: '#0F172A' }}>{item.text}</p>
-          <div className="mt-2.5 flex items-center gap-3"><CategoryBadge category={item.category} /></div>
-        </div>
-      </div>
-      <div className="flex items-center justify-center border-t px-5 py-2 transition-colors duration-150"
-        style={{ borderColor: isExpanded ? `${levelColor}18` : 'transparent', background: isExpanded ? `${levelColor}04` : 'transparent' }}
-        onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}>
-        <button className="inline-flex items-center gap-1.5 text-xs font-medium transition-all duration-200 hover:underline"
-          style={{ color: isExpanded ? levelColor : '#94A3B8' }}>
-          <Info size={12} />{isExpanded ? 'Скрыть' : 'Подробнее'}
-          {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        </button>
-      </div>
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE_SMOOTH }} style={{ overflow: 'hidden' }}>
-            <div className="mx-5 mb-4 rounded-xl px-4 py-3.5 sm:mx-6 sm:px-5 sm:py-4" style={{ borderLeft: `3px solid ${levelColor}`, background: `${levelColor}08` }}>
-              <p className="text-sm leading-relaxed" style={{ color: '#475569' }}>{item.description}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Main Wizard Component                                               */
-/* ------------------------------------------------------------------ */
 export default function QuestionnaireWizardClient() {
   const router = useRouter();
   const { data: session } = useSession();
-
-  const [currentStep, setCurrentStep] = useState<WizardStep>('info');
-  const [direction, setDirection] = useState(1);
+  const [template, setTemplate] = useState<AssessmentTemplate | null>(null);
+  const [answers, setAnswers] = useState<Record<string, AnswerState>>({});
+  const [projectInfo, setProjectInfo] = useState<ProjectInfo>({ name: '', description: '', category: '', targetLevel: 9 });
+  const [step, setStep] = useState<'info' | number | 'results'>('info');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [projectInfo, setProjectInfo] = useState<ProjectInfo>({
-    name: '', description: '', category: '', targetLevel: 9,
-  });
-
-  const [selections, setSelections] = useState<Map<number, Set<string>>>(new Map());
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [chartView, setChartView] = useState<'bars' | 'radar'>('bars');
-
-  const currentLevel = useMemo(() => {
-    if (typeof currentStep === 'number') return UGT_LEVELS[currentStep];
-    return null;
-  }, [currentStep]);
-
-  const currentChecklist = useMemo(() => {
-    if (typeof currentStep === 'number') return STEP_CHECKLISTS[currentStep];
-    return null;
-  }, [currentStep]);
-
-  const currentSelections = useMemo(() => {
-    if (!currentLevel) return new Set<string>();
-    return selections.get(currentLevel.id) ?? new Set<string>();
-  }, [selections, currentLevel]);
-
-  const categoriesInCurrentStep = useMemo(() => {
-    if (!currentChecklist) return [];
-    return Array.from(new Set(currentChecklist.items.map((i) => i.category)));
-  }, [currentChecklist]);
-
-  const filteredItems = useMemo(() => {
-    if (!currentChecklist) return [];
-    if (activeCategory === 'all') return currentChecklist.items;
-    return currentChecklist.items.filter((i) => i.category === activeCategory);
-  }, [currentChecklist, activeCategory]);
-
-  const toggleItem = useCallback((levelId: number, itemId: string) => {
-    setSelections((prev) => {
-      const next = new Map(prev);
-      const set = new Set(next.get(levelId) ?? []);
-      if (set.has(itemId)) set.delete(itemId);
-      else set.add(itemId);
-      next.set(levelId, set);
-      return next;
-    });
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_URL}/api/v1/assessments/template`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Не удалось загрузить актуальную версию анкеты.');
+        return response.json() as Promise<AssessmentTemplate>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setTemplate(data);
+        setAnswers(Object.fromEntries(data.checkpoints.map((checkpoint) => [checkpoint.code, emptyAnswer(checkpoint)])));
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить анкету.');
+      });
+    return () => { cancelled = true; };
   }, []);
 
-  const toggleExpand = useCallback((itemId: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(itemId)) next.delete(itemId);
-      else next.add(itemId);
-      return next;
-    });
+  const preview = useMemo(() => (template ? calculatePreview(template, answers) : null), [answers, template]);
+  const currentCheckpoints = useMemo(
+    () => (template && typeof step === 'number' ? template.checkpoints.filter((checkpoint) => checkpoint.ugt_level === step) : []),
+    [step, template],
+  );
+  const answeredCount = useMemo(
+    () => (template ? template.checkpoints.filter((checkpoint) => answers[checkpoint.code]?.status !== 'not_started').length : 0),
+    [answers, template],
+  );
+
+  const updateAnswer = useCallback((code: string, patch: Partial<AnswerState>) => {
+    setAnswers((current) => ({ ...current, [code]: { ...current[code], ...patch } }));
   }, []);
 
-  const goNext = useCallback(() => {
-    setDirection(1);
-    if (currentStep === 'info') setCurrentStep(0);
-    else if (typeof currentStep === 'number') {
-      if (currentStep < 8) setCurrentStep(currentStep + 1);
-      else setCurrentStep('results');
-    }
-  }, [currentStep]);
-
-  const goBack = useCallback(() => {
-    setDirection(-1);
-    if (currentStep === 'results') setCurrentStep(8);
-    else if (typeof currentStep === 'number') {
-      if (currentStep > 0) setCurrentStep(currentStep - 1);
-      else setCurrentStep('info');
-    }
-  }, [currentStep]);
-
-  const skipStep = useCallback(() => {
-    setDirection(1);
-    if (typeof currentStep === 'number') {
-      if (currentStep < 8) setCurrentStep(currentStep + 1);
-      else setCurrentStep('results');
-    }
-  }, [currentStep]);
+  const updateEvidence = useCallback((checkpointCode: string, evidenceCode: string, status: EvidenceStatus) => {
+    setAnswers((current) => ({
+      ...current,
+      [checkpointCode]: {
+        ...current[checkpointCode],
+        evidence: { ...current[checkpointCode].evidence, [evidenceCode]: status },
+      },
+    }));
+  }, []);
 
   const resetAssessment = useCallback(() => {
-    setSelections(new Map());
-    setExpandedItems(new Set());
+    if (!template) return;
+    setAnswers(Object.fromEntries(template.checkpoints.map((checkpoint) => [checkpoint.code, emptyAnswer(checkpoint)])));
     setProjectInfo({ name: '', description: '', category: '', targetLevel: 9 });
-    setCurrentStep('info');
-    setDirection(1);
-    setActiveCategory('all');
+    setStep('info');
     setSaveError(null);
-  }, []);
+  }, [template]);
 
-  const results = useMemo(() => {
-    const levelScores = STEP_CHECKLISTS.map((step) => {
-      const checked = selections.get(step.levelId) ?? new Set<string>();
-      const total = step.items.length;
-      const pct = Math.round((checked.size / total) * 100);
-      return {
-        levelId: step.levelId,
-        level: UGT_LEVELS[step.levelId - 1],
-        checked: checked.size,
-        total,
-        percentage: pct,
-        achieved: pct >= 70,
-      };
-    });
-
-    let determinedLevel = 0;
-    for (let i = 0; i < levelScores.length; i++) {
-      if (levelScores[i].achieved) determinedLevel = levelScores[i].levelId;
-      else break;
-    }
-    for (let i = 0; i < determinedLevel; i++) {
-      if (!levelScores[i].achieved) { determinedLevel = i; break; }
-    }
-    const overallPct = levelScores.reduce((sum, s) => sum + s.percentage, 0) / levelScores.length;
-    return { levelScores, determinedLevel, overallPct };
-  }, [selections]);
-
-  /**
-   * Сохранение проекта: собирает данные опросника (название, описание,
-   * категория, целевой уровень, ответы по уровням с текстами выбранных
-   * пунктов и процентами) и отправляет POST /api/v1/projects.
-   * При успехе — редирект на карточку проекта.
-   */
-  const handleSaveProject = useCallback(async () => {
+  const handleSave = useCallback(async () => {
     setSaveError(null);
+    if (!template) return;
     if (!projectInfo.name.trim()) {
       setSaveError('Укажите название проекта — оно обязательно для сохранения.');
       return;
@@ -473,451 +295,112 @@ export default function QuestionnaireWizardClient() {
       setSaveError('Сессия не активна. Войдите в систему и повторите попытку.');
       return;
     }
-
+    const missingReasons = template.checkpoints.some((checkpoint) => {
+      const answer = answers[checkpoint.code];
+      return answer.status === 'not_applicable' && !answer.comment.trim();
+    });
+    if (missingReasons) {
+      setSaveError('Для каждого ответа «Неприменимо» добавьте обоснование.');
+      return;
+    }
     setSaving(true);
     try {
-      const questionnaireResults = STEP_CHECKLISTS.map((step) => {
-        const checked = selections.get(step.levelId) ?? new Set<string>();
-        const score = results.levelScores.find((s) => s.levelId === step.levelId);
-        return {
-          level_id: step.levelId,
-          // В checked_items передаём тексты выбранных пунктов (не id)
-          checked_items: step.items.filter((i) => checked.has(i.id)).map((i) => i.text),
-          percentage: score?.percentage ?? 0,
-        };
-      });
-
-      const body = {
-        name: projectInfo.name.trim(),
-        description: projectInfo.description.trim() || null,
-        questionnaire_results: questionnaireResults,
-      };
-
-      const res = await fetch(`${API_URL}/api/v1/assessments`, {
+      const response = await fetch(`${API_URL}/api/v1/assessments`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.user.accessToken}`,
-        },
-        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.user.accessToken}` },
+        body: JSON.stringify({
+          name: projectInfo.name.trim(),
+          description: projectInfo.description.trim() || null,
+          category: projectInfo.category || null,
+          target_level: projectInfo.targetLevel,
+          template_version: template.version,
+          answers: template.checkpoints.map((checkpoint) => ({
+            checkpoint_code: checkpoint.code,
+            status: answers[checkpoint.code].status,
+            applicable: answers[checkpoint.code].status !== 'not_applicable',
+            comment: answers[checkpoint.code].comment.trim() || null,
+            evidence: checkpoint.evidence.map((evidence) => ({
+              evidence_code: evidence.code,
+              status: answers[checkpoint.code].evidence[evidence.code] ?? 'missing',
+            })),
+          })),
+        }),
       });
-
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        throw new Error(
-          detail
-            ? `Не удалось сохранить проект (${res.status}): ${detail.slice(0, 200)}`
-            : `Не удалось сохранить проект (${res.status})`,
-        );
+      if (!response.ok) {
+        const detail = await response.text().catch(() => '');
+        throw new Error(detail ? `Не удалось сохранить проект (${response.status}): ${detail.slice(0, 220)}` : `Не удалось сохранить проект (${response.status}).`);
       }
-
-      const data = (await res.json()) as { id: number };
+      const data = await response.json() as { id: number };
       router.push(`/dashboard/project/${data.id}`);
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Не удалось сохранить проект. Попробуйте ещё раз.');
+    } catch (error: unknown) {
+      setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить проект.');
     } finally {
       setSaving(false);
     }
-  }, [projectInfo, session, selections, results.levelScores, router]);
+  }, [answers, projectInfo, router, session, template]);
 
+  if (loadError) {
+    return <div className="mx-auto max-w-3xl px-6 py-32"><div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-6 text-tz-danger"><AlertCircle className="mb-3" />{loadError}</div></div>;
+  }
+  if (!template) {
+    return <div className="flex min-h-[60vh] items-center justify-center gap-3 text-tz-muted"><Loader2 className="animate-spin" />Загрузка актуальной анкеты…</div>;
+  }
+
+  const level = typeof step === 'number' ? UGT_LEVELS[step - 1] : null;
   const totalSteps = 9;
-  const completedSteps = currentStep === 'results' ? 9 : currentStep === 'info' ? 0 : (currentStep as number) + 1;
-  const progressPercent = Math.round((completedSteps / totalSteps) * 100);
-
-  const radarData = results.levelScores.map((s) => ({
-    subject: s.level.code, fullMark: 100, pct: s.percentage, color: s.level.color,
-  }));
-
-  const barData = results.levelScores.map((s) => ({
-    name: s.level.code, pct: s.percentage, color: s.level.color, achieved: s.achieved,
-  }));
-
-  const nextLevelRecommendations = useMemo(() => {
-    const nextId = results.determinedLevel + 1;
-    if (nextId > 9) return [];
-    const step = STEP_CHECKLISTS[nextId - 1];
-    const checked = selections.get(nextId) ?? new Set<string>();
-    return step.items.filter((i) => !checked.has(i.id));
-  }, [results.determinedLevel, selections]);
+  const progress = step === 'info' ? 0 : step === 'results' ? 100 : Math.round((step / totalSteps) * 100);
 
   return (
-    <>
-      <section className="relative overflow-hidden" style={{ background: '#0F172A', paddingTop: 120, paddingBottom: 48 }}>
-        <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
-          <motion.p className="mb-4 text-sm" style={{ color: '#94A3B8' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            Главная → Оценка проекта
-          </motion.p>
-          <motion.h1 className="text-4xl font-bold text-white sm:text-5xl lg:text-[56px]" style={{ lineHeight: 1.1, letterSpacing: '-0.02em' }}
-            initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: EASE_OUT_EXPO }}>
-            Оценка уровня готовности технологии
-          </motion.h1>
-          <motion.p className="mt-4 max-w-[600px] text-lg" style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5, ease: EASE_OUT_EXPO }}>
-            Ответьте на вопросы по критериям ГОСТ Р 58048-2017, и система определит текущий УГТ вашего проекта
-          </motion.p>
+    <div className="min-h-screen bg-tz-bg pb-20">
+      <header className="px-4 pb-10 pt-28 text-white sm:px-8" style={{ background: "var(--tz-hero-bg)" }}>
+        <div className="mx-auto max-w-6xl">
+          <p className="mb-3 text-sm text-tz-muted">Главная → Оценка проекта</p>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Экспресс-оценка готовности проекта</h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-[color:var(--tz-hero-muted)]">Не просто «да/нет»: оцените 22 контрольных рубежа по степени достижения и готовности подтверждающих материалов.</p>
+          <div className="mt-8 h-2 overflow-hidden rounded-full bg-tz-surface/10"><div className="h-full rounded-full bg-tz-accent-soft0 transition-all duration-500" style={{ width: `${progress}%` }} /></div>
+          <div className="mt-3 flex justify-between text-xs text-tz-muted"><span>{answeredCount} из {template.checkpoints.length} рубежей заполнено</span><span>Версия анкеты {template.version}</span></div>
+        </div>
+      </header>
 
-          <motion.div className="mt-10 max-w-[800px] rounded-2xl px-6 py-5 sm:px-8"
-            style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' }}
-            initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, delay: 0.7, ease: EASE_OUT_EXPO }}>
-            <div className="flex items-center justify-between gap-1">
-              {UGT_LEVELS.map((level, idx) => {
-                const isCompleted = currentStep === 'results' ? true : typeof currentStep === 'number' ? idx < currentStep : false;
-                const isCurrent = currentStep !== 'results' && currentStep !== 'info' && idx === (currentStep as number);
-                const isUpcoming = !isCompleted && !isCurrent;
-                return (
-                  <div key={level.id} className="flex flex-1 items-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <motion.div className="flex items-center justify-center rounded-full"
-                        style={{
-                          width: 40, height: 40,
-                          background: isCompleted ? '#10B981' : isCurrent ? level.color : 'rgba(255,255,255,0.08)',
-                          border: isUpcoming ? '2px solid rgba(255,255,255,0.15)' : 'none',
-                          boxShadow: isCurrent ? `0 0 0 4px ${level.color}33` : 'none',
-                        }}
-                        initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.8 + idx * 0.06, ease: EASE_BOUNCE }}>
-                        {isCompleted ? <Check size={18} className="text-white" strokeWidth={3} />
-                          : <span className="text-sm font-bold" style={{ color: isCurrent ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }}>{level.id}</span>}
-                      </motion.div>
-                      <span className="hidden font-mono text-[10px] font-medium sm:block" style={{ color: '#94A3B8' }}>{level.code}</span>
-                    </div>
-                    {idx < 8 && <div className="mx-1 hidden h-[2px] flex-1 sm:block" style={{
-                      background: isCompleted ? '#10B981'
-                        : isCurrent ? `repeating-linear-gradient(90deg, ${level.color} 0, ${level.color} 4px, transparent 4px, transparent 8px)`
-                          : 'rgba(255,255,255,0.1)',
-                    }} />}
-                  </div>
-                );
+      <main className="mx-auto max-w-6xl px-4 pt-8 sm:px-8">
+        {step === 'info' && (
+          <section className="mx-auto max-w-3xl rounded-3xl border border-tz-border bg-tz-surface p-6 shadow-sm sm:p-10">
+            <div className="mb-8 flex items-start gap-4"><div className="rounded-2xl bg-tz-accent-soft p-3 text-tz-accent"><Target /></div><div><p className="text-sm font-semibold uppercase tracking-wide text-tz-accent">Шаг 1</p><h2 className="mt-1 text-3xl font-bold text-tz-fg">Расскажите о проекте</h2><p className="mt-2 leading-6 text-tz-muted">Эти данные будут сохранены вместе с результатом и помогут подобрать следующий этап развития.</p></div></div>
+            <div className="space-y-5">
+              <label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">Название проекта *</span><input value={projectInfo.name} onChange={(event) => setProjectInfo((current) => ({ ...current, name: event.target.value }))} className="w-full rounded-xl border border-tz-border px-4 py-3 outline-none focus:border-tz-accent focus:ring-2 focus:ring-tz-accent-soft" placeholder="Например, система контроля качества" /></label>
+              <label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">Описание</span><textarea value={projectInfo.description} onChange={(event) => setProjectInfo((current) => ({ ...current, description: event.target.value }))} rows={4} className="w-full resize-none rounded-xl border border-tz-border px-4 py-3 outline-none focus:border-tz-accent focus:ring-2 focus:ring-tz-accent-soft" placeholder="Что создаётся, для кого и какую проблему решает?" /></label>
+              <div className="grid gap-5 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">Тип технологии</span><select value={projectInfo.category} onChange={(event) => setProjectInfo((current) => ({ ...current, category: event.target.value }))} className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-3 outline-none focus:border-tz-accent"><option value="">Выберите тип</option>{TECH_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></label><label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">Целевой УГТ</span><select value={projectInfo.targetLevel} onChange={(event) => setProjectInfo((current) => ({ ...current, targetLevel: Number(event.target.value) }))} className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-3 outline-none focus:border-tz-accent">{UGT_LEVELS.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select></label></div>
+            </div>
+            <div className="mt-8 flex justify-end"><button onClick={() => setStep(1)} className="inline-flex items-center gap-2 rounded-xl bg-tz-accent px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-tz-accent-hover">Начать оценку <ArrowRight size={17} /></button></div>
+          </section>
+        )}
+
+        {typeof step === 'number' && level && (
+          <section>
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-wide text-tz-accent">УГТ {step} · контрольные рубежи</p><h2 className="mt-1 text-3xl font-bold text-tz-fg">{level.name}</h2><p className="mt-2 max-w-3xl text-tz-muted">Выберите наиболее точное состояние каждого результата. Не отмечайте «подтверждено», если доказательства ещё не готовы.</p></div><div className="rounded-2xl border border-tz-border bg-tz-surface px-4 py-3 text-right shadow-sm"><p className="text-xs text-tz-muted">Заполнено в блоке</p><p className="font-mono text-2xl font-bold" style={{ color: getLevelColor(step) }}>{currentCheckpoints.filter((checkpoint) => answers[checkpoint.code].status !== 'not_started').length}/{currentCheckpoints.length}</p></div></div>
+            <div className="space-y-4">
+              {currentCheckpoints.map((checkpoint) => {
+                const answer = answers[checkpoint.code];
+                const dimensionLabel = checkpoint.dimensions.map((dimension) => DIMENSION_CONFIG[dimension].label).join(' · ');
+                return <article key={checkpoint.code} className="overflow-hidden rounded-2xl border border-tz-border bg-tz-surface shadow-sm"><div className="p-5 sm:p-6"><div className="flex items-start gap-4"><div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-tz-soft font-mono text-sm font-bold text-tz-secondary">{checkpoint.number}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold uppercase tracking-wide text-tz-muted">{checkpoint.code}</span>{checkpoint.critical && <span className="rounded-full bg-tz-warning-soft px-2 py-1 text-[11px] font-semibold text-tz-warning">Критический рубеж</span>}<span className="text-xs text-tz-muted">{dimensionLabel}</span></div><h3 className="mt-2 text-lg font-semibold text-tz-fg">{checkpoint.title}</h3><p className="mt-2 leading-6 text-tz-secondary">{checkpoint.explanation}</p></div></div><div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">{(['not_started', 'in_progress', 'formed', 'documented', 'verified', 'not_applicable'] as AnswerStatus[]).map((status) => <button key={status} onClick={() => updateAnswer(checkpoint.code, { status })} className={`min-h-12 rounded-xl border px-2 py-2 text-xs font-semibold transition ${answer.status === status ? 'border-tz-accent bg-tz-accent-soft text-tz-accent-hover shadow-sm' : 'border-tz-border bg-tz-surface text-tz-secondary hover:border-tz-accent hover:bg-tz-accent-soft'}`}>{STATUS_LABELS[status]}</button>)}</div>{answer.status === 'not_applicable' && <label className="mt-4 block"><span className="mb-2 flex items-center gap-2 text-sm font-semibold text-tz-warning"><Info size={15} />Почему этот рубеж неприменим?</span><textarea value={answer.comment} onChange={(event) => updateAnswer(checkpoint.code, { comment: event.target.value })} rows={2} className="w-full resize-none rounded-xl border border-tz-warning bg-tz-warning-soft px-4 py-3 text-sm outline-none focus:border-tz-warning" placeholder="Например: проект является программным продуктом и не имеет физической установочной серии." /></label>}{(['formed', 'documented', 'verified'].includes(answer.status)) && <div className="mt-5 rounded-2xl bg-tz-bg p-4"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-tz-secondary"><FileCheck2 size={16} className="text-tz-accent" />Состояние подтверждающих материалов</div><div className="space-y-3">{checkpoint.evidence.map((evidence) => <div key={evidence.code} className="flex flex-col gap-2 rounded-xl border border-tz-border bg-tz-surface p-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-sm text-tz-secondary">{evidence.title}{evidence.required && <span className="ml-1 text-tz-danger">*</span>}</span><select value={answer.evidence[evidence.code] ?? 'missing'} onChange={(event) => updateEvidence(checkpoint.code, evidence.code, event.target.value as EvidenceStatus)} className="rounded-lg border border-tz-border bg-tz-surface px-2 py-2 text-xs font-medium text-tz-secondary outline-none focus:border-tz-accent">{(['missing', 'draft', 'ready', 'verified'] as EvidenceStatus[]).map((status) => <option key={status} value={status}>{status === 'missing' ? 'Отсутствует' : status === 'draft' ? 'Черновик' : status === 'ready' ? 'Готово' : 'Проверено'}</option>)}</select></div>)}</div></div>}</div></article>;
               })}
             </div>
-            <div className="mt-4">
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Прогресс: {progressPercent}% ({Math.min(completedSteps, 9)}/9)</span>
-              </div>
-              <div className="h-1 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <motion.div className="h-full rounded-full" style={{ background: '#4A82FF' }}
-                  initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.8, ease: EASE_OUT_EXPO }} />
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+            <div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><button onClick={() => setStep(step === 1 ? 'info' : step - 1)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-tz-border bg-tz-surface px-5 py-3 font-semibold text-tz-secondary"><ChevronLeft size={17} />Назад</button><button onClick={() => setStep(step === 9 ? 'results' : step + 1)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-tz-accent px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-tz-accent-hover">{step === 9 ? 'Посмотреть результат' : 'Следующий блок'} <ChevronRight size={17} /></button></div>
+          </section>
+        )}
 
-      <section style={{ background: '#F5F7FA', padding: '64px 0' }}>
-        <div className="mx-auto max-w-[900px] px-4 sm:px-6">
-          <AnimatePresence mode="wait" custom={direction}>
-            {currentStep === 'info' && (
-              <motion.div key="info" custom={direction} variants={stepTransition} initial="enter" animate="center" exit="exit">
-                <div className="mb-8">
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
-                    style={{ background: 'rgba(46,91,255,0.1)', color: '#2E5BFF', border: '1px solid rgba(46,91,255,0.3)' }}>
-                    <FileText size={14} />Информация о проекте
-                  </div>
-                  <h2 className="text-2xl font-bold sm:text-[32px]" style={{ color: '#0F172A', lineHeight: 1.2 }}>Расскажите о вашем проекте</h2>
-                  <p className="mt-2 text-base" style={{ color: '#475569' }}>Эта информация поможет персонализировать результаты оценки</p>
-                </div>
-                <div className="rounded-2xl p-6 sm:p-8" style={{ background: '#FFFFFF', border: '1px solid #E8ECF0', boxShadow: '0 4px 20px rgba(15,23,42,0.06)' }}>
-                  <div className="space-y-6">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium" style={{ color: '#0F172A' }}>Название проекта</label>
-                      <input type="text" value={projectInfo.name} onChange={(e) => setProjectInfo((p) => ({ ...p, name: e.target.value }))}
-                        placeholder="Например: Система автоматического контроля качества"
-                        className="w-full rounded-[10px] border px-4 py-3 text-sm outline-none transition-colors focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
-                        style={{ borderColor: '#DEE2E8', background: '#FFFFFF' }} />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-medium" style={{ color: '#0F172A' }}>Описание проекта</label>
-                      <textarea value={projectInfo.description} onChange={(e) => setProjectInfo((p) => ({ ...p, description: e.target.value }))}
-                        placeholder="Краткое описание технологии и целей проекта" rows={4}
-                        className="w-full resize-none rounded-[10px] border px-4 py-3 text-sm outline-none transition-colors focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
-                        style={{ borderColor: '#DEE2E8', background: '#FFFFFF' }} />
-                    </div>
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-2 block text-sm font-medium" style={{ color: '#0F172A' }}>Категория технологии</label>
-                        <select value={projectInfo.category} onChange={(e) => setProjectInfo((p) => ({ ...p, category: e.target.value }))}
-                          className="w-full rounded-[10px] border px-4 py-3 text-sm outline-none transition-colors focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
-                          style={{ borderColor: '#DEE2E8', background: '#FFFFFF', color: projectInfo.category ? '#0F172A' : '#94A3B8' }}>
-                          <option value="" disabled>Выберите категорию</option>
-                          {TECH_CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="mb-2 block text-sm font-medium" style={{ color: '#0F172A' }}>Целевой уровень УГТ</label>
-                        <select value={projectInfo.targetLevel} onChange={(e) => setProjectInfo((p) => ({ ...p, targetLevel: Number(e.target.value) }))}
-                          className="w-full rounded-[10px] border px-4 py-3 text-sm outline-none transition-colors focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20"
-                          style={{ borderColor: '#DEE2E8', background: '#FFFFFF' }}>
-                          {UGT_LEVELS.map((l) => (<option key={l.id} value={l.id}>{l.code} — {l.name}</option>))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-8 flex justify-end">
-                    <button onClick={goNext}
-                      className="inline-flex items-center gap-2 rounded-[10px] px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:scale-[1.03] hover:shadow-lg active:scale-[0.98]"
-                      style={{ background: 'linear-gradient(135deg, #2E5BFF, #4A82FF)' }}>
-                      Начать оценку<ArrowRight size={18} />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {typeof currentStep === 'number' && currentLevel && currentChecklist && (
-              <motion.div key={`step-${currentStep}`} custom={direction} variants={stepTransition} initial="enter" animate="center" exit="exit">
-                <motion.div className="mb-8 overflow-hidden rounded-2xl border p-6 sm:p-8" variants={fadeUp} initial="hidden" animate="visible" custom={0}
-                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: `${currentLevel.color}25`, boxShadow: `0 4px 24px ${currentLevel.color}10, 0 1px 3px rgba(15,23,42,0.06)` }}>
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-sm font-semibold"
-                    style={{ background: `${currentLevel.color}15`, color: currentLevel.color, border: `1px solid ${currentLevel.color}30` }}>
-                    {currentLevel.code}
-                  </div>
-                  <h2 className="text-2xl font-bold sm:text-[32px]" style={{ color: '#0F172A', lineHeight: 1.2 }}>{currentLevel.name}</h2>
-                  <p className="mt-2 text-base" style={{ color: '#475569' }}>{currentLevel.short}</p>
-                  <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#94A3B8' }}>
-                    <HelpCircle size={16} />Отметьте пункты, которые выполнены для вашего проекта
-                  </div>
-                </motion.div>
-
-                <div className="mb-4 flex flex-wrap gap-2">
-                  <button onClick={() => setActiveCategory('all')} className="rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-200"
-                    style={{ background: activeCategory === 'all' ? '#FFFFFF' : 'transparent', color: activeCategory === 'all' ? '#0F172A' : '#94A3B8', boxShadow: activeCategory === 'all' ? '0 2px 8px rgba(15,23,42,0.08)' : 'none' }}>
-                    Все
-                  </button>
-                  {categoriesInCurrentStep.map((cat) => {
-                    const cfg = CATEGORY_CONFIG[cat as keyof typeof CATEGORY_CONFIG];
-                    const Icon = cfg.icon;
-                    return (
-                      <button key={cat} onClick={() => setActiveCategory(cat)} className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all duration-200"
-                        style={{ background: activeCategory === cat ? '#FFFFFF' : 'transparent', color: activeCategory === cat ? cfg.color : '#94A3B8', boxShadow: activeCategory === cat ? '0 2px 8px rgba(15,23,42,0.08)' : 'none' }}>
-                        <Icon size={14} />{cfg.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="space-y-3">
-                  <AnimatePresence mode="popLayout">
-                    {filteredItems.map((item, idx) => (
-                      <ChecklistItemCard key={item.id} item={item} isChecked={currentSelections.has(item.id)} isExpanded={expandedItems.has(item.id)}
-                        levelColor={currentLevel.color} onToggleCheck={() => toggleItem(currentLevel.id, item.id)} onToggleExpand={() => toggleExpand(item.id)} index={idx} />
-                    ))}
-                  </AnimatePresence>
-                </div>
-
-                <div className="mt-6 rounded-2xl bg-tz-surface p-4 sm:p-5" style={{ border: '1px solid #E8ECF0', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm" style={{ color: '#475569' }}>Выполнено: {currentSelections.size}/{currentChecklist.items.length}</span>
-                    <span className="font-mono text-xl font-semibold" style={{ color: currentLevel.color }}>{Math.round((currentSelections.size / currentChecklist.items.length) * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: '#E8ECF0' }}>
-                    <motion.div className="h-full rounded-full" style={{ background: currentLevel.color }}
-                      animate={{ width: `${(currentSelections.size / currentChecklist.items.length) * 100}%` }} transition={{ duration: 0.4, ease: EASE_OUT_EXPO }} />
-                  </div>
-                </div>
-
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <button onClick={goBack} className="inline-flex items-center justify-center gap-2 rounded-[10px] border px-5 py-3 text-sm font-medium transition-all duration-200 hover:bg-tz-soft"
-                    style={{ borderColor: '#DEE2E8', color: '#0F172A' }}><ChevronLeft size={16} />Назад</button>
-                  <div className="flex gap-3">
-                    <button onClick={skipStep} className="inline-flex items-center justify-center gap-2 rounded-[10px] px-5 py-3 text-sm font-medium transition-all duration-200 hover:bg-[#2E5BFF]/5"
-                      style={{ color: '#2E5BFF' }}>Пропустить уровень</button>
-                    <button onClick={goNext} className="inline-flex items-center justify-center gap-2 rounded-[10px] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.03] hover:shadow-lg active:scale-[0.98]"
-                      style={{ background: currentLevel.color }}>
-                      {currentStep === 8 ? (<><>Завершить оценку</><Check size={16} /></>) : (<><>Далее</><ChevronRight size={16} /></>)}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {currentStep === 'results' && (
-              <motion.div key="results" custom={direction} variants={stepTransition} initial="enter" animate="center" exit="exit">
-                <motion.div className="mb-10 text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}>
-                  <span className="mb-3 inline-block text-xs font-medium uppercase tracking-[0.05em]" style={{ color: '#94A3B8' }}>РЕЗУЛЬТАТЫ ОЦЕНКИ</span>
-                  <h2 className="text-3xl font-bold sm:text-[40px]" style={{ color: '#0F172A', lineHeight: 1.15 }}>Уровень готовности вашего проекта</h2>
-                </motion.div>
-
-                <motion.div className="relative mx-auto max-w-[700px] overflow-hidden rounded-2xl bg-tz-surface p-8 text-center shadow-xl sm:p-12"
-                  style={{ border: `2px solid ${getLevelColor(results.determinedLevel)}`, boxShadow: `0 16px 40px rgba(15,23,42,0.08), 0 0 40px ${getLevelColor(results.determinedLevel)}18` }}
-                  initial={{ opacity: 0, y: 40, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}>
-                  <div className="flex justify-center">
-                    <CircularProgress percentage={results.determinedLevel > 0 ? results.levelScores[results.determinedLevel - 1].percentage : 0}
-                      color={getLevelColor(results.determinedLevel)} size={180}
-                      label={results.determinedLevel > 0 ? `УГТ ${results.determinedLevel}` : '—'}
-                      sublabel={results.determinedLevel > 0 ? UGT_LEVELS[results.determinedLevel - 1].name : 'Не определён'} />
-                  </div>
-                  <motion.div className="mt-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
-                    <p className="font-mono text-xl font-medium" style={{ color: '#0F172A' }}>
-                      {results.determinedLevel > 0 ? `${results.levelScores[results.determinedLevel - 1].percentage}% критериев выполнено` : 'Недостаточно данных'}
-                    </p>
-                    {results.determinedLevel > 0 && <p className="mt-1 text-sm" style={{ color: '#475569' }}>({results.levelScores[results.determinedLevel - 1].checked} из {results.levelScores[results.determinedLevel - 1].total} критериев)</p>}
-                  </motion.div>
-                  <motion.p className="mx-auto mt-4 max-w-[500px] text-base" style={{ color: '#475569', lineHeight: 1.65 }}
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-                    {results.determinedLevel > 0
-                      ? `Ваш проект находится на этапе «${UGT_LEVELS[results.determinedLevel - 1].name}». ${UGT_LEVELS[results.determinedLevel - 1].description}`
-                      : 'Для определения уровня УГТ необходимо выполнить не менее 70% критериев хотя бы одного уровня.'}
-                  </motion.p>
-                  <motion.div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
-                    {results.determinedLevel > 0 && (
-                      <button
-                        onClick={() => document.getElementById('wizard-level-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                        className="inline-flex items-center gap-2 rounded-[10px] px-5 py-3.5 text-sm font-medium transition-all hover:bg-[#2E5BFF]/5"
-                        style={{ color: '#2E5BFF' }}
-                      >
-                        Детали по уровням<ChevronDown size={16} />
-                      </button>
-                    )}
-                    <button onClick={resetAssessment} className="inline-flex items-center gap-2 rounded-[10px] px-5 py-3.5 text-sm font-medium transition-all hover:bg-[#2E5BFF]/5"
-                      style={{ color: '#2E5BFF' }}><RotateCcw size={16} />Пройти заново</button>
-                  </motion.div>
-                </motion.div>
-
-                <motion.div className="mt-16" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6, ease: EASE_OUT_EXPO }}>
-                  <h3 className="mb-6 text-center text-2xl font-bold" style={{ color: '#0F172A' }}>Детализация по уровням</h3>
-                  <div className="mb-6 flex justify-center">
-                    <div className="inline-flex rounded-xl p-1" style={{ background: '#EEF1F5' }}>
-                      <button onClick={() => setChartView('bars')} className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
-                        style={{ background: chartView === 'bars' ? '#FFFFFF' : 'transparent', color: chartView === 'bars' ? '#0F172A' : '#94A3B8', boxShadow: chartView === 'bars' ? '0 1px 3px rgba(15,23,42,0.08)' : 'none' }}>
-                        Гистограмма
-                      </button>
-                      <button onClick={() => setChartView('radar')} className="rounded-lg px-4 py-2 text-sm font-medium transition-all"
-                        style={{ background: chartView === 'radar' ? '#FFFFFF' : 'transparent', color: chartView === 'radar' ? '#0F172A' : '#94A3B8', boxShadow: chartView === 'radar' ? '0 1px 3px rgba(15,23,42,0.08)' : 'none' }}>
-                        Радар
-                      </button>
-                    </div>
-                  </div>
-
-                  {chartView === 'bars' && (
-                    <div className="rounded-2xl bg-tz-surface p-4 shadow-md sm:p-6" style={{ border: '1px solid #E8ECF0' }}>
-                      <ResponsiveContainer width="100%" height={400}>
-                        <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="#E8ECF0" />
-                          <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 12, fill: '#94A3B8' }} />
-                          <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#475569' }} width={60} />
-                          <Tooltip formatter={(value) => [`${value ?? 0}%`, 'Выполнено']}
-                            contentStyle={{ borderRadius: 10, border: '1px solid #E8ECF0', boxShadow: '0 4px 12px rgba(15,23,42,0.08)' }} />
-                          <ReferenceLine x={70} stroke="#EF4444" strokeDasharray="6 3" label={{ value: 'Порог 70%', position: 'top', fill: '#EF4444', fontSize: 11 }} />
-                          <Bar dataKey="pct" radius={[0, 8, 8, 0]} barSize={22}>
-                            {barData.map((entry, idx) => (<Cell key={idx} fill={entry.color} />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-
-                  {chartView === 'radar' && (
-                    <div className="rounded-2xl bg-tz-surface p-4 shadow-md sm:p-6" style={{ border: '1px solid #E8ECF0' }}>
-                      <ResponsiveContainer width="100%" height={450}>
-                        <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
-                          <PolarGrid stroke="#E8ECF0" />
-                          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: '#475569' }} />
-                          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 11, fill: '#94A3B8' }} tickFormatter={(v) => `${v}%`} />
-                          <Radar name="Выполнено" dataKey="pct" stroke={getLevelColor(results.determinedLevel)} strokeWidth={2.5}
-                            fill={getLevelColor(results.determinedLevel)} fillOpacity={0.2} />
-                          <Tooltip formatter={(value) => [`${value ?? 0}%`, 'Выполнено']}
-                            contentStyle={{ borderRadius: 10, border: '1px solid #E8ECF0', boxShadow: '0 4px 12px rgba(15,23,42,0.08)' }} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </motion.div>
-
-                <motion.div className="mt-12 scroll-mt-6" id="wizard-level-results" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6, ease: EASE_OUT_EXPO }}>
-                  <h3 className="mb-6 text-center text-2xl font-bold" style={{ color: '#0F172A' }}>Результаты по уровням</h3>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {results.levelScores.map((s, idx) => (
-                      <motion.div key={s.levelId} className="rounded-2xl bg-tz-surface p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                        style={{ border: '1px solid', borderColor: s.achieved ? `${s.level.color}66` : '#E8ECF0', borderLeftWidth: s.achieved ? 3 : 1, borderLeftColor: s.achieved ? s.level.color : '#E8ECF0', boxShadow: s.levelId === results.determinedLevel ? `0 0 20px ${s.level.color}18` : '0 2px 8px rgba(15,23,42,0.04)' }}
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + idx * 0.06, duration: 0.4, ease: EASE_OUT_EXPO }}>
-                        <div className="mb-3 flex items-center justify-between">
-                          <span className="inline-block rounded-full px-3 py-1 font-mono text-xs font-semibold"
-                            style={{ background: `${s.level.color}18`, color: s.level.color }}>{s.level.code}</span>
-                          <span className="font-mono text-xl font-semibold" style={{ color: s.level.color }}>{s.percentage}%</span>
-                        </div>
-                        <p className="mb-2 text-sm font-medium" style={{ color: '#0F172A' }}>{s.level.name}</p>
-                        <div className="mb-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: '#E8ECF0' }}>
-                          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${s.percentage}%`, background: s.level.color }} />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs" style={{ color: '#94A3B8' }}>{s.checked}/{s.total} критериев</span>
-                          <span className="flex items-center gap-1 text-xs font-medium" style={{ color: s.achieved ? '#10B981' : '#94A3B8' }}>
-                            {s.achieved ? <><Check size={12} />Достигнут</> : <><span className="h-2 w-2 rounded-full bg-current" />Не достигнут</>}
-                          </span>
-                        </div>
-                        {s.levelId === results.determinedLevel && (
-                          <div className="mt-2 rounded-md px-2.5 py-1 text-center text-xs font-semibold"
-                            style={{ background: `${s.level.color}18`, color: s.level.color }}>✓ Определён текущий уровень</div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                <motion.div className="mt-16 overflow-hidden rounded-2xl p-6 sm:p-10" style={{ background: '#0F172A' }}
-                  initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.6, ease: EASE_OUT_EXPO }}>
-                  <div className="mb-6 flex items-center gap-3">
-                    <Lightbulb size={24} style={{ color: '#E5C840' }} />
-                    <h3 className="text-xl font-bold text-white sm:text-2xl">Рекомендации</h3>
-                  </div>
-                  <div className="space-y-4 text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                    <p>Ваш проект соответствует уровню <strong style={{ color: getLevelColor(results.determinedLevel) }}>
-                      УГТ {results.determinedLevel}{results.determinedLevel > 0 && ` — ${UGT_LEVELS[results.determinedLevel - 1].name}`}</strong>.
-                      {results.determinedLevel > 0 && results.determinedLevel < 9 && <> Для дальнейшего развития сфокусируйтесь на переходе к УГТ {results.determinedLevel + 1}.</>}
-                    </p>
-                    {results.determinedLevel < 9 && nextLevelRecommendations.length > 0 && (
-                      <div>
-                        <p className="mb-3 font-semibold" style={{ color: 'rgba(255,255,255,0.95)' }}>Для перехода на УГТ {results.determinedLevel + 1} необходимо:</p>
-                        <ul className="space-y-2">
-                          {nextLevelRecommendations.slice(0, 5).map((item) => (
-                            <li key={item.id} className="flex items-start gap-3">
-                              <span className="mt-2 h-2 w-2 flex-shrink-0 rounded-full" style={{ background: getLevelColor(results.determinedLevel + 1) }} />
-                              <span>{item.text}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {results.determinedLevel === 9 && <p>Поздравляем! Ваш проект достиг максимального уровня готовности технологии.</p>}
-                    {results.determinedLevel === 0 && <p>Рекомендуем начать с формализации научных принципов и подготовки публикаций для достижения УГТ 1.</p>}
-                  </div>
-                </motion.div>
-
-                <div className="mt-10 text-center">
-                  <p className="mb-4 text-sm" style={{ color: '#94A3B8' }}>
-                    Сохраните результаты оценки — проект появится в рабочем столе заказчика
-                  </p>
-                  {saveError && (
-                    <div
-                      className="mx-auto mb-5 flex max-w-[560px] items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left"
-                      role="alert"
-                    >
-                      <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
-                      <p className="text-sm font-medium text-red-700">{saveError}</p>
-                    </div>
-                  )}
-                  <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                    <button
-                      onClick={handleSaveProject}
-                      disabled={saving}
-                      className="inline-flex items-center gap-2 rounded-[10px] px-7 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.03] hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
-                      style={{ background: 'linear-gradient(135deg, #2E5BFF, #4A82FF)' }}
-                    >
-                      {saving ? (
-                        <><Loader2 size={16} className="animate-spin" />Сохранение…</>
-                      ) : (
-                        <><Save size={16} />Сохранить проект</>
-                      )}
-                    </button>
-                    <button onClick={resetAssessment} className="inline-flex items-center gap-2 rounded-[10px] px-5 py-3 text-sm font-medium transition-all hover:bg-[#2E5BFF]/5"
-                      style={{ color: '#2E5BFF' }}><RotateCcw size={16} />Пройти оценку заново</button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </section>
-    </>
+        {step === 'results' && preview && (
+          <section>
+            <div className="mb-8 text-center"><div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-tz-accent-soft text-tz-accent"><Sparkles /></div><p className="text-sm font-semibold uppercase tracking-wide text-tz-accent">Предварительный результат</p><h2 className="mt-2 text-4xl font-bold text-tz-fg">Профиль готовности проекта</h2><p className="mx-auto mt-3 max-w-2xl leading-7 text-tz-muted">Это самооценка для первичной регистрации. Официальное подтверждение появится после проверки доказательств.</p></div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><MetricCard label="Предварительный УГТ" value={preview.preliminary_ugt ? `УГТ ${preview.preliminary_ugt}` : '—'} hint={preview.latest_checkpoint ? `До рубежа ${preview.latest_checkpoint}` : 'Недостаточно данных'} color={getLevelColor(Math.max(1, preview.preliminary_ugt))} /><MetricCard label="Наполненность" value={`${preview.completion_pct}%`} hint="Содержательные критерии" color="#2563EB" /><MetricCard label="Доказательная база" value={`${preview.evidence_pct}%`} hint="Состояние материалов" color="#10B981" /><MetricCard label="Уверенность" value={`${preview.confidence_pct}%`} hint="Самооценка + подтверждения" color="#C49A00" /></div>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"><div className="rounded-3xl border border-tz-border bg-tz-surface p-5 shadow-sm sm:p-7"><div className="mb-4 flex items-center justify-between"><div><h3 className="text-xl font-bold text-tz-fg">Четыре направления</h3><p className="mt-1 text-sm text-tz-muted">Профиль наполненности проекта</p></div><ShieldCheck className="text-tz-accent" /></div><div className="h-[320px]"><ResponsiveContainer width="100%" height="100%"><RadarChart data={(Object.keys(DIMENSION_CONFIG) as Dimension[]).map((dimension) => ({ subject: DIMENSION_CONFIG[dimension].label, value: preview.dimension_scores[dimension] }))}><PolarGrid /><PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: '#475569' }} /><PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#94A3B8' }} /><Radar dataKey="value" stroke="#2563EB" fill="#2563EB" fillOpacity={0.22} strokeWidth={2} /><Tooltip formatter={(value) => [`${value ?? 0}%`, 'Наполненность']} /></RadarChart></ResponsiveContainer></div></div><div className="rounded-3xl border border-tz-border bg-tz-surface p-5 shadow-sm sm:p-7"><h3 className="text-xl font-bold text-tz-fg">Рубежи и блокеры</h3><p className="mt-1 text-sm text-tz-muted">Следующий непрерывный этап — УГТ {Math.min(preview.preliminary_ugt + 1, 9)}</p><div className="mt-5 space-y-3">{preview.blockers.length ? preview.blockers.slice(0, 6).map((blocker) => <div key={blocker.checkpoint_code} className="flex items-start gap-3 rounded-xl bg-tz-warning-soft p-3 text-sm text-tz-warning"><AlertCircle size={17} className="mt-0.5 flex-shrink-0" /><span><strong>{blocker.checkpoint_code}</strong> · {blocker.title}<span className="mt-1 block text-xs text-tz-warning">Состояние: {STATUS_LABELS[blocker.status]} → нужно документировать</span></span></div>) : <div className="rounded-xl bg-tz-success-soft p-4 text-sm text-tz-success"><Check className="mb-2" />Критических блокеров до следующего этапа не найдено.</div>}</div></div></div>
+            <div className="mt-6 rounded-3xl border border-tz-border bg-tz-surface p-5 shadow-sm sm:p-7"><h3 className="mb-5 text-xl font-bold text-tz-fg">Прогресс по УГТ</h3><div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">{preview.level_scores.map((item) => <div key={item.ugt_level} className="rounded-2xl border border-tz-border p-4"><div className="flex items-center justify-between"><span className="font-mono text-sm font-bold" style={{ color: getLevelColor(item.ugt_level) }}>УГТ {item.ugt_level}</span>{item.achieved && <Check size={16} className="text-tz-success" />}</div><p className="mt-2 font-mono text-2xl font-bold text-tz-fg">{item.percentage}%</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-tz-soft"><div className="h-full rounded-full" style={{ width: `${item.percentage}%`, background: getLevelColor(item.ugt_level) }} /></div><p className="mt-2 text-xs text-tz-muted">{item.achieved ? 'Блок достигнут' : 'Блок не достигнут'}</p></div>)}</div></div>
+            <div className="mt-6 rounded-3xl p-6 text-white shadow-sm sm:p-8" style={{ background: "var(--tz-hero-bg)" }}><div className="flex items-start gap-3"><Info className="mt-1 flex-shrink-0 text-tz-accent-hover" /><div><h3 className="text-xl font-bold">Что означает этот результат</h3><p className="mt-2 max-w-3xl leading-7 text-[color:var(--tz-hero-muted)]">Предварительный УГТ определяется самым высоким непрерывным блоком. Средний балл не может компенсировать незакрытый критический рубеж. После сохранения менеджер увидит ответы, комментарии и состояния материалов для последующей проверки.</p></div></div></div>
+            <div className="mt-8 text-center"><p className="mb-4 text-sm text-tz-muted">Сохраните результат — проект появится в рабочем столе заказчика.</p>{saveError && <div className="mx-auto mb-4 flex max-w-2xl items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft p-4 text-left text-sm text-tz-danger"><AlertCircle size={18} className="mt-0.5 flex-shrink-0" />{saveError}</div>}<div className="flex flex-col justify-center gap-3 sm:flex-row"><button onClick={handleSave} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-tz-accent px-7 py-3.5 font-semibold text-white shadow-sm transition hover:bg-tz-accent-hover disabled:cursor-not-allowed disabled:opacity-60">{saving ? <><Loader2 className="animate-spin" size={17} />Сохранение…</> : <><Save size={17} />Сохранить проект</>}</button><button onClick={resetAssessment} className="inline-flex items-center justify-center gap-2 rounded-xl border border-tz-border bg-tz-surface px-6 py-3.5 font-semibold text-tz-secondary"><RotateCcw size={17} />Пройти заново</button></div></div>
+            <div className="mt-6 flex justify-center"><button onClick={() => setStep(9)} className="inline-flex items-center gap-2 text-sm font-semibold text-tz-accent hover:text-tz-accent-hover"><ChevronLeft size={16} />Вернуться к последнему блоку</button></div>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }
