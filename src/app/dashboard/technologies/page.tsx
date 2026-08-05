@@ -45,7 +45,7 @@ interface ProjectSummary {
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Черновик",
-  active: "Активен",
+  auto_confirmed: "Подтверждён автоматически", active: "Активен",
   review: "На проверке",
   completed: "Завершён",
   rejected: "Отклонён",

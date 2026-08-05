@@ -123,6 +123,8 @@ interface JoinRequest {
 
 const STATUS_COLORS: Record<string, string> = {
   draft: '#94A3B8',
+  auto_confirmed: '#10B981',
+  published: '#2E5BFF',
   active: '#2E5BFF',
   completed: '#10B981',
   rejected: '#EF4444',
@@ -130,6 +132,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Черновик',
+  auto_confirmed: 'Подтверждён автоматически',
+  published: 'Опубликован',
   active: 'Активен',
   completed: 'Завершён',
   rejected: 'Отклонён',
@@ -414,10 +418,15 @@ export default function ProjectDashboardPage() {
           <div className="tz-card shrink-0 px-4 py-3">
             <div className="tz-eyebrow">Уровень УГТ</div>
             <div className="mt-1.5 flex items-center gap-1.5">
-              <span className="tz-ugt">{p.status === 'draft' ? `Предварительный УГТ ${p.preliminary_level ?? '—'}` : `УГТ ${p.current_level}`}</span>
+              <span className="tz-ugt">{`УГТ ${p.current_level}`}</span>
               <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
               <span className="tz-ugt tz-ugt-strong">{p.target_level}</span>
             </div>
+            {p.preliminary_level != null && p.preliminary_level !== p.current_level && (
+              <p className="mt-1 text-xs text-tz-muted">
+                Предварительный: УГТ {p.preliminary_level}
+              </p>
+            )}
             <p className="mt-1 text-xs text-tz-muted">по ГОСТ Р 58048-2017</p>
           </div>
         </div>

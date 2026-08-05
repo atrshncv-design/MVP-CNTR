@@ -13,7 +13,7 @@ type Project = { id: number; name: string; description: string | null; category:
 type Promotion = { id: number; project_id: number; project_name: string; from_level: number; to_level: number; status: string; rejection_reason: string | null; attempt_no: number; evaluation_result: { success?: boolean; missing?: string[]; summary?: string }; verification_docs: Array<{ id: number; title: string }> };
 
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
-const statusLabels: Record<string, string> = { draft: "Черновик", published: "Опубликован", active: "В работе", rejected: "Отклонён" };
+const statusLabels: Record<string, string> = { draft: "Черновик", auto_confirmed: "Подтверждён автоматически", published: "Опубликован", active: "В работе", rejected: "Отклонён" };
 const badge: Record<string, string> = { draft: "tz-badge-review", published: "tz-badge-success", active: "tz-badge-accent", rejected: "tz-badge-danger" };
 function budget(value: number | null) { return value == null ? "Бюджет не указан" : new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(value); }
 function detail(data: unknown, fallback: string) { return data && typeof data === "object" && typeof (data as { detail?: unknown }).detail === "string" ? (data as { detail: string }).detail : fallback; }

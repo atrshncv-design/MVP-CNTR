@@ -49,7 +49,7 @@ interface ProjectDetail {
 
 const PROJECT_STATUS_LABELS: Record<string, string> = {
   draft: 'Черновик',
-  active: 'В работе',
+  auto_confirmed: 'Подтверждён автоматически', active: 'В работе',
   review: 'На проверке',
   completed: 'Завершён',
   rejected: 'Отклонён',
