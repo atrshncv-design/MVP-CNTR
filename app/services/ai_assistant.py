@@ -28,6 +28,8 @@ def _llm_config() -> tuple[str | None, str, str]:
 
 async def ask_llm(system_prompt: str, user_message: str) -> str | None:
     """Вызов chat/completions OpenAI-совместимого API. None при отсутствии ключа/ошибке."""
+    from app.services import ai_metrics
+
     api_key, base, model = _llm_config()
     if api_key is None:
         return None
@@ -50,10 +52,12 @@ async def ask_llm(system_prompt: str, user_message: str) -> str | None:
                 },
             )
         if response.status_code != 200:
+            ai_metrics.METRICS["errors_total"] += 1
             return None
         payload = response.json()
         return payload["choices"][0]["message"]["content"]
     except Exception:  # noqa: BLE001 — ассистент не должен падать из-за LLM
+        ai_metrics.METRICS["errors_total"] += 1
         return None
 
 
@@ -105,10 +109,13 @@ async def process_chat(db: DBSession, payload: ChatIn, user: CurrentUser) -> Cha
     else:
         user_message = query
 
+    from app.services import ai_metrics
+
     llm_reply = await ask_llm(system_prompt, user_message)
 
     if llm_reply:
         return ChatOut(reply=ChatMessage(role="assistant", content=llm_reply), sources=sources)
+    ai_metrics.METRICS["fallbacks_total"] += 1
 
     if rag_context:
         fallback = (
