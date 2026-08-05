@@ -129,8 +129,8 @@ def test_manager_approve_publishes_and_reject_records_reason(client: TestClient)
     owner_view = client.get(f"/api/v1/projects/{draft['id']}", headers=_auth(owner_token))
     assert owner_view.status_code == 200  # причина видна владельцу через карточку
 
-    # Переоценка отклонённого проекта запрещена: официальный УГТ уже присвоен (тикет 05)
-    denied = client.post(
+    # Тикет 22: отклонённый драфт можно переоценить (resubmit) — новый черновик
+    resubmitted = client.post(
         "/api/v1/assessments",
         json={
             "questionnaire_results": [
@@ -139,7 +139,8 @@ def test_manager_approve_publishes_and_reject_records_reason(client: TestClient)
         },
         headers=_auth(owner_token),
     )
-    assert denied.status_code == 403
+    assert resubmitted.status_code == 201
+    assert resubmitted.json()["id"] != draft["id"]
 
     # Новый черновик новым пользователем → апрув сразу на заявленный уровень
     new_token, _ = _register(client)
