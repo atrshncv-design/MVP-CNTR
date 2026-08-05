@@ -10,6 +10,10 @@
   - Пользовательские незакоммиченные изменения (main, frontend `.hermes/`) не тронуты.
 - ⏸️ Следующий тикет: **02 — безопасная очистка репозитория** (включая фикс stale-теста ui-shell).
 
+## Friday Release Candidate — реализация (05.08.2026)
+
+- ✅ **Тикет 02 «Безопасная очистка» — done.** Frontend `85042c4` (codex/recovery-frontend): удалён мёртвый `_role-dashboard.tsx` (0 импортов), стартовые svg `public/{next,vercel,globe,file,window}.svg` (0 ссылок, favicon.ico сохранён); stale-тест `ui-shell.test.mjs` №5 переписан на проверку поведения — **node-тесты 5/5**, lint/tsc/build зелёные. Docs `friday-release-candidate`: удалены `КОД MVP "0"/{download,tool-results,upload}` (128 файлов: tool-артефакты, скриншоты, zip+extracted-дубль) и `.zscripts/dev.pid`. Backend: мусора не найдено (все .py используются). Пользовательские `.hermes/` и изменения в main не тронуты.
+
 ## Friday Release Candidate — Autopilot (05.08.2026)
 
 - ✅ Глубокое интервью завершено; конечное видение и приоритеты подтверждены Functional Validator.
