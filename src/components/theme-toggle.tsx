@@ -1,52 +1,104 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Sun, Moon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Sun, Moon, Star } from "lucide-react";
 
-export default function ThemeToggle() {
+export type ThemeName = "light" | "dark" | "udmurt";
+
+const THEMES: { id: ThemeName; label: string; Icon: typeof Sun }[] = [
+  { id: "light", label: "Светлая тема", Icon: Sun },
+  { id: "dark", label: "Тёмная тема", Icon: Moon },
+  { id: "udmurt", label: "Удмуртская тема", Icon: Star },
+];
+
+export function getStoredTheme(): ThemeName {
+  if (typeof window === "undefined") return "light";
+  const stored = window.localStorage.getItem("tz-theme");
+  if (stored === "dark" || stored === "udmurt") return stored;
+  if (
+    !stored &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
+    return "dark";
+  }
+  return "light";
+}
+
+/** Применяет тему на <html> и сохраняет выбор (тикет 16 — три темы). */
+export function applyTheme(theme: ThemeName) {
+  const el = document.documentElement;
+  el.classList.toggle("dark", theme === "dark");
+  if (theme === "udmurt") {
+    el.setAttribute("data-theme", "udmurt");
+  } else {
+    el.removeAttribute("data-theme");
+  }
+  try {
+    window.localStorage.setItem("tz-theme", theme);
+  } catch {
+    /* localStorage недоступен — тема живёт до перезагрузки */
+  }
+}
+
+export default function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<ThemeName>("light");
 
   useEffect(() => {
-    const current = document.documentElement.classList.contains("dark")
-      ? "dark"
-      : "light";
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTheme(current);
-    setMounted(true);
+    (async () => {
+      setTheme(getStoredTheme());
+      setMounted(true);
+    })();
   }, []);
 
-  const toggle = () => {
-    const next = theme === "dark" ? "light" : "dark";
+  const select = (next: ThemeName) => {
     setTheme(next);
-    try {
-      localStorage.setItem("tz-theme", next);
-    } catch {
-      /* noop */
-    }
-    document.documentElement.classList.toggle("dark", next === "dark");
+    applyTheme(next);
   };
 
   if (!mounted) {
     return (
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-tz-border">
-        <Sun className="h-4 w-4 text-tz-muted opacity-0" />
-      </span>
+      <div
+        aria-hidden="true"
+        className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${
+          onDark ? "border-white/15" : "border-tz-border"
+        }`}
+      >
+        <Sun className="h-3.5 w-3.5 opacity-0" />
+      </div>
     );
   }
 
+  const base = onDark
+    ? "text-white/60 hover:bg-white/10 hover:text-white"
+    : "text-tz-secondary hover:bg-tz-soft hover:text-tz-fg";
+  const active = onDark
+    ? "bg-white/15 text-white"
+    : "bg-tz-accent-soft text-tz-accent";
+
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-tz-border text-tz-secondary transition-colors hover:border-tz-accent hover:text-tz-accent"
+    <div
+      role="group"
+      aria-label="Переключатель темы: светлая, тёмная, удмуртская"
+      className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${
+        onDark ? "border-white/15 bg-white/[0.06]" : "border-tz-border bg-tz-surface"
+      }`}
     >
-      {theme === "dark" ? (
-        <Sun className="h-4 w-4" />
-      ) : (
-        <Moon className="h-4 w-4" />
-      )}
-    </button>
+      {THEMES.map(({ id, label, Icon }) => (
+        <button
+          key={id}
+          type="button"
+          aria-label={label}
+          aria-pressed={theme === id}
+          title={label}
+          onClick={() => select(id)}
+          className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${
+            theme === id ? active : base
+          }`}
+        >
+          <Icon className="h-3.5 w-3.5" />
+        </button>
+      ))}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth.config";
 import NotificationBell from "@/components/notification-bell";
+import ThemeToggle from "@/components/theme-toggle";
 
 const navigation = [
   { href: "/dashboard", label: "Рабочий стол" },
@@ -49,7 +50,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             ))}
           </nav>
           
-          <NotificationBell /><div className="ml-auto flex items-center gap-4">
+          <NotificationBell />
+          <div className="ml-auto flex items-center gap-4">
+            <ThemeToggle onDark />
             {session?.user && (
               <div className="hidden text-right sm:block">
                 <div className="text-sm font-semibold text-white">

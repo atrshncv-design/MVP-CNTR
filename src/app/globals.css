@@ -194,6 +194,102 @@
   --tz-p-bg-white: var(--tz-surface);
 }
 
+/* ─── Токены удмуртской темы (тикет 16, концепция А «Техно-геометрия») ──
+   Чёрно-красно-белая: бумажный фон, белые карточки, красный акцент,
+   графитовый текст. Восьмилучевой мотив — восемь уровней УГТ. */
+[data-theme="udmurt"] {
+  /* Базовые поверхности: бумага + белый */
+  --tz-bg: #f4f2ee;
+  --tz-surface: #ffffff;
+  --tz-surface-2: #ece8e0;
+  --tz-soft: #f1ede5;
+  --tz-fg: #0b0d12;
+  --tz-secondary: #45484f;
+  --tz-muted: #8a8d93;
+  --tz-border: #d9d4ca;
+  --tz-card-border: #e2ddd3;
+
+  /* Акцент — красный концепции А */
+  --tz-accent: #d63031;
+  --tz-accent-hover: #b52829;
+  --tz-accent-soft: rgba(214, 48, 49, 0.09);
+  --tz-accent-strong: #8e1c1d;
+
+  /* Бренд-градиент: красный → графит (строгая геометрия) */
+  --tz-grad-1: #d63031;
+  --tz-grad-2: #8e1c1d;
+  --tz-grad-3: #0b0d12;
+
+  /* Hero: чёрный → тёмно-красный */
+  --tz-hero-bg: linear-gradient(135deg, #0b0d12 0%, #5c1012 55%, #17181c 100%);
+  --tz-hero-fg: #f6f4f0;
+  --tz-hero-muted: #cfc8bc;
+
+  /* УГТ-шкала: красный старт концепции, далее тёплая → зелёная */
+  --tz-ugt-1: #d63031;
+  --tz-ugt-2: #e0522f;
+  --tz-ugt-3: #e06a2a;
+  --tz-ugt-4: #f59e0b;
+  --tz-ugt-5: #eab308;
+  --tz-ugt-6: #ca8a04;
+  --tz-ugt-7: #84cc16;
+  --tz-ugt-8: #65a30d;
+  --tz-ugt-9: #16a34a;
+  --tz-ugt-soft: rgba(214, 48, 49, 0.1);
+
+  /* Статусы: красная семантика, зелёный/янтарный — по смыслу */
+  --tz-success: #15803d;
+  --tz-warning: #b45309;
+  --tz-review: #8e1c1d;
+  --tz-danger: #c02526;
+  --tz-neutral: #5a5d64;
+
+  --tz-success-soft: rgba(21, 128, 61, 0.1);
+  --tz-warning-soft: rgba(180, 83, 9, 0.1);
+  --tz-review-soft: rgba(142, 28, 29, 0.1);
+  --tz-danger-soft: rgba(192, 37, 38, 0.1);
+  --tz-neutral-soft: rgba(90, 93, 100, 0.1);
+
+  --tz-shadow-card: 0 1px 3px rgb(11 13 18 / 0.07), 0 4px 16px rgb(11 13 18 / 0.05);
+  --tz-shadow-pop: 0 8px 32px rgb(11 13 18 / 0.12);
+  --tz-shadow-glow: 0 0 0 1px rgba(214, 48, 49, 0.25), 0 6px 24px rgba(214, 48, 49, 0.14);
+
+  /* Нейтральная палитра: тёплый бумажный оттенок (светлая, как :root) */
+  --tz-p-white: #ffffff;
+  --tz-p-gray-50: #faf8f3;
+  --tz-p-gray-100: #f2efe8;
+  --tz-p-gray-200: #e5e0d6;
+  --tz-p-gray-300: #d3cdc1;
+  --tz-p-gray-400: #a8a299;
+  --tz-p-gray-500: #7c7f87;
+  --tz-p-gray-600: #5a5d64;
+  --tz-p-gray-700: #3f4248;
+  --tz-p-gray-800: #26282d;
+  --tz-p-gray-900: #131417;
+  --tz-p-gray-950: #0b0d12;
+  --tz-p-slate-50: #faf8f3;
+  --tz-p-slate-100: #f2efe8;
+  --tz-p-slate-200: #e5e0d6;
+  --tz-p-slate-300: #d3cdc1;
+  --tz-p-slate-400: #a8a299;
+  --tz-p-slate-500: #7c7f87;
+  --tz-p-slate-600: #5a5d64;
+  --tz-p-slate-700: #3f4248;
+  --tz-p-slate-800: #26282d;
+  --tz-p-slate-900: #131417;
+  --tz-p-slate-950: #0b0d12;
+  --tz-p-neutral-50: #faf8f3;
+  --tz-p-neutral-100: #f2efe8;
+  --tz-p-neutral-200: #e5e0d6;
+  --tz-p-neutral-300: #d3cdc1;
+  --tz-p-neutral-400: #a8a299;
+  --tz-p-neutral-500: #7c7f87;
+  --tz-p-neutral-600: #5a5d64;
+  --tz-p-neutral-700: #3f4248;
+  --tz-p-neutral-800: #26282d;
+  --tz-p-neutral-900: #131417;
+}
+
 /* ─── Маппинг в Tailwind v4 @theme inline ─────────────────────────────── */
 @theme inline {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -894,3 +990,30 @@
 
 /* bg-white → поверхность в тёмной теме (D1) */
 .dark .bg-white { background-color: var(--tz-surface) !important; }
+
+/* ═══ Удмуртская тема: акцентные детали (тикет 16, концепция А) ═══ */
+
+/* Красные свечения вместо синих на бумажном фоне */
+[data-theme="udmurt"] body::before {
+  background:
+    radial-gradient(1000px 500px at 85% -10%, rgba(214, 48, 49, 0.07), transparent 60%),
+    radial-gradient(900px 480px at -10% 15%, rgba(11, 13, 18, 0.05), transparent 60%),
+    var(--tz-bg);
+}
+
+[data-theme="udmurt"] ::selection {
+  background: rgba(214, 48, 49, 0.18);
+}
+
+/* Красные свечения кнопок вместо синих */
+[data-theme="udmurt"] .tz-btn-primary {
+  box-shadow: 0 2px 12px rgba(214, 48, 49, 0.28);
+}
+[data-theme="udmurt"] .tz-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(214, 48, 49, 0.35);
+}
+
+/* Радарные свечения на hero в красной гамме */
+[data-theme="udmurt"] .tz-breathe {
+  box-shadow: 0 0 42px rgba(214, 48, 49, 0.22);
+}
