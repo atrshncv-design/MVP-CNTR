@@ -22,6 +22,8 @@ async def get_current_user(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Не авторизован")
     try:
         payload = decode_token(creds.credentials)
+        if payload.get("type") != "access":
+            raise ValueError("token type is not access")
         user_id = int(payload["sub"])
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Невалидный токен") from exc

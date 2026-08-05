@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "change_me_super_secret_at_least_32_chars_long_for_hs256"
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 60
+    refresh_token_ttl_days: int = 14
     cors_origins: str = "http://localhost:3000"
 
     gigachat_credentials: str | None = None
