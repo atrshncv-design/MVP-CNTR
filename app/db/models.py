@@ -164,6 +164,14 @@ class Project(Base):
     join_token: Mapped[str] = mapped_column(
         String(16), nullable=False, unique=True, default=lambda: generate_join_token()
     )
+    legal_owner: Mapped[str | None] = mapped_column(Text)
+    rights_holder: Mapped[str | None] = mapped_column(Text)
+    contract_number: Mapped[str | None] = mapped_column(String(128))
+    contract_basis: Mapped[str | None] = mapped_column(Text)
+    legal_updated_by: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.users.id")
+    )
+    legal_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -288,7 +296,37 @@ class ProjectMember(Base):
         BigInteger, ForeignKey("public.users.id"), nullable=True
     )
     is_priority: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_project_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ProjectInvite(Base):
+    """Приглашение в проект (тикет 04): single — одноразовое, bulk — массовое.
+
+    Одноразовые приглашения криптографически случайны, ограничены сроком и
+    набором допустимых ролей. Массовые имеют лимит использований и могут быть
+    отозваны администратором проекта.
+    """
+
+    __tablename__ = "project_invites"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    created_by: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id"), nullable=False
+    )
+    token: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
+    invite_type: Mapped[str] = mapped_column(String(16), nullable=False, default="single")
+    allowed_roles: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    max_uses: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    used_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 

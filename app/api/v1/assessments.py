@@ -21,6 +21,7 @@ from app.db.models import (
     AuditTrailEntry,
     Project,
     ProjectAssessment,
+    ProjectMember,
     QuestionnaireResult,
 )
 from app.schemas import (
@@ -196,6 +197,18 @@ async def create_assessment(
         created_by=user.id,
     )
     db.add(project)
+    await db.flush()
+    # Создатель — первый участник с полномочием project_admin (тикет 04)
+    db.add(
+        ProjectMember(
+            project_id=project.id,
+            user_id=user.id,
+            role_in_project="owner",
+            status="active",
+            is_priority=True,
+            is_project_admin=True,
+        )
+    )
     await db.flush()
 
     if readiness_result is not None and template is not None:

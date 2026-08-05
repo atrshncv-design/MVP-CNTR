@@ -86,6 +86,12 @@ class ProjectOut(BaseModel):
     created_by: int | None = None
     created_at: str | None = None
     updated_at: str | None = None
+    legal_owner: str | None = None
+    rights_holder: str | None = None
+    contract_number: str | None = None
+    contract_basis: str | None = None
+    legal_updated_by: int | None = None
+    legal_updated_at: str | None = None
     control_points: list[ControlPointOut] = []
     verification_documents_count: int = 0
 
@@ -579,3 +585,51 @@ class ProfileQueueOut(ProfileOut):
 
 class OrgQueueOut(OrgOut):
     creator_name: str = ""
+
+
+# ── Тикет 04 Friday RC: приглашения, project_admin, договорные поля ──────────
+
+
+class InviteIn(BaseModel):
+    invite_type: Literal["single", "bulk"] = "single"
+    allowed_roles: list[str] = []
+    max_uses: int = Field(default=1, ge=1, le=1000)
+    expires_in_hours: int | None = Field(default=None, ge=1, le=2160)
+
+
+class InviteOut(BaseModel):
+    id: int
+    project_id: int
+    token: str
+    invite_type: str
+    allowed_roles: list[str] = []
+    max_uses: int
+    used_count: int
+    expires_at: str | None = None
+    revoked_at: str | None = None
+    created_at: str | None = None
+
+
+class InviteAcceptIn(BaseModel):
+    token: str = Field(min_length=6, max_length=32)
+    role_in_project: str = Field(default="participant", min_length=1, max_length=64)
+
+
+class TransferAdminIn(BaseModel):
+    user_id: int
+
+
+class LegalIn(BaseModel):
+    legal_owner: str | None = Field(default=None, max_length=2000)
+    rights_holder: str | None = Field(default=None, max_length=2000)
+    contract_number: str | None = Field(default=None, max_length=128)
+    contract_basis: str | None = Field(default=None, max_length=2000)
+
+
+class LegalOut(BaseModel):
+    legal_owner: str | None = None
+    rights_holder: str | None = None
+    contract_number: str | None = None
+    contract_basis: str | None = None
+    legal_updated_by: int | None = None
+    legal_updated_at: str | None = None

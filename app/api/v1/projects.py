@@ -428,6 +428,14 @@ def _project_out(
         budget=project.budget,
         join_token=project.join_token,
         created_by=project.created_by,
+        legal_owner=project.legal_owner,
+        rights_holder=project.rights_holder,
+        contract_number=project.contract_number,
+        contract_basis=project.contract_basis,
+        legal_updated_by=project.legal_updated_by,
+        legal_updated_at=project.legal_updated_at.isoformat()
+        if project.legal_updated_at
+        else None,
         created_at=project.created_at.isoformat() if project.created_at else None,
         updated_at=project.updated_at.isoformat() if project.updated_at else None,
         control_points=[_cp_out(cp) for cp in (control_points or [])],

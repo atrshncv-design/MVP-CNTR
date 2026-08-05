@@ -12,6 +12,7 @@ from app.api.v1.chat import router as chat_router
 from app.api.v1.executors import router as executors_router
 from app.api.v1.generation import router as generation_router
 from app.api.v1.health import router as health_router
+from app.api.v1.invites import router as invites_router
 from app.api.v1.manager import router as manager_router
 from app.api.v1.membership import router as membership_router
 from app.api.v1.nioktr import router as nioktr_router
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(invites_router, prefix="/api/v1")
     app.include_router(projects_router, prefix="/api/v1")
     app.include_router(membership_router, prefix="/api/v1")
     app.include_router(rag_router, prefix="/api/v1")
