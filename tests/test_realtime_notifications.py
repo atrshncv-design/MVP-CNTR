@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager
 
 from fastapi.testclient import TestClient
 
@@ -32,8 +33,6 @@ def _register(client: TestClient, role: str = "gk_customer") -> tuple[str, int]:
     )
     return data["access_token"], data["user"]["id"]
 
-
-from contextlib import contextmanager
 
 
 async def _fake_ok_llm(*args, **kwargs):  # noqa: ARG001
