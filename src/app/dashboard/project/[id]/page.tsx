@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import {
   Activity,
   ArrowRight,
+  Globe,
   ArrowUp,
   Award,
   BarChart3,
@@ -55,6 +56,8 @@ interface ProjectData {
     budget: number | null;
     created_by: number | null;
     join_token: string | null;
+    is_public?: boolean;
+    show_preliminary?: boolean;
   };
   questionnaire_results: Array<{
     id: number;
@@ -182,6 +185,40 @@ export default function ProjectDashboardPage() {
   const [tokenCopied, setTokenCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+
+  // Публикация в реестре (тикет 10)
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  const togglePublication = async () => {
+    if (!session?.user?.accessToken || !project) return;
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/projects/${project.project.id}/publish`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${session.user.accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_public: !project.project.is_public,
+          show_preliminary: project.project.show_preliminary ?? false,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(
+          typeof data?.detail === 'string' ? data.detail : `Ошибка публикации (${res.status})`,
+        );
+      }
+      const updated = await res.json();
+      setProject((prev) =>
+        prev ? { ...prev, project: { ...prev.project, is_public: updated.is_public } } : prev,
+      );
+    } catch (e) {
+      setPublishError(e instanceof Error ? e.message : 'Не удалось изменить публикацию');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   // Заявки на вступление
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
@@ -803,6 +840,30 @@ export default function ProjectDashboardPage() {
                   style={{ width: `${(p.current_level / p.target_level) * 100}%` }}
                 />
               </div>
+            </div>
+
+            {/* Публикация в реестре (тикет 10) */}
+            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Globe size={20} className="text-[#2E5BFF]" />
+                <h3 className="font-bold text-tz-fg">Публикация в реестре</h3>
+              </div>
+              <p className="text-sm text-tz-muted mb-3">
+                {p.is_public
+                  ? 'Проект виден в общем реестре и реестре технологий.'
+                  : 'Проект скрыт из реестров. Публикация доступна после подтверждения УГТ.'}
+              </p>
+              {publishError && (
+                <p role="alert" className="mb-3 text-sm text-tz-danger-fg">{publishError}</p>
+              )}
+              <button
+                onClick={() => void togglePublication()}
+                disabled={publishing}
+                className={`tz-btn w-full ${p.is_public ? 'tz-btn-secondary' : 'tz-btn-primary'}`}
+              >
+                {publishing ? <Loader2 size={15} className="animate-spin" /> : null}
+                {p.is_public ? 'Скрыть из реестра' : 'Опубликовать'}
+              </button>
             </div>
 
             {/* KТ-1 Control Point */}
