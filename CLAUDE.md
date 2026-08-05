@@ -24,4 +24,14 @@
 5. **Атомарная память:** После каждого успешного шага ТЫ ОБЯЗАН обновить файл `Status.md`. Контекст следующих шагов читай из `Plan.md`.
 6. **Удалённый репозиторий (Push-контракт):** Все зафиксированные изменения (коммиты) должны в обязательном порядке отправляться (push) в удаленный репозиторий: `https://github.com/atrshncv-design/MVP-CNTR.git`. Remote命名为 `origin` (если ещё не задан). Запрещено оставлять локальные коммиты не отправленными.
 
+## Agent skills
+
+### Issue tracker
+
+Specs and implementation issues are tracked as local Markdown under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Domain documentation uses a single-context layout. See `docs/agents/domain.md`.
+
 ```

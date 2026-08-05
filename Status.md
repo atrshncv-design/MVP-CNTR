@@ -1,5 +1,16 @@
 # STATUS / CURRENT STATE
 
+## Friday Release Candidate — Autopilot (05.08.2026)
+
+- ✅ Глубокое интервью завершено; конечное видение и приоритеты подтверждены Functional Validator.
+- ✅ Главный тестовый шов согласован: полный black-box сценарий через браузер/API/файлы; внутренние тесты — поддерживающий слой.
+- ✅ Спецификация опубликована: `.scratch/friday-release-candidate/spec.md` (`Status: ready-for-agent`, 108 user stories).
+- ✅ Спецификация согласована командой Functional Validator «Теперь тикеты».
+- ✅ Local Markdown tracker и single-context domain rules настроены в `docs/agents/`.
+- ✅ Phase 3: 22 вертикальных тикета опубликованы в `.scratch/friday-release-candidate/issues/` по решению Functional Validator передать реализацию другой модели.
+- ✅ Master handoff prompt опубликован: `.scratch/friday-release-candidate/IMPLEMENTATION_PROMPT.md`.
+- ⏸️ Реализация не начата текущим агентом; следующий исполнитель начинает с тикета 01. Текущий агент вернётся для финального ревью.
+
 **MVP1 «Технозрелость» — готов к сдаче 31.08.2026** (пайплайн: спека → тикеты → реализация → QA)
 
 ## Актуальная фаза (03.08.2026)
