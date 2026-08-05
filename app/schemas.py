@@ -633,3 +633,19 @@ class LegalOut(BaseModel):
     contract_basis: str | None = None
     legal_updated_by: int | None = None
     legal_updated_at: str | None = None
+
+
+class DocumentFileOut(BaseModel):
+    id: int
+    project_id: int
+    title: str
+    doc_type: str
+    file_name: str | None = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    sha256: str | None = None
+    scan_status: str = "pending"
+    scan_result: str | None = None
+    version: int = 1
+    uploaded_by: int | None = None
+    created_at: str | None = None

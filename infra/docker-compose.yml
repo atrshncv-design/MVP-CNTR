@@ -49,6 +49,42 @@ services:
       timeout: 5s
       retries: 20
 
+  minio:
+    image: minio/minio:latest
+    container_name: tz-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-technoz}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-change_me}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || curl -f http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  clamav:
+    image: mkodockx/docker-clamav:alpine
+    container_name: tz-clamav
+    restart: unless-stopped
+    ports:
+      - "3310:3310"
+    volumes:
+      - clamav-db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "echo PING | nc -w 1 localhost 3310 | grep -q PONG || clamdcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
 volumes:
   pg-primary-data:
   pg-replica-data:
+  minio-data:
+  clamav-db:

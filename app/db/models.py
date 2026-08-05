@@ -360,6 +360,13 @@ class ProjectDocument(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     doc_type: Mapped[str] = mapped_column(String(64), nullable=False)
     file_url: Mapped[str | None] = mapped_column(Text)
+    storage_key: Mapped[str | None] = mapped_column(Text)
+    file_name: Mapped[str | None] = mapped_column(String(255))
+    file_size: Mapped[int | None] = mapped_column(BigInteger)
+    mime_type: Mapped[str | None] = mapped_column(String(128))
+    sha256: Mapped[str | None] = mapped_column(String(64))
+    scan_status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    scan_result: Mapped[str | None] = mapped_column(Text)
     stage_requirement_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("public.stage_requirements.id"), nullable=True
     )

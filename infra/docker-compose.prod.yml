@@ -35,9 +35,20 @@ services:
       LLM_API_BASE: ${LLM_API_BASE}
       LLM_API_KEY: ${LLM_API_KEY}
       LLM_MODEL: ${LLM_MODEL}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET:-technozrelost}
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      CLAMAV_ENABLED: "true"
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_started
+      clamav:
+        condition: service_started
     expose:
       - "8000"
 
@@ -70,5 +81,36 @@ services:
       - frontend
       - backend
 
+  minio:
+    image: minio/minio:latest
+    container_name: tz-prod-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio-prod-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  clamav:
+    image: mkodockx/docker-clamav:alpine
+    container_name: tz-prod-clamav
+    restart: unless-stopped
+    volumes:
+      - clamav-prod-db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "echo PING | nc -w 1 localhost 3310 | grep -q PONG || clamdcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
 volumes:
   pg-prod-data:
+  minio-prod-data:
+  clamav-prod-db:

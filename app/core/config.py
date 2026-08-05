@@ -39,6 +39,17 @@ class Settings(BaseSettings):
     llm_api_key: str | None = None
     llm_model: str = "gpt-4o-mini"
 
+    # Файловое хранилище (тикет 06): MinIO + ClamAV
+    minio_endpoint: str = "127.0.0.1:9000"
+    minio_access_key: str = "technoz"
+    minio_secret_key: str = "change_me"
+    minio_bucket: str = "technozrelost"
+    minio_secure: bool = False
+    clamav_host: str = "127.0.0.1"
+    clamav_port: int = 3310
+    clamav_enabled: bool = True
+    max_file_size_mb: int = 25
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
