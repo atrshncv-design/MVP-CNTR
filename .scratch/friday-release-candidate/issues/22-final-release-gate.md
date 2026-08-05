@@ -16,3 +16,5 @@
 
 ## Реализация (05.08.2026)
 - Black-box release gate: все гейты зелёные (190 pytest, frontend lint/tsc/test/build, compose, backup, security); фиксы B1 (публичные реестры `35594a2`), resubmit отклонённых драфтов, backup.sh PGPASSWORD; отчёт: `release-gate-report.md`; тикеты 13–15 в трекерах приведены к факту.
+
+- Повторная волна (аудит 06.08): добавлен `tests/test_full_ugt_journey.py` — один проект УГТ 1→9 (reject/fix/resubmit включены); pyright 0 errors (pyrightconfig.json); ruff чист; **192/192 pytest**; frontend 14/14; PROGRESS итог 22/22.

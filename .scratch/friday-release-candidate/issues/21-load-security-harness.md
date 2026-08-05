@@ -16,3 +16,5 @@
 
 ## Реализация (05.08.2026)
 - Backend `2f3763f`: scripts/loadtest.py (профиль 70/20/8/2, отчёт success/p50/p95/p99/throughput, цели PASS/FAIL, --prepare-users/--seed-manager), scripts/security_check.py (secrets/RBAC/IDOR/file, все PASS; известные ecdsa advisory без фикса задокументированы), infra/README-LOADTEST.md; cryptography обновлена до 50.x (закрыты 2 CVE). **190/190 pytest, ruff чист** (6 новых тестов).
+
+- Повторная волна (аудит 06.08): security gate переведён на актуальный контракт (реестры 200) → **ALL CHECKS PASS**; deps без фикса — WARN.

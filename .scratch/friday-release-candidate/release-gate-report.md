@@ -39,3 +39,11 @@
 
 - Тикет 14 закрыт документационно (issue → done, docs-коммит).
 - PROGRESS.md/Status.md приведены в соответствие: 22/22 done.
+
+## Повторная волна по замечаниям аудитора (06.08.2026)
+
+- **Security gate: ALL CHECKS PASS** — контракт публичных реестров (200) в harness, deps no-fix → WARN (ecdsa, задокументирован).
+- **E2E УГТ 1→9 как тест** — `tests/test_full_ugt_journey.py` (мок LLM/сканера, reject/fix/resubmit, 409 на этапе выше 9).
+- **Pyright: 0 errors** — `pyrightconfig.json` + 4 фикса типов (AuditTrailEntryOut, counts, competencies, rowcount).
+- **Frontend: 14/14 тестов** — поведенческие (тема: классы/data-theme/localStorage/цикл; API: fetch 200/401/заголовки); browser matrix честный (Chromium live, остальные pending).
+- Гейты: ruff ✅, **192/192 pytest** ✅, frontend lint/tsc/14 тестов/build ✅.

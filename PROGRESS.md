@@ -27,7 +27,7 @@
 | 21 | Нагрузочный и security harness | ✅ done |
 | 22 | Финальный black-box release gate | ✅ done |
 
-**Итог Friday RC:** 1/22. Baseline-отчёт: `.scratch/friday-release-candidate/baseline-audit.md`.
+**Итог Friday RC:** 22/22 ✅ (повторная волна по замечаниям аудитора 06.08: security gate ALL PASS, E2E УГТ 1→9, pyright 0, поведенческие frontend-тесты 14/14). Baseline-отчёт: `.scratch/friday-release-candidate/baseline-audit.md`.
 
 ---
 

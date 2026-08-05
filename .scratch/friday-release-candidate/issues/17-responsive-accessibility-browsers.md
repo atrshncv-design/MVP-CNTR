@@ -15,3 +15,5 @@
 
 ## Реализация (05.08.2026)
 - Frontend `7a08999`: контраст токенов до WCAG AA (muted/warning/success/accent/danger в 3 темах), фикс «Отклонить», mobile-эмуляция (0 overflow, 44px цели), docs/browser-matrix.md. Гейты зелёные.
+
+- Повторная волна (аудит 06.08): browser matrix приведён к факту (Chromium live, остальные pending до серверного прогона); поведенческие тесты темы и API-клиента добавлены (14/14).
