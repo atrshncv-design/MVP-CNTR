@@ -43,6 +43,11 @@
 
 ## Friday Release Candidate — реализация (05.08.2026)
 
+- ✅ **Тикет 07 «Универсальные комплекты и автозаявка» — done.** Backend `bb1e0f2` (codex/recovery-backend): миграция 0019 — `promotion_request_documents` (неизменяемый снимок версий документов заявки) + `stage_requirements.template_version=v1`; `stages.py`: единый хелпер `_trigger_application` (автотриггер полного комплекта, триггер не зависит от автора), новый роут `POST /projects/{id}/stage-document-file` (multipart; MinIO+ClamAV; только scan_status=clean засчитывается и инициирует заявку), guard US 56 — неизменённый отклонённый комплект не создаёт дубликат (409, сравнение по sha256 на требование), `uploaded` только для clean-файлов. **135/135 pytest, ruff чист** (6 новых тестов `test_requirement_sets.py`). Frontend `202e55b` — stage-progress-panel: файловая загрузка (PDF/DOCX/XLSX/PNG/JPEG ≤25 МБ), версия справочника в UI, список обязательных/загруженных/отсутствующих.
+- ⏸️ Следующий тикет: **08 — менеджерская верификация УГТ** (структурированный отказ, N→N+1, история).
+
+## Friday Release Candidate — реализация (05.08.2026)
+
 - ✅ **Тикет 02 «Безопасная очистка» — done.** Frontend `85042c4` (codex/recovery-frontend): удалён мёртвый `_role-dashboard.tsx` (0 импортов), стартовые svg `public/{next,vercel,globe,file,window}.svg` (0 ссылок, favicon.ico сохранён); stale-тест `ui-shell.test.mjs` №5 переписан на проверку поведения — **node-тесты 5/5**, lint/tsc/build зелёные. Docs `friday-release-candidate`: удалены `КОД MVP "0"/{download,tool-results,upload}` (128 файлов: tool-артефакты, скриншоты, zip+extracted-дубль) и `.zscripts/dev.pid`. Backend: мусора не найдено (все .py используются). Пользовательские `.hermes/` и изменения в main не тронуты.
 
 ## Friday Release Candidate — Autopilot (05.08.2026)
