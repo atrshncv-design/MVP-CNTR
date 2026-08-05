@@ -94,6 +94,8 @@ class ProjectOut(BaseModel):
     legal_updated_at: str | None = None
     control_points: list[ControlPointOut] = []
     verification_documents_count: int = 0
+    is_public: bool = False
+    show_preliminary: bool = False
 
 
 class QuestionnaireAnswerIn(BaseModel):
@@ -471,7 +473,15 @@ class RegistryProjectOut(BaseModel):
     target_level: int = 9
     budget: float | None = None
     organization: str | None = None
+    is_public: bool = False
+    show_preliminary: bool = False
+    published_at: str | None = None
     created_at: str | None = None
+
+
+class PublishIn(BaseModel):
+    is_public: bool
+    show_preliminary: bool = False
 
 
 class NotificationOut(BaseModel):

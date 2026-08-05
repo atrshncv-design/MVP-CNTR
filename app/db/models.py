@@ -172,6 +172,13 @@ class Project(Base):
         BigInteger, ForeignKey("public.users.id")
     )
     legal_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    is_public: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    show_preliminary: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

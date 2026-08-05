@@ -337,6 +337,13 @@ def test_registry_shows_only_published(client: TestClient) -> None:
     second_owner, _ = _register(client)
     approved = _assessment(client, second_owner)
     _approve_draft(client, manager_token, approved["id"], level=3)
+    # тикет 10: публикация с согласием владельца
+    pub = client.put(
+        f"/api/v1/projects/{approved['id']}/publish",
+        headers=_auth(second_owner),
+        json={"is_public": True},
+    )
+    assert pub.status_code == 200, pub.text
 
     registry = client.get("/api/v1/projects/registry", headers=_auth(investor_token))
     assert registry.status_code == 200

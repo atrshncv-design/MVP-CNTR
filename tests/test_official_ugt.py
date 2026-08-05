@@ -143,6 +143,12 @@ def test_registry_uses_confirmed_level_not_preliminary(client: TestClient) -> No
         headers=_auth(manager),
         json={"approve": True, "level": 5},
     )
+    # тикет 10: публикация с согласием владельца
+    client.put(
+        f"/api/v1/projects/{project['id']}/publish",
+        headers=_auth(token),
+        json={"is_public": True},
+    )
     registry2 = client.get(
         "/api/v1/projects/registry?ugt_min=3", headers=_auth(_register(client))
     )

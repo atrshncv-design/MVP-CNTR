@@ -23,6 +23,7 @@ from app.schemas import (
     ProjectDocumentOut,
     ProjectMemberOut,
     ProjectOut,
+    PublishIn,
     QuestionnaireAnswerIn,
     QuestionnaireResultIn,
     QuestionnaireResultOut,
@@ -208,11 +209,11 @@ async def project_registry(
     budget_min: float | None = Query(None, ge=0),
     budget_max: float | None = Query(None, ge=0),
 ) -> list[RegistryProjectOut]:
-    """Общий реестр проектов (только published). ?ugt_min=7 — реестр технологий."""
+    """Общий реестр проектов (только is_public). ?ugt_min=7 — реестр технологий."""
     stmt = (
         select(Project, User.organization)
         .outerjoin(User, Project.created_by == User.id)
-        .where(Project.status == "published")
+        .where(Project.is_public.is_(True))
         .order_by(Project.current_level.desc(), Project.updated_at.desc())
     )
     if ugt_min is not None:
@@ -233,14 +234,76 @@ async def project_registry(
             name=p.name,
             category=p.category,
             current_level=p.current_level,
-            preliminary_level=p.preliminary_level,
+            preliminary_level=(
+                p.preliminary_level if p.show_preliminary else None
+            ),
             target_level=p.target_level,
             budget=float(p.budget) if p.budget is not None else None,
             organization=org_name,
+            is_public=p.is_public,
+            show_preliminary=p.show_preliminary,
+            published_at=(
+                p.published_at.isoformat() if p.published_at else None
+            ),
             created_at=p.created_at.isoformat() if p.created_at else None,
         )
         for p, org_name in rows
     ]
+
+
+@router.put("/{project_id}/publish", response_model=ProjectOut)
+async def publish_project(
+    project_id: int,
+    payload: PublishIn,
+    db: DBSession,
+    user: CurrentUser,
+) -> ProjectOut:
+    """Публикация/скрытие проекта с согласием владельца (тикет 10).
+
+    УГТ 1–2: публикуется после авто-подтверждения (`auto_confirmed`).
+    УГТ 3–9: публикуется только после решения менеджера (`approved`).
+    """
+    project = await require_project_access(db, project_id, user)
+    membership = await db.scalar(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project_id,
+            ProjectMember.user_id == user.id,
+            ProjectMember.is_project_admin.is_(True),
+        )
+    )
+    is_staff = is_cntr_staff(user)
+    if membership is None and not is_staff and project.created_by != user.id:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Публикация доступна только администратору проекта или менеджеру",
+        )
+
+    if payload.is_public:
+        from datetime import UTC, datetime
+
+        # Проверка права на публикацию
+        if project.status == "auto_confirmed":
+            pass  # УГТ 1–2 — после авто-подтверждения
+        elif project.status == "approved" and project.current_level >= 2:
+            pass  # Повышение УГТ 3–9 — после решения менеджера
+        elif project.status == "published" and project.current_level >= 1:
+            pass  # После менеджерского апрува драфта (draft→published)
+        else:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Публикация требует подтверждения УГТ (авто для 1-2, менеджер для 3-9)",
+            )
+        project.is_public = True
+        project.show_preliminary = payload.show_preliminary
+        if project.published_at is None:
+            project.published_at = datetime.now(UTC)
+    else:
+        project.is_public = False
+        project.show_preliminary = payload.show_preliminary
+
+    await db.commit()
+    await db.refresh(project)
+    return _project_out(project)
 
 
 @router.get("/{project_id}", response_model=ProjectDetailOut)
@@ -440,6 +503,8 @@ def _project_out(
         updated_at=project.updated_at.isoformat() if project.updated_at else None,
         control_points=[_cp_out(cp) for cp in (control_points or [])],
         verification_documents_count=verification_documents_count,
+        is_public=project.is_public,
+        show_preliminary=project.show_preliminary,
     )
 
 
