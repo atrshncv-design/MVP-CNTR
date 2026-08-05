@@ -48,6 +48,11 @@
 
 ## Friday Release Candidate — реализация (05.08.2026)
 
+- ✅ **Тикет 08 «Менеджерская верификация УГТ» — done.** Backend `6082bb6` (codex/recovery-backend): первичное подтверждение — guards level ∈ [2, preliminary] (400 при понижении ниже УГТ 2 / превышении заявленного, US 59/60); повышение строго N→N+1 от текущего уровня (устаревшая заявка → 409, рассмотренная → 404); структурированный отказ `missing: list[str]` → `evaluation_result.missing_required` + audit; история попыток менеджерская и неизменяема (US 55). **143/143 pytest, ruff чист** (8 новых тестов `test_manager_verification.py`). Frontend `c1bc879` — при отклонении заявки менеджер вводит недостающие материалы.
+- ⏸️ Следующий тикет: **09 — комментарии, PDF-заключение, очистка версий**.
+
+## Friday Release Candidate — реализация (05.08.2026)
+
 - ✅ **Тикет 02 «Безопасная очистка» — done.** Frontend `85042c4` (codex/recovery-frontend): удалён мёртвый `_role-dashboard.tsx` (0 импортов), стартовые svg `public/{next,vercel,globe,file,window}.svg` (0 ссылок, favicon.ico сохранён); stale-тест `ui-shell.test.mjs` №5 переписан на проверку поведения — **node-тесты 5/5**, lint/tsc/build зелёные. Docs `friday-release-candidate`: удалены `КОД MVP "0"/{download,tool-results,upload}` (128 файлов: tool-артефакты, скриншоты, zip+extracted-дубль) и `.zscripts/dev.pid`. Backend: мусора не найдено (все .py используются). Пользовательские `.hermes/` и изменения в main не тронуты.
 
 ## Friday Release Candidate — Autopilot (05.08.2026)
