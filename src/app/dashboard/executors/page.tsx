@@ -54,14 +54,18 @@ export default function ExecutorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [tab, setTab] = useState<'specialists' | 'organizations'>('specialists');
 
   useEffect(() => {
     if (!session?.user?.accessToken) return;
     const fetchData = async () => {
       try {
+        const base = tab === 'specialists'
+          ? '/api/v1/executors/specialists'
+          : '/api/v1/executors/organizations';
         const url = roleFilter !== 'all'
-          ? `${API_URL}/api/v1/executors?role=${roleFilter}`
-          : `${API_URL}/api/v1/executors`;
+          ? `${API_URL}${base}?role=${roleFilter}`
+          : `${API_URL}${base}`;
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${session.user.accessToken}` },
         });
@@ -71,7 +75,7 @@ export default function ExecutorsPage() {
       }
     };
     fetchData();
-  }, [session, roleFilter]);
+  }, [session, roleFilter, tab]);
 
   const filtered = executors.filter((e) =>
     !search || e.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,6 +97,21 @@ export default function ExecutorsPage() {
         <p className="mt-2 text-tz-muted">
           R&D-стартапы, научные организации и производители
         </p>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button
+          onClick={() => setTab('specialists')}
+          className={`tz-btn ${tab === 'specialists' ? 'tz-btn-primary' : 'tz-btn-ghost'}`}
+        >
+          <User size={16} /> Специалисты
+        </button>
+        <button
+          onClick={() => setTab('organizations')}
+          className={`tz-btn ${tab === 'organizations' ? 'tz-btn-primary' : 'tz-btn-ghost'}`}
+        >
+          <Building2 size={16} /> Организации
+        </button>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-4">
