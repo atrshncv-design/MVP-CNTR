@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from sqlalchemy import func, select
 
-from app.core.deps import DBSession, ReadDBSession, require_role
+from app.core.deps import CurrentUserOptional, DBSession, ReadDBSession
 from app.db.models import (
     Organization,
     Project,
@@ -19,8 +17,6 @@ from app.schemas import ExecutorOut
 
 EXECUTOR_ROLE_SLUGS = ["rd_executor", "scientific_org", "serial_manufacturer"]
 EXECUTOR_CATALOG_VIEWERS = (*EXECUTOR_ROLE_SLUGS, "gk_customer", "cntr_admin", "cntr_manager")
-
-ExecutorViewer = Annotated[User, Depends(require_role(*EXECUTOR_CATALOG_VIEWERS))]
 
 router = APIRouter(prefix="/executors", tags=["executors"])
 
@@ -123,7 +119,7 @@ async def _organizations_as_executors(db: DBSession) -> list[ExecutorOut]:
 @router.get("", response_model=list[ExecutorOut])
 async def list_executors(
     db: ReadDBSession,
-    user: ExecutorViewer,
+    user: CurrentUserOptional,
     role: str | None = Query(None),
 ) -> list[ExecutorOut]:
     """Объединённый каталог исполнителей (совместимость)."""
@@ -137,7 +133,7 @@ async def list_executors(
 @router.get("/specialists", response_model=list[ExecutorOut])
 async def list_specialists(
     db: ReadDBSession,
-    user: ExecutorViewer,
+    user: CurrentUserOptional,
     role: str | None = Query(
         None, description="Роль: rd_executor | scientific_org | serial_manufacturer"
     ),
@@ -158,7 +154,7 @@ async def list_specialists(
 @router.get("/organizations", response_model=list[ExecutorOut])
 async def list_org_catalog(
     db: ReadDBSession,
-    user: ExecutorViewer,
+    user: CurrentUserOptional,
     type: str | None = Query(None, description="Тип организации"),
     region: str | None = Query(None, description="Регион"),
 ) -> list[ExecutorOut]:

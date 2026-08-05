@@ -161,11 +161,7 @@ def test_unauthorized_request_rejected(client: TestClient) -> None:
     assert response.status_code == 401
 
 
-def test_executors_catalog_requires_viewer_role(client: TestClient) -> None:
-    investor_token, _ = _register(client, _email("inv"), "investor")
-    forbidden = client.get("/api/v1/executors", headers=_auth(investor_token))
-    assert forbidden.status_code == 403
-
-    gk_token, _ = _register(client, _email("gk"), "gk_customer")
-    allowed = client.get("/api/v1/executors", headers=_auth(gk_token))
-    assert allowed.status_code == 200
+def test_executors_catalog_public(client: TestClient) -> None:
+    """Каталог исполнителей публичен (тикет 22: B1)."""
+    anonymous = client.get("/api/v1/executors")
+    assert anonymous.status_code == 200

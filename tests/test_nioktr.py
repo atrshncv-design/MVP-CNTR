@@ -165,9 +165,10 @@ def test_nioktr_organizations_catalog(client: TestClient) -> None:
     assert missing.status_code == 404
 
 
-def test_nioktr_requires_auth(client: TestClient) -> None:
-    assert client.get("/api/v1/nioktr").status_code == 401
-    assert client.get("/api/v1/nioktr/organizations").status_code == 401
+def test_nioktr_public_registry(client: TestClient) -> None:
+    """Реестр НИОКТР публичен (тикет 22: B1 — реестры без токена)."""
+    assert client.get("/api/v1/nioktr").status_code == 200
+    assert client.get("/api/v1/nioktr/organizations").status_code == 200
 
 
 def test_nioktr_seed_idempotent(tmp_path: Path, client: TestClient) -> None:

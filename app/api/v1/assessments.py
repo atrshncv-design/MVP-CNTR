@@ -152,6 +152,7 @@ async def create_assessment(
         select(Project.id).where(
             Project.created_by == user.id,
             or_(Project.current_level > 0, Project.preliminary_level.is_(None)),
+            Project.status != "rejected",  # отклонённый draft можно переоценить (тикет 22)
         )
     )
     if already is not None:

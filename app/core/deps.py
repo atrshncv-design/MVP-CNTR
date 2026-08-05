@@ -38,6 +38,29 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+async def get_current_user_optional(
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: DBSession,
+) -> User | None:
+    """Токен опционален: публичные эндпоинты (реестры) работают без авторизации."""
+    if creds is None or creds.scheme.lower() != "bearer":
+        return None
+    try:
+        payload = decode_token(creds.credentials)
+        if payload.get("type") != "access":
+            return None
+        user_id = int(payload["sub"])
+        user = await db.get(User, user_id)
+        if user is None or not user.is_active:
+            return None
+        return user
+    except Exception:  # noqa: BLE001 — невалидный токен = аноним
+        return None
+
+
+CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
+
+
 def require_role(*slugs: str) -> Any:
     allowed = set(slugs)
 

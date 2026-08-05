@@ -50,7 +50,7 @@ dump_pg() {
       -d "$DB_NAME" -Fc -f "$SNAPSHOT/pg_primary_$TS.dump"
   elif command -v docker >/dev/null 2>&1; then
     echo "[backup] pg_dump не найден — использую docker exec ${PG_CONTAINER:-tz-prod-db-primary}"
-    docker exec -i "${PG_CONTAINER:-tz-prod-db-primary}" \
+    docker exec -i -e PGPASSWORD="$DB_PASSWORD" "${PG_CONTAINER:-tz-prod-db-primary}" \
       pg_dump -h localhost -U "$DB_USER" -d "$DB_NAME" -Fc \
       > "$SNAPSHOT/pg_primary_$TS.dump"
   else
