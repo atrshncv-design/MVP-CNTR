@@ -28,6 +28,11 @@
 
 ## Friday Release Candidate — реализация (05.08.2026)
 
+- ✅ **Тикет 04 «Проектные роли, приглашения и договорное владение» — done.** Backend `918f25e` (codex/recovery-backend): миграция 0017 — `project_invites` (single/bulk: max_uses, expires_at, revoked_at, allowed_roles), `project_members.is_project_admin`, договорные поля `projects.legal_*`; API `invites.py`: создание/список/отзыв приглашений, accept (проверка срока/лимита/ролей — 409/403), transfer-admin (создатель теряет полномочие после передачи), legal — только менеджер; создатель автоматически owner+admin. **114/114 pytest, ruff чист**; live-E2E: invite 201 → accept 200 → reuse 409 → transfer 200 → old-admin 403 → legal user 403 / manager 200. Frontend `963091a` (codex/recovery-frontend): панель «Команда проекта» в карточке (приглашения со ссылками `/join/INV-…`, отзыв, передача admin, договорные поля для менеджера), join-клиент различает INV-токены (`/invites/accept`) и join-токены (`/projects/join`). Браузерный E2E: создание приглашения через UI, join INV-токеном → 403 «Роль не разрешена приглашением».
+- ⏸️ Следующий тикет: **05 — опросник и официальный УГТ до 2**.
+
+## Friday Release Candidate — реализация (05.08.2026)
+
 - ✅ **Тикет 02 «Безопасная очистка» — done.** Frontend `85042c4` (codex/recovery-frontend): удалён мёртвый `_role-dashboard.tsx` (0 импортов), стартовые svg `public/{next,vercel,globe,file,window}.svg` (0 ссылок, favicon.ico сохранён); stale-тест `ui-shell.test.mjs` №5 переписан на проверку поведения — **node-тесты 5/5**, lint/tsc/build зелёные. Docs `friday-release-candidate`: удалены `КОД MVP "0"/{download,tool-results,upload}` (128 файлов: tool-артефакты, скриншоты, zip+extracted-дубль) и `.zscripts/dev.pid`. Backend: мусора не найдено (все .py используются). Пользовательские `.hermes/` и изменения в main не тронуты.
 
 ## Friday Release Candidate — Autopilot (05.08.2026)
