@@ -6,7 +6,9 @@ import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import {
   Activity,
+  Archive,
   ArrowRight,
+  Download,
   Globe,
   ArrowUp,
   Award,
@@ -217,6 +219,58 @@ export default function ProjectDashboardPage() {
       setPublishError(e instanceof Error ? e.message : 'Не удалось изменить публикацию');
     } finally {
       setPublishing(false);
+    }
+  };
+
+  // Архив и экспорт (тикет 13)
+  const [archiving, setArchiving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
+
+  const archiveProject = async () => {
+    if (!session?.user?.accessToken || !project) return;
+    setArchiving(true);
+    setArchiveError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/projects/${project.project.id}/archive`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(typeof data?.detail === 'string' ? data.detail : `Ошибка (${res.status})`);
+      }
+      const updated = await res.json();
+      setProject((prev) => (prev ? { ...prev, project: { ...prev.project, status: updated.status } } : prev));
+    } catch (e) {
+      setArchiveError(e instanceof Error ? e.message : 'Не удалось архивировать');
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const exportProject = async () => {
+    if (!session?.user?.accessToken || !project) return;
+    setExporting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/projects/${project.project.id}/export`, {
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(typeof data?.detail === 'string' ? data.detail : `Ошибка (${res.status})`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `project-${project.project.id}-export.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setArchiveError(e instanceof Error ? e.message : 'Не удалось сформировать экспорт');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -864,6 +918,21 @@ export default function ProjectDashboardPage() {
                 {publishing ? <Loader2 size={15} className="animate-spin" /> : null}
                 {p.is_public ? 'Скрыть из реестра' : 'Опубликовать'}
               </button>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {p.status !== 'archived' ? (
+                  <button onClick={() => void archiveProject()} disabled={archiving} className="tz-btn tz-btn-ghost text-sm">
+                    {archiving ? <Loader2 size={14} className="animate-spin" /> : <Archive size={14} />} В архив
+                  </button>
+                ) : (
+                  <span className="tz-btn tz-btn-ghost text-sm opacity-60">В архиве</span>
+                )}
+                <button onClick={() => void exportProject()} disabled={exporting} className="tz-btn tz-btn-ghost text-sm">
+                  {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Экспорт
+                </button>
+              </div>
+              {archiveError && (
+                <p role="alert" className="mt-2 text-sm text-tz-danger-fg">{archiveError}</p>
+              )}
             </div>
 
             {/* KТ-1 Control Point */}
