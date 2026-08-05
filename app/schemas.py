@@ -637,6 +637,29 @@ class LegalOut(BaseModel):
     legal_updated_at: str | None = None
 
 
+class RequestOut(BaseModel):
+    id: int
+    from_level: int
+    to_level: int
+    status: str
+    attempt_no: int
+    rejection_reason: str | None = None
+    created_at: str | None = None
+    comments_count: int = 0
+
+
+class CommentIn(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+
+
+class CommentOut(BaseModel):
+    id: int
+    author_id: int
+    author_name: str
+    body: str
+    created_at: str | None = None
+
+
 class DocumentFileOut(BaseModel):
     id: int
     project_id: int

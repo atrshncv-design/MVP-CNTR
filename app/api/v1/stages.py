@@ -163,6 +163,18 @@ async def stage_requirements(
     return await _stage_reqs_with_status(db, project, stage)
 
 
+async def _next_version(db: DBSession, project_id: int, title: str) -> int:
+    from sqlalchemy import func as sqla_func
+
+    current = await db.scalar(
+        select(sqla_func.max(ProjectDocument.version)).where(
+            ProjectDocument.project_id == project_id,
+            ProjectDocument.title == title,
+        )
+    )
+    return (current or 0) + 1
+
+
 async def _trigger_application(
     db: DBSession, project: Project, doc: ProjectDocument, user: CurrentUser
 ) -> dict:
@@ -368,10 +380,12 @@ async def upload_stage_document_file(
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     scan_status, scan_result = await scanner.scan(data)
 
+    doc_title = title or (file.filename or "Документ")
     doc = ProjectDocument(
         project_id=project.id,
-        title=title or (file.filename or "Документ"),
+        title=doc_title,
         doc_type="stage",
+        version=await _next_version(db, project.id, doc_title),
         storage_key=stored.storage_key,
         file_name=file.filename or "document",
         file_size=stored.size,

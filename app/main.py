@@ -21,6 +21,7 @@ from app.api.v1.notifications import router as notifications_router
 from app.api.v1.profiles import router as profiles_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.rag import router as rag_router
+from app.api.v1.requests import router as requests_router
 from app.api.v1.stages import router as stages_router
 from app.api.v1.technologies import router as technologies_router
 from app.api.v1.users import router as users_router
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(invites_router, prefix="/api/v1")
     app.include_router(projects_router, prefix="/api/v1")
+    app.include_router(requests_router, prefix="/api/v1")
     app.include_router(membership_router, prefix="/api/v1")
     app.include_router(rag_router, prefix="/api/v1")
     app.include_router(generation_router, prefix="/api/v1")

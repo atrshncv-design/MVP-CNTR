@@ -446,6 +446,26 @@ class StageRequirement(Base):
     )
 
 
+class RequestComment(Base):
+    """Комментарий к конкретной заявке на повышение УГТ (тикет 09, US 53)."""
+
+    __tablename__ = "request_comments"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    promotion_request_id: Mapped[int] = mapped_column(
+        BigInteger,
+        ForeignKey("public.promotion_requests.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    author_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class PromotionRequestDocument(Base):
     """Неизменяемый снимок версий документов заявки (тикет 07)."""
 

@@ -23,6 +23,7 @@ dependencies = [
     "bcrypt<4.1",
     "pymupdf>=1.28.0",
     "minio>=7.2.20",
+    "reportlab>=5.0.0",
 ]
 
 [project.optional-dependencies]
