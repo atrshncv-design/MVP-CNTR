@@ -38,6 +38,11 @@
 
 ## Friday Release Candidate — реализация (05.08.2026)
 
+- ✅ **Тикет 06 «Безопасное файловое хранилище» — done.** Backend `056ed9f` (codex/recovery-backend): сервис `file_storage.py` — фактический MIME по сигнатуре (PDF/DOCX/XLSX/PNG/JPEG), лимит 25 МБ, внутренние UUID-имена, SHA-256, MinIO (закрытый бакет, авто-создание; диск в тестах), clamd INSTREAM (только clean = доказательство); API `files.py` — upload (multipart)/список/download (infected → 409)/rescan, публичных MinIO URL нет; миграция 0018 (storage_key/file_name/file_size/mime_type/sha256/scan_status в `project_documents` + индексы); compose local+prod: minio + clamav (arm64: mkodockx/docker-clamav:alpine, зеркала FreshClam). **129/129 pytest, ruff чист** (8 новых тестов). Frontend `9bc3d4e` — панель «Файлы проекта» в карточке (загрузка, статус антивируса, скачивание). Live: PDF → MinIO → download байт-в-байт, версии; clamd недоступен → `scan_status=error` (fail-safe, не clean). ⚠️ FreshClam CDN блокирует среду разработчика (403) — живой EICAR-тест перенесён на серверный стенд (клиент и compose готовы).
+- ⏸️ Следующий тикет: **07 — универсальные комплекты и автозаявка** (перевод stage-documents на файлы).
+
+## Friday Release Candidate — реализация (05.08.2026)
+
 - ✅ **Тикет 02 «Безопасная очистка» — done.** Frontend `85042c4` (codex/recovery-frontend): удалён мёртвый `_role-dashboard.tsx` (0 импортов), стартовые svg `public/{next,vercel,globe,file,window}.svg` (0 ссылок, favicon.ico сохранён); stale-тест `ui-shell.test.mjs` №5 переписан на проверку поведения — **node-тесты 5/5**, lint/tsc/build зелёные. Docs `friday-release-candidate`: удалены `КОД MVP "0"/{download,tool-results,upload}` (128 файлов: tool-артефакты, скриншоты, zip+extracted-дубль) и `.zscripts/dev.pid`. Backend: мусора не найдено (все .py используются). Пользовательские `.hermes/` и изменения в main не тронуты.
 
 ## Friday Release Candidate — Autopilot (05.08.2026)
