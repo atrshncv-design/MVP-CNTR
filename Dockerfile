@@ -12,6 +12,9 @@ RUN uv sync --frozen --no-dev
 FROM python:3.12-slim-bookworm
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1
+# Кириллический шрифт для PDF-заключений (reportlab, тикет 09)
+RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/.venv ./.venv
 COPY app ./app
 COPY alembic ./alembic
