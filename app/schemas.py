@@ -262,6 +262,7 @@ class AuditTrailEntryOut(BaseModel):
     id: int
     project_id: int
     user_id: int | None = None
+    user_name: str | None = None
     action: str
     details: dict = {}
     created_at: str | None = None

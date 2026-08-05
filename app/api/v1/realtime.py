@@ -44,9 +44,31 @@ async def _publish_stream(user_ids: list[int], event: dict) -> None:
 
 
 @router.get("/notifications/stream")
-async def stream_notifications(db: DBSession, user: CurrentUser) -> StreamingResponse:
-    """SSE-поток событий. Соединение держится, события доставляются live."""
-    uid = user.id
+async def stream_notifications(
+    db: DBSession,
+    user: CurrentUser,
+    access_token: str | None = None,
+) -> StreamingResponse:
+    """SSE-поток событий. Соединение держится, события доставляются live.
+
+    EventSource не поддерживает заголовки — токен принимается query-параметром
+    (access_token) и валидируется тем же механизмом, что и Bearer.
+    """
+    if access_token:
+        from app.core.security import decode_token
+
+        try:
+            payload = decode_token(access_token)
+            if payload.get("type") != "access":
+                raise ValueError("token type is not access")
+            uid = int(payload["sub"])
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Невалидный токен") from exc
+        active = await db.get(User, uid)
+        if active is None or not active.is_active:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь неактивен")
+    else:
+        uid = user.id
     queue: asyncio.Queue = asyncio.Queue(maxsize=100)
     _stream_subscribers.setdefault(uid, set()).add(queue)
 

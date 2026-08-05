@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, status
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlalchemy import Select, func, or_, select
 
 from app.core.deps import CurrentUser, DBSession, has_role, is_cntr_staff
@@ -10,6 +12,7 @@ from app.db.models import (
     Project,
     ProjectDocument,
     ProjectMember,
+    PromotionRequest,
     QuestionnaireResult,
     User,
     VerificationDocument,
@@ -279,8 +282,6 @@ async def publish_project(
         )
 
     if payload.is_public:
-        from datetime import UTC, datetime
-
         # Проверка права на публикацию
         if project.status == "auto_confirmed":
             pass  # УГТ 1–2 — после авто-подтверждения
@@ -304,6 +305,161 @@ async def publish_project(
     await db.commit()
     await db.refresh(project)
     return _project_out(project)
+
+
+@router.delete("/{project_id}", status_code=204)
+async def delete_project(
+    project_id: int, db: DBSession, user: CurrentUser
+) -> None:
+    """Удаление только пустого черновика (тикет 13).
+
+    Верифицированный/опубликованный проект удалить нельзя — только архив.
+    """
+    project = await require_project_access(db, project_id, user)
+    if project.created_by != user.id and not is_cntr_staff(user):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Только владелец")
+    has_answers = await db.scalar(
+        select(QuestionnaireResult.id).where(
+            QuestionnaireResult.project_id == project_id
+        ).limit(1)
+    )
+    has_docs = await db.scalar(
+        select(ProjectDocument.id).where(
+            ProjectDocument.project_id == project_id
+        ).limit(1)
+    )
+    if has_answers or has_docs or project.status not in ("draft", "auto_confirmed"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Удалить можно только пустой черновик без документов; "
+            "верифицированный проект архивируется",
+        )
+    await db.delete(project)
+    await db.commit()
+
+
+@router.post("/{project_id}/archive", response_model=ProjectOut)
+async def archive_project(
+    project_id: int, db: DBSession, user: CurrentUser
+) -> ProjectOut:
+    """Архивирование верифицированного проекта (тикет 13)."""
+    project = await require_project_access(db, project_id, user)
+    if project.created_by != user.id and not is_cntr_staff(user):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Только владелец")
+    if project.status == "archived":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Проект уже в архиве")
+    project.status = "archived"
+    project.is_public = False
+    await db.commit()
+    await db.refresh(project)
+    return _project_out(project)
+
+
+@router.get("/{project_id}/export")
+async def export_project(
+    project_id: int, db: DBSession, user: CurrentUser
+) -> Response:
+    """Экспорт проекта: карточка, решения заявок, заключения (тикет 13).
+
+    Отдаёт JSON-пакет (переносимый) с подтверждёнными данными; файлы
+    документов не включаются в публичный экспорт — только метаданные.
+    """
+    project = await require_project_access(db, project_id, user)
+    from fastapi.responses import JSONResponse
+
+    results = (
+        (
+            await db.execute(
+                select(QuestionnaireResult)
+                .where(QuestionnaireResult.project_id == project_id)
+                .order_by(QuestionnaireResult.level_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    requests = (
+        (
+            await db.execute(
+                select(PromotionRequest)
+                .where(PromotionRequest.project_id == project_id)
+                .order_by(PromotionRequest.attempt_no)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    documents = (
+        (
+            await db.execute(
+                select(ProjectDocument)
+                .where(ProjectDocument.project_id == project_id)
+                .order_by(ProjectDocument.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    payload = {
+        "project": {
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "category": project.category,
+            "status": project.status,
+            "current_level": project.current_level,
+            "preliminary_level": project.preliminary_level,
+            "target_level": project.target_level,
+            "budget": float(project.budget) if project.budget is not None else None,
+            "legal_owner": project.legal_owner,
+            "rights_holder": project.rights_holder,
+            "contract_number": project.contract_number,
+            "created_at": project.created_at.isoformat() if project.created_at else None,
+        },
+        "questionnaire_results": [
+            {
+                "level_id": r.level_id,
+                "percentage": r.percentage,
+                "checked_items": r.checked_items,
+            }
+            for r in results
+        ],
+        "requests": [
+            {
+                "id": r.id,
+                "from_level": r.from_level,
+                "to_level": r.to_level,
+                "status": r.status,
+                "attempt_no": r.attempt_no,
+                "rejection_reason": r.rejection_reason,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in requests
+        ],
+        "documents": [
+            {
+                "id": d.id,
+                "title": d.title,
+                "doc_type": d.doc_type,
+                "version": d.version,
+                "file_name": d.file_name,
+                "mime_type": d.mime_type,
+                "file_size": d.file_size,
+                "scan_status": d.scan_status,
+                "created_at": d.created_at.isoformat() if d.created_at else None,
+            }
+            for d in documents
+        ],
+        "exported_at": datetime.now(UTC).isoformat(),
+    }
+    return JSONResponse(
+        content=payload,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="project-{project_id}-export.json"'
+            )
+        },
+    )
 
 
 @router.get("/{project_id}", response_model=ProjectDetailOut)
