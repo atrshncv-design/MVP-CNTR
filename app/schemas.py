@@ -660,6 +660,16 @@ class RequestOut(BaseModel):
     comments_count: int = 0
 
 
+class ManagerTaskOut(BaseModel):
+    id: int
+    type: str
+    title: str
+    status: str
+    manager_name: str | None = None
+    project_id: int | None = None
+    created_at: str | None = None
+
+
 class CommentIn(BaseModel):
     body: str = Field(min_length=1, max_length=2000)
 

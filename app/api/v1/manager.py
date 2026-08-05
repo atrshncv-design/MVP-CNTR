@@ -32,6 +32,7 @@ from app.schemas import (
     PromotionDecisionIn,
     PromotionRequestOut,
 )
+from app.services.notifications import notify_user
 
 router = APIRouter(prefix="/manager", tags=["manager"])
 
@@ -161,6 +162,14 @@ async def decide_draft(
         )
 
     await db.commit()
+    if project.created_by:
+        await notify_user(
+            db,
+            project.created_by,
+            "draft.decided",
+            "Решение по вашему проекту принято",
+            {"project_id": project.id, "status": project.status},
+        )
     await db.refresh(project)
     return await _draft_row(db, project)
 
@@ -283,6 +292,20 @@ async def decide_promotion(
             )
         )
 
+    if project.created_by:
+        await notify_user(
+            db,
+            project.created_by,
+            "promotion.decided",
+            "Решение по заявке на повышение УГТ",
+            {
+                "project_id": project.id,
+                "request_id": req.id,
+                "status": req.status,
+                "from_level": req.from_level,
+                "to_level": req.to_level,
+            },
+        )
     await db.commit()
     await db.refresh(req)
     return await _promotion_out(db, req)

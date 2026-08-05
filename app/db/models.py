@@ -546,6 +546,25 @@ class Notification(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
+class NotificationOutbox(Base):
+    """Transactional outbox: realtime-события и задачи менеджеров (тикет 12)."""
+
+    __tablename__ = "notification_outbox"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    notification_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.notifications.id", ondelete="CASCADE")
+    )
+    target_scope: Mapped[str] = mapped_column(String(16), nullable=False, default="project")
+    manager_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="SET NULL")
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
 
 class Technology(Base):
     __tablename__ = "technologies"

@@ -98,7 +98,7 @@ def _clean_tables() -> Iterator[None]:
             "public.refresh_tokens, public.user_roles, public.users, "
             "public.user_profiles, public.user_organizations, public.organization_members, "
             "public.project_invites, public.promotion_requests, "
-            "public.promotion_request_documents " 
+            "public.promotion_request_documents, notification_outbox " 
             "RESTART IDENTITY CASCADE"
         )
     finally:
