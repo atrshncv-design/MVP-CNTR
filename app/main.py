@@ -14,6 +14,7 @@ from app.api.v1.generation import router as generation_router
 from app.api.v1.health import router as health_router
 from app.api.v1.manager import router as manager_router
 from app.api.v1.membership import router as membership_router
+from app.api.v1.nioktr import router as nioktr_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.rag import router as rag_router
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
     app.include_router(manager_router, prefix="/api/v1")
     app.include_router(notifications_router, prefix="/api/v1")
     app.include_router(stages_router, prefix="/api/v1")
+    app.include_router(nioktr_router, prefix="/api/v1")
     return app
 
 

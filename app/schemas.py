@@ -466,3 +466,45 @@ class NotificationOut(BaseModel):
     payload: dict = {}
     is_read: bool = False
     created_at: str | None = None
+
+
+# ─── НИОКТР-реестр (тикеты 01-07) ────────────────────────────────────────────
+
+
+class NioktrCardOut(BaseModel):
+    id: int
+    registration_number: str
+    name: str
+    annotation: str | None = None
+    keywords: list = []
+    nioktr_types: list = []
+    state_program: str | None = None
+    federal_program: str | None = None
+    created_date: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    is_ai_area: bool = False
+    is_ai_usage: bool = False
+    executor_name: str | None = None
+    executor_short_name: str | None = None
+    executor_ogrn: str | None = None
+    executor_territory: str | None = None
+    customer_name: str | None = None
+    budgets: list = []
+    organization_id: int | None = None
+    created_at: str | None = None
+
+
+class OrgCardOut(BaseModel):
+    id: int
+    name: str
+    short_name: str | None = None
+    ogrn: str | None = None
+    org_type: str | None = None
+    competencies: list = []
+    projects_count: int = 0
+    region: str | None = None
+
+
+class OrganizationDetailOut(OrgCardOut):
+    nioktr_cards: list[NioktrCardOut] = []

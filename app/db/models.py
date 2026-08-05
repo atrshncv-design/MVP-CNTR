@@ -458,3 +458,35 @@ class Technology(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class NioktrCard(Base):
+    __tablename__ = "nioktr_cards"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    registration_number: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    annotation: Mapped[str | None] = mapped_column(Text)
+    keywords: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    nioktr_types: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    state_program: Mapped[str | None] = mapped_column(Text)
+    federal_program: Mapped[str | None] = mapped_column(Text)
+    created_date: Mapped[str | None] = mapped_column(String(32))
+    start_date: Mapped[str | None] = mapped_column(String(32))
+    end_date: Mapped[str | None] = mapped_column(String(32))
+    is_ai_area: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_ai_usage: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    executor_name: Mapped[str | None] = mapped_column(Text)
+    executor_short_name: Mapped[str | None] = mapped_column(Text)
+    executor_ogrn: Mapped[str | None] = mapped_column(Text)
+    executor_territory: Mapped[str | None] = mapped_column(Text)
+    customer_name: Mapped[str | None] = mapped_column(Text)
+    budgets: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    organization_id: Mapped[int | None] = mapped_column(
+        BigInteger,
+        ForeignKey("public.organizations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
