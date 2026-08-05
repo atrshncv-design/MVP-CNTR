@@ -15,7 +15,7 @@
   --tz-soft: #eef2f8;
   --tz-fg: #0c1424;
   --tz-secondary: #475569;
-  --tz-muted: #94a3b8;
+  --tz-muted: #64748b;
   --tz-border: #e2e8f0;
   --tz-card-border: #e6ebf2;
 
@@ -48,8 +48,8 @@
   --tz-ugt-soft: rgba(245, 158, 11, 0.1);
 
   /* Статусы */
-  --tz-success: #16a34a;
-  --tz-warning: #d97706;
+  --tz-success: #15803d;
+  --tz-warning: #b45309;
   --tz-review: #2563eb;
   --tz-danger: #dc2626;
   --tz-neutral: #64748b;
@@ -115,7 +115,7 @@
   --tz-border: #1e2a44;
   --tz-card-border: #213055;
 
-  --tz-accent: #3b82f6;
+  --tz-accent: #2563eb;
   --tz-accent-hover: #60a5fa;
   --tz-accent-soft: rgba(59, 130, 246, 0.14);
   --tz-accent-strong: #1e3a8a;
@@ -142,7 +142,7 @@
   --tz-success: #34d399;
   --tz-warning: #fbbf24;
   --tz-review: #60a5fa;
-  --tz-danger: #f87171;
+  --tz-danger: #ef4444;
   --tz-neutral: #7f90b3;
 
   --tz-success-soft: rgba(52, 211, 153, 0.12);
@@ -205,7 +205,7 @@
   --tz-soft: #f1ede5;
   --tz-fg: #0b0d12;
   --tz-secondary: #45484f;
-  --tz-muted: #8a8d93;
+  --tz-muted: #5f6268;
   --tz-border: #d9d4ca;
   --tz-card-border: #e2ddd3;
 

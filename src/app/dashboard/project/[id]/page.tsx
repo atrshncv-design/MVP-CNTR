@@ -833,7 +833,7 @@ export default function ProjectDashboardPage() {
                           <button
                             onClick={() => decideJoinRequest(req.id, false)}
                             disabled={decidingId === req.id}
-                            className="inline-flex items-center gap-1 rounded-lg bg-tz-danger-soft px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg bg-tz-danger-soft px-3 py-2 text-xs font-semibold text-tz-danger-fg transition hover:bg-red-600 disabled:opacity-50"
                           >
                             <XCircle size={14} /> Отклонить
                           </button>
