@@ -20,10 +20,10 @@
 | 14 | Отказоустойчивый AI-консультант | ⏳ pending |
 | 15 | Три направления удмуртской темы (стоп-гейт: выбор пользователя → direction-approved.md) | ⏳ pending |
 | 16 | Единая система трёх тем | ✅ done |
-| 17 | Mobile, accessibility и browser matrix | ⏳ pending |
+| 17 | Mobile, accessibility и browser matrix | ✅ done |
 | 18 | Масштабируемый Docker-контур | ✅ done |
 | 19 | Повторяемая демо-среда seed/reset | ✅ done |
-| 20 | Backup, restore и наблюдаемость | ⏳ pending |
+| 20 | Backup, restore и наблюдаемость | ✅ done |
 | 21 | Нагрузочный и security harness | ⏳ pending |
 | 22 | Финальный black-box release gate | ⏳ pending |
 
