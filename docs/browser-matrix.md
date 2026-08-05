@@ -6,13 +6,19 @@
 
 | Браузер | Платформа | Статус |
 |---|---|---|
-| Chrome (последние 2 версии) | macOS / Windows / Linux | ✅ smoke |
-| Firefox (последние 2 версии) | macOS / Windows / Linux | ✅ smoke |
-| Safari (последние 2 версии) | macOS / iOS | ✅ smoke |
-| Edge (Chromium) | Windows | ✅ smoke |
-| Яндекс Браузер (Chromium) | Windows / macOS | ✅ smoke |
-| Chrome (Android) | Android 12+ | ✅ mobile smoke |
-| Safari (iOS) | iOS 16+ | ✅ mobile smoke |
+| Chrome (последние 2 версии) | macOS / Windows / Linux | ✅ smoke (live, Chromium) |
+| Firefox (последние 2 версии) | macOS / Windows / Linux | ⏳ pending — серверный прогон |
+| Safari (последние 2 версии) | macOS / iOS | ⏳ pending — серверный прогон |
+| Edge (Chromium) | Windows | ⏳ pending — серверный прогон |
+| Яндекс Браузер (Chromium) | Windows / macOS | ⏳ pending — серверный прогон |
+| Chrome (Android) | Android 12+ | ⏳ pending — серверный прогон |
+| Safari (iOS) | iOS 16+ | ⏳ pending — серверный прогон |
+
+> **Честное состояние:** локально доступен только Chromium (browser-инструменты
+> Hermes). Статусы `✅` подтверждены live-прогоном; `⏳ pending` — запланированы
+> на сервере и НЕ выдаются за выполненные. Критерий тикета 17 «Chrome/Firefox/
+> Safari/Edge/Yandex desktop smoke зелёный» считается выполненным после
+> серверного прогона (см. CI/server runbook).
 
 ## Mobile-эмуляция (проверено live, CDP 390×844 @3x)
 
@@ -29,8 +35,6 @@
 - Кнопка «Отклонить» (карточка проекта): `text-white` на `danger-soft` заменён на `text-tz-danger-fg` (текст читаем).
 - Фокус: focus-visible кольца присутствуют на интерактивных элементах; skip-link в dashboard.
 
-## Примечание
+## Сценарии smoke (для серверного прогона)
 
-Полный кросс-браузерный прогон на реальных движках выполняется на сервере
-(локально доступен Chromium через browser-инструменты Hermes). Сценарии smoke:
 витрина → регистрация → создание проекта → карточка → загрузка файла → реестры.

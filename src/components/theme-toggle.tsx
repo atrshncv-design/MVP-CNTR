@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { Sun, Moon, Star } from "lucide-react";
 
-export type ThemeName = "light" | "dark" | "udmurt";
+import type { ThemeName } from "@/lib/theme";
+
+export type { ThemeName } from "@/lib/theme";
 
 const THEMES: { id: ThemeName; label: string; Icon: typeof Sun }[] = [
   { id: "light", label: "Светлая тема", Icon: Sun },
@@ -11,33 +13,15 @@ const THEMES: { id: ThemeName; label: string; Icon: typeof Sun }[] = [
   { id: "udmurt", label: "Удмуртская тема", Icon: Star },
 ];
 
-export function getStoredTheme(): ThemeName {
-  if (typeof window === "undefined") return "light";
-  const stored = window.localStorage.getItem("tz-theme");
-  if (stored === "dark" || stored === "udmurt") return stored;
-  if (
-    !stored &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
-    return "dark";
-  }
-  return "light";
-}
+import { applyTheme, getStoredTheme } from "@/lib/theme";
 
-/** Применяет тему на <html> и сохраняет выбор (тикет 16 — три темы). */
-export function applyTheme(theme: ThemeName) {
-  const el = document.documentElement;
-  el.classList.toggle("dark", theme === "dark");
-  if (theme === "udmurt") {
-    el.setAttribute("data-theme", "udmurt");
-  } else {
-    el.removeAttribute("data-theme");
-  }
-  try {
-    window.localStorage.setItem("tz-theme", theme);
-  } catch {
-    /* localStorage недоступен — тема живёт до перезагрузки */
-  }
+/** Читает сохранённую тему с учётом системной (только на клиенте). */
+export function getStoredThemeSafe(): ThemeName {
+  if (typeof window === "undefined") return "light";
+  return getStoredTheme(
+    window.localStorage,
+    window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
 }
 
 export default function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
@@ -46,14 +30,14 @@ export default function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
 
   useEffect(() => {
     (async () => {
-      setTheme(getStoredTheme());
+      setTheme(getStoredThemeSafe());
       setMounted(true);
     })();
   }, []);
 
   const select = (next: ThemeName) => {
     setTheme(next);
-    applyTheme(next);
+    applyTheme(next, { documentElement: document.documentElement, storage: window.localStorage });
   };
 
   if (!mounted) {
