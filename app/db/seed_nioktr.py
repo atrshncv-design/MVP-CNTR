@@ -94,7 +94,7 @@ async def seed(input_path: Path, drop_old_technologies: bool = True) -> None:
             result = await db.execute(
                 delete(Technology).where(Technology.source_uri.like("nioktr:%"))
             )
-            print(f"Технологии старого раздела НИОКТР удалено: {result.rowcount}")
+            print(f"Технологии старого раздела НИОКТР удалено: {getattr(result, 'rowcount', 0)}")
 
         # ── Карточки НИОКТР ──
         existing_regs = {

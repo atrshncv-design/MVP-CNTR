@@ -1,0 +1,12 @@
+{
+  "include": ["app", "scripts"],
+  "exclude": ["tests", ".venv", ".graphify"],
+  "typeCheckingMode": "standard",
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Darwin",
+  "venvPath": ".",
+  "venv": ".venv",
+  "reportInvalidTypeForm": "none",
+  "reportMissingModuleSource": "none",
+  "reportMissingImports": "warning"
+}

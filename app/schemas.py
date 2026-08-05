@@ -260,7 +260,7 @@ class MemberPriorityIn(BaseModel):
 
 class AuditTrailEntryOut(BaseModel):
     id: int
-    project_id: int
+    project_id: int | None = None
     user_id: int | None = None
     user_name: str | None = None
     action: str

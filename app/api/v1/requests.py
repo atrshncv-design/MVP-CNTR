@@ -72,8 +72,9 @@ async def list_project_requests(
         .scalars()
         .all()
     )
-    counts = dict(
-        (
+    counts: dict[int, int] = {}
+    if requests:
+        rows = (
             await db.execute(
                 select(RequestComment.promotion_request_id, func.count(RequestComment.id))
                 .where(
@@ -82,7 +83,7 @@ async def list_project_requests(
                 .group_by(RequestComment.promotion_request_id)
             )
         ).all()
-    ) if requests else {}
+        counts = {int(row[0]): int(row[1]) for row in rows}
     return [
         RequestOut(
             id=r.id,

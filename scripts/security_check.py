@@ -155,10 +155,34 @@ def dependency_audit(repo_root: Path) -> tuple[list[dict], str | None]:
             text=True,
             timeout=120,
         )
-        out = (proc.stdout + proc.stderr).lower()
-        for line in out.splitlines():
-            if "vulnerable" in line or "advisory" in line or "cve" in line:
-                findings.append({"source": "uv audit", "detail": line.strip()[:200]})
+        out = proc.stdout + proc.stderr
+        lower = out.lower()
+        # Фрагменты "Package has N known vulnerabilities:" — до следующего
+        # такого заголовка. Если в фрагменте есть "no fix versions available"
+        # — severity=warn (фикса нет: гейт не роняет, но фиксируется).
+        import re as _re
+
+        vuln_headers = list(_re.finditer(r"^(.+?) has \d+ known vulnerabilit", lower, _re.M))
+        for i, m in enumerate(vuln_headers):
+            end = vuln_headers[i + 1].start() if i + 1 < len(vuln_headers) else len(lower)
+            section = lower[m.start():end]
+            no_fix = "no fix versions available" in section
+            head = m.group(0).strip()
+            findings.append(
+                {
+                    "source": "uv audit",
+                    "detail": head[:200],
+                    "severity": "warn" if no_fix else "fail",
+                }
+            )
+        # Прочие строки с cve/advisory (без "has N known") — только если
+        # секций не было вообще (иначе это хвосты warn-секций-дубликаты)
+        if not vuln_headers:
+            for line in lower.splitlines():
+                if "vulnerable" in line or "advisory" in line or "cve" in line:
+                    findings.append(
+                        {"source": "uv audit", "detail": line.strip()[:200], "severity": "fail"}
+                    )
         if proc.returncode != 0 and not findings:
             error = f"uv audit exit={proc.returncode}: {out[-300:]}"
     except (subprocess.SubprocessError, FileNotFoundError) as exc:
@@ -314,15 +338,20 @@ def live_checks(base_url: str) -> list[Check]:
             )
             return checks
 
-        # RBAC: auth boundary
-        r = api.request("GET", "/api/v1/projects/registry")
-        checks.append(
-            Check(
-                "RBAC: реестр без токена -> 401",
-                r.status_code == 401,
-                f"status={r.status_code}",
+        # RBAC: публичные реестры (тикет 22, B1) — доступны без токена (200)
+        for public_path in (
+            "/api/v1/projects/registry",
+            "/api/v1/nioktr",
+            "/api/v1/executors/specialists",
+        ):
+            r = api.request("GET", public_path)
+            checks.append(
+                Check(
+                    f"RBAC: публичный реестр {public_path} без токена -> 200",
+                    r.status_code == 200,
+                    f"status={r.status_code}",
+                )
             )
-        )
 
         # RBAC: менеджер не видит admin/audit, клиент не видит очередь менеджера
         for label, token, path, expected in (
@@ -481,16 +510,23 @@ def main() -> int:
         )
     )
 
-    # 2. Dependencies
+    # 2. Dependencies: с фиксом — FAIL; без фикса — WARN (не роняет гейт)
     vulns, audit_error = dependency_audit(args.repo_root)
+    fixable = [v for v in vulns if v.get("severity") != "warn"]
     for v in vulns:
-        all_checks.append(Check("DEPS", False, f"{v['detail']}"))
+        passed = None if v.get("severity") == "warn" else False
+        label = "WARN" if v.get("severity") == "warn" else "CVE"
+        all_checks.append(Check(f"DEPS: {label}", passed, f"{v['detail']}"))
     if audit_error:
         all_checks.append(Check("DEPS: uv audit", None, audit_error))
     versions = key_package_versions(args.repo_root)
     detail = ", ".join(f"{k}={v}" for k, v in sorted(versions.items())) or "uv pip list недоступен"
     all_checks.append(
-        Check("DEPS: известные CVE в lockfile", not vulns, f"уязвимостей: {len(vulns)} | {detail}")
+        Check(
+            "DEPS: fixable CVE в lockfile",
+            not fixable,
+            f"fixable: {len(fixable)}, no-fix WARN: {len(vulns) - len(fixable)} | {detail}",
+        )
     )
 
     # 3–5. Live
