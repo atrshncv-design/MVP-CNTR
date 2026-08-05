@@ -419,6 +419,7 @@ class PromotionRequestOut(BaseModel):
 class PromotionDecisionIn(BaseModel):
     approve: bool
     reason: str | None = Field(default=None, max_length=500)
+    missing: list[str] = Field(default_factory=list, max_length=20)
 
 
 class StageRequirementOut(BaseModel):

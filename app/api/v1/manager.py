@@ -115,8 +115,20 @@ async def decide_draft(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Черновик не найден")
 
     if payload.approve:
+        # Тикет 08: первичное подтверждение — на заявленный уровень, не ниже УГТ 2
+        level = payload.level or project.preliminary_level or 2
+        if level < 2:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Официальный уровень не может быть ниже УГТ 2",
+            )
+        if project.preliminary_level is not None and level > project.preliminary_level:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Нельзя подтвердить уровень выше предварительного (заявленного)",
+            )
         project.status = "published"
-        project.current_level = payload.level or project.preliminary_level or 1
+        project.current_level = level
         project.rejection_reason = None
         for cp_title, cp_desc in CONTROL_POINTS_TEMPLATE:
             db.add(
@@ -225,6 +237,18 @@ async def decide_promotion(
     if project is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
 
+    # Тикет 08: повышение строго N→N+1 от текущего уровня проекта
+    if project.current_level != req.from_level:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Уровень проекта изменился — переоформите заявку (N→N+1)",
+        )
+    if req.to_level != req.from_level + 1:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Подтверждается только следующий уровень (N→N+1)",
+        )
+
     if payload.approve:
         project.current_level = req.to_level
         req.status = "approved"
@@ -242,12 +266,20 @@ async def decide_promotion(
         req.status = "rejected"
         req.rejection_reason = payload.reason or "Отклонено менеджером ЦНТР"
         req.manager_id = user.id
+        if payload.missing:
+            req.evaluation_result = {
+                **(req.evaluation_result or {}),
+                "missing_required": payload.missing,
+            }
         db.add(
             AuditTrailEntry(
                 project_id=project.id,
                 user_id=user.id,
                 action="promotion.rejected",
-                details={"reason": req.rejection_reason},
+                details={
+                    "reason": req.rejection_reason,
+                    "missing": payload.missing,
+                },
             )
         )
 
