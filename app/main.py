@@ -17,6 +17,7 @@ from app.api.v1.health import router as health_router
 from app.api.v1.invites import router as invites_router
 from app.api.v1.manager import router as manager_router
 from app.api.v1.membership import router as membership_router
+from app.api.v1.metrics import router as metrics_router
 from app.api.v1.nioktr import router as nioktr_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.profiles import router as profiles_router
@@ -28,6 +29,10 @@ from app.api.v1.stages import router as stages_router
 from app.api.v1.technologies import router as technologies_router
 from app.api.v1.users import router as users_router
 from app.core.config import settings
+from app.core.logging_config import setup_logging
+from app.services.metrics import PrometheusMetricsMiddleware, install_db_listeners
+
+setup_logging()
 
 
 @asynccontextmanager
@@ -51,6 +56,16 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    # Метрики: route-шаблоны для меток (Starlette кладёт endpoint в scope при
+    # роутинге; маппинг endpoint -> путь даёт ограниченную кардинальность).
+    route_templates: dict[int, str] = {}
+    for route in app.routes:
+        endpoint = getattr(route, "endpoint", None)
+        path = getattr(route, "path", None)
+        if endpoint is not None and path is not None:
+            route_templates[id(endpoint)] = path
+    app.add_middleware(PrometheusMetricsMiddleware, route_templates=route_templates)
+    install_db_listeners()
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(invites_router, prefix="/api/v1")
@@ -69,6 +84,7 @@ def create_app() -> FastAPI:
     app.include_router(assessments_router, prefix="/api/v1")
     app.include_router(manager_router, prefix="/api/v1")
     app.include_router(notifications_router, prefix="/api/v1")
+    app.include_router(metrics_router, prefix="/api/v1")
     app.include_router(profiles_router, prefix="/api/v1")
     app.include_router(stages_router, prefix="/api/v1")
     app.include_router(nioktr_router, prefix="/api/v1")
@@ -86,4 +102,5 @@ if __name__ == "__main__":
         host=settings.app_host,
         port=settings.app_port,
         reload=settings.app_env == "dev",
+        log_config=None,  # JSON-логи уже настроены в setup_logging()
     )

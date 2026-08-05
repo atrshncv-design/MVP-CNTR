@@ -51,6 +51,9 @@ done
 echo "[entrypoint] Primary готов."
 
 echo "[entrypoint] применяю миграции (advisory lock)..."
+# BACKUP_BEFORE_MIGRATIONS=1 (env, default в prod-compose) — перед alembic
+# выполняется infra/backup.sh (тикет 20). Бэкап делается ПОД advisory lock:
+# при N репликах backend его выполнит только та реплика, что выиграла lock.
 python - <<'PY'
 import asyncio
 import os
@@ -59,6 +62,18 @@ import sys
 import asyncpg
 
 MIGRATION_LOCK = 732018  # произвольный id; общий для всех реплик backend
+
+
+async def run(cmd: list[str]) -> int:
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    out, _ = await proc.communicate()
+    if out:
+        print(out.decode(errors="replace"), end="")
+    return proc.returncode or 0
 
 
 async def main() -> int:
@@ -77,17 +92,15 @@ async def main() -> int:
         await conn.close()
         return 1
     try:
-        proc = await asyncio.create_subprocess_exec(
-            "alembic",
-            "upgrade",
-            "head",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-        out, _ = await proc.communicate()
-        if proc.returncode != 0:
-            print(out.decode(errors="replace"), file=sys.stderr)
-            return proc.returncode
+        if os.environ.get("BACKUP_BEFORE_MIGRATIONS", "0") == "1":
+            print("[entrypoint] резервное копирование перед миграциями...")
+            backup_rc = await run(["/app/backup.sh"])
+            if backup_rc != 0:
+                print("[entrypoint] backup.sh завершился с ошибкой — миграции не применяю", file=sys.stderr)
+                return backup_rc
+        rc = await run(["alembic", "upgrade", "head"])
+        if rc != 0:
+            return rc
     finally:
         await conn.execute("SELECT pg_advisory_unlock($1)", MIGRATION_LOCK)
         await conn.close()

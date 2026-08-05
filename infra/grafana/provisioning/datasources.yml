@@ -1,0 +1,12 @@
+# Grafana — provisioning datasource: Prometheus (тикет 20).
+# uid зафиксирован — на него ссылается infra/grafana/dashboard.json.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

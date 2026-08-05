@@ -153,6 +153,9 @@ services:
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
       CLAMAV_ENABLED: "true"
+      # Бэкап перед миграциями (тикет 20): 1 = backup.sh до alembic upgrade
+      BACKUP_BEFORE_MIGRATIONS: ${BACKUP_BEFORE_MIGRATIONS:-1}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
     depends_on:
       db:
         condition: service_healthy
@@ -162,6 +165,9 @@ services:
         condition: service_started
       clamav:
         condition: service_started
+    volumes:
+      # Бэкапы перед миграциями (тикет 20): backup.sh пишет сюда
+      - backups-prod-data:/backups
     expose:
       - "8000"
     healthcheck:
@@ -220,9 +226,47 @@ services:
       timeout: 5s
       retries: 10
 
+  # ── Prometheus: сбор метрик /api/v1/metrics (тикет 20) ────────────────────
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: tz-prod-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-prod-data:/prometheus
+    depends_on:
+      backend:
+        condition: service_started
+    expose:
+      - "9090"
+
+  # ── Grafana: дашборды поверх Prometheus (тикет 20) ─────────────────────────
+  # UI: http://<host>:3001 (логин: GRAFANA_ADMIN_USER / GRAFANA_ADMIN_PASSWORD,
+  # по умолчанию admin/admin — сменить в .env.production).
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: tz-prod-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-prod-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboard.json:/var/lib/grafana/dashboards/platform.json:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+    ports:
+      - "3001:3000"
+
 volumes:
   pg-prod-primary-data:
   pg-prod-replica-data:
   minio-prod-data:
   clamav-prod-db:
   redis-prod-data:
+  backups-prod-data:
+  prometheus-prod-data:
+  grafana-prod-data:

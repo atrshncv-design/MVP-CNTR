@@ -168,6 +168,25 @@ class ObjectStorage:
         except Exception as exc:  # noqa: BLE001
             raise FileStorageError(f"MinIO remove failed: {exc}") from exc
 
+    def health(self) -> bool:
+        """Доступность хранилища (тикет 20, метрика storage_up)."""
+        if self._local_root is not None:
+            return self._local_root.exists()
+        try:
+            return bool(self._minio().bucket_exists(settings.minio_bucket))
+        except Exception:  # noqa: BLE001 -- метрики не должны падать
+            return False
+
+    def object_count(self) -> int:
+        """Количество объектов в бакете (тикет 20, метрика storage_objects)."""
+        if self._local_root is not None:
+            return sum(1 for path in self._local_root.rglob("*") if path.is_file())
+        try:
+            client = self._minio()
+            return sum(1 for _ in client.list_objects(settings.minio_bucket, recursive=True))
+        except Exception:  # noqa: BLE001 -- метрики не должны падать
+            return 0
+
 
 storage = ObjectStorage()
 scanner = ClamAvScanner()
