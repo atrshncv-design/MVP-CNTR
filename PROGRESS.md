@@ -16,16 +16,16 @@
 | 10 | Публичная карточка, реестры и приватность | ✅ done |
 | 11 | Реестры специалистов, организаций и НИОКТР | ✅ done |
 | 12 | Realtime-уведомления и распределение задач | ✅ done |
-| 13 | Архивирование, аудит и экспорт проекта | ⏳ pending |
-| 14 | Отказоустойчивый AI-консультант | ⏳ pending |
-| 15 | Три направления удмуртской темы (стоп-гейт: выбор пользователя → direction-approved.md) | ⏳ pending |
+| 13 | Архивирование, аудит, экспорт | ✅ done |
+| 14 | Отказоустойчивый AI-консультант | ✅ done |
+| 15 | Три направления удмуртской темы | ✅ done |
 | 16 | Единая система трёх тем | ✅ done |
 | 17 | Mobile, accessibility и browser matrix | ✅ done |
 | 18 | Масштабируемый Docker-контур | ✅ done |
 | 19 | Повторяемая демо-среда seed/reset | ✅ done |
 | 20 | Backup, restore и наблюдаемость | ✅ done |
 | 21 | Нагрузочный и security harness | ✅ done |
-| 22 | Финальный black-box release gate | ⏳ pending |
+| 22 | Финальный black-box release gate | ✅ done |
 
 **Итог Friday RC:** 1/22. Baseline-отчёт: `.scratch/friday-release-candidate/baseline-audit.md`.
 

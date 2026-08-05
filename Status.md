@@ -131,3 +131,8 @@
 - Реализация новых механик → тесты → QA демо-маршрута №18
 - Деплой на сервер коллег: `cd technozrelost-backend && ./infra/deploy.sh` (инструкция: `infra/README-DEPLOY.md`)
 - Дизайн-проход open-design — после сдачи (по решению Functional Validator)
+
+
+## Friday Release Candidate — ФИНАЛ (05.08.2026)
+
+✅ **Все 22 тикета закрыты.** Release gate: 190/190 pytest, frontend lint/tsc/5/5/build зелёные, compose/backup/security PASS (известные ecdsa advisory без фикса задокументированы), публичные реестры 200 (B1 закрыт), resubmit отклонённых драфтов. Отчёт: `.scratch/friday-release-candidate/release-gate-report.md`. Ветки: backend `codex/recovery-backend` (head `35594a2`), frontend `codex/recovery-frontend` (head `7a08999`), docs `codex/friday-release-candidate` (head `…`). Развёртывание: `infra/README-DEPLOY.md` (deploy.sh) + seed `uv run python -m app.db.reset_demo --full` на сервере.
