@@ -6,6 +6,8 @@ const navigation = [
   { href: "/dashboard/projects", label: "Проекты" },
   { href: "/dashboard/gk_customer/projects/new", label: "Заявки" },
   { href: "/dashboard/technologies", label: "Реестры" },
+  { href: "/dashboard/nioktr", label: "НИОКТР" },
+  { href: "/dashboard/organizations", label: "Организации" },
   { href: "/dashboard/ai-assistant", label: "Документы" },
 ];
 
