@@ -9,6 +9,10 @@ build/
 .mypy_cache/
 .ruff_cache/
 
+# Артефакты нагрузочного harness (тикет 21) — воспроизводимы командой
+reports/
+.loadtest_tokens.json
+
 # graphify local lifecycle/cache (portable graph artifacts remain trackable)
 .graphify/cache/
 .graphify/studio/
