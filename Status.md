@@ -1,5 +1,13 @@
 # STATUS / CURRENT STATE
 
+## i.moscow Product Patterns — Autopilot (05.08.2026)
+
+- ✅ Исправлен референс: актуальная айдентика i.moscow зафиксирована как изумрудная; прежнее описание красной палитры признано ошибочным.
+- ✅ Опубликовано дополнение к спецификации: `.scratch/imoscow-product-patterns/spec.md`.
+- ✅ Опубликованы 8 вертикальных тикетов: P0 — маршрут проекта, результат оценки, статусы, карточки, фильтры и визуальный проход; P1 — каталог возможностей.
+- ✅ Подготовлен handoff-промпт: `.scratch/imoscow-product-patterns/IMPLEMENTATION_PROMPT.md`.
+- ⏸️ Реализация начинается после завершения основной Friday Release Candidate, чтобы модели не меняли общие ветки параллельно.
+
 ## Friday Release Candidate — реализация (05.08.2026)
 
 - ✅ **Тикет 01 «Аудит и baseline» — done.** Baseline-отчёт: `.scratch/friday-release-candidate/baseline-audit.md`.
