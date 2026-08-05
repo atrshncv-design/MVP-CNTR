@@ -61,8 +61,10 @@ export default function CntrManagerDashboard() {
     if (!token) return;
     const reason = approve ? undefined : window.prompt("Причина отклонения заявки")?.trim();
     if (!approve && !reason) return;
+    const missingText = approve ? undefined : window.prompt("Недостающие материалы (через запятую)")?.trim();
+    const missing = missingText ? missingText.split(",").map((s) => s.trim()).filter(Boolean) : [];
     setBusy(id);
-    try { const res = await fetch(`${API_URL}/api/v1/manager/queue/promotions/${id}/decide`, { method: "POST", headers: { ...auth(token), "Content-Type": "application/json" }, body: JSON.stringify({ approve, reason }) }); if (!res.ok) throw new Error(detail(await res.json().catch(() => null), `Ошибка решения (${res.status}).`)); await load(); }
+    try { const res = await fetch(`${API_URL}/api/v1/manager/queue/promotions/${id}/decide`, { method: "POST", headers: { ...auth(token), "Content-Type": "application/json" }, body: JSON.stringify({ approve, reason, missing }) }); if (!res.ok) throw new Error(detail(await res.json().catch(() => null), `Ошибка решения (${res.status}).`)); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : "Не удалось обработать заявку."); } finally { setBusy(null); }
   };
 
