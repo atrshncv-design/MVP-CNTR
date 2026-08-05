@@ -24,7 +24,7 @@
 | 18 | Масштабируемый Docker-контур | ✅ done |
 | 19 | Повторяемая демо-среда seed/reset | ✅ done |
 | 20 | Backup, restore и наблюдаемость | ✅ done |
-| 21 | Нагрузочный и security harness | ⏳ pending |
+| 21 | Нагрузочный и security harness | ✅ done |
 | 22 | Финальный black-box release gate | ⏳ pending |
 
 **Итог Friday RC:** 1/22. Baseline-отчёт: `.scratch/friday-release-candidate/baseline-audit.md`.
