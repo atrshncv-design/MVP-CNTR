@@ -1,5 +1,15 @@
 # STATUS / CURRENT STATE
 
+## Friday Release Candidate — реализация (05.08.2026)
+
+- ✅ **Тикет 01 «Аудит и baseline» — done.** Baseline-отчёт: `.scratch/friday-release-candidate/baseline-audit.md`.
+  - Backend `codex/recovery-backend @ 779c6ac`: ruff чист, **97/97 pytest**; миграции 0015 head (dev+test); 17 API-роутеров; 23 таблицы; live: health/ready/register 200, защищённые 401.
+  - Frontend `codex/recovery-frontend @ 8d51882`: lint/tsc/build зелёные (33 маршрута); node-тесты 4/5 — падает stale-ассерт `const statCards` (`tests/ui-shell.test.mjs` №5; страница честная — значения из API), фикс в тикете 02.
+  - Infra: compose валиден (local: pg primary+replica; prod: backend/db/frontend/nginx); **MinIO/Redis/ClamAV отсутствуют** (тикеты 06/18).
+  - Главные расхождения: **публичные реестры (registry, nioktr) требуют auth — 401 для посетителей** (спека US 6–14; тикеты 10/11); профили/организации/приглашения/официальный УГТ≤2/комментарии/PDF/приватность/realtime/3 темы/demo reset/backup/load-harness — missing (тикеты 03–22).
+  - Пользовательские незакоммиченные изменения (main, frontend `.hermes/`) не тронуты.
+- ⏸️ Следующий тикет: **02 — безопасная очистка репозитория** (включая фикс stale-теста ui-shell).
+
 ## Friday Release Candidate — Autopilot (05.08.2026)
 
 - ✅ Глубокое интервью завершено; конечное видение и приоритеты подтверждены Functional Validator.
