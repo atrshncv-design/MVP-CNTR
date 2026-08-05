@@ -126,8 +126,61 @@ async def list_executors(
     user: ExecutorViewer,
     role: str | None = Query(None),
 ) -> list[ExecutorOut]:
+    """Объединённый каталог исполнителей (совместимость)."""
     executors = await _users_as_executors(db)
     executors.extend(await _organizations_as_executors(db))
     if role:
         executors = [e for e in executors if e.role_slug == role]
     return executors
+
+
+@router.get("/specialists", response_model=list[ExecutorOut])
+async def list_specialists(
+    db: DBSession,
+    user: ExecutorViewer,
+    role: str | None = Query(
+        None, description="Роль: rd_executor | scientific_org | serial_manufacturer"
+    ),
+    org: str | None = Query(None, description="Подстрока организации"),
+) -> list[ExecutorOut]:
+    """Реестр специалистов: только verified-профили, отдельные фильтры (тикет 11)."""
+    executors = await _users_as_executors(db)
+    if role:
+        executors = [e for e in executors if e.role_slug == role]
+    if org:
+        lowered = org.lower()
+        executors = [
+            e for e in executors if e.organization and lowered in e.organization.lower()
+        ]
+    return executors
+
+
+@router.get("/organizations", response_model=list[ExecutorOut])
+async def list_org_catalog(
+    db: DBSession,
+    user: ExecutorViewer,
+    type: str | None = Query(None, description="Тип организации"),
+    region: str | None = Query(None, description="Регион"),
+) -> list[ExecutorOut]:
+    """Реестр организаций: отдельные поля и фильтры (тикет 11)."""
+    stmt = select(Organization).order_by(Organization.projects_count.desc())
+    if type:
+        stmt = stmt.where(Organization.org_type == type)
+    if region:
+        stmt = stmt.where(Organization.region == region)
+    rows = await db.execute(stmt)
+    result: list[ExecutorOut] = []
+    for org in rows.scalars().all():
+        role_slug = ORG_ROLE_SLUG.get(org.org_type or "", ORG_ROLE_DEFAULT)
+        result.append(
+            ExecutorOut(
+                id=-org.id,
+                full_name=org.short_name or org.name,
+                organization=org.name,
+                role_slug=role_slug,
+                role_name=ORG_ROLE_NAMES[role_slug],
+                competencies=list(org.competencies or []),
+                completed_projects=org.projects_count,
+            )
+        )
+    return result

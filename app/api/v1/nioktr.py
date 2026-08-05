@@ -33,6 +33,8 @@ def _card_out(card: NioktrCard) -> NioktrCardOut:
         budgets=card.budgets or [],
         organization_id=card.organization_id,
         created_at=card.created_at.isoformat() if card.created_at else None,
+        source=card.source,
+        imported_at=card.imported_at.isoformat() if card.imported_at else None,
     )
 
 

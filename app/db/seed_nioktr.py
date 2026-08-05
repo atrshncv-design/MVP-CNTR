@@ -141,6 +141,7 @@ async def seed(input_path: Path, drop_old_technologies: bool = True) -> None:
                 customer_name=card.get("customer"),
                 budgets=budgets,
                 organization_id=org.id if org else None,
+                source="МИНОБРНАУКИ России",
             )
             if reg in existing_regs:
                 card_row = await db.scalar(

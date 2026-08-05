@@ -682,3 +682,10 @@ class NioktrCard(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    source: Mapped[str] = mapped_column(
+        Text, nullable=False, default="МИНОБРНАУКИ России", server_default="МИНОБРНАУКИ России"
+    )
+    imported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+

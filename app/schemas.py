@@ -518,6 +518,8 @@ class NioktrCardOut(BaseModel):
     budgets: list = []
     organization_id: int | None = None
     created_at: str | None = None
+    source: str = "МИНОБРНАУКИ России"
+    imported_at: str | None = None
 
 
 class OrgCardOut(BaseModel):
