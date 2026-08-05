@@ -186,17 +186,43 @@ async def create_assessment(
     else:
         preliminary = compute_current_level(payload.questionnaire_results)
 
+    # Тикет 05: официальный УГТ подтверждается автоматически максимум до 2.
+    # preliminary 1–2 → current_level = preliminary (auto_confirmed);
+    # preliminary 3–9 → официальный УГТ 2, первичное подтверждение выше — менеджер.
+    if preliminary <= 2:
+        official_level = preliminary
+        project_status = "auto_confirmed"
+    else:
+        official_level = 2
+        project_status = "draft"
+
     project = Project(
         name=payload.name or f"Экспресс-оценка УГТ — {date.today().isoformat()}",
         description=payload.description,
         category=payload.category,
-        status="draft",
+        status=project_status,
         preliminary_level=preliminary,
-        current_level=0,
+        current_level=official_level,
         target_level=payload.target_level,
         created_by=user.id,
     )
     db.add(project)
+    await db.flush()
+    db.add(
+        AuditTrailEntry(
+            project_id=project.id,
+            user_id=user.id,
+            action=(
+                "project.auto_confirmed"
+                if project_status == "auto_confirmed"
+                else "project.capped_at_2"
+            ),
+            details={
+                "preliminary_level": preliminary,
+                "official_level": official_level,
+            },
+        )
+    )
     await db.flush()
     # Создатель — первый участник с полномочием project_admin (тикет 04)
     db.add(

@@ -34,8 +34,8 @@ def _assessment(client: TestClient, token: str, levels: list[dict] | None = None
         "questionnaire_results": levels
         or [
             {"level_id": 1, "checked_items": ["Идея"], "percentage": 100.0},
-            {"level_id": 2, "checked_items": ["Концепция"], "percentage": 80.0},
-            {"level_id": 3, "checked_items": [], "percentage": 0.0},
+            {"level_id": 2, "checked_items": ["Концепция"], "percentage": 100.0},
+            {"level_id": 3, "checked_items": ["Эксперимент"], "percentage": 100.0},
         ],
     }
     response = client.post("/api/v1/assessments", json=payload, headers=_auth(token))
@@ -60,7 +60,8 @@ def test_assessment_creates_draft_with_preliminary_level(client: TestClient) -> 
     draft = _assessment(client, token)
 
     assert draft["status"] == "draft"
-    assert draft["preliminary_level"] == 2  # 100% → 80% непрерывно
+    assert draft["preliminary_level"] == 3  # 1..3 непрерывно
+    assert draft["current_level"] == 2  # тикет 05: официальный УГТ капнут на 2
     assert len(draft["questionnaire_results"]) == 3
 
 
@@ -71,7 +72,7 @@ def test_assessment_mine_lists_own_drafts(client: TestClient) -> None:
     mine = client.get("/api/v1/assessments/mine", headers=_auth(token))
     assert mine.status_code == 200
     assert len(mine.json()) == 1
-    assert mine.json()[0]["preliminary_level"] == 2
+    assert mine.json()[0]["preliminary_level"] == 3
 
 
 def test_assessment_403_after_real_project(client: TestClient) -> None:
@@ -128,8 +129,21 @@ def test_manager_approve_publishes_and_reject_records_reason(client: TestClient)
     owner_view = client.get(f"/api/v1/projects/{draft['id']}", headers=_auth(owner_token))
     assert owner_view.status_code == 200  # причина видна владельцу через карточку
 
-    # Повторная оценка → новый черновик → апрув
-    draft2 = _assessment(client, owner_token)
+    # Переоценка отклонённого проекта запрещена: официальный УГТ уже присвоен (тикет 05)
+    denied = client.post(
+        "/api/v1/assessments",
+        json={
+            "questionnaire_results": [
+                {"level_id": 1, "checked_items": ["Идея"], "percentage": 100.0}
+            ]
+        },
+        headers=_auth(owner_token),
+    )
+    assert denied.status_code == 403
+
+    # Новый черновик новым пользователем → апрув сразу на заявленный уровень
+    new_token, _ = _register(client)
+    draft2 = _assessment(client, new_token)
     _approve_draft(client, manager_token, draft2["id"], level=3)
     assert draft2["id"] != draft["id"]
 
@@ -152,7 +166,7 @@ def test_manager_reject_requires_reason_field_optional(client: TestClient) -> No
 
 
 def _published_project(
-    client: TestClient, owner_token: str, manager_token: str, level: int = 1
+    client: TestClient, owner_token: str, manager_token: str, level: int = 2
 ) -> int:
     draft = _assessment(client, owner_token)
     _approve_draft(client, manager_token, draft["id"], level=level)
@@ -162,7 +176,7 @@ def _published_project(
 def test_stage_requirements_and_auto_application(client: TestClient, monkeypatch) -> None:
     owner_token, owner_id = _register(client)
     manager_token, _ = _register(client, "cntr_manager")
-    project_id = _published_project(client, owner_token, manager_token, level=1)
+    project_id = _published_project(client, owner_token, manager_token, level=2)
 
     # Требования этапа 1→2 (8 переходов в словаре)
     reqs = client.get(
@@ -171,7 +185,7 @@ def test_stage_requirements_and_auto_application(client: TestClient, monkeypatch
     assert reqs.status_code == 200
     stage = reqs.json()
     assert len(stage) == 1  # один переход на этап
-    assert stage[0]["from_level"] == 1 and stage[0]["to_level"] == 2
+    assert stage[0]["from_level"] == 2 and stage[0]["to_level"] == 3
     assert stage[0]["uploaded"] is False
 
     # Мок LLM: оценка успешна
@@ -225,7 +239,7 @@ def test_stage_requirements_and_auto_application(client: TestClient, monkeypatch
     )
     assert decided.status_code == 200
     detail = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))
-    assert detail.json()["project"]["current_level"] == 2
+    assert detail.json()["project"]["current_level"] == 3
 
     # История попыток доступна менеджеру
     history = client.get(
@@ -243,7 +257,7 @@ def _get_join_token(client: TestClient, owner_token: str, project_id: int) -> st
 def test_stage_evaluate_failure_and_retry(client: TestClient, monkeypatch) -> None:
     owner_token, _ = _register(client)
     manager_token, _ = _register(client, "cntr_manager")
-    project_id = _published_project(client, owner_token, manager_token, level=1)
+    project_id = _published_project(client, owner_token, manager_token, level=2)
 
     reqs = client.get(
         f"/api/v1/projects/{project_id}/stage-requirements", headers=_auth(owner_token)
@@ -282,7 +296,7 @@ def test_stage_evaluate_failure_and_retry(client: TestClient, monkeypatch) -> No
 def test_stage_evaluate_success_sends_to_manager(client: TestClient, monkeypatch) -> None:
     owner_token, _ = _register(client)
     manager_token, _ = _register(client, "cntr_manager")
-    project_id = _published_project(client, owner_token, manager_token, level=1)
+    project_id = _published_project(client, owner_token, manager_token, level=2)
 
     reqs = client.get(
         f"/api/v1/projects/{project_id}/stage-requirements", headers=_auth(owner_token)
@@ -319,8 +333,9 @@ def test_registry_shows_only_published(client: TestClient) -> None:
 
     # Черновик — не светится
     draft = _assessment(client, owner_token)
-    # Апрувнутый проект уровня 3 — в реестре
-    approved = _assessment(client, owner_token)
+    # Апрувнутый проект уровня 3 — в реестре (другой владелец: переоценка запрещена)
+    second_owner, _ = _register(client)
+    approved = _assessment(client, second_owner)
     _approve_draft(client, manager_token, approved["id"], level=3)
 
     registry = client.get("/api/v1/projects/registry", headers=_auth(investor_token))
@@ -344,7 +359,7 @@ def test_verification_docs_before_and_after_join(client: TestClient) -> None:
     owner_token, owner_id = _register(client)
     reg_token, _ = _register(client, "regulating_organization")
     manager_token, _ = _register(client, "cntr_manager")
-    project_id = _published_project(client, owner_token, manager_token, level=1)
+    project_id = _published_project(client, owner_token, manager_token, level=2)
 
     # До вступления — 403
     before = client.post(
@@ -388,7 +403,7 @@ def test_verification_docs_before_and_after_join(client: TestClient) -> None:
 def test_verification_docs_empty_list_in_card(client: TestClient) -> None:
     owner_token, _ = _register(client)
     manager_token, _ = _register(client, "cntr_manager")
-    project_id = _published_project(client, owner_token, manager_token, level=1)
+    project_id = _published_project(client, owner_token, manager_token, level=2)
 
     card = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))
     assert card.status_code == 200
@@ -399,7 +414,7 @@ def test_regular_participant_can_upload_verification_doc(client: TestClient) -> 
     owner_token, owner_id = _register(client)
     rd_token, _ = _register(client, "rd_executor")
     manager_token, _ = _register(client, "cntr_manager")
-    project_id = _published_project(client, owner_token, manager_token, level=1)
+    project_id = _published_project(client, owner_token, manager_token, level=2)
 
     join_token = _get_join_token(client, owner_token, project_id)
     client.post(
