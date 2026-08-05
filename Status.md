@@ -33,6 +33,11 @@
 
 ## Friday Release Candidate — реализация (05.08.2026)
 
+- ✅ **Тикет 05 «Опросник и официальный УГТ до 2» — done.** Backend `29ca153` (codex/recovery-backend): `create_assessment` — preliminary ≤ 2 → `auto_confirmed` с `current_level=preliminary`; preliminary 3–9 → официальный **cap на 2** (US 35), статус draft (первичное подтверждение выше — менеджер); audit `project.auto_confirmed`/`project.capped_at_2`; переоценка запрещена после присвоения официального уровня. **121/121 pytest, ruff чист** (7 новых тестов `test_official_ugt.py`, обновлены 11 старых в `test_new_core.py` под новую модель). Frontend `038455c` (codex/recovery-frontend): статус «Подтверждён автоматически» во всех ЛК; карточка показывает официальный УГТ и отдельно «Предварительный: УГТ N» (US 11). Браузерный E2E: проект preliminary 1 → карточка «Подтверждён автоматически · УГТ 1»; preliminary 7 → «Черновик · УГТ 2» + «Предварительный: УГТ 7».
+- ⏸️ Следующий тикет: **06 — безопасное файловое хранилище** (MinIO, MIME, ClamAV).
+
+## Friday Release Candidate — реализация (05.08.2026)
+
 - ✅ **Тикет 02 «Безопасная очистка» — done.** Frontend `85042c4` (codex/recovery-frontend): удалён мёртвый `_role-dashboard.tsx` (0 импортов), стартовые svg `public/{next,vercel,globe,file,window}.svg` (0 ссылок, favicon.ico сохранён); stale-тест `ui-shell.test.mjs` №5 переписан на проверку поведения — **node-тесты 5/5**, lint/tsc/build зелёные. Docs `friday-release-candidate`: удалены `КОД MVP "0"/{download,tool-results,upload}` (128 файлов: tool-артефакты, скриншоты, zip+extracted-дубль) и `.zscripts/dev.pid`. Backend: мусора не найдено (все .py используются). Пользовательские `.hermes/` и изменения в main не тронуты.
 
 ## Friday Release Candidate — Autopilot (05.08.2026)
