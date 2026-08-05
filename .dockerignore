@@ -1,0 +1,12 @@
+# Build context (backend root) — исключаем окружение и мусор
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.graphify/
+.git/
+.gitignore
+.env
+.env.*
+tests/
+*.md

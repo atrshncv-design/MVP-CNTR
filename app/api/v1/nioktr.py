@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, or_, select
 
-from app.core.deps import CurrentUser, DBSession
+from app.core.deps import CurrentUser, ReadDBSession
 from app.db.models import NioktrCard, Organization
 from app.schemas import NioktrCardOut, OrganizationDetailOut, OrgCardOut
 
@@ -40,7 +40,7 @@ def _card_out(card: NioktrCard) -> NioktrCardOut:
 
 @router.get("", response_model=list[NioktrCardOut])
 async def list_nioktr_cards(
-    db: DBSession,
+    db: ReadDBSession,
     user: CurrentUser,
     search: str | None = Query(None),
     ai: bool | None = Query(None),
@@ -67,7 +67,7 @@ async def list_nioktr_cards(
 
 @router.get("/organizations", response_model=list[OrgCardOut])
 async def list_organizations(
-    db: DBSession,
+    db: ReadDBSession,
     user: CurrentUser,
     search: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
@@ -105,7 +105,7 @@ async def list_organizations(
 @router.get("/organizations/{ogrn}", response_model=OrganizationDetailOut)
 async def get_organization(
     ogrn: str,
-    db: DBSession,
+    db: ReadDBSession,
     user: CurrentUser,
 ) -> OrganizationDetailOut:
     org = await db.scalar(select(Organization).where(Organization.ogrn == ogrn))
@@ -133,7 +133,7 @@ async def get_organization(
 @router.get("/{registration_number}", response_model=NioktrCardOut)
 async def get_nioktr_card(
     registration_number: str,
-    db: DBSession,
+    db: ReadDBSession,
     user: CurrentUser,
 ) -> NioktrCardOut:
     card = await db.scalar(

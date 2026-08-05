@@ -20,7 +20,11 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY db ./db
+# Seed-данные НИОКТР (seed_gost/seed_nioktr/seed_templates выполняются в контейнере)
+COPY data ./data
+# Входная точка: ожидание Primary → миграции под advisory lock → uvicorn (тикет 18)
+COPY infra/backend-entrypoint.sh ./backend-entrypoint.sh
+RUN chmod +x ./backend-entrypoint.sh
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000
-# При старте применяем миграции (идемпотентно), затем запускаем API
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["/app/backend-entrypoint.sh"]

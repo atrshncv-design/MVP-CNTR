@@ -6,12 +6,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import get_db, get_read_db
 from app.core.security import decode_token
 from app.db.models import User
 
 bearer_scheme = HTTPBearer(auto_error=False)
 DBSession = Annotated[AsyncSession, Depends(get_db)]
+# Read-сессия (тикет 18): Replica, если задана DATABASE_REPLICA_URL, иначе Primary.
+ReadDBSession = Annotated[AsyncSession, Depends(get_read_db)]
 
 
 async def get_current_user(

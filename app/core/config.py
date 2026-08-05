@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     postgres_replica_host: str | None = None
     postgres_replica_port: int = 5433
 
+    # Полные DSN (тикет 18): приоритетнее разбиения на части POSTGRES_*.
+    # DATABASE_URL — Primary (запись), DATABASE_REPLICA_URL — Replica (чтение).
+    database_url: str | None = None
+    database_replica_url: str | None = None
+
     db_schema_public: str = "public"
     db_schema_test: str = "test"
     vector_dimension: int = 1536
@@ -56,6 +61,8 @@ class Settings(BaseSettings):
 
     @property
     def primary_dsn(self) -> str:
+        if self.database_url:
+            return self.database_url
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
@@ -63,6 +70,8 @@ class Settings(BaseSettings):
 
     @property
     def replica_dsn(self) -> str | None:
+        if self.database_replica_url:
+            return self.database_replica_url
         if not self.postgres_replica_host:
             return None
         return (

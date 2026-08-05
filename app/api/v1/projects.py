@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlalchemy import Select, func, or_, select
 
-from app.core.deps import CurrentUser, DBSession, has_role, is_cntr_staff
+from app.core.deps import CurrentUser, DBSession, ReadDBSession, has_role, is_cntr_staff
 from app.db.models import (
     AuditTrailEntry,
     ControlPoint,
@@ -204,7 +204,7 @@ async def list_projects(db: DBSession, user: CurrentUser) -> list[ProjectOut]:
 
 @router.get("/registry", response_model=list[RegistryProjectOut])
 async def project_registry(
-    db: DBSession,
+    db: ReadDBSession,
     user: CurrentUser,
     ugt_min: int | None = Query(None, ge=1, le=9),
     ugt_max: int | None = Query(None, ge=1, le=9),

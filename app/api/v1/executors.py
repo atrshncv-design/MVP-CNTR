@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 
-from app.core.deps import DBSession, require_role
+from app.core.deps import DBSession, ReadDBSession, require_role
 from app.db.models import (
     Organization,
     Project,
@@ -122,7 +122,7 @@ async def _organizations_as_executors(db: DBSession) -> list[ExecutorOut]:
 
 @router.get("", response_model=list[ExecutorOut])
 async def list_executors(
-    db: DBSession,
+    db: ReadDBSession,
     user: ExecutorViewer,
     role: str | None = Query(None),
 ) -> list[ExecutorOut]:
@@ -136,7 +136,7 @@ async def list_executors(
 
 @router.get("/specialists", response_model=list[ExecutorOut])
 async def list_specialists(
-    db: DBSession,
+    db: ReadDBSession,
     user: ExecutorViewer,
     role: str | None = Query(
         None, description="Роль: rd_executor | scientific_org | serial_manufacturer"
@@ -157,7 +157,7 @@ async def list_specialists(
 
 @router.get("/organizations", response_model=list[ExecutorOut])
 async def list_org_catalog(
-    db: DBSession,
+    db: ReadDBSession,
     user: ExecutorViewer,
     type: str | None = Query(None, description="Тип организации"),
     region: str | None = Query(None, description="Регион"),
