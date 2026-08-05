@@ -440,6 +440,25 @@ class StageRequirement(Base):
     to_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    template_version: Mapped[str] = mapped_column(String(16), nullable=False, default="v1")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class PromotionRequestDocument(Base):
+    """Неизменяемый снимок версий документов заявки (тикет 07)."""
+
+    __tablename__ = "promotion_request_documents"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    promotion_request_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.promotion_requests.id", ondelete="CASCADE"), nullable=False
+    )
+    project_document_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.project_documents.id", ondelete="CASCADE"), nullable=False
+    )
+    document_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

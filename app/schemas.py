@@ -427,6 +427,7 @@ class StageRequirementOut(BaseModel):
     to_level: int
     title: str
     description: str
+    template_version: str = "v1"
     uploaded: bool = False
 
 

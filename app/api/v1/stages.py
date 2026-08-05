@@ -9,7 +9,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+import hashlib
+from typing import Annotated
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
 
 from app.api.v1.manager import notify_managers
@@ -20,6 +23,7 @@ from app.db.models import (
     Project,
     ProjectDocument,
     PromotionRequest,
+    PromotionRequestDocument,
     StageRequirement,
 )
 from app.schemas import (
@@ -28,6 +32,7 @@ from app.schemas import (
     StageRequirementOut,
 )
 from app.services.ai_assistant import ask_llm
+from app.services.file_storage import FileStorageError, scanner, store_project_file
 
 router = APIRouter(prefix="/projects", tags=["stages"])
 
@@ -58,10 +63,10 @@ async def _stage_reqs_with_status(
         .scalars()
         .all()
     )
-    uploaded_ids = set(
+    doc_rows = (
         (
             await db.execute(
-                select(ProjectDocument.stage_requirement_id).where(
+                select(ProjectDocument).where(
                     ProjectDocument.project_id == project.id,
                     ProjectDocument.doc_type == "stage",
                     ProjectDocument.stage_requirement_id.isnot(None),
@@ -71,6 +76,12 @@ async def _stage_reqs_with_status(
         .scalars()
         .all()
     )
+    # Учитывается только clean-файл либо legacy-текст без storage_key (тикеты 06/07)
+    uploaded_ids = {
+        d.stage_requirement_id
+        for d in doc_rows
+        if d.storage_key is None or d.scan_status == "clean"
+    }
     return [
         StageRequirementOut(
             id=r.id,
@@ -78,6 +89,7 @@ async def _stage_reqs_with_status(
             to_level=r.to_level,
             title=r.title,
             description=r.description,
+            template_version=r.template_version,
             uploaded=r.id in uploaded_ids,
         )
         for r in requirements
@@ -151,50 +163,16 @@ async def stage_requirements(
     return await _stage_reqs_with_status(db, project, stage)
 
 
-@router.post("/{project_id}/stage-documents", status_code=status.HTTP_201_CREATED)
-async def upload_stage_document(
-    project_id: int,
-    payload: StageDocumentIn,
-    db: DBSession,
-    user: CurrentUser,
+async def _trigger_application(
+    db: DBSession, project: Project, doc: ProjectDocument, user: CurrentUser
 ) -> dict:
-    """Загрузка документа этапа. Полный комплект → автозаявка на повышение УГТ."""
-    await require_project_access(db, project_id, user)
-    project = await db.get(Project, project_id)
-    if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
-    if project.status != "published":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект ещё не опубликован менеджером")
-    if project.current_level >= MAX_LEVEL:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект достиг максимального УГТ 9")
-
-    requirement = await db.get(StageRequirement, payload.stage_requirement_id)
-    if requirement is None or requirement.from_level != project.current_level:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Требование не относится к текущему этапу проекта",
-        )
-
-    doc = ProjectDocument(
-        project_id=project.id,
-        title=payload.title,
-        doc_type="stage",
-        file_url=payload.content,
-        stage_requirement_id=requirement.id,
-        status="active",
-        uploaded_by=user.id,
-    )
-    db.add(doc)
-    await db.flush()
-
+    """Автотриггер: полный комплект → заявка на повышение (снимок версий)."""
     result: dict = {"doc_id": doc.id, "request_id": None, "request_status": None}
 
-    # Автотриггер: комплект полон → создаём или обновляем заявку на повышение
     stage = await _current_stage(db, project)
     if stage is not None:
         reqs = await _stage_reqs_with_status(db, project, stage)
         if all(r.uploaded for r in reqs):
-            # Проверяем, нет ли уже активной заявки для этого уровня
             active = await db.scalar(
                 select(PromotionRequest)
                 .where(
@@ -211,6 +189,67 @@ async def upload_stage_document(
                 attempt = active.attempt_no
             else:
                 previous = await _latest_request(db, project.id)
+                # US 56: неизменённый отклонённый комплект не создаёт новую заявку.
+                # Неизменность определяется по контенту (sha256) на требование.
+                if previous is not None and previous.status == "rejected":
+                    snapshot_rows = (
+                        await db.execute(
+                            select(
+                                PromotionRequestDocument.project_document_id,
+                                PromotionRequestDocument.document_version,
+                            ).where(
+                                PromotionRequestDocument.promotion_request_id
+                                == previous.id
+                            )
+                        )
+                    ).all()
+                    snap_docs = {
+                        d.id: d
+                        for d in (
+                            await db.execute(
+                                select(ProjectDocument).where(
+                                    ProjectDocument.id.in_(
+                                        [r.project_document_id for r in snapshot_rows]
+                                    )
+                                )
+                            )
+                        ).scalars().all()
+                    } if snapshot_rows else {}
+                    snapshot = {
+                        d.stage_requirement_id: (
+                            d.sha256
+                            or hashlib.sha256((d.file_url or "").encode()).hexdigest()
+                        )
+                        for r in snapshot_rows
+                        if (d := snap_docs.get(r.project_document_id)) is not None
+                    }
+                    current_docs = list(
+                        (
+                            await db.execute(
+                                select(ProjectDocument).where(
+                                    ProjectDocument.project_id == project.id,
+                                    ProjectDocument.doc_type == "stage",
+                                    ProjectDocument.stage_requirement_id.isnot(None),
+                                )
+                            )
+                        )
+                        .scalars()
+                        .all()
+                    )
+                    current = {
+                        d.stage_requirement_id: (
+                            d.sha256
+                            or hashlib.sha256((d.file_url or "").encode()).hexdigest()
+                        )
+                        for d in current_docs
+                        if d.storage_key is None or d.scan_status == "clean"
+                    }
+                    if current == snapshot and current:
+                        raise HTTPException(
+                            status.HTTP_409_CONFLICT,
+                            "Комплект не изменён после отклонения — "
+                            "загрузите исправленные документы",
+                        )
                 attempt = (previous.attempt_no + 1) if previous else 1
                 request = PromotionRequest(
                     project_id=project.id,
@@ -221,6 +260,23 @@ async def upload_stage_document(
                 )
                 db.add(request)
                 await db.flush()
+                # Снимок версий документов заявки (тикет 07)
+                for d in (
+                    await db.execute(
+                        select(ProjectDocument).where(
+                            ProjectDocument.project_id == project.id,
+                            ProjectDocument.doc_type == "stage",
+                            ProjectDocument.stage_requirement_id.isnot(None),
+                        )
+                    )
+                ).scalars().all():
+                    db.add(
+                        PromotionRequestDocument(
+                            promotion_request_id=request.id,
+                            project_document_id=d.id,
+                            document_version=d.version,
+                        )
+                    )
 
             docs = list(
                 (
@@ -268,9 +324,118 @@ async def upload_stage_document(
                 "request_status": request.status,
                 "evaluation_success": success,
             }
-
     await db.commit()
     return result
+
+
+@router.post(
+    "/{project_id}/stage-document-file", status_code=status.HTTP_201_CREATED
+)
+async def upload_stage_document_file(
+    project_id: int,
+    db: DBSession,
+    user: CurrentUser,
+    file: Annotated[UploadFile, File()],
+    stage_requirement_id: Annotated[int, Form()],
+    title: Annotated[str | None, Form()] = None,
+) -> dict:
+    """Загрузка документа этапа файлом (PDF/DOCX/XLSX/PNG/JPEG ≤25 МБ).
+
+    Только clean-файл засчитывается в комплект и инициирует автозаявку.
+    """
+    await require_project_access(db, project_id, user)
+    project = await db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+    if project.status != "published":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Проект ещё не опубликован менеджером")
+    if project.current_level >= MAX_LEVEL:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Проект достиг максимального УГТ 9")
+
+    requirement = await db.get(StageRequirement, stage_requirement_id)
+    if requirement is None or requirement.from_level != project.current_level:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Требование не относится к текущему этапу проекта",
+        )
+
+    data = await file.read()
+    try:
+        stored = store_project_file(project.id, file.filename or "document", data)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    except FileStorageError as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    scan_status, scan_result = await scanner.scan(data)
+
+    doc = ProjectDocument(
+        project_id=project.id,
+        title=title or (file.filename or "Документ"),
+        doc_type="stage",
+        storage_key=stored.storage_key,
+        file_name=file.filename or "document",
+        file_size=stored.size,
+        mime_type=stored.mime_type,
+        sha256=stored.sha256,
+        scan_status=scan_status,
+        scan_result=scan_result,
+        stage_requirement_id=requirement.id,
+        status="active",
+        uploaded_by=user.id,
+    )
+    db.add(doc)
+    await db.flush()
+
+    if scan_status != "clean":
+        # Заражённый/непроверенный файл не инициирует заявку (тикеты 06/07)
+        await db.commit()
+        return {
+            "doc_id": doc.id,
+            "request_id": None,
+            "request_status": None,
+            "scan_status": scan_status,
+            "evaluation_success": None,
+        }
+    return await _trigger_application(db, project, doc, user)
+
+
+@router.post("/{project_id}/stage-documents", status_code=status.HTTP_201_CREATED)
+async def upload_stage_document(
+    project_id: int,
+    payload: StageDocumentIn,
+    db: DBSession,
+    user: CurrentUser,
+) -> dict:
+    """Загрузка документа этапа. Полный комплект → автозаявка на повышение УГТ."""
+    await require_project_access(db, project_id, user)
+    project = await db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+    if project.status != "published":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Проект ещё не опубликован менеджером")
+    if project.current_level >= MAX_LEVEL:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Проект достиг максимального УГТ 9")
+
+    requirement = await db.get(StageRequirement, payload.stage_requirement_id)
+    if requirement is None or requirement.from_level != project.current_level:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Требование не относится к текущему этапу проекта",
+        )
+
+    doc = ProjectDocument(
+        project_id=project.id,
+        title=payload.title,
+        doc_type="stage",
+        file_url=payload.content,
+        stage_requirement_id=requirement.id,
+        status="active",
+        uploaded_by=user.id,
+    )
+    db.add(doc)
+    await db.flush()
+
+    return await _trigger_application(db, project, doc, user)
 
 
 @router.post("/{project_id}/stage-evaluate", response_model=StageEvaluateOut)
