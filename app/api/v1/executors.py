@@ -6,7 +6,15 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 
 from app.core.deps import DBSession, require_role
-from app.db.models import Organization, Project, ProjectMember, Role, User, user_roles_tbl
+from app.db.models import (
+    Organization,
+    Project,
+    ProjectMember,
+    Role,
+    User,
+    UserProfile,
+    user_roles_tbl,
+)
 from app.schemas import ExecutorOut
 
 EXECUTOR_ROLE_SLUGS = ["rd_executor", "scientific_org", "serial_manufacturer"]
@@ -60,7 +68,10 @@ async def _users_as_executors(db: DBSession) -> list[ExecutorOut]:
         )
         .join(role_subq, User.id == role_subq.c.user_id)
         .outerjoin(completed_subq, User.id == completed_subq.c.user_id)
+        .join(UserProfile, UserProfile.user_id == User.id)
         .where(User.is_active == True)  # noqa: E712
+        # Только подтверждённые менеджером профили попадают в реестр (US 19).
+        .where(UserProfile.state == "verified")
         # DISTINCT ON несовместим с ORDER BY по другому столбцу в PostgreSQL —
         # используем GROUP BY по всем выбранным столбцам.
         .group_by(

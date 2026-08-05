@@ -477,6 +477,90 @@ class Technology(Base):
     )
 
 
+class UserProfile(Base):
+    """Личный профессиональный профиль (тикет 03 Friday RC).
+
+    Независим от проектных ролей: основная роль аккаунта определяет
+    профильный реестр, но не проектные полномочия. Публикуется только в
+    состоянии verified.
+    """
+
+    __tablename__ = "user_profiles"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    headline: Mapped[str | None] = mapped_column(String(255))
+    bio: Mapped[str | None] = mapped_column(Text)
+    region: Mapped[str | None] = mapped_column(String(128))
+    skills: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    state: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
+    review_comment: Mapped[str | None] = mapped_column(Text)
+    reviewed_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class UserOrganization(Base):
+    """Организация, созданная пользователем платформы (тикет 03 Friday RC).
+
+    Отделена от справочной таблицы organizations (реестр НИОКТР — read-only).
+    Публикуется в реестре организаций только в состоянии verified.
+    """
+
+    __tablename__ = "user_organizations"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    short_name: Mapped[str | None] = mapped_column(String(255))
+    ogrn: Mapped[str | None] = mapped_column(String(32))
+    org_type: Mapped[str | None] = mapped_column(String(64))
+    region: Mapped[str | None] = mapped_column(String(128))
+    description: Mapped[str | None] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
+    review_comment: Mapped[str | None] = mapped_column(Text)
+    created_by: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id"), nullable=False
+    )
+    reviewed_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class OrganizationMember(Base):
+    """Членство пользователя в пользовательской организации (тикет 03).
+
+    Пользователь может состоять в нескольких организациях; is_primary
+    отмечает основную для профильного реестра.
+    """
+
+    __tablename__ = "organization_members"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
+    )
+    organization_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.user_organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    role_in_org: Mapped[str] = mapped_column(String(32), nullable=False, default="member")
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class NioktrCard(Base):
     __tablename__ = "nioktr_cards"
 

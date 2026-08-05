@@ -104,7 +104,7 @@ def test_technologies_require_auth(client: TestClient) -> None:
 def test_executors_include_organizations_and_users(client: TestClient) -> None:
     _seed_registries()
     gk_token = _register(client)
-    _register(client, "rd_executor")  # живой пользователь-исполнитель
+    _register(client, "rd_executor")  # живой пользователь-исполнитель (без профиля)
 
     response = client.get("/api/v1/executors", headers=_auth(gk_token))
     assert response.status_code == 200
@@ -118,7 +118,8 @@ def test_executors_include_organizations_and_users(client: TestClient) -> None:
     assert orgs[0]["role_slug"] == "scientific_org"
     assert orgs[0]["competencies"] == ["машинное обучение", "компьютерное зрение"]
     assert orgs[0]["completed_projects"] == 5
-    assert len(users) >= 1
+    # непроверенный профиль в каталог не попадает (тикет 03: только verified)
+    assert len(users) == 0
 
 
 def test_executors_role_filter(client: TestClient) -> None:

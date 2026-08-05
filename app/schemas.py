@@ -515,3 +515,67 @@ class OrgCardOut(BaseModel):
 
 class OrganizationDetailOut(OrgCardOut):
     nioktr_cards: list[NioktrCardOut] = []
+
+
+# ── Тикет 03 Friday RC: профили, организации, членство ──────────────────────
+
+PROFILE_STATES = ("draft", "pending", "verified", "rejected")
+ORG_STATES = PROFILE_STATES
+
+
+class ProfileIn(BaseModel):
+    headline: str | None = Field(default=None, max_length=255)
+    bio: str | None = Field(default=None, max_length=5000)
+    region: str | None = Field(default=None, max_length=128)
+    skills: list[str] = []
+
+
+class ProfileOut(BaseModel):
+    id: int
+    user_id: int
+    headline: str | None = None
+    bio: str | None = None
+    region: str | None = None
+    skills: list[str] = []
+    state: str
+    review_comment: str | None = None
+    reviewed_at: str | None = None
+
+
+class OrgIn(BaseModel):
+    name: str = Field(min_length=1, max_length=500)
+    short_name: str | None = Field(default=None, max_length=255)
+    ogrn: str | None = Field(default=None, max_length=32)
+    org_type: str | None = Field(default=None, max_length=64)
+    region: str | None = Field(default=None, max_length=128)
+    description: str | None = Field(default=None, max_length=5000)
+
+
+class OrgOut(BaseModel):
+    id: int
+    name: str
+    short_name: str | None = None
+    ogrn: str | None = None
+    org_type: str | None = None
+    region: str | None = None
+    description: str | None = None
+    state: str
+    review_comment: str | None = None
+    created_by: int
+    member_role: str | None = None
+    is_primary: bool = False
+
+
+class ManagerDecideIn(BaseModel):
+    action: Literal["verify", "reject"]
+    comment: str = Field(min_length=1, max_length=2000)
+
+
+class ProfileQueueOut(ProfileOut):
+    full_name: str
+    email: EmailStr
+    role_slugs: list[str] = []
+
+
+class OrgQueueOut(OrgOut):
+    creator_name: str = ""
