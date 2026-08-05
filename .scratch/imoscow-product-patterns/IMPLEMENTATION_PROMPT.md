@@ -7,8 +7,9 @@
 1. `AGENTS.md`, `CLAUDE.md`, `Plan.md`, `Status.md`.
 2. `.scratch/friday-release-candidate/spec.md` и все тикеты `.scratch/friday-release-candidate/issues/` с их текущими статусами.
 3. `.scratch/imoscow-product-patterns/spec.md` и все тикеты `.scratch/imoscow-product-patterns/issues/`.
-4. `docs/agents/domain.md` и `docs/agents/issue-tracker.md`.
-5. Актуальный frontend/backend-код, тесты, миграции и дизайн-токены.
+4. `.scratch/imoscow-product-patterns/DEEP_DIVE_BACKLOG.md` — только как границу будущих исследований, не как текущий scope.
+5. `docs/agents/domain.md` и `docs/agents/issue-tracker.md`.
+6. Актуальный frontend/backend-код, тесты, миграции и дизайн-токены.
 
 При конфликте: AGENTS/безопасность → базовая Friday-спека → i.moscow-спека → отдельный тикет.
 
@@ -34,6 +35,8 @@ i.moscow — референс карточной композиции, ясно�
 8. Тикет 08 — P1; не начинай его до зелёного P0 release gate.
 
 Frontier: 01 → (02, 03, 04; параллельно только при раздельных файлах) → 05 → 06 → 07 → после отдельного решения 08. Не запускай параллельно агентов, меняющих общие API, компоненты, токены или миграции.
+
+Перед каждым тикетом прочитай его секции `Demo`, `Required tests` и `Do not build`. Demo — обязательное наблюдаемое доказательство готовности. Всё из `DEEP_DIVE_BACKLOG.md` запрещено реализовывать этим промптом без новой согласованной спецификации.
 
 ## Жёсткие инженерные правила
 
