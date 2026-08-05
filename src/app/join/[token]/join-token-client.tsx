@@ -14,11 +14,16 @@ const JOIN_ROLES = [
   { value: "auditor", label: "Аудитор" },
   { value: "investor", label: "Инвестор" },
   { value: "participant", label: "Участник проекта" },
+  { value: "tech_lead", label: "Технический руководитель" },
+  { value: "project_curator", label: "Куратор проекта" },
 ] as const;
 
 interface JoinResponse {
   status: "active" | "pending";
   project: { id: number; name: string } | null;
+  project_id?: number;
+  project_name?: string;
+  role_in_project?: string;
 }
 
 function extractError(data: unknown, fallback: string): string {
@@ -55,7 +60,9 @@ export default function JoinTokenClient({
   const handleJoin = async (role: string) => {
     setState({ kind: "joining" });
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/join`, {
+      const isInvite = token.toUpperCase().startsWith("INV-");
+      const endpoint = isInvite ? "/api/v1/invites/accept" : "/api/v1/projects/join";
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,12 +81,15 @@ export default function JoinTokenClient({
       }
 
       const data = (await res.json()) as JoinResponse;
-      if (data.status === "active" && data.project) {
-        router.replace(`/dashboard/project/${data.project.id}`);
+      const project =
+        data.project ??
+        (data.project_id ? { id: data.project_id, name: data.project_name ?? "" } : null);
+      if (data.status === "active" && project) {
+        router.replace(`/dashboard/project/${project.id}`);
       } else {
         setState({
           kind: "pending",
-          project: data.project,
+          project,
         });
       }
     } catch {

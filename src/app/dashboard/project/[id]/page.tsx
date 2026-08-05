@@ -36,6 +36,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import StageProgressPanel from '@/components/stage-progress-panel';
+import ProjectTeamPanel from '@/components/project-team-panel';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
@@ -425,6 +426,7 @@ export default function ProjectDashboardPage() {
           {/* Main column */}
           <div className="lg:col-span-2 space-y-6">
             <StageProgressPanel projectId={p.id} currentLevel={p.current_level} status={p.status} />
+            <ProjectTeamPanel projectId={p.id} />
             {/* Radar chart */}
             <div className="tz-card p-6">
               <div className="flex items-center gap-2 mb-4">
