@@ -30,6 +30,7 @@ test("customer P0 workspace is honest when no project API is connected", () => {
 
   assert.match(source, /Проектов пока нет/);
   assert.match(source, /Создать первую заявку/);
-  assert.doesNotMatch(source, /const statCards/);
-  assert.doesNotMatch(source, /Активные проекты.*value:\s*['"]3['"]/s);
+  // Значения карточек приходят из API-состояния (нули при недоступности API),
+  // а не захардкожены: ни одна карточка не содержит литерального числового value.
+  assert.doesNotMatch(source, /value:\s*['"]\d+['"]/);
 });
