@@ -12,6 +12,11 @@
 
 ## Friday Release Candidate — реализация (05.08.2026)
 
+- ✅ **Тикет 03 «Личные профили и организации» — done.** Backend `c244b9c` (codex/recovery-backend): миграция 0016 (`user_profiles` draft/pending/verified/rejected, `user_organizations`, `organization_members` — многочленство), роутер `profiles.py` (профиль: просмотр/редактирование/отправка; организации: создание/вступление/редактирование/отправка; менеджерские очереди и решения verify/reject с обязательным комментарием), каталог исполнителей только с verified-профилями. **107/107 pytest, ruff чист**. Frontend `fa79bbd` (codex/recovery-frontend): страница `/dashboard/profile` (профиль + организации) и очередь проверки в ЛК менеджера; lint/tsc/build зелёные, node-тесты 5/5. Браузерный E2E: регистрация → профиль draft → сохранение → «На проверке» → очередь менеджера → Подтвердить → verified + empty-state.
+- ⏸️ Следующий тикет: **04 — проектные роли, приглашения и договорное владение**.
+
+## Friday Release Candidate — реализация (05.08.2026)
+
 - ✅ **Тикет 02 «Безопасная очистка» — done.** Frontend `85042c4` (codex/recovery-frontend): удалён мёртвый `_role-dashboard.tsx` (0 импортов), стартовые svg `public/{next,vercel,globe,file,window}.svg` (0 ссылок, favicon.ico сохранён); stale-тест `ui-shell.test.mjs` №5 переписан на проверку поведения — **node-тесты 5/5**, lint/tsc/build зелёные. Docs `friday-release-candidate`: удалены `КОД MVP "0"/{download,tool-results,upload}` (128 файлов: tool-артефакты, скриншоты, zip+extracted-дубль) и `.zscripts/dev.pid`. Backend: мусора не найдено (все .py используются). Пользовательские `.hermes/` и изменения в main не тронуты.
 
 ## Friday Release Candidate — Autopilot (05.08.2026)
