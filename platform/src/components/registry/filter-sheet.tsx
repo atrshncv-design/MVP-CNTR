@@ -52,7 +52,7 @@ export function FilterControls({
     <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
       {/* Год */}
       <label className="flex flex-col gap-1.5">
-        <span className="text-meta font-medium uppercase tracking-wide text-muted">
+        <span className="text-meta font-medium text-muted">
           Год
         </span>
         <select
@@ -71,7 +71,7 @@ export function FilterControls({
 
       {/* Тип работ */}
       <label className="flex flex-col gap-1.5">
-        <span className="text-meta font-medium uppercase tracking-wide text-muted">
+        <span className="text-meta font-medium text-muted">
           Тип работ
         </span>
         <select
@@ -90,7 +90,7 @@ export function FilterControls({
 
       {/* ИИ-фильтры */}
       <fieldset className="flex flex-col gap-2 sm:col-span-2">
-        <legend className="text-meta font-medium uppercase tracking-wide text-muted">
+        <legend className="text-meta font-medium text-muted">
           Искусственный интеллект
         </legend>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
@@ -121,7 +121,7 @@ export function FilterControls({
 
       {/* Сортировка */}
       <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className="text-meta font-medium uppercase tracking-wide text-muted">
+        <span className="text-meta font-medium text-muted">
           Сортировка
         </span>
         <select

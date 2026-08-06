@@ -1,6 +1,6 @@
 # T-011 — UGT path, checkpoints and evidence
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-005 (УГТ-модель), T-009 (путь в кабинете), T-010 (проверка)
 
 ## Цель

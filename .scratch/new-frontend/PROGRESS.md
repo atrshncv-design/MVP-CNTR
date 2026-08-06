@@ -15,7 +15,7 @@ Worktree: `.worktrees/new-front` (ветка `new-front`), приложение:
 | T-008 | Кабинет заказчика | done |
 | T-009 | Кабинет исполнителя | done |
 | T-010 | Операционный центр | done |
-| T-011 | Путь УГТ 1–9, checkpoint'ы, доказательства | pending |
-| T-012 | Запросы, документы, комментарии, решения | pending |
+| T-011 | Путь УГТ 1–9, checkpoint'ы, доказательства | done |
+| T-012 | Запросы, документы, комментарии, решения | done |
 | T-013 | Авторизация и регистрация в 5 шагов | done |
-| T-014 | Responsive и accessibility pass | pending |
+| T-014 | Responsive и accessibility pass | done |

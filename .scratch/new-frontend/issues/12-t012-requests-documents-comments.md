@@ -1,6 +1,6 @@
 # T-012 — Requests, documents, comments, decisions
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-005 (status/upload/decision-компоненты), T-008/T-009/T-010 (интеграция в кабинеты)
 
 ## Цель

@@ -1,6 +1,6 @@
 # T-014 — Responsive and accessibility pass
 
-Status: ready-for-agent
+Status: done
 Blocked by: все P0-тикеты (финальный проход)
 
 ## Цель
