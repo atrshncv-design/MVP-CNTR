@@ -1,0 +1,178 @@
+{
+  "alembic/env.py": {
+    "mtime": 1784872673270.7551,
+    "hash": "fda89bfd894825f3211723e7a3c5d9d3"
+  },
+  "alembic/versions/0001_init_schemas.py": {
+    "mtime": 1784872673271.1873,
+    "hash": "3be9ecc11c86598ff01a3b03a2483fab"
+  },
+  "alembic/versions/0002_rag_documents.py": {
+    "mtime": 1784872673271.4104,
+    "hash": "91e89274c51e73fc55b41f551f2db6dd"
+  },
+  "alembic/versions/0003_rbac.py": {
+    "mtime": 1784872673271.732,
+    "hash": "6b34a0c269dda8006ab71adeaa49cb5c"
+  },
+  "alembic/versions/0004_projects_and_questionnaire.py": {
+    "mtime": 1784872673271.877,
+    "hash": "c7762f87bce00f1c8234d2a3874305b8"
+  },
+  "alembic/versions/0005_rag_metadata.py": {
+    "mtime": 1784872673272.2231,
+    "hash": "c18207051813feec1b3e46603f2f2dce"
+  },
+  "app/__init__.py": {
+    "mtime": 1784872673272.499,
+    "hash": "713a1c13b3f284b985e8cd2e781ce758"
+  },
+  "app/api/__init__.py": {
+    "mtime": 1784872673272.5825,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "app/api/v1/__init__.py": {
+    "mtime": 1784872673272.72,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "app/api/v1/auth.py": {
+    "mtime": 1784872673273.1118,
+    "hash": "b7d9f357eb3b2457997747ac1ac26525"
+  },
+  "app/api/v1/chat.py": {
+    "mtime": 1784872673273.4563,
+    "hash": "d031f88039eb45ad8a66bb0071876b80"
+  },
+  "app/api/v1/executors.py": {
+    "mtime": 1784872673273.6685,
+    "hash": "6825fb4353c49ec134c5543f9daefce6"
+  },
+  "app/api/v1/generation.py": {
+    "mtime": 1784872673273.822,
+    "hash": "cee2faf712ec8549493760a7974e0e98"
+  },
+  "app/api/v1/health.py": {
+    "mtime": 1784872673273.9639,
+    "hash": "5f7a9eeee53ab76fe7482bbed1e4d25f"
+  },
+  "app/api/v1/projects.py": {
+    "mtime": 1784875196397.1812,
+    "hash": "ab4bb2fc58875a710e77b623f8a94203"
+  },
+  "app/api/v1/rag.py": {
+    "mtime": 1784872673274.336,
+    "hash": "aecd050e670c7d5054364432edb907cc"
+  },
+  "app/api/v1/technologies.py": {
+    "mtime": 1784872673274.4802,
+    "hash": "e0c2abbf28ce03fe79285a526258dc10"
+  },
+  "app/core/__init__.py": {
+    "mtime": 1784872673274.5596,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "app/core/config.py": {
+    "mtime": 1784872673274.7534,
+    "hash": "cb68d539538ff2275cf8c46f49b41fea"
+  },
+  "app/core/database.py": {
+    "mtime": 1784872673275.073,
+    "hash": "afd593156cb09c2be10725cc44b5a8e4"
+  },
+  "app/core/deps.py": {
+    "mtime": 1784872673275.3096,
+    "hash": "bf411ee471d8ca29f657a39b6419c1f0"
+  },
+  "app/core/embeddings.py": {
+    "mtime": 1784872673275.4658,
+    "hash": "67ac49f454b1a20aae886bf3f11fdf19"
+  },
+  "app/core/security.py": {
+    "mtime": 1784872673275.7314,
+    "hash": "ad558be57f8614ad228ea7bca81e0946"
+  },
+  "app/db/__init__.py": {
+    "mtime": 1784872673275.9592,
+    "hash": "1a026ef7591c27b1ac91d761a90a5d31"
+  },
+  "app/db/models.py": {
+    "mtime": 1784872673276.27,
+    "hash": "4bf051cc7b636a53dceb330d16ccb496"
+  },
+  "app/db/seed_templates.py": {
+    "mtime": 1784872673276.562,
+    "hash": "08a9be234a7f301f7b1e86f2ced4f5da"
+  },
+  "app/main.py": {
+    "mtime": 1784872673276.7114,
+    "hash": "e21bbc0e8dc36576a3c8126326e2803b"
+  },
+  "app/schemas.py": {
+    "mtime": 1784872673276.9597,
+    "hash": "294402f4be3b363c44f3c3067e3bb7a8"
+  },
+  "app/services/ai_assistant.py": {
+    "mtime": 1784872673277.2507,
+    "hash": "18ef9fcde0b0ec21f2efc5887ba833ee"
+  },
+  "app/services/document_generator.py": {
+    "mtime": 1784872673277.43,
+    "hash": "0c746e9d373187588cd52896d1b714f5"
+  },
+  "app/services/rag.py": {
+    "mtime": 1784872673277.5874,
+    "hash": "2b985b246a0a29b9b43cdb8aeb9457f4"
+  },
+  "db/migrations/sql/0001_init_schemas.sql": {
+    "mtime": 1784872673278.2222,
+    "hash": "ed116f6ee5def05495fa6f72f3e72ffb"
+  },
+  "db/migrations/sql/0002_rag_documents.sql": {
+    "mtime": 1784872673278.3813,
+    "hash": "cb525df7ad2ea963dfc3e45f0d72b9cb"
+  },
+  "db/migrations/sql/0003_rbac.sql": {
+    "mtime": 1784872673278.7048,
+    "hash": "4affc31531c15369e89bc9e006530d6a"
+  },
+  "db/migrations/sql/0004_projects_and_questionnaire.sql": {
+    "mtime": 1784872673278.8657,
+    "hash": "544771d69e80721e2a63d755af0856dd"
+  },
+  "db/migrations/sql/0005_rag_metadata.sql": {
+    "mtime": 1784872673279.0242,
+    "hash": "588098b74931ad6a8e1ed91327ddf9ec"
+  },
+  "tests/test_health.py": {
+    "mtime": 1784872673280.617,
+    "hash": "38ee225940d7a40cb9fe447bc44ca982"
+  },
+  "AGENTS.md": {
+    "mtime": 1784872673269.8098,
+    "hash": "77abe0b46e54b5fac32f767a38c079e9"
+  },
+  "README.md": {
+    "mtime": 1784872673270.3367,
+    "hash": "b72de9209bcd338fca607e6beca6425f"
+  },
+  "db/migrations/README.md": {
+    "mtime": 1784872673277.8477,
+    "hash": "5f144d95c71d1bc3c35a2af4a34182f0"
+  },
+  "infra/README.md": {
+    "mtime": 1784872673279.297,
+    "hash": "e34d0ffff8782e9b030f21673fdeaca0"
+  },
+  "infra/docker-compose.yml": {
+    "mtime": 1784872673279.451,
+    "hash": "39aab39a4bfa3258586fa7d6b0f9c136"
+  },
+  ".agents/skills/graphify/SKILL.md": {
+    "mtime": 1784872673265.791,
+    "hash": "a3fbec2ddba8d0a35825c242671b3655"
+  },
+  ".graphify/GRAPH_REPORT.md": {
+    "mtime": 1784872673268.8835,
+    "hash": "272c152eb7bf7c8377f2833e78d64285"
+  }
+}

@@ -1,0 +1,321 @@
+{
+  "communities": {
+    "0": [
+      "lib_ugt_data",
+      "lib_ugt_data_deliverabledoc",
+      "lib_ugt_data_riskitem",
+      "lib_ugt_data_ugi_levels",
+      "lib_ugt_data_ugilevel",
+      "lib_ugt_data_ugp_levels",
+      "lib_ugt_data_ugplevel",
+      "lib_ugt_data_ugs_levels",
+      "lib_ugt_data_ugslevel",
+      "lib_ugt_data_ugt_levels",
+      "lib_ugt_data_ugtlevel",
+      "projects_page",
+      "projects_page_projectspage",
+      "ugt_scale_index",
+      "ugt_scale_ugt_scale_page_client",
+      "ugt_scale_ugt_scale_page_client_containervariants",
+      "ugt_scale_ugt_scale_page_client_easeout",
+      "ugt_scale_ugt_scale_page_client_getkpiicon",
+      "ugt_scale_ugt_scale_page_client_herovariants",
+      "ugt_scale_ugt_scale_page_client_itemvariants",
+      "ugt_scale_ugt_scale_page_client_ugtscalepageclient"
+    ],
+    "1": [
+      "new_page",
+      "new_page_newprojectpage",
+      "questionnaire_index",
+      "questionnaire_questionnaire_wizard_client",
+      "questionnaire_questionnaire_wizard_client_category_config",
+      "questionnaire_questionnaire_wizard_client_categorybadge",
+      "questionnaire_questionnaire_wizard_client_checklistitem",
+      "questionnaire_questionnaire_wizard_client_checklistitemcard",
+      "questionnaire_questionnaire_wizard_client_circularprogress",
+      "questionnaire_questionnaire_wizard_client_ease_bounce",
+      "questionnaire_questionnaire_wizard_client_ease_out_expo",
+      "questionnaire_questionnaire_wizard_client_ease_smooth",
+      "questionnaire_questionnaire_wizard_client_fadeup",
+      "questionnaire_questionnaire_wizard_client_getlevelcolor",
+      "questionnaire_questionnaire_wizard_client_projectinfo",
+      "questionnaire_questionnaire_wizard_client_questionnairewizardclient",
+      "questionnaire_questionnaire_wizard_client_step_checklists",
+      "questionnaire_questionnaire_wizard_client_stepdata",
+      "questionnaire_questionnaire_wizard_client_steptransition",
+      "questionnaire_questionnaire_wizard_client_tech_categories",
+      "questionnaire_questionnaire_wizard_client_wizardstep"
+    ],
+    "2": [
+      "app_page",
+      "app_page_home",
+      "dashboard_page",
+      "dashboard_page_dashboardindex",
+      "lib_roles",
+      "lib_roles_allowedrolesfor",
+      "lib_roles_isauthroute",
+      "lib_roles_isprotectedroute",
+      "lib_roles_role_dashboard",
+      "lib_roles_roles",
+      "lib_roles_roleslug",
+      "lib_roles_route_allowed_roles",
+      "register_page",
+      "register_page_registerpage",
+      "register_page_status",
+      "src_middleware",
+      "src_middleware_config"
+    ],
+    "3": [
+      "auditor_page",
+      "auditor_page_page",
+      "cntr_admin_page",
+      "cntr_admin_page_page",
+      "cntr_manager_page",
+      "cntr_manager_page_page",
+      "dashboard_role_dashboard",
+      "dashboard_role_dashboard_requireroleonserver",
+      "dashboard_role_dashboard_roledashboard",
+      "investor_page",
+      "investor_page_page",
+      "scientific_org_page",
+      "scientific_org_page_page",
+      "serial_manufacturer_page",
+      "serial_manufacturer_page_page",
+      "ugt_expert_page",
+      "ugt_expert_page_page"
+    ],
+    "4": [
+      "rd_executor_page",
+      "rd_executor_page_available_tasks",
+      "rd_executor_page_competence_areas",
+      "rd_executor_page_containervariants",
+      "rd_executor_page_document_templates",
+      "rd_executor_page_easeout",
+      "rd_executor_page_itemvariants",
+      "rd_executor_page_rdexecutordashboard"
+    ],
+    "5": [
+      "gk_customer_page",
+      "gk_customer_page_containervariants",
+      "gk_customer_page_easeout",
+      "gk_customer_page_gkcustomerdashboard",
+      "gk_customer_page_itemvariants",
+      "gk_customer_page_statcards"
+    ],
+    "6": [
+      "id_page",
+      "id_page_projectdashboardpage",
+      "id_page_projectdata",
+      "id_page_status_colors",
+      "id_page_status_labels",
+      "id_page_ugt_level_names"
+    ],
+    "7": [
+      "src_auth_config",
+      "src_auth_config_apiuser",
+      "src_auth_config_handlers_signin_signout_auth",
+      "src_auth_config_loginresponse",
+      "src_auth_config_session",
+      "src_auth_config_user"
+    ],
+    "8": [
+      "technologies_page",
+      "technologies_page_categories",
+      "technologies_page_status_colors",
+      "technologies_page_status_labels",
+      "technologies_page_technologiespage",
+      "technologies_page_technology"
+    ],
+    "9": [
+      "executors_page",
+      "executors_page_executor",
+      "executors_page_executorspage",
+      "executors_page_role_colors",
+      "executors_page_role_names"
+    ],
+    "10": [
+      "lib_questionnaire_data",
+      "lib_questionnaire_data_evaluation_thresholds",
+      "lib_questionnaire_data_questionnaire",
+      "lib_questionnaire_data_questionnaireitem",
+      "lib_questionnaire_data_questionnairelevel"
+    ],
+    "11": [
+      "login_page",
+      "login_page_loginform",
+      "login_page_loginpage",
+      "login_page_status"
+    ],
+    "12": [
+      "ai_assistant_page",
+      "ai_assistant_page_aiassistantpage",
+      "ai_assistant_page_message"
+    ],
+    "13": [
+      "app_layout",
+      "app_layout_metadata",
+      "app_layout_rootlayout"
+    ],
+    "14": [
+      "dashboard_layout",
+      "dashboard_layout_dashboardlayout"
+    ],
+    "15": [
+      "eslint_config",
+      "eslint_config_eslintconfig"
+    ],
+    "16": [
+      "forbidden_page",
+      "forbidden_page_forbiddenpage"
+    ],
+    "17": [
+      "next_config",
+      "next_config_nextconfig"
+    ],
+    "18": [
+      "postcss_config",
+      "postcss_config_config"
+    ],
+    "19": [
+      "nextauth_route"
+    ]
+  },
+  "cohesion": {
+    "0": 0.1,
+    "1": 0.1,
+    "2": 0.19852941176470587,
+    "3": 0.16911764705882354,
+    "4": 0.25,
+    "5": 0.3333333333333333,
+    "6": 0.3333333333333333,
+    "7": 0.3333333333333333,
+    "8": 0.3333333333333333,
+    "9": 0.4,
+    "10": 0.4,
+    "11": 0.5,
+    "12": 0.6666666666666666,
+    "13": 0.6666666666666666,
+    "14": 1,
+    "15": 1,
+    "16": 1,
+    "17": 1,
+    "18": 1,
+    "19": 1
+  },
+  "gods": [
+    {
+      "id": "dashboard_role_dashboard_roledashboard",
+      "label": "RoleDashboard()",
+      "edges": 8,
+      "degree": 8
+    },
+    {
+      "id": "lib_roles_roles",
+      "label": "ROLES",
+      "edges": 4,
+      "degree": 4
+    },
+    {
+      "id": "lib_roles_roleslug",
+      "label": "RoleSlug",
+      "edges": 4,
+      "degree": 4
+    },
+    {
+      "id": "lib_roles_role_dashboard",
+      "label": "ROLE_DASHBOARD",
+      "edges": 4,
+      "degree": 4
+    },
+    {
+      "id": "lib_ugt_data_ugt_levels",
+      "label": "UGT_LEVELS",
+      "edges": 3,
+      "degree": 3
+    },
+    {
+      "id": "questionnaire_questionnaire_wizard_client_getlevelcolor",
+      "label": "getLevelColor()",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "questionnaire_questionnaire_wizard_client_questionnairewizardclient",
+      "label": "QuestionnaireWizardClient()",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "lib_roles_isprotectedroute",
+      "label": "isProtectedRoute()",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "lib_roles_isauthroute",
+      "label": "isAuthRoute()",
+      "edges": 2,
+      "degree": 2
+    },
+    {
+      "id": "lib_roles_allowedrolesfor",
+      "label": "allowedRolesFor()",
+      "edges": 2,
+      "degree": 2
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `UGT_LEVELS` connect `Community 0` to `Community 1`?",
+      "why": "High betweenness centrality (0.011) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `ROLES` connect `Community 2` to `Community 3`?",
+      "why": "High betweenness centrality (0.005) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `eslintConfig`, `nextConfig`, `config` to the rest of the system?",
+      "why": "64 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.1 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.1 - nodes in this community are weakly interconnected."
+    }
+  ],
+  "labels": {
+    "0": "Community 0",
+    "1": "Community 1",
+    "2": "Community 2",
+    "3": "Community 3",
+    "4": "Community 4",
+    "5": "Community 5",
+    "6": "Community 6",
+    "7": "Community 7",
+    "8": "Community 8",
+    "9": "Community 9",
+    "10": "Community 10",
+    "11": "Community 11",
+    "12": "Community 12",
+    "13": "Community 13",
+    "14": "Community 14",
+    "15": "Community 15",
+    "16": "Community 16",
+    "17": "Community 17",
+    "18": "Community 18",
+    "19": "Community 19"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

@@ -1,0 +1,90 @@
+name: technozrelost-infra
+
+services:
+  pg-primary:
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: tz-pg-primary
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-technoz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-technozrelost}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-primary-data:/var/lib/postgresql/data
+      - ./postgres/postgresql-primary.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./postgres/init-primary.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-technoz} -d ${POSTGRES_DB:-technozrelost}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  pg-replica:
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: tz-pg-replica
+    restart: unless-stopped
+    depends_on:
+      - pg-primary
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-technoz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-technozrelost}
+      PGPRIMARY_HOST: pg-primary
+      REPL_USER: replicator
+      REPL_PASSWORD: replica_pass
+      REPL_SLOT: tz_replica_slot
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-replica-data:/var/lib/postgresql/data
+      - ./postgres/start-replica.sh:/usr/local/bin/start-replica.sh:ro
+    entrypoint: ["/bin/bash", "/usr/local/bin/start-replica.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-technoz} -d ${POSTGRES_DB:-technozrelost}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    container_name: tz-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-technoz}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-change_me}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || curl -f http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  clamav:
+    image: mkodockx/docker-clamav:alpine
+    container_name: tz-clamav
+    restart: unless-stopped
+    ports:
+      - "3310:3310"
+    volumes:
+      - clamav-db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "echo PING | nc -w 1 localhost 3310 | grep -q PONG || clamdcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  pg-primary-data:
+  pg-replica-data:
+  minio-data:
+  clamav-db:

@@ -1,0 +1,294 @@
+{
+  "eslint.config.mjs": {
+    "mtime": 1785682506611.7468,
+    "hash": "66fef39214291d318ab14a4e8ad24d8e"
+  },
+  "next.config.ts": {
+    "mtime": 1785682506612.0854,
+    "hash": "9b77af189a21a7a64e4bd7a426f64176"
+  },
+  "postcss.config.mjs": {
+    "mtime": 1785682506613.1758,
+    "hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "src/app/api/auth/[...nextauth]/route.ts": {
+    "mtime": 1785682506615.4248,
+    "hash": "952f03ecb31d5210c188f3b93055fe7b"
+  },
+  "src/app/dashboard/_role-dashboard.tsx": {
+    "mtime": 1785838674097.147,
+    "hash": "51dab9fbf3f11cf750615fc96c940996"
+  },
+  "src/app/dashboard/ai-assistant/page.tsx": {
+    "mtime": 1785838674090.64,
+    "hash": "3883bc023ed98f1491ff3a957fc19da8"
+  },
+  "src/app/dashboard/auditor/page.tsx": {
+    "mtime": 1785838674085.1316,
+    "hash": "dfa1935eeb1a2aa7d2bbae23d88114f9"
+  },
+  "src/app/dashboard/cntr_admin/page.tsx": {
+    "mtime": 1785838674086.2908,
+    "hash": "6dfeea7b097df38446fee741027c6bbc"
+  },
+  "src/app/dashboard/cntr_manager/page.tsx": {
+    "mtime": 1785751828693.932,
+    "hash": "ee6644a678f95c044c4aa86cb809dee1"
+  },
+  "src/app/dashboard/executors/page.tsx": {
+    "mtime": 1785838674089.1113,
+    "hash": "0e88dd0983e0aff1c70971494ab53267"
+  },
+  "src/app/dashboard/gk_customer/page.tsx": {
+    "mtime": 1785838674093.9756,
+    "hash": "a2f2677db1c3bfb69bb7a0c61d1244e2"
+  },
+  "src/app/dashboard/gk_customer/projects/new/page.tsx": {
+    "mtime": 1785682506618.4058,
+    "hash": "6f6b61dea2fe2d0fcb87d1189fc4a15f"
+  },
+  "src/app/dashboard/gk_customer/projects/page.tsx": {
+    "mtime": 1785682506618.584,
+    "hash": "df740a555f45eff3325bfb146c5cf174"
+  },
+  "src/app/dashboard/investor/page.tsx": {
+    "mtime": 1785838674087.416,
+    "hash": "2f5833e61593caac0a5e90900ef103f3"
+  },
+  "src/app/dashboard/layout.tsx": {
+    "mtime": 1785838674095.2026,
+    "hash": "89339f9f3590b83353aa78bae5c857ce"
+  },
+  "src/app/dashboard/page.tsx": {
+    "mtime": 1785682506619.1675,
+    "hash": "f1a172f07ea093379530325ae3c5aefc"
+  },
+  "src/app/dashboard/project/[id]/page.tsx": {
+    "mtime": 1785838674083.681,
+    "hash": "865ece0af58c766c022a1336c55e1019"
+  },
+  "src/app/dashboard/rd_executor/page.tsx": {
+    "mtime": 1785838674091.4065,
+    "hash": "992d99277cc77b084fda0906c3d08938"
+  },
+  "src/app/dashboard/scientific_org/page.tsx": {
+    "mtime": 1785838674092.2834,
+    "hash": "29cdcf81733e688f41ac7514082fae7e"
+  },
+  "src/app/dashboard/serial_manufacturer/page.tsx": {
+    "mtime": 1785838674088.2952,
+    "hash": "57e9d27f0364e82936a3e5073c14cd6b"
+  },
+  "src/app/dashboard/technologies/page.tsx": {
+    "mtime": 1785751715866.8123,
+    "hash": "f19e27738635c8432f13748507e8e61b"
+  },
+  "src/app/forbidden/page.tsx": {
+    "mtime": 1785838674094.398,
+    "hash": "5c55fa24826e80b569ada35f75efd1ae"
+  },
+  "src/app/layout.tsx": {
+    "mtime": 1785762708545.9536,
+    "hash": "cba6d9acd5839926c4d3a2ffaa2014ac"
+  },
+  "src/app/login/page.tsx": {
+    "mtime": 1785838680833.3315,
+    "hash": "2bd743372648b1748737662583fef6f9"
+  },
+  "src/app/register/page.tsx": {
+    "mtime": 1785838674099.7344,
+    "hash": "ac51306ec62a0b9458d23c61fc57d366"
+  },
+  "src/auth.config.ts": {
+    "mtime": 1785764062791.859,
+    "hash": "c9edd232eda8cbb741baae67a2aa4033"
+  },
+  "src/components/questionnaire/index.ts": {
+    "mtime": 1785682506623.3064,
+    "hash": "d21400a3b8b2c3334ea9896cacd51e06"
+  },
+  "src/components/questionnaire/questionnaire-wizard-client.tsx": {
+    "mtime": 1785838674101.5793,
+    "hash": "d3ae1bed93a9d50565c4c400dd3cf836"
+  },
+  "src/components/ugt-scale/index.ts": {
+    "mtime": 1785682506623.893,
+    "hash": "671a2adc7ce6fa7ff2da5f53364618d9"
+  },
+  "src/components/ugt-scale/ugt-scale-page-client.tsx": {
+    "mtime": 1785757338148.7615,
+    "hash": "f075b23a12e27b967073ef660c7d2f0a"
+  },
+  "src/lib/questionnaire-data.ts": {
+    "mtime": 1785682506624.733,
+    "hash": "f1c08d4fa30e6843ae7390709ed37b27"
+  },
+  "src/lib/roles.ts": {
+    "mtime": 1785764042961.6404,
+    "hash": "218c0e561fe857415dcab9c0d318b791"
+  },
+  "src/lib/ugt-data.ts": {
+    "mtime": 1785682506625.2366,
+    "hash": "ec16601db421d95fd298d0b0ae9bc2f5"
+  },
+  "src/middleware.ts": {
+    "mtime": 1785682506625.3882,
+    "hash": "d49f90a2781c0f8523f9abae72305531"
+  },
+  "AGENTS.md": {
+    "mtime": 1785682506610.8545,
+    "hash": "f88f95b8bc7c88935d2b0377dbd0055b"
+  },
+  "CLAUDE.md": {
+    "mtime": 1785682506611.0735,
+    "hash": "5c27369b226fcf2be8a6cfe52224e767"
+  },
+  "README.md": {
+    "mtime": 1785682506611.3303,
+    "hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "public/file.svg": {
+    "mtime": 1785682506613.4595,
+    "hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "public/globe.svg": {
+    "mtime": 1785682506613.6758,
+    "hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "public/next.svg": {
+    "mtime": 1785682506614.3562,
+    "hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "public/vercel.svg": {
+    "mtime": 1785682506614.5483,
+    "hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "public/window.svg": {
+    "mtime": 1785682506614.7246,
+    "hash": "a2760511c65806022ad20adf74370ff3"
+  },
+  ".agents/skills/graphify/SKILL.md": {
+    "mtime": 1785682506607.2854,
+    "hash": "a3fbec2ddba8d0a35825c242671b3655"
+  },
+  ".graphify/GRAPH_REPORT.md": {
+    "mtime": 1785836036077.4365,
+    "hash": "ed59616a27755ce5e0628e66c80e0927"
+  },
+  "tests/ui-shell.test.mjs": {
+    "mtime": 1785682506625.8704,
+    "hash": "bf6e3658474f6e1ecd9e2f7824bddedf"
+  },
+  "docs/testing/stage1-ui-shell.tdd.md": {
+    "mtime": 1785682506611.5967,
+    "hash": "e90e008cc1afd9450e02376bb1d93150"
+  },
+  "src/app/(landing)/about/page.tsx": {
+    "mtime": 1785759678235.44,
+    "hash": "d6f8fabec362f8d33db5063caf59d18b"
+  },
+  "src/app/(landing)/customers/page.tsx": {
+    "mtime": 1785759711354.715,
+    "hash": "23603878ece9e5dc9d59a7ba86bf1f20"
+  },
+  "src/app/(landing)/layout.tsx": {
+    "mtime": 1785759640476.2415,
+    "hash": "efe17174e8f9390e77e00faaf6727a01"
+  },
+  "src/app/(landing)/levels/[id]/page.tsx": {
+    "mtime": 1785759678257.6938,
+    "hash": "8f3a799fd82475ecd876757fd0604eb7"
+  },
+  "src/app/(landing)/levels/page.tsx": {
+    "mtime": 1785763230607.1626,
+    "hash": "2f62aa61aeaac6370eba2a0aa9a03cec"
+  },
+  "src/app/(landing)/methodology/page.tsx": {
+    "mtime": 1785759678254.525,
+    "hash": "cd1a4fd489af0c2f409d9754bf241f0b"
+  },
+  "src/app/(landing)/page.tsx": {
+    "mtime": 1785838674098.132,
+    "hash": "f7c6fe18931beb797e4546e400dc9fd3"
+  },
+  "src/app/(landing)/performers/page.tsx": {
+    "mtime": 1785759711350.9558,
+    "hash": "446a55fdd9ff873b51278db6f859d84a"
+  },
+  "src/app/(landing)/roadmap/page.tsx": {
+    "mtime": 1785759711342.9207,
+    "hash": "9c19a043eafd1fe9e585965f5856afd6"
+  },
+  "src/app/dashboard/projects/page.tsx": {
+    "mtime": 1785838680833.702,
+    "hash": "c06e9ae0785c3f7a68f6acc25f6d047c"
+  },
+  "src/app/dashboard/regulating_organization/page.tsx": {
+    "mtime": 1785838674089.9746,
+    "hash": "3d4e4f2fb2cadf3c8da892b1a3ccbefd"
+  },
+  "src/components/assess-ugt-card.tsx": {
+    "mtime": 1785751475814.2964,
+    "hash": "7138c2da6112837b9db15b8d38c79722"
+  },
+  "src/components/join-project-form.tsx": {
+    "mtime": 1785838674093.1235,
+    "hash": "d330a794d929cf8100fb184babb3baaa"
+  },
+  "src/components/landing/landing-footer.tsx": {
+    "mtime": 1785827703820.6099,
+    "hash": "b602ccc6779a60aad3c773f691422ed8"
+  },
+  "src/components/landing/landing-nav.tsx": {
+    "mtime": 1785822191927.8538,
+    "hash": "34fa317a201920eae8ca2415528530cd"
+  },
+  "src/components/landing/living-radar.tsx": {
+    "mtime": 1785828822424.6206,
+    "hash": "257ff5b4193f44759c6f9ebf1f61830b"
+  },
+  "src/components/landing/reveal.tsx": {
+    "mtime": 1785759609466.3723,
+    "hash": "ede53dbdceebde6ad3a47397c2be439e"
+  },
+  "src/components/landing/ugt-card.tsx": {
+    "mtime": 1785763235039.6912,
+    "hash": "690f68632828b6da3365c60f532fe162"
+  },
+  "src/components/providers.tsx": {
+    "mtime": 1785694960239.7185,
+    "hash": "76f31787bd224ba48de59018ea881c49"
+  },
+  "src/components/stage-progress-panel.tsx": {
+    "mtime": 1785753235702.3413,
+    "hash": "a58184b05a6feb1873dbcd9a68fcea16"
+  },
+  "src/components/theme-toggle.tsx": {
+    "mtime": 1785762973253.858,
+    "hash": "73eb0eb713b52ace17adb9fd8fb99d74"
+  },
+  "src/components/verification-docs-panel.tsx": {
+    "mtime": 1785756087795.4473,
+    "hash": "cb88142a4f4f075747a9b524928c3bc1"
+  },
+  "src/lib/api-client.ts": {
+    "mtime": 1785682506624.4175,
+    "hash": "c024d31261b1b858a8538123afee5301"
+  },
+  "tests/api-client.test.mjs": {
+    "mtime": 1785682506625.6533,
+    "hash": "39ca65fbbaa3b0be1b95c481d18080ec"
+  },
+  "DESIGN.md": {
+    "mtime": 1785742516238.1772,
+    "hash": "fcd7e83032f20bd9fbf7c6ce174dd36f"
+  },
+  "docs/prompts/frontend-backend-audit.md": {
+    "mtime": 1785763679770.3767,
+    "hash": "ac024446a3ec4a08a34f9cb5b8373019"
+  },
+  "docs/prompts/landing-page-task.md": {
+    "mtime": 1785758053453.6802,
+    "hash": "97de2bd75e5c8320001e04e92d67865d"
+  }
+}
