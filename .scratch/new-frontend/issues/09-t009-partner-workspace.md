@@ -10,9 +10,9 @@ Blocked by: T-003 (shell), T-004 (адаптер+фикстуры dossier), T-00
 T-003, T-004, T-005, T-007.
 
 ## Изменяемые файлы / области
-- `platform/src/app/(app)/partner/page.tsx` — дашборд исполнителя.
-- `platform/src/app/(app)/partner/technologies/page.tsx`, `technologies/new/page.tsx` (создание: прогрессивное раскрытие, черновик, требования к доказательствам ДО длинной формы), `technologies/[id]/page.tsx` (рабочий dossier — T-007), `technologies/[id]/evidence/page.tsx` (доказательства и документы, upload-состояния), `technologies/[id]/path/page.tsx` (УГТ-путь, T-011).
-- `platform/src/app/(app)/partner/applications/page.tsx`, `requests/page.tsx` (просмотр запросов заказчиков), `pilots/page.tsx`.
+- `platform/src/app/app/partner/page.tsx` — дашборд исполнителя.
+- `platform/src/app/app/partner/technologies/page.tsx`, `technologies/new/page.tsx` (создание: прогрессивное раскрытие, черновик, требования к доказательствам ДО длинной формы), `technologies/[id]/page.tsx` (рабочий dossier — T-007), `technologies/[id]/evidence/page.tsx` (доказательства и документы, upload-состояния), `technologies/[id]/path/page.tsx` (УГТ-путь, T-011).
+- `platform/src/app/app/partner/applications/page.tsx`, `requests/page.tsx` (просмотр запросов заказчиков), `pilots/page.tsx`.
 - `platform/src/components/partner/` — `technology-submit-form.tsx`, `evidence-upload.tsx` (STATES.md §6), `clarification-response.tsx`, `path-progress.tsx` (тонкая, полная — T-011).
 
 ## Сценарий пользователя

@@ -1,6 +1,6 @@
 # T-008 — Customer workspace (кабинет заказчика)
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-003 (shell), T-004 (адаптер), T-005 (состояния)
 
 ## Цель

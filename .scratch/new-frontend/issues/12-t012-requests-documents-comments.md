@@ -10,8 +10,8 @@ Blocked by: T-005 (status/upload/decision-компоненты), T-008/T-009/T-0
 T-005 (готовые примитивы: upload-state, decision-timeline, notification), T-008–T-010 (точки встраивания).
 
 ## Изменяемые файлы / области
-- `platform/src/app/(app)/documents/page.tsx` — документный workspace организации.
-- `platform/src/app/(app)/notifications/page.tsx` — центр уведомлений (объект, событие, срочность, требуемое действие, срок, прочитано/нет, прямой переход).
+- `platform/src/app/app/documents/page.tsx` — документный workspace организации.
+- `platform/src/app/app/notifications/page.tsx` — центр уведомлений (объект, событие, срочность, требуемое действие, срок, прочитано/нет, прямой переход).
 - `platform/src/components/comments.tsx` — контекстные комментарии (принадлежат объекту: технология/запрос/документ/checkpoint/решение; не чат).
 - `platform/src/components/notifications/notification-item.tsx`, `notification-bell.tsx` (контент).
 - Интеграция `decision-timeline`, `upload-state`, `status-badge` в dossier'ы и кабинеты.

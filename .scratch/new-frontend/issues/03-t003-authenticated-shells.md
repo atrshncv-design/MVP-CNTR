@@ -1,6 +1,6 @@
 # T-003 — Authenticated shells (sidebar + contextual top bar)
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-001
 
 ## Цель

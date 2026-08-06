@@ -1,6 +1,6 @@
 # T-006 — Public discovery and registries
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-001, T-004 (данные), T-002 (shell), T-005 (состояния)
 
 ## Цель

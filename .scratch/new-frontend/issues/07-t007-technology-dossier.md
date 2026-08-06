@@ -11,8 +11,8 @@ T-003, T-004 (фикстуры dossier), T-005, T-006 (карточка→dossie
 
 ## Изменяемые файлы / области
 - `platform/src/app/(public)/technology/[id]/page.tsx` — публичный паспорт (Design.md §5.2: заголовок+статус проверки, проблема/решение, области применения, текущий УГТ и путь, 4 измерения, сводка доказательств/публичные документы, организация, пилоты/история внедрения, связанные записи, контакт/заявка).
-- `platform/src/app/(app)/partner/technologies/[id]/page.tsx` — рабочий dossier (редактируемые поля, документы, checkpoint'ы, комментарии, история подач, N→N+1).
-- `platform/src/app/(operations)/technology/[id]/page.tsx` — проверочный dossier (очередь, назначенный проверяющий, внутренние заметки, история решений, публикация, аудит, флаги конфликтов/недостающих доказательств).
+- `platform/src/app/app/partner/technologies/[id]/page.tsx` — рабочий dossier (редактируемые поля, документы, checkpoint'ы, комментарии, история подач, N→N+1).
+- `platform/src/app/operations/technology/[id]/page.tsx` — проверочный dossier (очередь, назначенный проверяющий, внутренние заметки, история решений, публикация, аудит, флаги конфликтов/недостающих доказательств).
 - `platform/src/components/dossier/` — `dossier-header.tsx`, `dossier-problem-solution.tsx`, `dossier-ugt-summary.tsx`, `dossier-dimensions.tsx` (радар — ДОПОЛНИТЕЛЬНО к текстовой разбивке), `dossier-evidence.tsx`, `dossier-organization.tsx`, `dossier-related.tsx`, `dossier-decisions.tsx`, `dossier-visibility.tsx`.
 - `platform/src/lib/dossier-views.ts` — сборка представления по (объект, роль, scope).
 

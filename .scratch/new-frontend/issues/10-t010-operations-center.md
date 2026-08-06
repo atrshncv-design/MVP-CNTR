@@ -10,8 +10,8 @@ Blocked by: T-003 (operations shell), T-004 (адаптер+фикстуры з�
 T-003, T-004, T-005, T-007.
 
 ## Изменяемые файлы / области
-- `platform/src/app/(operations)/page.tsx` — центр: очередь и просроченное, требующие решения, недостающие доказательства, новые записи, кандидаты на публикацию (приоритеты ROLES.md §«Operations dashboard»).
-- `platform/src/app/(operations)/queue/page.tsx`, `submissions/page.tsx`, `verification/page.tsx`, `technology/page.tsx` (реестр-менеджмент), `requests/page.tsx`, `organizations/page.tsx`, `research/page.tsx`, `pilots/page.tsx`, `decisions/page.tsx`, `analytics/page.tsx`, `settings/page.tsx`.
+- `platform/src/app/operations/page.tsx` — центр: очередь и просроченное, требующие решения, недостающие доказательства, новые записи, кандидаты на публикацию (приоритеты ROLES.md §«Operations dashboard»).
+- `platform/src/app/operations/queue/page.tsx`, `submissions/page.tsx`, `verification/page.tsx`, `technology/page.tsx` (реестр-менеджмент), `requests/page.tsx`, `organizations/page.tsx`, `research/page.tsx`, `pilots/page.tsx`, `decisions/page.tsx`, `analytics/page.tsx`, `settings/page.tsx`.
 - `platform/src/components/operations/` — `ops-queue-table.tsx` (плотная таблица 56–64px, колонки: объект, тип задачи, приоритет, статус, ответственный, срок, недостающее, последнее событие, следующее действие), `queue-kanban.tsx` (опциональный вид, не единственный), `task-assign.tsx`, `decision-form.tsx` (одобрить/уточнить/отклонить/опубликовать/архивировать с причиной и подтверждением), `ops-analytics.tsx` (счётчики ТОЛЬКО по реальным данным, с источником).
 
 ## Сценарий пользователя

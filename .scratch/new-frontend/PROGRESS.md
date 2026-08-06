@@ -7,12 +7,12 @@ Worktree: `.worktrees/new-front` (ветка `new-front`), приложение:
 |---|-------|--------|
 | T-001 | Дизайн-токены и три темы | done |
 | T-002 | Публичный shell и задача-first навигация | done |
-| T-003 | Авторизованные shell'ы (sidebar + top bar) | pending |
+| T-003 | Авторизованные shell'ы (sidebar + top bar) | done |
 | T-004 | Typed data layer + реальные фикстуры НИОКТР | done |
 | T-005 | Универсальная система состояний | done |
-| T-006 | Публичный discovery и реестры | pending |
+| T-006 | Публичный discovery и реестры | done |
 | T-007 | Technology dossier (3 режима) | pending |
-| T-008 | Кабинет заказчика | pending |
+| T-008 | Кабинет заказчика | done |
 | T-009 | Кабинет исполнителя | pending |
 | T-010 | Операционный центр | pending |
 | T-011 | Путь УГТ 1–9, checkpoint'ы, доказательства | pending |
