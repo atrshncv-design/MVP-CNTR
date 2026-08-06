@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ChevronRight, Menu } from "lucide-react";
+import { SectionMark } from "@/components/udmurt/section-mark";
 
 export interface TopBarProps {
   /** Заголовок текущего раздела (контекст top bar, Design.md §11.1). */
@@ -65,13 +66,12 @@ export function TopBar({
               ))}
             </nav>
           ) : null}
-          <p
+          <SectionMark
+            label={title}
             className={`truncate font-semibold text-primary ${
               dense ? "text-small" : "text-small sm:text-body"
             }`}
-          >
-            {title}
-          </p>
+          />
         </div>
 
         {right ? (

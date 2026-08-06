@@ -28,6 +28,7 @@ import { getAdapter } from "@/lib/adapter";
 import { getStatusMeta, type Status } from "@/lib/status";
 import { isFixtureRecord } from "@/lib/types";
 import { technologyDossierFixtures, technologySummaryFixtures } from "@/data/fixtures";
+import { Sparkline } from "@/components/charts/sparkline";
 import { CustomerNav } from "@/components/customer/customer-nav";
 import { FixtureBadge } from "@/components/customer/fixture-badge";
 import { RequestCard } from "@/components/customer/request-card";
@@ -49,6 +50,28 @@ const ACTIVE_REQUEST_STATUSES: readonly Status[] = [
   "published",
   "active",
 ];
+
+/**
+ * Активность по дням: количество событий на каждый день окна [min,max] дат
+ * (пропущенные дни — честные нули, без выдуманных значений; D-05).
+ */
+function activityByDay(dates: string[]): number[] {
+  const days = dates.map((d) => d.slice(0, 10)).sort();
+  if (days.length === 0) return [];
+  const counts = new Map<string, number>();
+  for (const day of days) counts.set(day, (counts.get(day) ?? 0) + 1);
+  const first = days[0];
+  const last = days[days.length - 1];
+  const points: number[] = [];
+  const cursor = new Date(`${first}T00:00:00.000Z`);
+  const end = new Date(`${last}T00:00:00.000Z`);
+  while (cursor <= end) {
+    const key = cursor.toISOString().slice(0, 10);
+    points.push(counts.get(key) ?? 0);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return points;
+}
 
 interface UrgentItem {
   kind: "request" | "pilot";
@@ -190,6 +213,9 @@ export default async function CustomerDashboardPage() {
 
   const orgName = requests[0]?.customerOrganization ?? null;
 
+  /* D-05: активность создания запросов по дням (реальные даты фикстур). */
+  const requestActivity = activityByDay(requests.map((r) => r.createdAt));
+
   return (
     <div className={CONTAINER}>
       <CustomerNav />
@@ -220,6 +246,33 @@ export default async function CustomerDashboardPage() {
         {kpis.map((kpi) => (
           <KpiCard key={kpi.label} label={kpi.label} value={kpi.value} note={kpi.note} />
         ))}
+      </section>
+
+      {/* D-05: активность по дням (создание запросов; даты фикстур кабинета). */}
+      <section aria-label="Активность" className="mt-8">
+        <SectionHeading title="Активность" />
+        <div className="rounded-panel border border-subtle bg-surface p-5">
+          {requestActivity.length >= 2 ? (
+            <>
+              <h3 className="text-small font-semibold text-primary">
+                Создание запросов по дням
+              </h3>
+              <div className="mt-3">
+                <Sparkline
+                  points={requestActivity}
+                  ariaLabel="Активность: количество созданных запросов по дням"
+                />
+              </div>
+              <p className="mt-3 text-meta text-muted">
+                Источник: фикстуры UI (демо) — даты создания запросов кабинета.
+              </p>
+            </>
+          ) : (
+            <p className="text-small text-secondary">
+              График появится после накопления данных.
+            </p>
+          )}
+        </div>
       </section>
 
       {/* 1. Рабочая очередь */}

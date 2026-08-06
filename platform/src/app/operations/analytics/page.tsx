@@ -4,10 +4,19 @@
  * (OpsAnalytics: бейдж «Реальные данные» / «Фикстуры UI (демо)»).
  */
 
-import { Activity, Building2, FileSearch, FlaskConical, Layers, Rocket } from "lucide-react";
+import {
+  Activity,
+  Building2,
+  ChartNoAxesColumn,
+  FileSearch,
+  FlaskConical,
+  Layers,
+  Rocket,
+} from "lucide-react";
 import { getAdapter } from "@/lib/adapter";
-import { operationalTaskFixtures } from "@/data/fixtures";
-import { OpsAnalytics } from "@/components/operations/ops-analytics";
+import { operationalTaskFixtures, technologyDossierFixtures } from "@/data/fixtures";
+import { BarChart } from "@/components/charts/bar-chart";
+import { OpsAnalytics, SourceBadge } from "@/components/operations/ops-analytics";
 import { ErrorState } from "@/components/states/error-state";
 
 const CONTAINER = "mx-auto w-full max-w-[1280px] px-5 py-8 md:px-8";
@@ -48,6 +57,16 @@ export default async function OperationsAnalyticsPage() {
   for (const task of tasks) {
     statusCounts.set(task.status, (statusCounts.get(task.status) ?? 0) + 1);
   }
+
+  /* Распределение заявленных уровней УГТ по досье-фикстурам (D-05). */
+  const ugtCounts = new Map<number, number>();
+  for (const dossier of technologyDossierFixtures) {
+    const level = dossier.ugt.currentLevel;
+    ugtCounts.set(level, (ugtCounts.get(level) ?? 0) + 1);
+  }
+  const ugtDistribution = [...ugtCounts.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([level, count]) => ({ label: `УГТ ${level}`, value: count }));
 
   return (
     <div className={CONTAINER}>
@@ -110,6 +129,33 @@ export default async function OperationsAnalyticsPage() {
           }))}
           sourcesNote="Реальные данные: реестр НИОКТР и справочник организаций. Остальное — контролируемые фикстуры интерфейса, не публикуемые в открытых реестрах."
         />
+
+        {/* D-05: распределение заявленных уровней УГТ по досье (фикстуры). */}
+        <section
+          aria-labelledby="ugt-chart-heading"
+          className="mt-6 rounded-panel border border-subtle bg-surface p-5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2
+              id="ugt-chart-heading"
+              className="flex items-center gap-2 text-h3 font-semibold tracking-tight text-primary"
+            >
+              <ChartNoAxesColumn className="h-5 w-5 text-accent" aria-hidden />
+              Распределение заявленных уровней УГТ по досье
+            </h2>
+            <SourceBadge />
+          </div>
+          <div className="mt-4">
+            <BarChart
+              data={ugtDistribution}
+              ariaLabel="Распределение заявленных уровней УГТ по досье: количество досье на каждом уровне"
+            />
+          </div>
+          <p className="mt-3 text-meta text-muted">
+            Источник: фикстуры UI (демо) — {technologyDossierFixtures.length} досье
+            technologyDossierFixtures (заявленный currentLevel).
+          </p>
+        </section>
       </div>
     </div>
   );

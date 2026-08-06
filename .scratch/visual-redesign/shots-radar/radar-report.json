@@ -1,0 +1,92 @@
+{
+  "light": {
+    "theme": "light",
+    "bodyBg": "rgb(246, 245, 241)",
+    "cardBg": "rgb(255, 255, 255)",
+    "accent": "#1d4ed8",
+    "accentSoft": "#dbeafe",
+    "textMuted": "#667085",
+    "textPrimary": "#1a1d21",
+    "textSecondary": "#4b5563",
+    "polyFill": "rgb(219, 234, 254)",
+    "polyStroke": "rgb(29, 78, 216)",
+    "polyFillOpacity": "1",
+    "gridStroke": "rgb(102, 112, 133)",
+    "gridOpacity": "0.35",
+    "dotFill": "rgb(29, 78, 216)",
+    "ringStroke": "rgb(102, 112, 133)",
+    "emptyTextFill": "rgb(75, 85, 99)",
+    "labels": [
+      "Научная",
+      "Техническая",
+      "Производственная",
+      "Организационная"
+    ],
+    "overhang": {
+      "svgLeft": 222,
+      "svgRight": 482,
+      "minLabelLeft": 225,
+      "maxLabelRight": 479
+    }
+  },
+  "dark": {
+    "theme": "dark",
+    "bodyBg": "rgb(11, 14, 19)",
+    "cardBg": "rgb(18, 22, 29)",
+    "accent": "#60a5fa",
+    "accentSoft": "#3b82f624",
+    "textMuted": "#8a93a0",
+    "textPrimary": "#edeff2",
+    "textSecondary": "#b8bfc9",
+    "polyFill": "rgba(59, 130, 246, 0.14)",
+    "polyStroke": "rgb(96, 165, 250)",
+    "polyFillOpacity": "1",
+    "gridStroke": "rgb(138, 147, 160)",
+    "gridOpacity": "0.35",
+    "dotFill": "rgb(96, 165, 250)",
+    "ringStroke": "rgb(138, 147, 160)",
+    "emptyTextFill": "rgb(184, 191, 201)",
+    "labels": [
+      "Научная",
+      "Техническая",
+      "Производственная",
+      "Организационная"
+    ],
+    "overhang": {
+      "svgLeft": 222,
+      "svgRight": 482,
+      "minLabelLeft": 225,
+      "maxLabelRight": 479
+    }
+  },
+  "udmurt": {
+    "theme": "udmurt",
+    "bodyBg": "rgb(244, 242, 238)",
+    "cardBg": "rgb(255, 255, 255)",
+    "accent": "#c02626",
+    "accentSoft": "#fbe9e9",
+    "textMuted": "#666f79",
+    "textPrimary": "#0b0d12",
+    "textSecondary": "#4b5563",
+    "polyFill": "rgb(251, 233, 233)",
+    "polyStroke": "rgb(192, 38, 38)",
+    "polyFillOpacity": "1",
+    "gridStroke": "rgb(102, 111, 121)",
+    "gridOpacity": "0.35",
+    "dotFill": "rgb(192, 38, 38)",
+    "ringStroke": "rgb(102, 111, 121)",
+    "emptyTextFill": "rgb(75, 85, 99)",
+    "labels": [
+      "Научная",
+      "Техническая",
+      "Производственная",
+      "Организационная"
+    ],
+    "overhang": {
+      "svgLeft": 222,
+      "svgRight": 482,
+      "minLabelLeft": 225,
+      "maxLabelRight": 479
+    }
+  }
+}

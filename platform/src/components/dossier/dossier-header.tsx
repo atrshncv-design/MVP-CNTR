@@ -8,6 +8,7 @@ import type { TechnologyDossier } from "@/lib/types";
 import { StatusBadge } from "@/components/status-badge";
 import { UgtBadge } from "@/components/ugt-badge";
 import { FixtureBadge } from "@/components/customer/fixture-badge";
+import { SectionMark } from "@/components/udmurt/section-mark";
 import { isFixtureRecord } from "@/lib/types";
 
 export interface DossierHeaderProps {
@@ -25,7 +26,7 @@ export function DossierHeader({
 }: DossierHeaderProps) {
   return (
     <header className="max-w-4xl">
-      <p className="font-mono text-meta text-muted">{eyebrow}</p>
+      <SectionMark label={eyebrow} />
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <StatusBadge status={dossier.visibility.publicationStatus} />
         <UgtBadge level={dossier.ugt.currentLevel} />
