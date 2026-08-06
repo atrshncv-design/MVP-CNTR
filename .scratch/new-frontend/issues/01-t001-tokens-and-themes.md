@@ -1,6 +1,6 @@
 # T-001 — Semantic design system and three themes
 
-Status: ready-for-agent
+Status: done
 Blocked by: —
 
 ## Цель

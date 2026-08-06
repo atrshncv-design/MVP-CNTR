@@ -5,7 +5,7 @@ Worktree: `.worktrees/new-front` (ветка `new-front`), приложение:
 
 | # | Тикет | Статус |
 |---|-------|--------|
-| T-001 | Дизайн-токены и три темы | pending |
+| T-001 | Дизайн-токены и три темы | done |
 | T-002 | Публичный shell и задача-first навигация | pending |
 | T-003 | Авторизованные shell'ы (sidebar + top bar) | pending |
 | T-004 | Typed data layer + реальные фикстуры НИОКТР | pending |

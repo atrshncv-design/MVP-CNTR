@@ -1,26 +1,381 @@
+/*
+ * T-001. Единый файл семантических токенов дизайн-системы.
+ * Три темы: светлая (:root), тёмная ([data-theme="dark"]), удмуртская ([data-theme="udmurt"]).
+ * Механизм тем: атрибут data-theme на <html>; значение ставит inline-скрипт в layout.tsx
+ * ДО первого рендера (без FOUC). Класс .dark НЕ используется.
+ * Компоненты НЕ хардкодят цвета — только утилиты от токенов (bg-canvas, text-primary, border-subtle, ...).
+ */
 @import "tailwindcss";
 
+/* ============================================================
+ * ТЕМА 1 — СВЕТЛАЯ (по умолчанию, :root)
+ * ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* Поверхности */
+  --canvas: #f6f5f1;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border-subtle: #e4e2dc;
+  --border-strong: #c9c6bd;
+
+  /* Текст */
+  --text-primary: #1a1d21;
+  --text-secondary: #4b5563;
+  /* muted затемнён с #6b7280 для WCAG AA 4.5:1 на canvas #f6f5f1 (4.56:1) */
+  --text-muted: #667085;
+  --text-inverse: #ffffff;
+
+  /* Акцент (текст/ссылки/текущий путь) и заливка действий */
+  --accent: #1d4ed8;
+  --accent-strong: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --accent-soft: #dbeafe;
+  --link: #1d4ed8;
+  --focus-ring: #2563eb;
+
+  /* Статусы */
+  --status-success: #15803d;
+  --status-success-soft: #dcfce7;
+  --status-warning: #b45309;
+  --status-warning-soft: #fef3c7;
+  --status-danger: #b91c1c;
+  --status-danger-soft: #fee2e2;
+  --status-info: #1e40af;
+  --status-info-soft: #e0f2fe;
+  --status-draft: #667085;
+  --status-draft-soft: #f3f4f6;
+
+  /* УГТ: низкий 1–3, средний 4–6, высокий 7–9 */
+  --ugt-low: #b45309;
+  --ugt-low-soft: #fef3c7;
+  --ugt-medium: #a16207;
+  --ugt-medium-soft: #fef9c3;
+  --ugt-high: #15803d;
+  --ugt-high-soft: #dcfce7;
+
+  /* Слои */
+  --overlay: rgba(15, 17, 20, 0.5);
+  --scrim: rgba(15, 17, 20, 0.9);
+
+  /* Геометрия */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-surface: 16px;
+
+  /* Шрифты (подключаются через @fontsource в layout.tsx) */
+  --font-sans: "Golos Text Variable", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
+
+  /* Типографика (§7.2): desktop → mobile через clamp */
+  --text-display: clamp(2.5rem, 6vw, 4rem);
+  --text-display--line-height: clamp(2.75rem, 6.5vw, 4.25rem);
+  --text-h1: clamp(2rem, 4.5vw, 3rem);
+  --text-h1--line-height: clamp(2.25rem, 5vw, 3.375rem);
+  --text-h2: clamp(1.75rem, 3.5vw, 2.25rem);
+  --text-h2--line-height: clamp(2rem, 4vw, 2.625rem);
+  --text-h3: clamp(1.375rem, 2.5vw, 1.5rem);
+  --text-h3--line-height: clamp(1.75rem, 3vw, 1.875rem);
+  --text-body-lg: 1.25rem;
+  --text-body-lg--line-height: 1.875rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.25rem;
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1rem;
 }
 
+/* ============================================================
+ * ТЕМА 2 — ТЁМНАЯ
+ * ============================================================ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0b0e13;
+  --surface: #12161d;
+  --surface-elevated: #1a2029;
+  --border-subtle: #262d38;
+  --border-strong: #3a4350;
+
+  --text-primary: #edeff2;
+  --text-secondary: #b8bfc9;
+  --text-muted: #8a93a0;
+  --text-inverse: #0b0e13;
+
+  --accent: #60a5fa;
+  --accent-strong: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(59, 130, 246, 0.14);
+  --link: #60a5fa;
+  --focus-ring: #60a5fa;
+
+  --status-success: #4ade80;
+  --status-success-soft: rgba(74, 222, 128, 0.14);
+  --status-warning: #fbbf24;
+  --status-warning-soft: rgba(251, 191, 36, 0.14);
+  --status-danger: #f87171;
+  --status-danger-soft: rgba(248, 113, 113, 0.14);
+  --status-info: #7dd3fc;
+  --status-info-soft: rgba(125, 211, 252, 0.14);
+  --status-draft: #9ca3af;
+  --status-draft-soft: rgba(156, 163, 175, 0.14);
+
+  --ugt-low: #fb923c;
+  --ugt-low-soft: rgba(251, 146, 60, 0.14);
+  --ugt-medium: #fbbf24;
+  --ugt-medium-soft: rgba(251, 191, 36, 0.14);
+  --ugt-high: #4ade80;
+  --ugt-high-soft: rgba(74, 222, 128, 0.14);
+
+  --overlay: rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.9);
+}
+
+/* ============================================================
+ * ТЕМА 3 — УДМУРТСКАЯ
+ * Базис: бумага, графит, красный только как акцент/текущий путь.
+ * Характер — модульная геометрия восьмиконечной звезды в разделителях,
+ * маркерах УГТ и прогресс-паттернах (data-URI SVG), сдержанно.
+ * ============================================================ */
+[data-theme="udmurt"] {
+  color-scheme: light;
+
+  --canvas: #f4f2ee;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border-subtle: #e3ded3;
+  --border-strong: #c8c0b0;
+
+  --text-primary: #0b0d12;
+  --text-secondary: #4b5563;
+  /* muted затемнён с #6b7280 для WCAG AA 4.5:1 на бумаге #f4f2ee (4.56:1) */
+  --text-muted: #666f79;
+  --text-inverse: #ffffff;
+
+  --accent: #c02626;
+  --accent-strong: #b91c1c;
+  --accent-contrast: #ffffff;
+  --accent-soft: #fbe9e9;
+  --link: #c02626;
+  --focus-ring: #c02626;
+
+  /* Синий — только по семантике (info), не как бренд-акцент */
+  --status-success: #15803d;
+  --status-success-soft: #dcfce7;
+  --status-warning: #b45309;
+  --status-warning-soft: #fef3c7;
+  --status-danger: #b91c1c;
+  --status-danger-soft: #fee2e2;
+  --status-info: #1e40af;
+  --status-info-soft: #e0f2fe;
+  --status-draft: #666f79;
+  --status-draft-soft: #f3f4f6;
+
+  --ugt-low: #c2410c;
+  --ugt-low-soft: #ffedd5;
+  /* ugt-medium затемнён с #a16207 для AA 4.5:1 на soft-тинте (4.56:1) */
+  --ugt-medium: #a05f05;
+  --ugt-medium-soft: #fef3c7;
+  --ugt-high: #15803d;
+  --ugt-high-soft: #dcfce7;
+
+  --overlay: rgba(15, 17, 20, 0.5);
+  --scrim: rgba(15, 17, 20, 0.9);
+
+  /* Орнаментальные паттерны: восьмиконечная звезда (толязь) */
+  --pattern-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1 14.2 9.8 23 12 14.2 14.2 12 23 9.8 14.2 1 12 9.8 9.8Z' fill='%23c02626'/%3E%3C/svg%3E");
+  --pattern-stars: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 12'%3E%3Cpath d='M5.5 0.5 6.7 4.3 10.5 5.5 6.7 6.7 5.5 10.5 4.3 6.7 0.5 5.5 4.3 4.3Z' fill='%23c02626'/%3E%3Cpath d='M30 0.5 31.2 4.3 35 5.5 31.2 6.7 30 10.5 28.8 6.7 25 5.5 28.8 4.3Z' fill='%230b0d12'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+ * Маппинг токенов в утилиты Tailwind v4.
+ * bg-canvas, bg-surface, text-primary, text-secondary, text-muted,
+ * border-subtle, border-strong, bg-accent, bg-accent-strong,
+ * text-accent-contrast, bg-accent-soft, text-link, outline-focus-ring,
+ * bg/text-status-*, bg/text-ugt-*, rounded-control/panel/surface,
+ * font-sans/font-mono.
+ * ============================================================ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+
+  --color-subtle: var(--border-subtle);
+  --color-strong: var(--border-strong);
+
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-inverse: var(--text-inverse);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-soft: var(--accent-soft);
+  --color-link: var(--link);
+  --color-focus-ring: var(--focus-ring);
+
+  --color-status-success: var(--status-success);
+  --color-status-success-soft: var(--status-success-soft);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-soft: var(--status-warning-soft);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-soft: var(--status-danger-soft);
+  --color-status-info: var(--status-info);
+  --color-status-info-soft: var(--status-info-soft);
+  --color-status-draft: var(--status-draft);
+  --color-status-draft-soft: var(--status-draft-soft);
+
+  --color-ugt-low: var(--ugt-low);
+  --color-ugt-low-soft: var(--ugt-low-soft);
+  --color-ugt-medium: var(--ugt-medium);
+  --color-ugt-medium-soft: var(--ugt-medium-soft);
+  --color-ugt-high: var(--ugt-high);
+  --color-ugt-high-soft: var(--ugt-high-soft);
+
+  --color-overlay: var(--overlay);
+  --color-scrim: var(--scrim);
+
+  --radius-control: var(--radius-control);
+  --radius-panel: var(--radius-panel);
+  --radius-surface: var(--radius-surface);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --text-display: var(--text-display);
+  --text-display--line-height: var(--text-display--line-height);
+  --text-h1: var(--text-h1);
+  --text-h1--line-height: var(--text-h1--line-height);
+  --text-h2: var(--text-h2);
+  --text-h2--line-height: var(--text-h2--line-height);
+  --text-h3: var(--text-h3);
+  --text-h3--line-height: var(--text-h3--line-height);
+  --text-body-lg: var(--text-body-lg);
+  --text-body-lg--line-height: var(--text-body-lg--line-height);
+  --text-body: var(--text-body);
+  --text-body--line-height: var(--text-body--line-height);
+  --text-small: var(--text-small);
+  --text-small--line-height: var(--text-small--line-height);
+  --text-meta: var(--text-meta);
+  --text-meta--line-height: var(--text-meta--line-height);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+ * Base
+ * ============================================================ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--text-primary);
+  }
+
+  /* Видимое кольцо фокуса 2px с отступом — во всех темах */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Disabled-состояния различимы */
+  :disabled,
+  [aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* reduced-motion: отключаем декоративные переходы/анимации */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================================
+ * Удмуртские модульные мотивы (активны только в data-theme="udmurt")
+ * ============================================================ */
+
+/* Разделитель секций: в udmurt-теме — ряд восьмиконечных звёзд, иначе — тонкая линия */
+.section-divider {
+  height: 1px;
+  border: 0;
+  background-color: var(--border-subtle);
+}
+[data-theme="udmurt"] .section-divider {
+  height: 12px;
+  background-color: transparent;
+  background-image: var(--pattern-stars);
+  background-repeat: repeat-x;
+  background-position: center;
+  background-size: 48px 12px;
+}
+
+/* Маркер УГТ: ромб в светлой/тёмной, восьмиконечная звезда в udmurt.
+ * Цвет задаётся классом text-ugt-* на самом элементе (currentColor). */
+.ugt-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+.ugt-marker::before {
+  content: "";
+  width: 11px;
+  height: 11px;
+  transform: rotate(45deg);
+  background-color: currentColor;
+}
+[data-theme="udmurt"] .ugt-marker::before {
+  width: 20px;
+  height: 20px;
+  transform: none;
+  background-color: transparent;
+  background-image: var(--pattern-star);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.ugt-marker.is-pending {
+  opacity: 0.35;
+}
+
+/* Трек пути УГТ: в udmurt-теме заполнение — орнаментальный пунктир звёзд */
+.ugt-track {
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--border-subtle);
+  overflow: hidden;
+}
+.ugt-track-fill {
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--accent-strong);
+}
+[data-theme="udmurt"] .ugt-track-fill {
+  background-color: transparent;
+  background-image: var(--pattern-stars);
+  background-repeat: repeat-x;
+  background-size: 48px 100%;
 }
