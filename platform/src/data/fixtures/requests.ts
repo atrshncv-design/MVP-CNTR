@@ -13,6 +13,7 @@ import {
   fixtureMarker,
   type CustomerRequest,
   type CustomerRequestSummary,
+  type TechnologyMatch,
 } from "../../lib/types.ts";
 
 const fixture = fixtureMarker();
@@ -98,6 +99,47 @@ export const customerRequestSummaryFixtures: CustomerRequestSummary[] = [
   },
 ];
 
+/**
+ * T-008. Совпадения запроса с проверенными технологиями (для dossier).
+ *
+ * ВАЖНО про тип TechnologyMatch: поле называется requestId, но в контексте
+ * CustomerRequest.matchedTechnologies оно хранит id СОПОСТАВЛЕННОЙ ТЕХНОЛОГИИ
+ * (тип переиспользуется с «технология → связанные запросы»; менять контракт
+ * T-004 нельзя). Dossier-страница резолвит его в TechnologyDossier через
+ * адаптер (getTechnology, scope participant). Все совпадения — только
+ * проверенные технологии-фикстуры (approved/published), не черновики.
+ */
+const matchedTechnologiesByRequest: Readonly<Record<string, TechnologyMatch[]>> = {
+  // Одобренный запрос: два совпадения с проверенными технологиями.
+  "fixture-request-approved-04": [
+    {
+      requestId: "fixture-tech-approved-04",
+      title: "Тестовая технология: цифровой двойник производственной линии",
+      matchScore: 82,
+    },
+    {
+      requestId: "fixture-tech-published-06",
+      title: "Тестовая технология: энергоэффективная система освещения",
+      matchScore: 58,
+    },
+  ],
+  // Опубликованный запрос: два совпадения с проверенными технологиями.
+  "fixture-request-published-06": [
+    {
+      requestId: "fixture-tech-approved-04",
+      title: "Тестовая технология: цифровой двойник производственной линии",
+      matchScore: 74,
+    },
+    {
+      requestId: "fixture-tech-published-06",
+      title: "Тестовая технология: энергоэффективная система освещения",
+      matchScore: 68,
+    },
+  ],
+  // Остальные статусы — честное «совпадений пока нет»: черновик не подавался,
+  // запрос на проверке ещё не сопоставлялся, нужны уточнения/отклонён.
+};
+
 export const customerRequestFixtures: CustomerRequest[] =
   customerRequestSummaryFixtures.map(
     (s): CustomerRequest => ({
@@ -115,7 +157,7 @@ export const customerRequestFixtures: CustomerRequest[] =
       publicationStatus: s.publicationStatus,
       createdAt: s.createdAt,
       deadline: s.deadline,
-      matchedTechnologies: [],
+      matchedTechnologies: matchedTechnologiesByRequest[s.id] ?? [],
       relatedPilot: null,
       ...fixture,
     }),

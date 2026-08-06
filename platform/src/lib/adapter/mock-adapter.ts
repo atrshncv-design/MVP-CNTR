@@ -355,6 +355,7 @@ export class MockPlatformDataAdapter implements PlatformDataAdapter {
     const aiUsage = parseBool(filters.is_ai_usage);
     const types = toArr(filters.nioktr_types);
     const programs = toArr(filters.state_program);
+    const years = toArr(filters.year);
 
     let items = this.allResearch().filter((r) => {
       if (search) {
@@ -382,6 +383,12 @@ export class MockPlatformDataAdapter implements PlatformDataAdapter {
       if (
         programs.length > 0 &&
         !programs.some((p) => (r.stateProgram ?? "").toLowerCase().includes(p.toLowerCase()))
+      ) {
+        return false;
+      }
+      if (
+        years.length > 0 &&
+        !years.some((y) => r.createdDate.startsWith(y))
       ) {
         return false;
       }
