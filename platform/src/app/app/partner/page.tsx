@@ -111,9 +111,8 @@ function KpiCard({
   return (
     <div className="rounded-panel border border-subtle bg-surface p-5">
       <p className="text-meta font-medium text-muted">{label}</p>
-      <p className="mt-1.5 font-mono text-h3 font-semibold tracking-tight text-primary">
-        {value}
-      </p>
+      {/* D-09: одно главное число — display-шрифт (text-h2), подпись — text-meta muted. */}
+      <p className="mt-1.5 text-h2 font-semibold tracking-tight text-primary">{value}</p>
       <p className="mt-1 text-meta leading-relaxed text-muted">{note}</p>
     </div>
   );
@@ -227,7 +226,7 @@ export default async function PartnerDashboardPage() {
 
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-h2 font-semibold tracking-tight text-primary">
+          <h1 className="text-h1 font-semibold tracking-tight text-primary">
             Кабинет исполнителя
           </h1>
           <p className="mt-1.5 text-small text-secondary">

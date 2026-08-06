@@ -11,6 +11,7 @@ import { MobileDrawer } from "@/components/mobile-drawer";
 import { GlobalSearch } from "@/components/global-search";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
+  findDeepestSection,
   getRoleDefinition,
   getSectionsForRole,
   isCenterRole,
@@ -90,6 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const { title, crumbs } = sectionBreadcrumb(pathname, allSections);
+  const activeSection = findDeepestSection(pathname, allSections);
 
   const sidebarContent = (
     <Sidebar
@@ -122,6 +124,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <TopBar
           title={title}
           breadcrumbs={crumbs}
+          subtitle={activeSection?.description}
           onMenuOpen={() => setDrawerOpen(true)}
           menuLabel="Открыть меню кабинета"
           right={

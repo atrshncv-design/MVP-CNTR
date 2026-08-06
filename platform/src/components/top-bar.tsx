@@ -9,6 +9,8 @@ export interface TopBarProps {
   title: string;
   /** Хлебные крошки (цепочка разделов; на mobile показывается только заголовок). */
   breadcrumbs?: string[];
+  /** Подзаголовок раздела (только comfortable-плотность; операционный центр остаётся компактным). */
+  subtitle?: string;
   /** Правая группа действий: поиск, уведомления, тема, профиль. */
   right?: ReactNode;
   /** Открыть мобильный drawer (бургер виден только на mobile). */
@@ -27,6 +29,7 @@ export interface TopBarProps {
 export function TopBar({
   title,
   breadcrumbs = [],
+  subtitle,
   right,
   onMenuOpen,
   menuLabel = "Открыть меню",
@@ -37,7 +40,7 @@ export function TopBar({
     <header className="sticky top-0 z-30 border-b border-border-subtle bg-canvas/85 backdrop-blur">
       <div
         className={`flex items-center gap-2 ${
-          dense ? "h-12 px-3 md:gap-3 md:px-4" : "h-16 gap-3 px-4 md:px-6"
+          dense ? "min-h-12 px-3 md:gap-3 md:px-4" : "min-h-16 gap-3 px-4 md:px-6"
         }`}
       >
         <button
@@ -54,7 +57,7 @@ export function TopBar({
           {breadcrumbs.length > 1 ? (
             <nav
               aria-label="Хлебные крошки"
-              className="hidden min-w-0 items-center gap-1.5 text-meta text-muted sm:flex"
+              className="hidden min-w-0 items-center gap-1.5 font-mono text-meta text-muted sm:flex"
             >
               {breadcrumbs.map((crumb, index) => (
                 <span key={`${crumb}-${index}`} className="flex min-w-0 items-center gap-1.5">
@@ -68,10 +71,11 @@ export function TopBar({
           ) : null}
           <SectionMark
             label={title}
-            className={`truncate font-semibold text-primary ${
-              dense ? "text-small" : "text-small sm:text-body"
-            }`}
+            className="truncate font-display text-h3 font-semibold text-primary"
           />
+          {subtitle && !dense ? (
+            <p className="mt-0.5 truncate text-small text-secondary">{subtitle}</p>
+          ) : null}
         </div>
 
         {right ? (

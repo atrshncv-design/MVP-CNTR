@@ -353,7 +353,8 @@ function RegistryCard({
           {real ? "реальные" : "демо"}
         </span>
       </span>
-      <span className="mt-3 block font-mono text-h2 font-semibold tracking-tight text-primary">
+      {/* D-09: главное число реестра — display-шрифт (text-h2), источник — text-meta muted. */}
+      <span className="mt-3 block text-h2 font-semibold tracking-tight text-primary">
         {value}
       </span>
       <span className="mt-1 block text-small font-medium text-secondary">
