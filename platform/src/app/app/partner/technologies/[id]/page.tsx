@@ -19,6 +19,7 @@ import { DossierEvidence } from "@/components/dossier/dossier-evidence";
 import { DossierRelated } from "@/components/dossier/dossier-related";
 import { DossierVisibility } from "@/components/dossier/dossier-visibility";
 import { DossierDecisionHistory } from "@/components/dossier/dossier-decision-history";
+import { CommentSection } from "@/components/comments/comment-section";
 import { EmptyState } from "@/components/states/empty-state";
 import { ErrorState } from "@/components/states/error-state";
 
@@ -129,6 +130,11 @@ export default async function PartnerTechnologyDossierPage({
           <DossierDecisionHistory
             decisions={view.decisions}
             emptyLabel="Решений по технологии пока нет. История появится после подачи на проверку."
+          />
+          <CommentSection
+            objectType="technology"
+            objectId={dossier.id}
+            author="Исполнитель"
           />
         </div>
 

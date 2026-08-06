@@ -26,6 +26,7 @@ import type { Decision } from "@/lib/types";
 import type { VisibilityScope } from "@/lib/adapter/types";
 import { formatDateTime } from "@/lib/datetime";
 import { getMockSession } from "@/lib/session";
+import { appendLocalNotification } from "@/lib/notifications";
 import { StatusBadge } from "@/components/status-badge";
 
 /* ------------------------------------------------------------------ */
@@ -236,6 +237,27 @@ export function DecisionForm({
       visibilityScope: "operations",
     };
     appendStoredOpsRecord(record);
+    // T-012: решение порождает уведомление участнику (демо-хранилище).
+    const decisionLabel =
+      action === "publish"
+        ? "опубликован"
+        : action === "approved"
+          ? "одобрено"
+          : action === "clarification"
+            ? "запрошены уточнения"
+            : "отклонено";
+    appendLocalNotification({
+      objectType: objectType === "technology" ? "technology" : "request",
+      objectId,
+      event: `Решение Центра: «${objectTitle}» ${decisionLabel}`,
+      urgency: action === "rejected" ? "high" : "medium",
+      requiredAction:
+        action === "clarification"
+          ? "Ответьте на уточнения Центра"
+          : action === "rejected"
+            ? "Изучите причину и доработайте запись"
+            : null,
+    });
     setSaved(record);
   };
 

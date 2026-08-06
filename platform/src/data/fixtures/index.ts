@@ -32,6 +32,7 @@ export {
   operationalTaskFixtures,
   operationalTasksById,
 } from "./operations.ts";
+export { organizationDocumentFixtures } from "./documents.ts";
 
 const fixture = fixtureMarker();
 
