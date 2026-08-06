@@ -69,6 +69,10 @@
     "Segoe UI", Roboto, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
     monospace;
+  /* Акцидентный шрифт заголовков (Q6: Unbounded — стартовый кандидат,
+     кириллица проверена; финальный выбор — за валидатором). */
+  --font-display: "Unbounded Variable", "Golos Text Variable", ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 
   /* Типографика (§7.2): desktop → mobile через clamp */
   --text-display: clamp(2.5rem, 6vw, 4rem);
@@ -246,6 +250,7 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
 
   --text-display: var(--text-display);
   --text-display--line-height: var(--text-display--line-height);
@@ -284,6 +289,15 @@
   ::selection {
     background-color: var(--accent-soft);
     color: var(--text-primary);
+  }
+
+  /* Акцидентная типографика (Q6): крупные заголовки — display-шрифт.
+     h3 и текстовые уровни остаются на --font-sans для плотных интерфейсов. */
+  .text-display,
+  .text-h1,
+  .text-h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 
   /* Видимое кольцо фокуса 2px с отступом — во всех темах */

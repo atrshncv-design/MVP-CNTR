@@ -190,7 +190,7 @@ export default function TokensDemoPage() {
         <Section
           id="typography"
           title="Типографика"
-          intro="Golos Text — рабочая гарнитура, IBM Plex Mono — только идентификаторы и метаданные. Предложение по умолчанию, переносы естественные."
+          intro="Unbounded — акцидентный display-гротеск для заголовков, Golos Text — рабочая гарнитура текста, IBM Plex Mono — только идентификаторы и метаданные. Предложение по умолчанию, переносы естественные."
         >
           <div className="space-y-5">
             <div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@fontsource-variable/golos-text";
+import "@fontsource-variable/unbounded";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "@fontsource/ibm-plex-mono/600.css";
