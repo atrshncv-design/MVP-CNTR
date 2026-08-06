@@ -24,7 +24,7 @@ export function ProvenanceBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-meta text-muted ${
+      className={`inline-flex min-w-0 items-center gap-1.5 text-meta text-muted ${
         compact ? "" : "leading-relaxed"
       }`}
       title={
@@ -33,7 +33,7 @@ export function ProvenanceBadge({
       }
     >
       <Database className="h-3.5 w-3.5 shrink-0" aria-hidden />
-      <span className="truncate">{provenance.source}</span>
+      <span className="min-w-0 truncate">{provenance.source}</span>
       {importedLabel ? (
         <span className="hidden sm:inline">·</span>
       ) : null}

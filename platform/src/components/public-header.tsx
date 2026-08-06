@@ -119,10 +119,12 @@ export function PublicHeader() {
 
         {/* Правая группа */}
         <div className="ml-auto flex items-center gap-1.5 md:gap-2 2xl:gap-1.5">
-          {/* Поиск-entry. На 2xl+ текст и kbd скрываются (см. global-search:
-              они показываются с xl:inline), чтобы освободить место inline-навигации;
-              остаётся иконка с тач-целью 44px. */}
-          <div className="2xl:[&_span]:hidden 2xl:[&_kbd]:hidden">
+          {/* Поиск-entry: иконочная кнопка 44px на всех ширинах — текстовая
+              версия с kbd переполняла хедер на 1024–1535 (scrollWidth 1474
+              при viewport 1280; span/kbd вложены в кнопку, поэтому селектор
+              [&_button_span]). Модалка поиска открывается из иконки;
+              текстовая версия есть в мобильном drawer. */}
+          <div className="[&_button_span]:hidden [&_button_kbd]:hidden">
             <GlobalSearch />
           </div>
           <div className="hidden lg:block">

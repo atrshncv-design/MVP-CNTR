@@ -8,7 +8,12 @@ import {
   ugtLevelMeaning,
   transitionCriteria,
 } from "@/lib/ugt";
-import { UGT_BAND_META, bandRangeLabel, ugtLevelInfo } from "@/lib/ugt";
+import {
+  UGT_BAND_META,
+  UGT_LEVEL_COLORS,
+  bandRangeLabel,
+  ugtLevelInfo,
+} from "@/lib/ugt";
 import { UgtBadge } from "@/components/ugt-badge";
 
 export interface UgtLevelCardProps {
@@ -30,7 +35,12 @@ export function UgtLevelCard({ level }: UgtLevelCardProps) {
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <UgtBadge level={level} />
-        <p className="font-mono text-meta text-muted">
+        <p className="flex items-center gap-1.5 font-mono text-meta text-muted">
+          <span
+            aria-hidden
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: UGT_LEVEL_COLORS[level - 1] }}
+          />
           {bandMeta.label}: {bandRangeLabel(info.band)}
         </p>
       </div>

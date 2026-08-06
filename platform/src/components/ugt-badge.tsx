@@ -1,29 +1,20 @@
 /**
  * T-005. Канонический бейдж УГТ (Design.md §10, STATES.md §2).
- * Число + название уровня + band — цвет не единственный канал: маркер
- * (форма: ромб в светлой/тёмной, восьмиконечная звезда в удмуртской теме),
- * число и подпись band передают смысл без цвета.
+ * Тон бейджа — цвет уровня (UGT_LEVEL_COLORS, D-07), текст — контрастный
+ * (UGT_LEVEL_TEXT_COLORS: белый на тёмных тонах, тёмный на светлых).
+ * Цвет — не единственный канал: маркер (форма: ромб в светлой/тёмной,
+ * восьмиконечная звезда в удмуртской теме), число и подпись band передают
+ * смысл без цвета.
  */
 
 import {
   UGT_BAND_META,
+  UGT_LEVEL_COLORS,
+  UGT_LEVEL_TEXT_COLORS,
   bandOfLevel,
   bandRangeLabel,
   ugtLevelInfo,
-  type UgtBand,
 } from "@/lib/ugt";
-
-const BAND_TEXT: Record<UgtBand, string> = {
-  low: "text-ugt-low",
-  medium: "text-ugt-medium",
-  high: "text-ugt-high",
-};
-
-const BAND_SOFT: Record<UgtBand, string> = {
-  low: "bg-ugt-low-soft",
-  medium: "bg-ugt-medium-soft",
-  high: "bg-ugt-high-soft",
-};
 
 export interface UgtBadgeProps {
   /** Номер уровня 1–9. Вне диапазона бейдж не рендерится (null у вызывающего). */
@@ -39,20 +30,24 @@ export function UgtBadge({ level, showBand = true, className = "" }: UgtBadgePro
   const band = bandOfLevel(level);
   if (!info || !band) return null;
 
+  const tone = UGT_LEVEL_COLORS[level - 1];
+  const text = UGT_LEVEL_TEXT_COLORS[level - 1];
+
   return (
     <span
-      className={`inline-flex items-center gap-2.5 rounded-control py-1 pl-1 pr-3 ${BAND_SOFT[band]} ${className}`}
+      className={`inline-flex items-center gap-2.5 rounded-control py-1 pl-1 pr-3 ${className}`}
+      style={{ backgroundColor: tone }}
     >
-      <span className={`ugt-marker ${BAND_TEXT[band]}`} aria-hidden />
+      <span className="ugt-marker" style={{ color: text }} aria-hidden />
       <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className={`font-mono text-small font-semibold ${BAND_TEXT[band]}`}>
+        <span className="font-mono text-small font-semibold" style={{ color: text }}>
           УГТ {level}
         </span>
-        <span className="text-small font-medium leading-tight text-primary">
+        <span className="text-small font-medium leading-tight" style={{ color: text }}>
           {info.name}
         </span>
         {showBand ? (
-          <span className="text-meta leading-tight text-secondary">
+          <span className="text-meta leading-tight" style={{ color: text }}>
             {UGT_BAND_META[band].shortLabel} · {bandRangeLabel(band)}
           </span>
         ) : null}

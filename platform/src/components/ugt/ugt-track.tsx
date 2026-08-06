@@ -1,9 +1,11 @@
 /**
- * T-011. Полный трек УГТ 1–9 с band-разметкой и заполнением до текущего
- * уровня. Цвет — не единственный канал: число + название + band (STATES.md §2).
+ * T-011. Полный трек УГТ 1–9 с band-разметкой и подсветкой ТЕКУЩЕГО уровня.
+ * Сегмент текущего уровня заливается цветом уровня (UGT_LEVEL_COLORS, D-07),
+ * остальные сегменты — border-subtle. Цвет — не единственный канал:
+ * число + название + band (STATES.md §2).
  */
 
-import { UGT_LEVELS } from "@/lib/ugt";
+import { UGT_LEVEL_COLORS, UGT_LEVELS } from "@/lib/ugt";
 
 export interface UgtTrackProps {
   /** Текущий (заявленный или подтверждённый) уровень. */
@@ -25,22 +27,25 @@ export function UgtTrack({ currentLevel, verified, compact = false }: UgtTrackPr
     >
       <div className="flex items-center gap-1.5">
         {UGT_LEVELS.map((level) => {
-          const filled = level.number <= currentLevel;
-          const bandClass =
-            level.band === "low"
-              ? "bg-status-warning"
-              : level.band === "medium"
-                ? "bg-[var(--ugt-medium)]"
-                : "bg-[var(--ugt-high)]";
+          const isCurrent = level.number === currentLevel;
           return (
             <div key={level.number} className="flex-1">
               <div
                 className={`h-2 rounded-full transition-colors ${
-                  filled ? bandClass : "bg-border-subtle"
+                  isCurrent ? "" : "bg-border-subtle"
                 }`}
+                style={
+                  isCurrent
+                    ? { backgroundColor: UGT_LEVEL_COLORS[level.number - 1] }
+                    : undefined
+                }
               />
               {!compact ? (
-                <p className="mt-1.5 text-center font-mono text-meta text-muted">
+                <p
+                  className={`mt-1.5 text-center font-mono text-meta ${
+                    isCurrent ? "font-semibold text-primary" : "text-muted"
+                  }`}
+                >
                   {level.number}
                 </p>
               ) : null}
