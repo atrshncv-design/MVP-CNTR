@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+// Серверный URL бэкенда (модуль используется только серверными компонентами).
+// Не NEXT_PUBLIC_: читается в рантайме, не инлайнится в клиентские бандлы.
+const API_URL = process.env.API_URL_INTERNAL ?? "http://127.0.0.1:8000";
 
 export class ApiError extends Error {
   readonly status: number;
