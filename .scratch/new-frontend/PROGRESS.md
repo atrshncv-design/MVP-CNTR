@@ -6,10 +6,10 @@ Worktree: `.worktrees/new-front` (ветка `new-front`), приложение:
 | # | Тикет | Статус |
 |---|-------|--------|
 | T-001 | Дизайн-токены и три темы | done |
-| T-002 | Публичный shell и задача-first навигация | pending |
+| T-002 | Публичный shell и задача-first навигация | done |
 | T-003 | Авторизованные shell'ы (sidebar + top bar) | pending |
-| T-004 | Typed data layer + реальные фикстуры НИОКТР | pending |
-| T-005 | Универсальная система состояний | pending |
+| T-004 | Typed data layer + реальные фикстуры НИОКТР | done |
+| T-005 | Универсальная система состояний | done |
 | T-006 | Публичный discovery и реестры | pending |
 | T-007 | Technology dossier (3 режима) | pending |
 | T-008 | Кабинет заказчика | pending |

@@ -1,6 +1,6 @@
 # T-005 — Universal state system
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-001
 
 ## Цель

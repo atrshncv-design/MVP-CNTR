@@ -1,6 +1,6 @@
 # T-002 — Public shell and task-based navigation
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-001
 
 ## Цель

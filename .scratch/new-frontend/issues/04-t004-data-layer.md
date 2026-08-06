@@ -1,6 +1,6 @@
 # T-004 — Typed data layer and real-data fixtures
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-001 (не блокируется T-002/T-003 по файлам)
 
 ## Цель
