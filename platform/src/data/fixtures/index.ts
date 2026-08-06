@@ -27,6 +27,7 @@ export {
   customerRequestsById,
 } from "./requests.ts";
 export { pilotFixtures, pilotsById } from "./pilots.ts";
+export { partnerApplicationFixtures } from "./applications.ts";
 export {
   operationalTaskFixtures,
   operationalTasksById,
