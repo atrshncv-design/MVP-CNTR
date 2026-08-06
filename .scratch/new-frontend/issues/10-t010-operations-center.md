@@ -1,6 +1,6 @@
 # T-010 — Center operations center (операционный центр сотрудника)
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-003 (operations shell), T-004 (адаптер+фикстуры задач), T-005 (состояния), T-007 (проверочный dossier)
 
 ## Цель

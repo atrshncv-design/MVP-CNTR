@@ -1,6 +1,6 @@
 # T-009 — Industrial partner workspace (кабинет исполнителя)
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-003 (shell), T-004 (адаптер+фикстуры dossier), T-005 (состояния), T-007 (dossier-компоненты)
 
 ## Цель
