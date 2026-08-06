@@ -11,11 +11,11 @@ Worktree: `.worktrees/new-front` (ветка `new-front`), приложение:
 | T-004 | Typed data layer + реальные фикстуры НИОКТР | done |
 | T-005 | Универсальная система состояний | done |
 | T-006 | Публичный discovery и реестры | done |
-| T-007 | Technology dossier (3 режима) | pending |
+| T-007 | Technology dossier (3 режима) | done |
 | T-008 | Кабинет заказчика | done |
 | T-009 | Кабинет исполнителя | pending |
 | T-010 | Операционный центр | pending |
 | T-011 | Путь УГТ 1–9, checkpoint'ы, доказательства | pending |
 | T-012 | Запросы, документы, комментарии, решения | pending |
-| T-013 | Авторизация и регистрация в 5 шагов | pending |
+| T-013 | Авторизация и регистрация в 5 шагов | done |
 | T-014 | Responsive и accessibility pass | pending |

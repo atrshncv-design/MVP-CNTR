@@ -1,6 +1,6 @@
 # T-007 — Technology dossier (три режима)
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-001, T-003 (шеллы), T-004 (данные), T-005 (состояния)
 
 ## Цель

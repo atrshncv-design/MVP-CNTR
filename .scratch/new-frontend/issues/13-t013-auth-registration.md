@@ -1,6 +1,6 @@
 # T-013 — Authentication and five-step registration
 
-Status: ready-for-agent
+Status: done
 Blocked by: T-001 (токены), T-002 (shell); mock-сессия — T-003
 
 ## Цель
