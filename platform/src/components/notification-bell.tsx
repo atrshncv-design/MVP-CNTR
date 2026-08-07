@@ -1,101 +1,158 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Bell, X } from "lucide-react";
-import { EmptyState } from "@/components/states/empty-state";
+import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Bell, Check } from "lucide-react";
 
-export interface NotificationBellProps {
-  /**
-   * Ссылка «Все уведомления» (раздел /app/notifications — контент T-012).
-   * В операционном шелле может отсутствовать — тогда показывается только
-   * панель-заглушка.
-   */
-  linkHref?: string;
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+
+interface NotificationItem {
+  id: number;
+  type: string;
+  title: string;
+  payload: Record<string, unknown>;
+  is_read: boolean;
+  created_at: string | null;
 }
 
-/**
- * T-003. Entry уведомлений: колокольчик с панелью. Контент уведомлений
- * наполняется в T-012; сейчас — честное пустое состояние (STATES.md §3)
- * без выдуманных счётчиков и событий. Доступно без hover (тач-цель 44px).
- */
-export function NotificationBell({ linkHref }: NotificationBellProps) {
+/** Короткий звуковой сигнал через Web Audio (без аудиофайлов). */
+function beep() {
+  try {
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new Ctx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch {
+    /* звук недоступен — молча */
+  }
+}
+
+export default function NotificationBell() {
+  const { data: session } = useSession();
+  const token = session?.user?.accessToken;
+  const [items, setItems] = useState<NotificationItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const esRef = useRef<EventSource | null>(null);
 
+  const load = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/v1/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const list = (await res.json()) as NotificationItem[];
+      setItems(list);
+      setUnread(list.filter((n) => !n.is_read).length);
+    } catch {
+      /* ignore */
+    }
+  }, [token]);
+
+  // SSE-подписка: live-события + звук
   useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+    if (!token) return;
+    const es = new EventSource(
+      `${API_URL}/api/v1/notifications/stream?access_token=${encodeURIComponent(token)}`,
+    );
+    esRef.current = es;
+    es.addEventListener("notification", () => {
+      beep();
+      void load();
+    });
+    es.addEventListener("snapshot", (e) => {
+      try {
+        const data = JSON.parse((e as MessageEvent).data) as { unread: number };
+        setUnread(data.unread);
+      } catch {
+        /* ignore */
+      }
+    });
+    return () => es.close();
+  }, [token, load]);
 
-  const close = () => setOpen(false);
+  const markRead = async (id: number) => {
+    if (!token) return;
+    try {
+      await fetch(`${API_URL}/api/v1/notifications/${id}/read`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setItems((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+      setUnread((u) => Math.max(0, u - 1));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (!token) return null;
 
   return (
     <div className="relative">
       <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-label="Уведомления"
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border-subtle bg-surface text-secondary transition-colors hover:border-border-strong hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+        onClick={() => {
+          setOpen((o) => !o);
+          if (!open) void load();
+        }}
+        className="relative grid h-9 w-9 place-items-center rounded-xl text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
+        aria-label={`Уведомления${unread ? `, ${unread} непрочитанных` : ""}`}
       >
-        <Bell className="h-[18px] w-[18px]" aria-hidden />
+        <Bell size={18} />
+        {unread > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[#EF4444] px-1 text-[10px] font-bold text-white">
+            {unread > 99 ? "99+" : unread}
+          </span>
+        )}
       </button>
 
-      {open ? (
-        <>
-          {/* Оверлей-закрытие (внешний клик) */}
-          <button
-            type="button"
-            aria-label="Закрыть уведомления"
-            onClick={close}
-            className="fixed inset-0 z-40 block h-full w-full cursor-default bg-transparent"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Уведомления"
-            className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-panel border border-border-subtle bg-surface shadow-xl"
-          >
-            <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
-              <span className="text-small font-semibold text-primary">
-                Уведомления
-              </span>
-              <button
-                type="button"
-                onClick={close}
-                aria-label="Закрыть"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-control text-secondary transition-colors hover:bg-surface-elevated hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
-            <div className="p-4">
-              <EmptyState
-                compact
-                icon={Bell}
-                title="Пока нет уведомлений"
-                description="События по проектам, заявкам и решениям появятся здесь."
-              />
-            </div>
-            {linkHref ? (
-              <div className="border-t border-border-subtle p-3">
-                <Link
-                  href={linkHref}
-                  onClick={close}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-control border border-border-strong text-small font-medium text-primary transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-                >
-                  Все уведомления
-                </Link>
-              </div>
-            ) : null}
+      {open && (
+        <div className="absolute right-0 top-11 w-80 rounded-2xl border border-tz-border bg-tz-surface p-2 shadow-2xl">
+          <div className="flex items-center justify-between px-3 py-2">
+            <span className="text-sm font-bold text-tz-fg">Уведомления</span>
+
           </div>
-        </>
-      ) : null}
+          <div className="max-h-80 overflow-y-auto">
+            {items.length === 0 ? (
+              <p className="px-3 py-6 text-center text-sm text-tz-muted">
+                Уведомлений пока нет
+              </p>
+            ) : (
+              items.slice(0, 20).map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => void markRead(n.id)}
+                  className={`flex w-full items-start gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-tz-surface-2 ${
+                    n.is_read ? "opacity-60" : ""
+                  }`}
+                >
+                  <span className="mt-0.5 shrink-0">
+                    {n.is_read ? (
+                      <Check size={14} className="text-tz-muted" />
+                    ) : (
+                      <span className="block h-2 w-2 rounded-full bg-[#2E5BFF]" />
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-tz-fg">
+                      {n.title}
+                    </span>
+                    <span className="block text-xs text-tz-muted">{n.created_at ?? ""}</span>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

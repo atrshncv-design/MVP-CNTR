@@ -1,95 +1,88 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Moon, Star, Sun } from "lucide-react";
-import {
-  THEMES,
-  applyTheme,
-  getSystemTheme,
-  resolveTheme,
-  type Theme,
-} from "@/lib/theme";
+import { useEffect, useState } from "react";
+import { Sun, Moon, Star } from "lucide-react";
 
-const LABELS: Record<Theme, string> = {
-  light: "Светлая",
-  dark: "Тёмная",
-  udmurt: "Удмуртская",
-};
+import type { ThemeName } from "@/lib/theme";
 
-const ICONS: Record<Theme, typeof Sun> = {
-  light: Sun,
-  dark: Moon,
-  udmurt: Star,
-};
+export type { ThemeName } from "@/lib/theme";
 
-/**
- * T-001. Переключатель тем: сегмент-контрол из трёх значений (не пилюля-кнопка).
- * role=radiogroup + radio с aria-checked, roving tabindex, стрелки влево/вправо.
- * Текущая тема читается из data-theme на <html> (уже установлен inline-скриптом
- * до гидратации — рассинхрона с серверным рендером нет).
- */
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme | null>(null);
-  const buttonsRef = useRef<Array<HTMLButtonElement | null>>([]);
+const THEMES: { id: ThemeName; label: string; Icon: typeof Sun }[] = [
+  { id: "light", label: "Светлая тема", Icon: Sun },
+  { id: "dark", label: "Тёмная тема", Icon: Moon },
+  { id: "udmurt", label: "Удмуртская тема", Icon: Star },
+];
+
+import { applyTheme, getStoredTheme } from "@/lib/theme";
+
+/** Читает сохранённую тему с учётом системной (только на клиенте). */
+export function getStoredThemeSafe(): ThemeName {
+  if (typeof window === "undefined") return "light";
+  return getStoredTheme(
+    window.localStorage,
+    window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
+}
+
+export default function ThemeToggle({ onDark = false }: { onDark?: boolean }) {
+  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<ThemeName>("light");
 
   useEffect(() => {
     (async () => {
-      const applied = document.documentElement.getAttribute("data-theme");
-      setTheme(resolveTheme(applied as Theme | null, getSystemTheme()));
+      setTheme(getStoredThemeSafe());
+      setMounted(true);
     })();
   }, []);
 
-  const select = (next: Theme) => {
-    applyTheme(next, document, window.localStorage);
+  const select = (next: ThemeName) => {
     setTheme(next);
+    applyTheme(next, { documentElement: document.documentElement, storage: window.localStorage });
   };
 
-  const onKeyDown = (event: React.KeyboardEvent, index: number) => {
-    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-    event.preventDefault();
-    const dir = event.key === "ArrowRight" ? 1 : -1;
-    const nextIndex = (index + dir + THEMES.length) % THEMES.length;
-    const next = THEMES[nextIndex];
-    select(next);
-    buttonsRef.current[nextIndex]?.focus();
-  };
+  if (!mounted) {
+    return (
+      <div
+        aria-hidden="true"
+        className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${
+          onDark ? "border-white/15" : "border-tz-border"
+        }`}
+      >
+        <Sun className="h-3.5 w-3.5 opacity-0" />
+      </div>
+    );
+  }
+
+  const base = onDark
+    ? "text-white/60 hover:bg-white/10 hover:text-white"
+    : "text-tz-secondary hover:bg-tz-soft hover:text-tz-fg";
+  const active = onDark
+    ? "bg-white/15 text-white"
+    : "bg-tz-accent-soft text-tz-accent";
 
   return (
     <div
-      role="radiogroup"
-      aria-label="Тема оформления"
-      className="inline-flex items-center gap-0.5 rounded-control border border-border-subtle bg-surface p-1"
+      role="group"
+      aria-label="Переключатель темы: светлая, тёмная, удмуртская"
+      className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${
+        onDark ? "border-white/15 bg-white/[0.06]" : "border-tz-border bg-tz-surface"
+      }`}
     >
-      {THEMES.map((value, index) => {
-        const Icon = ICONS[value];
-        const active = theme === value;
-        return (
-          <button
-            key={value}
-            ref={(el) => {
-              buttonsRef.current[index] = el;
-            }}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={LABELS[value]}
-            title={LABELS[value]}
-            tabIndex={active ? 0 : -1}
-            onClick={() => select(value)}
-            onKeyDown={(event) => onKeyDown(event, index)}
-            className={[
-              "inline-flex h-9 items-center gap-2 rounded-[6px] px-3 text-sm font-medium",
-              "transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-              active
-                ? "bg-accent-soft text-accent"
-                : "text-secondary hover:bg-accent-soft/60 hover:text-primary",
-            ].join(" ")}
-          >
-            <Icon className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">{LABELS[value]}</span>
-          </button>
-        );
-      })}
+      {THEMES.map(({ id, label, Icon }) => (
+        <button
+          key={id}
+          type="button"
+          aria-label={label}
+          aria-pressed={theme === id}
+          title={label}
+          onClick={() => select(id)}
+          className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${
+            theme === id ? active : base
+          }`}
+        >
+          <Icon className="h-3.5 w-3.5" />
+        </button>
+      ))}
     </div>
   );
 }

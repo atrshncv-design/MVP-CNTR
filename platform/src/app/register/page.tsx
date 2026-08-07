@@ -1,265 +1,233 @@
-/**
- * T-013. Регистрация, шаг 1 из 5 — данные пользователя (/register).
- * Ввод сохраняется в черновик (localStorage) при каждом изменении:
- * навигация назад/вперёд и перезагрузка не теряют данные (Design.md §14).
- * Валидация — на уровне полей, с объяснением «почему» и «что исправить».
- */
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Save } from "lucide-react";
-import { AuthShell } from "@/components/auth/auth-shell";
-import {
-  FieldWrap,
-  TextInput,
-} from "@/components/auth/form-controls";
-import { RegistrationProgress } from "@/components/auth/registration-progress";
-import {
-  EMPTY_REGISTRATION_DRAFT,
-  hasRegistrationContent,
-  isUserStepValid,
-  validateEmail,
-  validateFirstName,
-  validateLastName,
-  validateMiddleName,
-  validatePhone,
-  type RegistrationDraftData,
-} from "@/lib/registration";
-import {
-  readRegistrationDraft,
-  registerDraft,
-} from "@/lib/session";
+import { ROLES } from "@/lib/roles";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+
+type Status = "idle" | "loading" | "error";
+
+const fieldClassName =
+  "w-full rounded-lg border border-tz-border bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[#2E5BFF] focus:ring-2 focus:ring-[#2E5BFF]/20";
+const PUBLIC_REGISTRATION_ROLES = ROLES.filter((role) => !role.slug.startsWith("cntr_"));
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [draft, setDraft] = useState<RegistrationDraftData>(EMPTY_REGISTRATION_DRAFT);
-  const [ready, setReady] = useState(false);
-  const [restored, setRestored] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    full_name: "",
+    organization: "",
+    role_slug: "gk_customer",
+  });
+  const [status, setStatus] = useState<Status>("idle");
+  const [error, setError] = useState("");
 
-  /* Восстановление черновика (localStorage доступен только в браузере). */
-  useEffect(() => {
-    (async () => {
-      const saved = readRegistrationDraft();
-      if (saved && hasRegistrationContent(saved)) {
-        setDraft({ ...EMPTY_REGISTRATION_DRAFT, ...saved });
-        setRestored(true);
+  function update<K extends keyof typeof form>(key: K, value: string) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus("loading");
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          full_name: form.full_name,
+          organization: form.organization || null,
+          role_slug: form.role_slug,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setStatus("error");
+        setError(data?.detail ?? "Не удалось зарегистрироваться");
+        return;
       }
-      setReady(true);
-    })();
-  }, []);
 
-  const update = (patch: Partial<RegistrationDraftData>) => {
-    const next = { ...draft, ...patch };
-    setDraft(next);
-    registerDraft(next);
-  };
-
-  const markTouched = (field: string) =>
-    setTouched((prev) => ({ ...prev, [field]: true }));
-
-  const errors = {
-    firstName: touched.firstName ? validateFirstName(draft.firstName) : null,
-    lastName: touched.lastName ? validateLastName(draft.lastName) : null,
-    middleName: touched.middleName ? validateMiddleName(draft.middleName) : null,
-    email: touched.email ? validateEmail(draft.email) : null,
-    phone: touched.phone ? validatePhone(draft.phone) : null,
-  };
-
-  const goNext = () => {
-    setTouched({
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-    });
-    if (!isUserStepValid(draft)) return;
-    registerDraft(draft);
-    router.push("/register/organization");
-  };
-
-  if (!ready) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-canvas p-6">
-        <p role="status" className="text-small text-muted">
-          Загружаем регистрацию…
-        </p>
-      </div>
-    );
+      router.push("/login");
+    } catch {
+      setStatus("error");
+      setError("Сервис регистрации временно недоступен");
+    }
   }
 
   return (
-    <AuthShell
-      title="Регистрация"
-      subtitle={
-        <>
-          Шаг 1 из 5: данные пользователя. Уже есть аккаунт?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-accent underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            Войти
-          </Link>
-        </>
-      }
-      backHref="/"
-      backLabel="На главную"
-    >
-      <RegistrationProgress current="user" />
-
-      {restored ? (
-        <p
-          role="status"
-          className="mt-4 flex items-center gap-2 rounded-control border border-status-info/40 bg-status-info-soft px-3 py-2 text-meta text-status-info"
-        >
-          <Save className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          Черновик восстановлен — ввод сохраняется автоматически.
-        </p>
-      ) : (
-        <p className="mt-4 flex items-center gap-2 text-meta text-muted">
-          <Save className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          Ввод сохраняется автоматически — можно вернуться на любой шаг.
-        </p>
-      )}
-
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          goNext();
-        }}
-        noValidate
-        className="mt-6 space-y-5"
+    <main className="grid min-h-screen bg-tz-bg lg:grid-cols-[1.1fr_0.9fr]">
+      <section
+        className="relative hidden overflow-hidden px-12 py-14 text-white lg:flex lg:flex-col"
+        style={{ background: "var(--tz-hero-bg)" }}
       >
-        <FieldWrap
-          label="Фамилия"
-          required
-          hint="Фамилия нужна для документов и проверки организации."
-          hintId="reg-lastname-hint"
-          error={errors.lastName}
-          errorId="reg-lastname-error"
-        >
-          {({ describedBy }) => (
-            <TextInput
-              id="reg-lastname"
-              value={draft.lastName}
-              onChange={(value) => update({ lastName: value })}
-              onBlur={() => markTouched("lastName")}
-              placeholder="Иванова"
-              autoComplete="family-name"
-              describedBy={describedBy}
-            />
-          )}
-        </FieldWrap>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <FieldWrap
-            label="Имя"
-            required
-            hint="По имени Центр обращается к вам в переписке."
-            hintId="reg-firstname-hint"
-            error={errors.firstName}
-            errorId="reg-firstname-error"
-          >
-            {({ describedBy }) => (
-              <TextInput
-                id="reg-firstname"
-                value={draft.firstName}
-                onChange={(value) => update({ firstName: value })}
-                onBlur={() => markTouched("firstName")}
-                placeholder="Мария"
-                autoComplete="given-name"
-                describedBy={describedBy}
-              />
-            )}
-          </FieldWrap>
-
-          <FieldWrap
-            label="Отчество"
-            hint="Необязательно, но помогает при документах."
-            hintId="reg-middlename-hint"
-            error={errors.middleName}
-            errorId="reg-middlename-error"
-          >
-            {({ describedBy }) => (
-              <TextInput
-                id="reg-middlename"
-                value={draft.middleName}
-                onChange={(value) => update({ middleName: value })}
-                onBlur={() => markTouched("middleName")}
-                placeholder="Сергеевна"
-                autoComplete="additional-name"
-                describedBy={describedBy}
-              />
-            )}
-          </FieldWrap>
+        <div className="text-lg font-extrabold tracking-[0.08em]">ТЕХНОЗРЕЛОСТЬ</div>
+        <div className="mt-1 font-mono text-xs text-[color:var(--tz-hero-muted)]">ГОСТ Р 58048-2017</div>
+        <div className="my-auto max-w-xl">
+          <p className="font-mono text-xs uppercase tracking-[0.1em] text-[#7196FF]">
+            Единый рабочий контур ЦНТР
+          </p>
+          <h1 className="mt-5 text-5xl font-bold leading-[1.08] tracking-[-0.04em]">
+            Подключите организацию к жизненному циклу проекта
+          </h1>
+          <p className="mt-6 max-w-lg text-lg leading-relaxed text-[color:var(--tz-hero-muted)]">
+            Создайте рабочую учётную запись, чтобы вести проекты, оценивать УГТ и
+            работать с документами в едином контуре.
+          </p>
+          <div className="mt-12 grid grid-cols-9 gap-2" aria-label="Шкала УГТ от 1 до 9">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => (
+              <div
+                key={level}
+                className="border-t-4 border-[#2E5BFF] pt-2 font-mono text-xs text-[color:var(--tz-hero-muted)]"
+              >
+                УГТ {level}
+              </div>
+            ))}
+          </div>
         </div>
+        <p className="text-sm text-[color:var(--tz-hero-muted)]">Центр научно-технологического развития</p>
+      </section>
 
-        <FieldWrap
-          label="Email"
-          required
-          hint="На этот адрес придёт решение по заявке и уведомления. Он станет логином."
-          hintId="reg-email-hint"
-          error={errors.email}
-          errorId="reg-email-error"
-        >
-          {({ describedBy }) => (
-            <TextInput
-              id="reg-email"
-              type="email"
-              value={draft.email}
-              onChange={(value) => update({ email: value })}
-              onBlur={() => markTouched("email")}
-              placeholder="you@company.ru"
-              autoComplete="email"
-              inputMode="email"
-              describedBy={describedBy}
-            />
-          )}
-        </FieldWrap>
+      <section className="flex items-center justify-center px-5 py-10 sm:px-10">
+        <div className="w-full max-w-md">
+          <div className="mb-8 lg:hidden">
+            <div className="font-extrabold tracking-[0.08em] text-tz-fg">ТЕХНОЗРЕЛОСТЬ</div>
+            <div className="mt-1 font-mono text-xs text-tz-secondary">ГОСТ Р 58048-2017</div>
+          </div>
 
-        <FieldWrap
-          label="Телефон"
-          required
-          hint="Нужен для связи по заявке и запроса уточнений."
-          hintId="reg-phone-hint"
-          error={errors.phone}
-          errorId="reg-phone-error"
-        >
-          {({ describedBy }) => (
-            <TextInput
-              id="reg-phone"
-              type="tel"
-              value={draft.phone}
-              onChange={(value) => update({ phone: value })}
-              onBlur={() => markTouched("phone")}
-              placeholder="+7 (912) 000-00-00"
-              autoComplete="tel"
-              inputMode="tel"
-              describedBy={describedBy}
-            />
-          )}
-        </FieldWrap>
+          <div className="mb-8 flex items-start gap-3 rounded-xl border border-[#2E5BFF]/20 bg-[#2E5BFF]/[0.08] p-4">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2E5BFF] font-mono text-sm font-bold text-white">
+              01
+            </div>
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.08em] text-[#7196FF]">Заявка на доступ</p>
+              <p className="mt-1 text-sm leading-relaxed text-tz-secondary">
+                Заполните данные организации и выберите рабочую роль.
+              </p>
+            </div>
+          </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-border-subtle pt-5">
-          <Link
-            href="/"
-            className="inline-flex h-11 items-center gap-2 rounded-control border border-border-subtle px-4 text-small font-medium text-secondary transition-colors hover:border-border-strong hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            На главную
-          </Link>
-          <button
-            type="submit"
-            className="inline-flex h-11 items-center gap-2 rounded-control bg-accent-strong px-5 text-small font-medium text-accent-contrast transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            Далее: организация
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </button>
+          <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-secondary">Новая учётная запись</p>
+          <h2 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-tz-fg">Регистрация в платформе</h2>
+          <p className="mt-3 text-tz-secondary">
+            После регистрации вы сможете перейти к рабочему кабинету организации.
+          </p>
+
+          <form onSubmit={onSubmit} className="mt-8 space-y-5">
+            <div>
+              <label htmlFor="full_name" className="mb-2 block text-sm font-semibold text-tz-fg">
+                ФИО
+              </label>
+              <input
+                id="full_name"
+                name="full_name"
+                autoComplete="name"
+                required
+                value={form.full_name}
+                onChange={(event) => update("full_name", event.target.value)}
+                className={fieldClassName}
+                placeholder="Иванов Иван Иванович"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-tz-fg">
+                Рабочий email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={form.email}
+                onChange={(event) => update("email", event.target.value)}
+                className={fieldClassName}
+                placeholder="name@company.ru"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="organization" className="mb-2 block text-sm font-semibold text-tz-fg">
+                Организация
+              </label>
+              <input
+                id="organization"
+                name="organization"
+                value={form.organization}
+                onChange={(event) => update("organization", event.target.value)}
+                className={fieldClassName}
+                placeholder="Название организации"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="role_slug" className="mb-2 block text-sm font-semibold text-tz-fg">
+                Рабочая роль
+              </label>
+              <select
+                id="role_slug"
+                name="role_slug"
+                value={form.role_slug}
+                onChange={(event) => update("role_slug", event.target.value)}
+                className={fieldClassName}
+              >
+                {PUBLIC_REGISTRATION_ROLES.map((role) => (
+                  <option key={role.slug} value={role.slug}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs leading-relaxed text-tz-secondary">
+                Роль определяет доступные разделы рабочего кабинета.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-tz-fg">
+                Пароль
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={form.password}
+                onChange={(event) => update("password", event.target.value)}
+                className={fieldClassName}
+                placeholder="Не менее 8 символов"
+              />
+            </div>
+
+            <p aria-live="polite" className="min-h-5 text-sm text-tz-danger">
+              {status === "error" ? error : ""}
+            </p>
+
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              className="w-full rounded-lg bg-[#2E5BFF] px-4 py-3 font-bold text-white transition hover:bg-[#244BD9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E5BFF] disabled:cursor-wait disabled:opacity-60"
+            >
+              {status === "loading" ? "Создание учётной записи…" : "Создать учётную запись"}
+            </button>
+          </form>
+
+          <p className="mt-7 text-sm text-tz-secondary">
+            Уже есть аккаунт?{" "}
+            <Link href="/login" className="font-semibold text-[#7196FF] underline-offset-4 hover:underline">
+              Войти в платформу
+            </Link>
+          </p>
         </div>
-      </form>
-    </AuthShell>
+      </section>
+    </main>
   );
 }

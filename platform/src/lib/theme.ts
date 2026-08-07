@@ -1,85 +1,50 @@
 /**
- * T-001. Логика тем: чтение сохранённого выбора, резолв системной темы,
- * применение data-theme на <html>, переключение. Чистые функции без побочных
- * эффектов на сервере — DOM/Storage доступны только при явной передаче
- * (или когда window/document реально существуют).
+ * Логика трёх тем (тикет 16): чистая, без JSX — тестируется напрямую.
+ * Вынесена из components/theme-toggle.tsx.
  */
+export type ThemeName = "light" | "dark" | "udmurt";
 
-export type Theme = "light" | "dark" | "udmurt";
+export const THEME_ORDER: ThemeName[] = ["light", "dark", "udmurt"];
 
-export const THEME_STORAGE_KEY = "nfr-theme";
+const STORAGE_KEY = "tz-theme";
 
-export const THEMES: readonly Theme[] = ["light", "dark", "udmurt"];
-
-const isTheme = (value: unknown): value is Theme =>
-  value === "light" || value === "dark" || value === "udmurt";
-
-/** Прочитать сохранённый выбор из localStorage (null, если нет/невалиден/нет доступа). */
+/** Читает сохранённую/системную тему (SSR-safe). */
 export function getStoredTheme(
-  storage: Pick<Storage, "getItem"> | null | undefined = null,
-): Theme | null {
-  const s =
-    storage ??
-    (typeof window !== "undefined" ? window.localStorage : null);
-  if (!s) return null;
-  try {
-    const raw = s.getItem(THEME_STORAGE_KEY);
-    return isTheme(raw) ? raw : null;
-  } catch {
-    return null;
-  }
+  storage: Pick<Storage, "getItem"> | null = null,
+  matchDark: boolean = false,
+): ThemeName {
+  if (!storage) return "light";
+  const stored = storage.getItem(STORAGE_KEY);
+  if (stored === "dark" || stored === "udmurt") return stored;
+  if (!stored && matchDark) return "dark";
+  return "light";
 }
 
-/** Тема по системной настройке: тёмная при prefers-color-scheme: dark. */
-export function getSystemTheme(
-  prefersDark: boolean | null | undefined = null,
-): Theme {
-  const dark =
-    prefersDark ??
-    (typeof window !== "undefined"
-      ? window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false
-      : false);
-  return dark ? "dark" : "light";
-}
-
-/** Итоговая тема: ручной выбор приоритетнее системного. */
-export function resolveTheme(
-  stored: Theme | null | undefined,
-  system: Theme | null | undefined,
-): Theme {
-  return stored ?? system ?? "light";
-}
-
-/**
- * Применить тему: установить data-theme на <html> и (если storage передан
- * или доступен) сохранить выбор в localStorage. Возвращает применённую тему.
- */
+/** Применяет тему на <html> (class .dark + data-theme) и сохраняет выбор. */
 export function applyTheme(
-  theme: Theme,
-  doc: Pick<Document, "documentElement"> | null | undefined = null,
-  storage: Pick<Storage, "setItem"> | null | undefined = undefined,
-): Theme {
-  const d = doc ?? (typeof document !== "undefined" ? document : null);
-  if (d) d.documentElement.setAttribute("data-theme", theme);
-  if (storage !== undefined) {
-    const s =
-      storage ?? (typeof window !== "undefined" ? window.localStorage : null);
-    if (s) {
-      try {
-        s.setItem(THEME_STORAGE_KEY, theme);
-      } catch {
-        /* noop: недоступное хранилище не ломает применение темы */
-      }
+  theme: ThemeName,
+  env: {
+    documentElement: HTMLElement;
+    storage?: Pick<Storage, "setItem"> | null;
+  },
+) {
+  env.documentElement.classList.toggle("dark", theme === "dark");
+  if (theme === "udmurt") {
+    env.documentElement.setAttribute("data-theme", "udmurt");
+  } else {
+    env.documentElement.removeAttribute("data-theme");
+  }
+  if (env.storage) {
+    try {
+      env.storage.setItem(STORAGE_KEY, theme);
+    } catch {
+      /* localStorage недоступен — тема живёт до перезагрузки */
     }
   }
-  return theme;
 }
 
-/** Следующая тема по кругу (для cycle-жеста). */
-export function cycleTheme(
-  current: Theme,
-  order: readonly Theme[] = THEMES,
-): Theme {
-  const index = order.indexOf(current);
-  return order[(index + 1) % order.length];
+/** Циклический переход светлая → тёмная → удмуртская → светлая. */
+export function cycleTheme(current: ThemeName): ThemeName {
+  const idx = THEME_ORDER.indexOf(current);
+  return THEME_ORDER[(idx + 1) % THEME_ORDER.length];
 }
