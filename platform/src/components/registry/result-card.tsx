@@ -58,7 +58,7 @@ export function ResearchCard({ record }: { record: ResearchRecord }) {
   const year = researchYear(record);
 
   return (
-    <article className="flex min-w-0 flex-col rounded-panel border border-subtle bg-surface p-5">
+    <article className="flex flex-col rounded-panel border border-subtle bg-surface p-5">
       {/* Состояние: рег. № + статус публикации */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="font-mono text-meta text-muted">

@@ -3,7 +3,6 @@
  * История из локальных записей решений (DecisionForm) + честное пустое
  * состояние, если решений ещё нет.
  */
-"use client";
 
 import { ScrollText } from "lucide-react";
 import { readStoredOpsRecords } from "@/components/operations/decision-form";

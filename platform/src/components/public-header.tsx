@@ -29,12 +29,7 @@ function BrandMark() {
  * T-002. Публичный header (Design.md §11.1): identity Центра,
  * задача-first навигация (§4.1), глобальный поиск (entry), переключатель
  * тем, вход и primary-действие «Подать технологию».
- *
- * Breakpoints (D-02, фикс переполнения): на 1280–1535 суммарная натуральная
- * ширина (6 подписей навигации ≈600px + тема ≈348px + поиск с текстом + CTA)
- * превышает бюджет контейнера 1216px, поэтому навигация живёт в drawer
- * (бургер) до 2xl; inline-навигация возвращается только на 2xl+, где
- * контейнер расширяется до 1600px и поиск схлопывается в иконку.
+ * Мобильная навигация — drawer (бургер), текущий раздел подсвечен.
  */
 export function PublicHeader() {
   const pathname = usePathname();
@@ -68,7 +63,7 @@ export function PublicHeader() {
 
   const navLinkClasses = (active: boolean) =>
     [
-      "inline-flex h-10 items-center rounded-control px-2 text-small font-medium transition-colors",
+      "inline-flex h-10 items-center rounded-control px-3 text-small font-medium transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
       active
         ? "bg-accent-soft text-accent"
@@ -77,7 +72,7 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-subtle bg-canvas/85 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 md:px-8 2xl:max-w-[1600px] 2xl:gap-2">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 md:px-8 2xl:max-w-[1600px]">
         {/* Identity */}
         <Link
           href="/"
@@ -89,18 +84,16 @@ export function PublicHeader() {
             <span className="truncate text-small font-semibold text-primary">
               ЦНТР Удмуртии
             </span>
-            <span className="hidden truncate text-meta text-muted 2xl:block">
+            <span className="hidden truncate text-meta text-muted sm:block">
               Центр научно-технологического развития
             </span>
           </span>
         </Link>
 
-        {/* Задача-first навигация (desktop). Inline только на 2xl+: на
-           1280–1535 суммарная ширина (6 подписей + тема + поиск + CTA)
-           превышает бюджет контейнера, поэтому навигация живёт в drawer. */}
+        {/* Задача-first навигация (desktop) */}
         <nav
           aria-label="Разделы платформы"
-          className="ml-2 hidden items-center gap-0 2xl:flex"
+          className="ml-4 hidden items-center gap-0.5 xl:flex"
         >
           {PUBLIC_TASK_NAV.map((item) => {
             const active = isTaskActive(pathname, item.href);
@@ -118,48 +111,41 @@ export function PublicHeader() {
         </nav>
 
         {/* Правая группа */}
-        <div className="ml-auto flex items-center gap-1.5 md:gap-2 2xl:gap-1.5">
-          {/* Поиск-entry: иконочная кнопка 44px на всех ширинах — текстовая
-              версия с kbd переполняла хедер на 1024–1535 (scrollWidth 1474
-              при viewport 1280; span/kbd вложены в кнопку, поэтому селектор
-              [&_button_span]). Модалка поиска открывается из иконки;
-              текстовая версия есть в мобильном drawer. */}
-          <div className="[&_button_span]:hidden [&_button_kbd]:hidden">
-            <GlobalSearch />
-          </div>
-          <div className="hidden lg:block">
+        <div className="ml-auto flex items-center gap-1.5 md:gap-2">
+          <GlobalSearch />
+          <div className="hidden xl:block">
             <ThemeToggle />
           </div>
           <Link
             href="/login"
-            className="hidden h-11 items-center rounded-control px-3 text-small font-medium text-secondary transition-colors hover:bg-surface-elevated hover:text-primary md:inline-flex 2xl:px-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            className="hidden h-10 items-center rounded-control px-3 text-small font-medium text-secondary transition-colors hover:bg-surface-elevated hover:text-primary md:inline-flex focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             Войти
           </Link>
           <Link
             href="/register"
-            className="hidden h-11 items-center rounded-control bg-accent-strong px-4 text-small font-medium text-accent-contrast transition-colors hover:opacity-90 md:inline-flex 2xl:px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            className="hidden h-10 items-center rounded-control bg-accent-strong px-4 text-small font-medium text-accent-contrast transition-colors hover:opacity-90 md:inline-flex focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             Подать технологию
           </Link>
 
-          {/* Бургер (drawer: <2xl) */}
+          {/* Бургер */}
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="Открыть меню"
             aria-expanded={menuOpen}
             aria-controls="public-mobile-menu"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border-subtle bg-surface text-primary transition-colors hover:border-border-strong 2xl:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border-subtle bg-surface text-primary transition-colors hover:border-border-strong xl:hidden"
           >
             <Menu className="h-5 w-5" aria-hidden />
           </button>
         </div>
       </div>
 
-      {/* Drawer (навигация + поиск + тема + CTA): <2xl */}
+      {/* Мобильный drawer */}
       {menuOpen ? (
-        <div className="fixed inset-0 z-50 2xl:hidden" id="public-mobile-menu">
+        <div className="fixed inset-0 z-50 xl:hidden" id="public-mobile-menu">
           {/* Оверлей */}
           <button
             type="button"

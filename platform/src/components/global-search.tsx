@@ -43,12 +43,12 @@ export function GlobalSearch() {
         className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-control border border-border-subtle bg-surface px-2.5 text-secondary transition-colors hover:border-border-strong hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring xl:h-10 xl:min-w-10"
       >
         <Search className="h-[18px] w-[18px] shrink-0" aria-hidden />
-        <span className="hidden whitespace-nowrap text-small xl:inline">
+        <span className="hidden whitespace-nowrap text-small 2xl:inline">
           Поиск по платформе
         </span>
         <kbd
           aria-hidden
-          className="hidden rounded-[4px] border border-border-subtle bg-canvas px-1.5 py-0.5 font-mono text-meta text-muted xl:inline"
+          className="hidden rounded-[4px] border border-border-subtle bg-canvas px-1.5 py-0.5 font-mono text-meta text-muted 2xl:inline"
         >
           /
         </kbd>

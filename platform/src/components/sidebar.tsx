@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { SectionDef } from "@/lib/roles";
 import { findDeepestSection } from "@/lib/roles";
-import { GeometryDivider } from "@/components/udmurt/geometry-divider";
 
 /** Знак Центра: восьмиконечная звезда (толязь) на акцентной плашке. */
 function BrandMark() {
@@ -72,10 +71,9 @@ export function Sidebar({
 
   const rowClasses = (active: boolean) =>
     [
-      "relative flex items-center rounded-control font-medium transition-colors",
+      "flex items-center rounded-control font-medium transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-      // D-09: строки ≥44px (тач-цели и плотность сайдбара), маркер активного раздела — полоса 3px слева.
-      dense ? "h-11 gap-2 rounded-[6px] px-2.5 text-small" : "h-11 gap-2.5 px-3 text-small",
+      dense ? "h-8 gap-2 rounded-[6px] px-2.5 text-small" : "h-10 gap-2.5 px-3 text-small",
       active
         ? "bg-accent-soft text-accent"
         : "text-secondary hover:bg-surface-elevated hover:text-primary",
@@ -110,11 +108,8 @@ export function Sidebar({
           return (
             <div
               key={group.title ?? `group-${index}`}
-              className={index > 0 ? "mt-2.5" : undefined}
+              className={index > 0 ? "mt-5" : undefined}
             >
-              {/* D-09: разделитель ролевых секций — GeometryDivider (D-06):
-                  в udmurt-теме ряд звёзд «толэзё», в светлой/тёмной — тонкая линия. */}
-              {index > 0 ? <GeometryDivider className="mb-2.5" /> : null}
               {group.title ? (
                 <p
                   className={`mb-1.5 font-medium uppercase tracking-wider text-muted ${
@@ -136,13 +131,6 @@ export function Sidebar({
                         aria-current={active ? "page" : undefined}
                         className={rowClasses(active)}
                       >
-                        {/* D-09: маркер активного раздела — полоса 3px слева (токен акцента). */}
-                        {active ? (
-                          <span
-                            aria-hidden
-                            className="absolute left-0 top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-full bg-accent"
-                          />
-                        ) : null}
                         <Icon
                           className={`shrink-0 ${dense ? "h-4 w-4" : "h-[18px] w-[18px]"}`}
                           aria-hidden

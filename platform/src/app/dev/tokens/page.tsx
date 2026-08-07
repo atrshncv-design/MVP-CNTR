@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import nioktrDemo from "@/data/nioktr-demo.json";
-import { UGT_LEVEL_COLORS } from "@/lib/ugt";
 
 /**
  * T-001. Dev-демо-страница визуальной проверки дизайн-системы в трёх темах.
@@ -95,6 +94,12 @@ const UGT_LEVELS = [
   { level: 8, band: "high", name: "Серия 0" },
   { level: 9, band: "high", name: "Производство" },
 ] as const;
+
+const bandColor = {
+  low: "text-ugt-low",
+  medium: "text-ugt-medium",
+  high: "text-ugt-high",
+} as const;
 
 type NioktrCard = {
   registration_number: string;
@@ -185,7 +190,7 @@ export default function TokensDemoPage() {
         <Section
           id="typography"
           title="Типографика"
-          intro="Unbounded — акцидентный display-гротеск для заголовков, Golos Text — рабочая гарнитура текста, IBM Plex Mono — только идентификаторы и метаданные. Предложение по умолчанию, переносы естественные."
+          intro="Golos Text — рабочая гарнитура, IBM Plex Mono — только идентификаторы и метаданные. Предложение по умолчанию, переносы естественные."
         >
           <div className="space-y-5">
             <div>
@@ -472,14 +477,12 @@ export default function TokensDemoPage() {
                   className="flex w-[68px] flex-col items-center gap-1.5"
                 >
                   <span
-                    className="ugt-marker"
-                    style={{ color: UGT_LEVEL_COLORS[item.level - 1] }}
+                    className={`ugt-marker ${bandColor[item.band]} ${item.level > 5 ? "is-pending" : ""}`}
                   >
                     <span className="sr-only">Уровень {item.level}</span>
                   </span>
                   <span
-                    className="font-mono text-body font-semibold"
-                    style={{ color: UGT_LEVEL_COLORS[item.level - 1] }}
+                    className={`font-mono text-body font-semibold ${bandColor[item.band]}`}
                   >
                     {item.level}
                   </span>
