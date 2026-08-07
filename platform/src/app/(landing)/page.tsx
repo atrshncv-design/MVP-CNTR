@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import Reveal from "@/components/landing/reveal";
 import LivingRadar from "@/components/landing/living-radar";
+import { GeometryDivider } from "@/components/udmurt/geometry-divider";
+import { SectionMark } from "@/components/udmurt/section-mark";
 import { UGTScaleStrip } from "@/components/landing/ugt-card";
 import { UGT_LEVELS } from "@/lib/ugt-data";
 import { ROLES } from "@/lib/roles";
@@ -99,7 +101,7 @@ export default function LandingHome() {
               <p className="tz-eyebrow">ЦНТР Удмуртии · Цифровая платформа трансфера технологий</p>
             </Reveal>
             <Reveal delay={0.05}>
-              <h1 className="mt-4 font-display text-[clamp(2rem,5vw+0.5rem,3.2rem)] font-extrabold leading-[1.08] tracking-tight text-tz-fg">
+              <h1 className="mt-4 font-display text-[clamp(1.375rem,2.25vw+0.25rem,2rem)] font-extrabold leading-[1.12] tracking-tight text-tz-fg">
                 Путь технологии от идеи до серийного производства —{" "}
                 <span className="tz-grad-text">на одной платформе</span>
               </h1>
@@ -134,6 +136,9 @@ export default function LandingHome() {
         </div>
       </section>
 
+      {/* ── Удмуртский орнамент: разделитель (видим в udmurt-теме) ── */}
+      <GeometryDivider />
+
       {/* ── Тёплая шкала УГТ ─────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
         <Reveal>
@@ -159,7 +164,7 @@ export default function LandingHome() {
       <section className="border-y border-tz-border/60 bg-tz-surface/40">
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <Reveal>
-            <p className="tz-eyebrow">Как это работает</p>
+            <SectionMark label="Как это работает" className="tz-eyebrow" />
             <h2 className="mt-3 max-w-xl tz-page-title">
               Три шага от оценки до внедрения
             </h2>
@@ -187,10 +192,13 @@ export default function LandingHome() {
         </div>
       </section>
 
+      {/* ── Удмуртский орнамент: разделитель (видим в udmurt-теме) ── */}
+      <GeometryDivider />
+
       {/* ── 9 ролей ──────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <Reveal>
-          <p className="tz-eyebrow">Экосистема участников</p>
+          <SectionMark label="Экосистема участников" className="tz-eyebrow" />
           <h2 className="mt-3 max-w-2xl tz-page-title">
             Девять ролей — каждый участник работает в своём кабинете
           </h2>
@@ -225,7 +233,7 @@ export default function LandingHome() {
           <Reveal>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="tz-eyebrow">Методика</p>
+                <SectionMark label="Методика" className="tz-eyebrow" />
                 <h2 className="mt-3 tz-page-title">Что означает каждый уровень</h2>
               </div>
               <Link href="/methodology" className="tz-btn tz-btn-ghost tz-btn-sm">
@@ -268,6 +276,9 @@ export default function LandingHome() {
           </div>
         </div>
       </section>
+
+      {/* ── Удмуртский орнамент: разделитель (видим в udmurt-теме) ── */}
+      <GeometryDivider />
 
       {/* ── Финальный CTA ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">

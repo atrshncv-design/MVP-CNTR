@@ -2,6 +2,8 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth.config";
 import NotificationBell from "@/components/notification-bell";
 import ThemeToggle from "@/components/theme-toggle";
+import { UdmurtStar } from "@/components/udmurt/star";
+import "@/components/udmurt/udmurt.css";
 
 const navigation = [
   { href: "/dashboard", label: "Рабочий стол" },
@@ -28,8 +30,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#0a101f]/80 backdrop-blur-xl">
         <div className="mx-auto flex min-h-[64px] max-w-[1440px] items-center gap-8 px-5 sm:px-8">
           <Link href="/dashboard" className="group flex shrink-0 items-center gap-2.5">
+            {/* Удмуртская тема: вместо плашки «ТЗ» — звезда «толэзё» (CSS-переключатель d06) */}
             <span
-              className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-[#2e5bff] via-[#7c5cff] to-[#00d4c8] font-mono text-[13px] font-bold text-white shadow-[0_4px_18px_rgba(90,100,255,0.45)] transition-transform group-hover:scale-105"
+              aria-hidden="true"
+              className="d06-udmurt-only items-center justify-center"
+            >
+              <UdmurtStar size={26} />
+            </span>
+            <span
+              className="d06-neutral-only grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-[#2e5bff] via-[#7c5cff] to-[#00d4c8] font-mono text-[13px] font-bold text-white shadow-[0_4px_18px_rgba(90,100,255,0.45)] transition-transform group-hover:scale-105"
               aria-hidden="true"
             >
               ТЗ

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, JetBrains_Mono } from "next/font/google";
+import "@fontsource-variable/unbounded";
 import "./globals.css";
 import Providers from "@/components/providers";
 

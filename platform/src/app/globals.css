@@ -21,6 +21,7 @@
 
   /* Акцент — глубокий ink-синий (D2) */
   --tz-accent: #1e3a8a;
+  --accent: var(--tz-accent); /* алиас для udmurt-компонентов (звезда/орнамент) */
   --tz-accent-hover: #1d4ed8;
   --tz-accent-soft: rgba(30, 58, 138, 0.08);
   --tz-accent-strong: #172554;
@@ -116,6 +117,7 @@
   --tz-card-border: #213055;
 
   --tz-accent: #2563eb;
+  --accent: var(--tz-accent); /* алиас для udmurt-компонентов (звезда/орнамент) */
   --tz-accent-hover: #60a5fa;
   --tz-accent-soft: rgba(59, 130, 246, 0.14);
   --tz-accent-strong: #1e3a8a;
@@ -211,6 +213,7 @@
 
   /* Акцент — красный концепции А */
   --tz-accent: #d63031;
+  --accent: var(--tz-accent); /* алиас для udmurt-компонентов (звезда/орнамент) */
   --tz-accent-hover: #b52829;
   --tz-accent-soft: rgba(214, 48, 49, 0.09);
   --tz-accent-strong: #8e1c1d;
@@ -293,7 +296,7 @@
 /* ─── Маппинг в Tailwind v4 @theme inline ─────────────────────────────── */
 @theme inline {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Unbounded Variable", var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Consolas, monospace;
 
   /* Семантические утилиты: bg-tz-*, text-tz-*, border-tz-* */
