@@ -4,9 +4,11 @@
 
 **Blocked by:** repo-hygiene/04 — Проверка чистого клона.
 
-**Status:** ready-for-agent
+**Status:** ready-for-review
 
-- [ ] Все маршруты и endpoints сопоставлены с ролями и источниками данных.
-- [ ] Моки, dead controls, fallback data и отсутствующие backend-проверки перечислены.
-- [ ] Каждому разрыву назначены severity и рекомендуемое действие: fix, hide или in-development.
-- [ ] Отдельно отмечены генерация документов и AI-доступ к данным.
+- [x] Все маршруты и endpoints сопоставлены с ролями и источниками данных.
+- [x] Моки, dead controls, fallback data и отсутствующие backend-проверки перечислены.
+- [x] Каждому разрыву назначены severity и рекомендуемое действие: fix, hide или in-development.
+- [x] Отдельно отмечены генерация документов и AI-доступ к данным.
+
+Результат: `.scratch/release-audit/evidence-matrix.md` (10.08.2026).
