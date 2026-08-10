@@ -19,6 +19,38 @@
 
 **MVP1 «Технозрелость» — готов к сдаче 31.08.2026** (пайплайн: спека → тикеты → реализация → QA)
 
+
+## Тикет 02 (repo-hygiene/canonical-layout) — 10.08.2026
+- ✅ Каноническая структура зафиксирована: `docs/canonical-layout.md` (канонические приложения frontend/backend, целевые каталоги frontend/, backend/, infra/, docs/, tests/, обоснование будущего expand/migrate/contract тикета).
+- ✅ `README.md` создан: одна процедура setup/test/build только по каноническим путям `technozrelost-frontend/` и `technozrelost-backend/`.
+- ✅ Корневой `.gitignore` исправлен: литеральные «\n» заменены отдельными строками; добавлены .env/.env.* с исключениями `.env.example`/`.env.production.example`; node_modules/.next/.venv/__pycache__/build/dist/coverage/logs/.DS_Store/ГОСТЫ/Данные для тестового реестра/; рудимент `.git_backup_mvp0/` удалён (каталог не существует).
+- ✅ Аудит CI/скриптов на legacy-пути: 0 совпадений в $WT, technozrelost-frontend, technozrelost-backend (только чтение).
+- ✅ Тикет переведён в `Status: ready-for-review` (commit/push — за оркестратором).
+
+## Тикет 03 (repo-hygiene/remove-junk) — 10.08.2026
+- ✅ Составлен `removal-plan.md` (`.scratch/repo-hygiene/removal-plan.md`): 3 группы — (1) пересоздаваемые артефакты (в $WT мусор не найден; артефакты в чужих worktree задокументированы с командами восстановления, не удалялись); (2) обратимые удаления; (3) запрещённые в этом запуске (ГОСТЫ/, Данные для тестового реестра/, КОД MVP "0"…, new-front/platform, ветка new-front, архивы, tracked-исходники) с владельцем/риском/бэкапом.
+- ✅ Удалён старый worktree `.worktrees/repo-hygiene-inventory` (ветка `codex/repo-hygiene-inventory`, HEAD c2964a2): дерево было чистым, `git worktree remove` выполнен БЕЗ `--force`; ветка сохранена. Внутри $WT пересоздаваемого мусора не найдено (find: 0 совпадений; `git status --porcelain --ignored`: 0 `!!`).
+- ✅ Проверки: tracked-состояние канонических worktree (frontend 69 / backend 612 строк porcelain) идентично ДО/ПОСЛЕ; `git diff --check` чист; lock-файлы на месте (`technozrelost-frontend/package-lock.json`, `technozrelost-backend/uv.lock`) — артефакты пересоздаваемы (npm ci / uv sync --all-extras).
+- ✅ Замечание: в корневом `.gitignore` нет `.pytest_cache/` (покрыт в `technozrelost-backend/.gitignore` стр. 8) — правка не вносилась, отмечено в отчёте.
+- ✅ Тикет переведён в `Status: ready-for-review` (commit/push — за оркестратором).
+## Тикет 04 (repo-hygiene/clean-clone) — 10.08.2026
+- ✅ Clean-clone gate выполнен в чистом клоне /tmp/tz-repo-hygiene/clean-clone (HEAD a01a27b; commit за оркестратором): полный отчёт `.scratch/repo-hygiene/clean-clone-report.md`; тикет 04 переведён в `Status: ready-for-review` (не done).
+- ✅ Frontend (codex/recovery-frontend, HEAD 08511a1): npm ci → lint → tsc --noEmit → build → test — все PASS (14/14 тестов); сборка не требует секретов (`.env.local` не создавался).
+- ⚠️ Backend (release/friday-rc, HEAD 9e6cccc): uv sync PASS; alembic/pytest/health BLOCKED — БД недоступна (docker daemon не запущен, порты 5432/5433 закрыты, connection refused); ruff FAIL — 4×E501 (line too long) в alembic/versions 0007/0009/0010/0013.
+- ✅ Матрица check-ignore зелёная: .env/.env.local/node_modules/.next/.venv/app.log/.DS_Store — ignore; .env.example/.env.production.example — не игнорируются; `.env.example` tracked на release/friday-rc (клонируется).
+- ⚠️ Наблюдения: на codex/recovery-frontend отсутствует `.env.local.example` (README упоминает `cp .env.local.example .env.local` — сборка прошла без него); на release/friday-rc нет корневого `.gitignore` (node_modules/.next не игнорируются веткой; исправленный корневой `.gitignore` придёт из ветки тикета); CI (.github/workflows) отсутствует — критерий 3 deferred.
+
+## Правка по ревью (repo-hygiene 02–04) — 10.08.2026
+- 🔧 Тикет 02: `docs/canonical-layout.md` уточнён — явные источники истины (только `technozrelost-frontend/` @08511a1 и `technozrelost-backend/` @9e6cccc), отдельное обоснование отложенной физической консолидации (expand–migrate–contract) и явная формулировка «раздельные ветки/worktree ≠ завершённая консолидация».
+- 🔧 Тикет 03: `removal-plan.md` — у каждого кандидата статус `retained` / `archive-pending` / `deletion-pending`, для ценных материалов (`ГОСТЫ/`, `Данные для тестового реестра/`, legacy) — `approval required` + `backup gate`; acceptance criterion «перенос в docs/archive» честно помечен как невыполненный (NOT DONE) — требуется авторизованный тикет.
+- 🔧 Тикет 04: добавлен CI `.github/workflows/repo-hygiene.yml` (check-ignore матрица, tracked secret-like files, secret scan с маскированным выводом, generated artifacts) — 4 шага валидированы локально PASS; clean-clone-report.md дополнен фактическими результатами и Backlog (ruff 4×E501, npm audit 2 high, отсутствие `.env.local.example`); backend БД-проверки остаются BLOCKED (docker не запущен, команды воспроизведения — в отчёте).
+- 🔧 README.md: убрана ссылка на отсутствующий `.env.local.example` — описана фактическая процедура (`npm ci`; `.env.local` не требуется для build/lint/typecheck/test, при необходимости создаётся вручную; значения в git не попадают).
+- ✅ Тикеты 02, 03, 04 остаются в `Status: ready-for-review` (не done); `git diff --check` — чисто; commit/push не выполнялись.
+
+## Приёмка оркестратора (repo-hygiene 02–04) — 10.08.2026
+- ✅ Тикеты 02–04 проверены оркестратором и приняты как `ready-for-review` (НЕ done). Финальное состояние подготовлено:
+  - В файлы тикетов 02/03/04 добавлены Acceptance notes: канонические источники (только `technozrelost-frontend/` @08511a1 и `technozrelost-backend/` @9e6cccc), отложенная физическая консолидация ≠ выполненная, статусы кандидатов retained/archive-pending/deletion-pending, перенос в `docs/archive` — только по отдельному ручному approval (критерий «перенос в docs/archive» — NOT DONE), CI workflow сохранён (ad-hoc 12/12 PASS, реальный GitHub Actions — после push), backend БД-проверки — BLOCKED (не маскировались).
+- ✅ Новых удалений не выполнялось; `ГОСТЫ/` и тестовые данные не перемещались; секретов в отчётах нет (скан чист); `git diff --check` — чисто; `git add/commit/push` не выполнялись.
 ## Актуальная фаза (03.08.2026)
 - ✅ Интервью-продолжение (19 решений) завершено — лог: `.scratch/mvp1-release/interview-log.md`
 - ✅ **Спека обновлена** (`.scratch/mvp1-release/spec.md`, 03.08): новое ядро продукта — экспресс-оценка УГТ любым пользователем → проект-черновик → апрув менеджера (присвоение официального УГТ) → два реестра (общий + технологии УГТ 7+) → автозаявка на повышение N→N+1 по полноте комплекта документов → предварительная оценка по ГОСТам → верификация менеджером. Роль «Эксперт УГТ» → **«Регулирующая организация»** (join по токену → документы подтверждения). Демо-маршрут №18, критерии приёмки №19 (чек-лист 6 шагов).

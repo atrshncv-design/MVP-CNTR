@@ -1,0 +1,77 @@
+name: repo-hygiene
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  hygiene:
+    name: Repository hygiene and secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: .gitignore covers key patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in .env .env.local node_modules/ .next/ .venv/ __pycache__/ dist/ build/ "*.log" .DS_Store; do
+            if ! git check-ignore -q --no-index "$p"; then
+              echo "::error::pattern NOT ignored: $p"
+              exit 1
+            fi
+          done
+          for p in .env.example .env.production.example; do
+            if git check-ignore -q --no-index "$p"; then
+              echo "::error::template should NOT be ignored: $p"
+              exit 1
+            fi
+          done
+          echo "OK: .gitignore matrix"
+
+      - name: No tracked secret-like files
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Ищем tracked-файлы, похожие на секреты (.env, *.pem, *.key).
+          # Выводятся ТОЛЬКО имена файлов, содержимое никогда не печатается.
+          if git ls-files | grep -E '(^|/)\.env([.-][^/]*)?$|\.(pem|key)$' | grep -vE '\.(example|production\.example)$'; then
+            echo "::error::tracked secret-like file found (names above, contents NOT shown)"
+            exit 1
+          fi
+          echo "OK: no tracked .env/.pem/.key files"
+
+      - name: Secret scan (masked output)
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS= read -r pattern; do
+            # -o печатает только совпадение; awk заменяет его на <masked>.
+            # Значение секрета НИКОГДА не попадает в лог.
+            if git grep -nI -oE "$pattern" -- . ':!node_modules' ':!.next' ':!.venv' | awk -F: '{print "  "$1":"$2": <masked>"}'; then
+              echo "::error::secret pattern matched: $pattern"
+              found=1
+            fi
+          done < <(printf '%s\n' \
+            'AKIA[0-9A-Z]{16}' \
+            'ghp_[A-Za-z0-9]{36}' \
+            'xox[baprs]-' \
+            '-----BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY')
+          if [ "$found" -ne 0 ]; then
+            exit 1
+          fi
+          echo "OK: secret scan clean"
+
+      - name: No generated artifacts in working tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git status --porcelain --ignored=matching | grep -qE '^!! (node_modules/|\.next/|\.venv/|dist/|build/|__pycache__/)'; then
+            echo "::error::generated build artifacts present in working tree"
+            git status --porcelain --ignored=matching | grep -E '^!! ' | cut -c1-80 | head -20 || true
+            exit 1
+          fi
+          echo "OK: no generated artifacts"

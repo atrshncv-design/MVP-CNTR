@@ -4,9 +4,18 @@
 
 **Blocked by:** 02 — Каноническая структура монорепо.
 
-**Status:** ready-for-agent
+**Status:** ready-for-review
 
 - [ ] Удалены только позиции из одобренного inventory; материальные удаления перечислены в отчёте.
 - [ ] Ценные материалы перенесены в docs/archive и помечены как неканонические.
 - [ ] `.gitignore` покрывает env, caches, builds, logs, QA data и локальные worktree.
 - [ ] Полный build/test после удаления зелёный.
+
+## Comments
+
+### Acceptance notes (по ревью оркестратора, 10.08.2026)
+
+- Ценные материалы остаются на месте и не перемещались: `ГОСТЫ/` (70M), `Данные для тестового реестра/` (395M), `КОД MVP "0" 210726 - ТОЛЬКО ФРОНТЭНД/` (11M), архивы.
+- `removal-plan.md` содержит статус каждого кандидата: `retained` / `archive-pending` / `deletion-pending` (+ `approval required` / `backup gate` для ценных материалов).
+- Перенос в `docs/archive` (включая `КОД MVP "0"…`, статус archive-pending) требует ОТДЕЛЬНОГО ручного approval Functional Validator/оркестратора.
+- Acceptance criterion «ценные материалы перенесены в docs/archive» — **НЕ выполнен (NOT DONE)**; выполнение не заявляется, требуется авторизованный тикет.
