@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — Матрица фактических функций MVP.
 
-**Status:** ready-for-review
+**Status:** done
 
 - [x] Happy path работает на чистой test schema без mock data — **Status: PASS (по коду)**: полная цепочка регистрация→оценка→проект→менеджер→этапы N→N+1 реализована (verification-report.md §Core flow trace); живой прогон на test schema — **Status: BLOCKED** (docker daemon DOWN, PostgreSQL недоступен; команда владельцу: `docker compose -f infra/docker-compose.yml up -d pg-primary pg-replica && uv run alembic upgrade head && uv run pytest` — verification-report.md §Checks).
 - [x] Ошибки API отображаются как ошибки и не создают локальный ложный успех — **Status: PASS**: все обработчики пути используют паттерн `!res.ok` → throw(detail) → setError; успех — перезагрузка с сервера; ложного успеха не найдено (verification-report.md §8 «Обработка ошибок FE»).

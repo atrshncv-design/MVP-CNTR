@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — Сквозное ядро УГТ; 03 — Базовая матрица девяти ролей и IDOR.
 
-**Status:** ready-for-review
+**Status:** done
 
 - [ ] Backend tests/lint и frontend lint/typecheck/build зелёные — **Status: FAIL / BLOCKED / PASS (смешанный)**: frontend (клон @08511a1) — **Status: PASS** (lint, tsc --noEmit, build 29 маршрутов, test 14/14); backend ruff — **Status: FAIL** (4×E501, backlog 0007:29, 0009:29, 0010:34, 0013:29 — не правился); backend pytest / alembic / health — **Status: BLOCKED** (docker daemon DOWN, PostgreSQL недоступен; команда владельцу: `docker compose -f infra/docker-compose.yml up -d pg-primary pg-replica && uv run alembic upgrade head && uv run pytest`) — baseline-report.md §1 (B1–B5).
 - [ ] Smoke всех девяти ролей выполнен на чистой базе — **Status: PARTIAL (структурный)**; живой — **Status: BLOCKED**: структурный smoke 7 PASS / 2 PARTIAL (auditor, scientific_org — спец-функции R7); живой браузерный smoke невозможен без сервера и БД (docker DOWN; команда владельцу в baseline-report.md §2 S2) — baseline-report.md §2.

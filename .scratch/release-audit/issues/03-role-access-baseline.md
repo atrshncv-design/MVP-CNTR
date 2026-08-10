@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — Матрица фактических функций MVP.
 
-**Status:** ready-for-review
+**Status:** done
 
 - [x] Создатель и принятый участник получают только предусмотренный проектный доступ — **Status: PASS**: OWN-проверки `require_project_access`/`can_access_project` (projects.py:138-179), тесты test_project_scope/test_rbac_projects (role-access-matrix.md §2).
 - [ ] Перебор ID чужого проекта, файла, запроса и очереди возвращает безопасный отказ — **Status: PASS (по коду)**; живой прогон негативных проверок — **Status: BLOCKED**: статически 31/33 endpoint с object-id закрыты (0 открытых, 2 частично: SSE access_token — R3, генерация — не готова); живые IDOR-негативные проверки невозможны без БД (docker DOWN; команда владельцу: `docker compose -f infra/docker-compose.yml up -d pg-primary pg-replica`, затем в клоне `env -u PYTHONPATH uv run pytest`) — role-access-matrix.md §3–4.

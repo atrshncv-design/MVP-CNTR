@@ -4,7 +4,7 @@
 
 **Blocked by:** repo-hygiene/04 — Проверка чистого клона.
 
-**Status:** ready-for-review
+**Status:** done
 
 - [x] Все маршруты и endpoints сопоставлены с ролями и источниками данных.
 - [x] Моки, dead controls, fallback data и отсутствующие backend-проверки перечислены.
