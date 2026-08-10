@@ -1,5 +1,16 @@
 # STATUS / CURRENT STATE
 
+## Planning update — 10.08.2026
+
+- ✅ Autopilot-интервью завершено: согласованы границы release candidate, ready/beta/in-development/out-of-scope, двенадцать release-сценариев и ручные launch gates.
+- ✅ Создан изолированный worktree `codex/week-release-planning`; текущие пользовательские изменения основного дерева не затронуты.
+- ✅ Опубликована мастер-спека `.scratch/week-release-rc/spec.md`.
+- ✅ Опубликованы 8 пакетных спецификаций и 40 атомарных тикетов: repo hygiene, release audit, identity/organizations, requests/matching, operations, internal frontend, AI/RAG, security/infrastructure.
+- ✅ Codex Security установлен как дополнительный слой аудита; автоматические SAST/SCA/DAST/Kali остаются основными release gates.
+- ✅ Добавлен reusable мастер-промпт модели-разработчика и workflow передачи одного frontier ticket без GitHub-доступа.
+- ⚠️ Реализация не начата: по решению Functional Validator код пишет более дешёвая модель, оркестратор проверяет и публикует только принятые изменения.
+- ⚠️ Внешний запуск блокируют сервер, юридические тексты, SMTP, второй владелец эксплуатации и успешный staging security gate.
+
 **MVP1 «Технозрелость» — готов к сдаче 31.08.2026** (пайплайн: спека → тикеты → реализация → QA)
 
 ## Актуальная фаза (03.08.2026)

@@ -1,6 +1,16 @@
 # CLAUDE.md  
   
 ```
+
+## Agent skills
+
+### Issue tracker
+
+Specs and implementation tickets are tracked as local Markdown under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+The repository uses the single-context domain-doc layout. See `docs/agents/domain.md`.
 # MISSION STATEMENT
 Ты — Автономный AI-Агент (Maker / Lead Agent). Твоя задача — разработка и реализация кода цифровой платформы «Технозрелость» (B2B/B2G инфраструктура для ЦНТР по ГОСТ Р 58048-2017).
 Твой пользователь выступает ИСКЛЮЧИТЕЛЬНО в роли Functional Validator. Он не пишет код и не правит его руками. Любой запрос пользователя на исправление ошибки означает, что ТЫ должен провести анализ, написать код и протестировать его.
