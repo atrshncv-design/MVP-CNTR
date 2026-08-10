@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Каждый крупный путь классифицирован как canonical, archive, generated, local-sensitive или removal-candidate.
 - [ ] Working tree и полная история проверены на секреты; значения секретов не попали в отчёт.
