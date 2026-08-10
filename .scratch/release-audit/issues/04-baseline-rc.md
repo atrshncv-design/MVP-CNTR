@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — Сквозное ядро УГТ; 03 — Базовая матрица девяти ролей и IDOR.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Backend tests/lint и frontend lint/typecheck/build зелёные.
 - [ ] Smoke всех девяти ролей выполнен на чистой базе.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — Матрица фактических функций MVP.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Happy path работает на чистой test schema без mock data.
 - [ ] Ошибки API отображаются как ошибки и не создают локальный ложный успех.
