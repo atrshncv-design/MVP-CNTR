@@ -3,19 +3,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FileCheck, FileText, Loader2, ShieldCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import {
+  getProjectDetail,
+  getProjects,
+  uploadVerificationDoc,
+  type VerificationDocument,
+} from "@/lib/api-client";
 
 type Project = { id: number; name: string; current_level: number };
-
-type VerificationDoc = {
-  id: number;
-  title: string;
-  comment: string | null;
-  file_ref: string | null;
-  uploader_name: string | null;
-  created_at: string | null;
-};
 
 function formatDate(value: string | null): string {
   if (!value) return '';
@@ -30,7 +25,7 @@ export default function VerificationDocsPanel() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState('');
-  const [docs, setDocs] = useState<VerificationDoc[]>([]);
+  const [docs, setDocs] = useState<VerificationDocument[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
@@ -47,12 +42,8 @@ export default function VerificationDocsPanel() {
       }
       setDocsLoading(true);
       try {
-        const res = await fetch(`${API_URL}/api/v1/projects/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error(`Не удалось загрузить карточку проекта (${res.status}).`);
-        const data = (await res.json()) as { verification_documents?: VerificationDoc[] };
-        setDocs(data.verification_documents ?? []);
+        const detail = await getProjectDetail(token, Number(id));
+        setDocs(detail.verification_documents ?? []);
       } catch {
         setDocs([]);
       } finally {
@@ -64,12 +55,8 @@ export default function VerificationDocsPanel() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(`${API_URL}/api/v1/projects`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Не удалось загрузить проекты (${res.status}).`);
-        return res.json();
-      })
-      .then((data: Project[]) => {
+    getProjects(token)
+      .then((data) => {
         const list = data.filter((p) => p.id);
         setProjects(list);
         const target = projectId || String(list[0]?.id ?? '');
@@ -92,29 +79,22 @@ export default function VerificationDocsPanel() {
     }
     setState('loading');
     setMessage('');
-    const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/verification-docs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
+    try {
+      await uploadVerificationDoc(token, Number(projectId), {
         title: title.trim(),
         comment: comment.trim() || null,
         file_ref: fileRef.trim() || null,
-      }),
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
+      });
+      setState('success');
+      setMessage('Документ добавлен и передан в очередь менеджера ЦНТР.');
+      setTitle('');
+      setComment('');
+      setFileRef('');
+      await loadDocs(projectId);
+    } catch (e) {
       setState('error');
-      setMessage(
-        typeof data?.detail === 'string' ? data.detail : `Ошибка загрузки (${res.status}).`,
-      );
-      return;
+      setMessage(e instanceof Error ? e.message : 'Ошибка загрузки документа.');
     }
-    setState('success');
-    setMessage('Документ добавлен и передан в очередь менеджера ЦНТР.');
-    setTitle('');
-    setComment('');
-    setFileRef('');
-    await loadDocs(projectId);
   };
 
   return (
@@ -138,6 +118,7 @@ export default function VerificationDocsPanel() {
       <div className="mt-5">
         <select
           className="tz-select"
+          aria-label="Проект для загрузки верифицирующих документов"
           value={projectId}
           onChange={(e) => {
             setProjectId(e.target.value);
@@ -200,21 +181,25 @@ export default function VerificationDocsPanel() {
           className="tz-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          aria-label="Название документа"
+          aria-describedby="verification-docs-message"
           placeholder="Название документа"
         />
         <input
           className="tz-input"
           value={fileRef}
           onChange={(e) => setFileRef(e.target.value)}
+          aria-label="Ссылка или идентификатор файла"
           placeholder="Ссылка или идентификатор файла (необязательно)"
         />
         <textarea
           className="tz-input min-h-20"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
+          aria-label="Комментарий для менеджера"
           placeholder="Комментарий для менеджера"
         />
-        <button className="tz-btn tz-btn-primary" disabled={state === 'loading'}>
+        <button type="submit" className="tz-btn tz-btn-primary" disabled={state === 'loading'}>
           {state === 'loading' ? (
             <Loader2 className="animate-spin" size={15} />
           ) : (
@@ -226,6 +211,8 @@ export default function VerificationDocsPanel() {
 
       {message && (
         <p
+          id="verification-docs-message"
+          aria-live="polite"
           className={`mt-3 text-sm ${state === 'success' ? 'text-tz-success' : 'text-tz-danger'}`}
         >
           {message}

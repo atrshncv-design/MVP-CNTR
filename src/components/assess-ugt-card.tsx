@@ -22,12 +22,17 @@ export function AssessUgTCard() {
     fetch(`${API_URL}/api/v1/assessments/mine`, {
       headers: { Authorization: `Bearer ${session.user.accessToken}` },
     })
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => {
+        // Ошибка API (401/403/429/5xx) не выводится как «0 черновиков» —
+        // остаётся неизвестным значением «…».
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((list: Array<{ status: string }>) => {
         if (!cancelled) setDrafts(list.length);
       })
       .catch(() => {
-        if (!cancelled) setDrafts(0);
+        if (!cancelled) setDrafts(null);
       });
     return () => {
       cancelled = true;

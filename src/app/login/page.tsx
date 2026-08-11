@@ -46,6 +46,7 @@ function LoginForm() {
           type="email"
           autoComplete="email"
           required
+          aria-describedby="login-error"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           className="w-full rounded-lg border border-tz-border bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[var(--tz-accent)] focus:ring-2 focus:ring-[var(--tz-accent)]/20"
@@ -62,12 +63,13 @@ function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
+          aria-describedby="login-error"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className="w-full rounded-lg border border-tz-border bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[var(--tz-accent)] focus:ring-2 focus:ring-[var(--tz-accent)]/20"
         />
       </div>
-      <p aria-live="polite" className="min-h-5 text-sm text-tz-danger">
+      <p id="login-error" role="alert" aria-live="polite" className="min-h-5 text-sm text-tz-danger">
         {status === "error" ? error : ""}
       </p>
       <button

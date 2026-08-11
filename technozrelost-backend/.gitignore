@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Артефакты нагрузочного harness (тикет 21) — воспроизводимы командой
+reports/
+.loadtest_tokens.json
+
+# graphify local lifecycle/cache (portable graph artifacts remain trackable)
+.graphify/cache/
+.graphify/studio/
+.graphify/branch.json
+.graphify/worktree.json
+.graphify/needs_update
+.graphify/.graphify_describe_pending
+app/.graphify/

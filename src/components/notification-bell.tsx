@@ -3,7 +3,6 @@
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Check } from "lucide-react";
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 interface NotificationItem {
@@ -94,6 +93,16 @@ export default function NotificationBell() {
     }
   };
 
+  // Закрытие панели по Escape (тикет 04).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   if (!token) return null;
 
   return (
@@ -103,8 +112,11 @@ export default function NotificationBell() {
           setOpen((o) => !o);
           if (!open) void load();
         }}
-        className="relative grid h-9 w-9 place-items-center rounded-xl text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
         aria-label={`Уведомления${unread ? `, ${unread} непрочитанных` : ""}`}
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls="notification-panel"
+        className="relative grid h-11 w-11 place-items-center rounded-xl text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
       >
         <Bell size={18} />
         {unread > 0 && (
@@ -115,7 +127,12 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 w-80 rounded-2xl border border-tz-border bg-tz-surface p-2 shadow-2xl">
+        <div
+          id="notification-panel"
+          role="region"
+          aria-label="Уведомления"
+          className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-tz-border bg-tz-surface p-2 shadow-2xl"
+        >
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-sm font-bold text-tz-fg">Уведомления</span>
 
@@ -130,7 +147,7 @@ export default function NotificationBell() {
                 <button
                   key={n.id}
                   onClick={() => void markRead(n.id)}
-                  className={`flex w-full items-start gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-tz-surface-2 ${
+                  className={`flex min-h-11 w-full items-start gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-tz-surface-2 ${
                     n.is_read ? "opacity-60" : ""
                   }`}
                 >

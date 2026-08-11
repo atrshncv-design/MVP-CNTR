@@ -1,0 +1,17 @@
+# Prometheus — сбор метрик платформы «Технозрелость» (тикет 20).
+# Эндпоинт: GET /api/v1/metrics (Prometheus text exposition, см. app/api/v1/metrics.py).
+#
+# Примечание: при deploy.replicas: 2 Docker DNS резолвит `backend` в оба
+# контейнера; Prometheus обращается по имени сервиса и получает метрики
+# реплик вперемешку (достаточно для rate()-агрегатов на дашборде).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: technozrelost-backend
+    metrics_path: /api/v1/metrics
+    static_configs:
+      - targets: ["backend:8000"]
+        labels:
+          service: technozrelost-backend

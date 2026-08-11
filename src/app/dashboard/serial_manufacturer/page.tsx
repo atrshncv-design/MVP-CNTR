@@ -5,36 +5,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
-  AlertCircle,
   Building2,
   Factory,
   Loader2,
-  RefreshCw,
   Wallet,
 } from 'lucide-react';
+import { CardSkeleton, EmptyState, ErrorState } from "@/components/states";
 import JoinProjectForm from '@/components/join-project-form';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { getProjectRegistry, type RegistryProject } from "@/lib/api-client";
 import { AssessUgTCard } from "@/components/assess-ugt-card";
 
-/** Реестр технологий = опубликованные проекты УГТ 7+ (решение №14): RegistryProjectOut. */
-interface Technology {
-  id: number;
-  name: string;
-  category: string | null;
-  current_level: number;
-  preliminary_level: number | null;
-  target_level: number;
-  budget: number | null;
-  organization: string | null;
-  created_at: string | null;
-}
-
-const PUBLISHED_COLOR = 'var(--tz-success)';
+const PUBLISHED_COLOR = '#10B981';
 
 export default function SerialManufacturerDashboard() {
   const { data: session } = useSession();
-  const [technologies, setTechnologies] = useState<Technology[]>([]);
+  const [technologies, setTechnologies] = useState<RegistryProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,13 +30,8 @@ export default function SerialManufacturerDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/registry?ugt_min=7`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
-      });
-      if (!res.ok) {
-        throw new Error(`Не удалось загрузить технологии (${res.status}).`);
-      }
-      setTechnologies((await res.json()) as Technology[]);
+      const list = await getProjectRegistry(session.user.accessToken, { ugt_min: 7 });
+      setTechnologies(list);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить технологии.');
     } finally {
@@ -73,7 +53,7 @@ export default function SerialManufacturerDashboard() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол серийного производителя
         </p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
@@ -88,7 +68,7 @@ export default function SerialManufacturerDashboard() {
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Технологии УГТ 7+
         </span>
         <a href="#join" className="py-4 text-tz-secondary hover:text-tz-fg">
@@ -104,40 +84,21 @@ export default function SerialManufacturerDashboard() {
         <div id="registry">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="tz-card-title text-tz-fg">Технологии УГТ 7+</h2>
+              <h2 className="text-lg font-bold text-tz-fg">Технологии УГТ 7+</h2>
               <p className="text-sm text-tz-muted">Опубликованные проекты, подтверждённые менеджером ЦНТР</p>
             </div>
           </div>
 
           {loading ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-              <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
-              <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
-            </div>
+          <CardSkeleton />
           ) : error ? (
-            <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
-              <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
-              <p className="font-semibold text-tz-danger">{error}</p>
-              <button
-                onClick={() => loadTechnologies()}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-              >
-                <RefreshCw size={14} /> Повторить
-              </button>
-            </div>
+          <ErrorState message={error} onRetry={() => loadTechnologies()} />
           ) : technologies.length === 0 ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
-                <Factory size={22} className="text-[var(--tz-accent)]" />
-              </div>
-              <h2 className="tz-section-title mt-5 text-tz-fg">
-                Технологий УГТ 7+ пока нет
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
-                Как только технология достигнет уровня опытного образца, она появится
-                в этом реестре для оценки готовности к серийному выпуску.
-              </p>
-            </div>
+          <EmptyState
+            icon={<Factory size={22} className="text-[#2E5BFF]" />}
+            title="Технологий УГТ 7+ пока нет"
+            text="Как только технология достигнет уровня опытного образца, она появится в этом реестре для оценки готовности к серийному выпуску."
+          />
           ) : (
             <div className="grid gap-4">
               {technologies.map((tech) => {
@@ -168,16 +129,16 @@ export default function SerialManufacturerDashboard() {
                             </span>
                           )}
                         </div>
-                        <h3 className="mt-1.5 tz-card-title text-tz-fg">{tech.name}</h3>
+                        <h3 className="mt-1.5 text-lg font-bold text-tz-fg">{tech.name}</h3>
                         <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-tz-muted">
                           {tech.organization && (
                             <span className="flex items-center gap-1.5">
-                              <Building2 size={14} className="text-[var(--tz-ugt-2)]" />
+                              <Building2 size={14} className="text-[#FF7A2E]" />
                               {tech.organization}
                             </span>
                           )}
                           <span className="flex items-center gap-1.5">
-                            <Activity size={14} className="text-[var(--tz-accent)]" />
+                            <Activity size={14} className="text-[#2E5BFF]" />
                             УГТ {tech.current_level} / {tech.target_level}
                           </span>
                           {tech.budget != null && (
@@ -191,11 +152,11 @@ export default function SerialManufacturerDashboard() {
                       <div className="w-36 shrink-0">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-tz-muted">Готовность</span>
-                          <span className="font-semibold text-[var(--tz-accent)]">{progress}%</span>
+                          <span className="font-semibold text-[#2E5BFF]">{progress}%</span>
                         </div>
                         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-tz-surface-2">
                           <div
-                            className="h-full rounded-full bg-[var(--tz-accent)] transition-all duration-500"
+                            className="h-full rounded-full bg-[#2E5BFF] transition-all duration-500"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -212,7 +173,7 @@ export default function SerialManufacturerDashboard() {
         <aside id="join" className="lg:sticky lg:top-8 lg:self-start">
           {loading ? (
             <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
-              <Loader2 size={22} className="animate-spin text-[var(--tz-accent)]" />
+              <Loader2 size={22} className="animate-spin text-[#2E5BFF]" />
             </div>
           ) : (
             <JoinProjectForm />

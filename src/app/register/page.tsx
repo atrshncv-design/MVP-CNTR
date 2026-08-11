@@ -22,6 +22,7 @@ export default function RegisterPage() {
     organization: "",
     role_slug: "gk_customer",
   });
+  const [consents, setConsents] = useState({ terms: false, privacy: false });
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
 
@@ -44,6 +45,10 @@ export default function RegisterPage() {
           full_name: form.full_name,
           organization: form.organization || null,
           role_slug: form.role_slug,
+          consents: [
+            { slug: "terms", version: 1, accepted: consents.terms },
+            { slug: "privacy", version: 1, accepted: consents.privacy },
+          ],
         }),
       });
 
@@ -115,6 +120,7 @@ export default function RegisterPage() {
                 name="full_name"
                 autoComplete="name"
                 required
+                aria-describedby="register-error"
                 value={form.full_name}
                 onChange={(event) => update("full_name", event.target.value)}
                 className={fieldClassName}
@@ -132,6 +138,7 @@ export default function RegisterPage() {
                 type="email"
                 autoComplete="email"
                 required
+                aria-describedby="register-error"
                 value={form.email}
                 onChange={(event) => update("email", event.target.value)}
                 className={fieldClassName}
@@ -186,6 +193,7 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 required
                 minLength={8}
+                aria-describedby="register-error"
                 value={form.password}
                 onChange={(event) => update("password", event.target.value)}
                 className={fieldClassName}
@@ -193,13 +201,34 @@ export default function RegisterPage() {
               />
             </div>
 
-            <p aria-live="polite" className="min-h-5 text-sm text-tz-danger">
+            <p id="register-error" aria-live="polite" className="min-h-5 text-sm text-tz-danger">
               {status === "error" ? error : ""}
             </p>
 
+            <div className="space-y-2 rounded-lg border border-tz-border bg-tz-card p-3 text-sm text-tz-secondary">
+              <label className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={consents.terms}
+                  onChange={(event) => setConsents((c) => ({ ...c, terms: event.target.checked }))}
+                  className="mt-0.5 h-4 w-4 accent-[var(--tz-accent)]"
+                />
+                <span>Принимаю <span className="font-semibold text-tz-fg">Пользовательское соглашение</span> (v1)</span>
+              </label>
+              <label className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={consents.privacy}
+                  onChange={(event) => setConsents((c) => ({ ...c, privacy: event.target.checked }))}
+                  className="mt-0.5 h-4 w-4 accent-[var(--tz-accent)]"
+                />
+                <span>Согласен на <span className="font-semibold text-tz-fg">обработку персональных данных</span> (v1)</span>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={status === "loading"}
+              disabled={status === "loading" || !consents.terms || !consents.privacy}
               className="w-full rounded-lg bg-[var(--tz-accent)] px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--tz-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tz-accent)] disabled:cursor-wait disabled:opacity-60"
             >
               {status === "loading" ? "Создание учётной записи…" : "Создать учётную запись"}

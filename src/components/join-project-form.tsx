@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { KeyRound, Loader2, LogIn, CheckCircle2, AlertCircle } from 'lucide-react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { joinProject } from "@/lib/api-client";
 
 /** Роли, доступные при вступлении в проект по токену */
 const JOIN_ROLES = [
@@ -17,24 +16,6 @@ const JOIN_ROLES = [
   { value: 'investor', label: 'Инвестор' },
   { value: 'participant', label: 'Участник проекта' },
 ] as const;
-
-interface JoinResponse {
-  status: 'active' | 'pending';
-  project: { id: number; name: string } | null;
-}
-
-/** Достаёт человекочитаемое сообщение об ошибке из ответа FastAPI */
-function extractError(data: unknown, fallback: string): string {
-  if (data && typeof data === 'object') {
-    const detail = (data as { detail?: unknown }).detail;
-    if (typeof detail === 'string') return detail;
-    if (Array.isArray(detail) && detail[0] && typeof detail[0] === 'object') {
-      const msg = (detail[0] as { msg?: unknown }).msg;
-      if (typeof msg === 'string') return msg;
-    }
-  }
-  return fallback;
-}
 
 /**
  * Форма вступления в проект по токену (TZ-XXXXXX).
@@ -68,21 +49,12 @@ export default function JoinProjectForm() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.user.accessToken}`,
-        },
-        body: JSON.stringify({ token: normalized, role_in_project: role }),
+      const data = await joinProject(session.user.accessToken, {
+        token: normalized,
+        role_in_project: role,
       });
-      const data = (await res.json().catch(() => null)) as JoinResponse | null;
 
-      if (!res.ok) {
-        throw new Error(extractError(data, `Не удалось присоединиться к проекту (${res.status}).`));
-      }
-
-      if (data?.status === 'active') {
+      if (data.status === 'active') {
         if (data.project?.id) {
           router.push(`/dashboard/project/${data.project.id}`);
         } else {
@@ -120,6 +92,8 @@ export default function JoinProjectForm() {
           type="text"
           value={token}
           onChange={(e) => setToken(e.target.value)}
+          aria-label="Токен приглашения в проект (TZ-XXXXXX)"
+          aria-describedby="join-token-error"
           placeholder="TZ-XXXXXX"
           disabled={loading}
           className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-2.5 font-mono text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-tz-accent disabled:opacity-60"
@@ -144,7 +118,7 @@ export default function JoinProjectForm() {
         </div>
 
         {error && (
-          <p className="flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-3 py-2.5 text-sm text-tz-danger">
+          <p id="join-token-error" className="flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-3 py-2.5 text-sm text-tz-danger">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
             {error}
           </p>

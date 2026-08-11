@@ -39,10 +39,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import StageProgressPanel from '@/components/stage-progress-panel';
+import PromotionHistoryPanel from '@/components/promotion-history-panel';
 import ProjectTeamPanel from '@/components/project-team-panel';
 import ProjectFilesPanel from '@/components/project-files-panel';
 import RequestCommentsPanel from '@/components/request-comments-panel';
-import ProjectRadar from '@/components/dashboard/project-radar';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
@@ -130,12 +130,12 @@ interface JoinRequest {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'var(--tz-neutral)',
-  auto_confirmed: 'var(--tz-success)',
-  published: 'var(--tz-accent)',
-  active: 'var(--tz-accent)',
-  completed: 'var(--tz-success)',
-  rejected: 'var(--tz-danger)',
+  draft: '#94A3B8',
+  auto_confirmed: '#10B981',
+  published: '#2E5BFF',
+  active: '#2E5BFF',
+  completed: '#10B981',
+  rejected: '#EF4444',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -192,6 +192,19 @@ export default function ProjectDashboardPage() {
   // Публикация в реестре (тикет 10)
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+
+  // Закрытие модальных окон по Escape (тикет 04).
+  useEffect(() => {
+    if (!viewingDoc && !generatedDoc) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setViewingDoc(null);
+        setGeneratedDoc(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewingDoc, generatedDoc]);
 
   const togglePublication = async () => {
     if (!session?.user?.accessToken || !project) return;
@@ -464,7 +477,7 @@ export default function ProjectDashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--tz-accent)] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2E5BFF] border-t-transparent" />
       </div>
     );
   }
@@ -479,7 +492,7 @@ export default function ProjectDashboardPage() {
   }
 
   const { project: p } = project;
-  const statusColor = STATUS_COLORS[p.status] ?? 'var(--tz-neutral)';
+  const statusColor = STATUS_COLORS[p.status] ?? '#94A3B8';
   const userRoles: string[] = (session?.user?.roles as string[]) ?? [];
   const userRoleSet = new Set(userRoles);
   const canSeeBudget = userRoleSet.has('gk_customer') || userRoleSet.has('cntr_admin') || userRoleSet.has('investor');
@@ -509,28 +522,19 @@ export default function ProjectDashboardPage() {
               <p className="mt-2 max-w-2xl text-tz-muted">{p.description}</p>
             )}
           </div>
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="tz-card shrink-0 p-4">
-              <ProjectRadar
-                currentLevel={p.current_level}
-                documents={project.documents.map((d) => ({ doc_type: d.doc_type }))}
-                size={120}
-              />
+          <div className="tz-card shrink-0 px-4 py-3">
+            <div className="tz-eyebrow">Уровень УГТ</div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <span className="tz-ugt">{`УГТ ${p.current_level}`}</span>
+              <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
+              <span className="tz-ugt tz-ugt-strong">{p.target_level}</span>
             </div>
-            <div className="tz-card shrink-0 px-4 py-3">
-              <div className="tz-eyebrow">Уровень УГТ</div>
-              <div className="mt-1.5 flex items-center gap-1.5">
-                <span className="tz-ugt">{`УГТ ${p.current_level}`}</span>
-                <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
-                <span className="tz-ugt tz-ugt-strong">{p.target_level}</span>
-              </div>
-              {p.preliminary_level != null && p.preliminary_level !== p.current_level && (
-                <p className="mt-1 text-xs text-tz-muted">
-                  Предварительный: УГТ {p.preliminary_level}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-tz-muted">по ГОСТ Р 58048-2017</p>
-            </div>
+            {p.preliminary_level != null && p.preliminary_level !== p.current_level && (
+              <p className="mt-1 text-xs text-tz-muted">
+                Предварительный: УГТ {p.preliminary_level}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-tz-muted">по ГОСТ Р 58048-2017</p>
           </div>
         </div>
 
@@ -538,14 +542,15 @@ export default function ProjectDashboardPage() {
           {/* Main column */}
           <div className="lg:col-span-2 space-y-6">
             <StageProgressPanel projectId={p.id} currentLevel={p.current_level} status={p.status} />
+            <PromotionHistoryPanel projectId={p.id} />
             <ProjectTeamPanel projectId={p.id} />
             <ProjectFilesPanel projectId={p.id} />
             <RequestCommentsPanel projectId={p.id} />
             {/* Radar chart */}
             <div className="tz-card p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Activity size={20} className="text-[var(--tz-accent)]" />
-                <h2 className="tz-card-title text-tz-fg">УГТ-профиль</h2>
+                <Activity size={20} className="text-[#2E5BFF]" />
+                <h2 className="text-lg font-bold text-tz-fg">УГТ-профиль</h2>
               </div>
               <div className="flex items-center justify-center">
                 <ResponsiveContainer width="100%" height={320}>
@@ -559,8 +564,8 @@ export default function ProjectDashboardPage() {
                     <Radar
                       name="Цель"
                       dataKey="target"
-                      stroke="var(--tz-review)"
-                      fill="var(--tz-review)"
+                      stroke="#E5C840"
+                      fill="#E5C840"
                       fillOpacity={0.1}
                       strokeWidth={2}
                       strokeDasharray="4 4"
@@ -568,8 +573,8 @@ export default function ProjectDashboardPage() {
                     <Radar
                       name="Прогресс"
                       dataKey="progress"
-                      stroke="var(--tz-accent)"
-                      fill="var(--tz-accent)"
+                      stroke="#2E5BFF"
+                      fill="#2E5BFF"
                       fillOpacity={0.15}
                       strokeWidth={2}
                     />
@@ -578,11 +583,11 @@ export default function ProjectDashboardPage() {
               </div>
               <div className="flex justify-center gap-6 mt-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-6 rounded bg-[var(--tz-accent)]" />
+                  <div className="h-3 w-6 rounded bg-[#2E5BFF]" />
                   <span className="text-tz-muted">Текущий</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-6 rounded border-2 border-dashed border-[var(--tz-review)]" />
+                  <div className="h-3 w-6 rounded border-2 border-dashed border-[#E5C840]" />
                   <span className="text-tz-muted">Цель</span>
                 </div>
               </div>
@@ -590,7 +595,7 @@ export default function ProjectDashboardPage() {
 
             {/* UGT Levels progress */}
             <div className="tz-card p-6">
-              <h2 className="tz-card-title text-tz-fg mb-4">Прогресс по уровням УГТ</h2>
+              <h2 className="text-lg font-bold text-tz-fg mb-4">Прогресс по уровням УГТ</h2>
               <div className="space-y-3">
                 {UGT_LEVEL_NAMES.map((name, i) => {
                   const level = i + 1;
@@ -614,12 +619,12 @@ export default function ProjectDashboardPage() {
                             className="tz-progress-fill"
                             style={{
                               width: `${progress}%`,
-                              background: progress >= 80 ? 'var(--tz-success)' : progress >= 40 ? 'var(--tz-accent)' : 'var(--tz-review)',
+                              background: progress >= 80 ? '#10B981' : progress >= 40 ? '#2E5BFF' : '#E5C840',
                             }}
                           />
                         </div>
                       </div>
-                      {isCurrent && <ArrowUp size={16} className="text-[var(--tz-accent)]" />}
+                      {isCurrent && <ArrowUp size={16} className="text-[#2E5BFF]" />}
                       {!isTarget && <XCircle size={14} className="text-tz-muted" />}
                     </div>
                   );
@@ -630,8 +635,8 @@ export default function ProjectDashboardPage() {
             {/* Control Points */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Shield size={20} className="text-[var(--tz-review)]" />
-                <h2 className="tz-card-title text-tz-fg">Контрольные точки (КТ)</h2>
+                <Shield size={20} className="text-[#E5C840]" />
+                <h2 className="text-lg font-bold text-tz-fg">Контрольные точки (КТ)</h2>
               </div>
               {project.control_points.length === 0 ? (
                 <p className="text-sm text-tz-muted">Контрольные точки не заданы</p>
@@ -678,8 +683,8 @@ export default function ProjectDashboardPage() {
             {/* Documents */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
-                <FileText size={20} className="text-[var(--tz-ugt-2)]" />
-                <h2 className="tz-card-title text-tz-fg">Документы</h2>
+                <FileText size={20} className="text-[#FF7A2E]" />
+                <h2 className="text-lg font-bold text-tz-fg">Документы</h2>
               </div>
 
               {/* Генерация документов — доступна всем участникам */}
@@ -690,7 +695,7 @@ export default function ProjectDashboardPage() {
                     onClick={() => generateDocument(doc.type)}
                     disabled={generatingDoc !== null}
                     title={doc.label}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--tz-accent)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[var(--tz-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#2E5BFF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#244BD9] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {generatingDoc === doc.type ? (
                       <Loader2 size={15} className="animate-spin" />
@@ -734,8 +739,8 @@ export default function ProjectDashboardPage() {
                       <span
                         className="rounded-full px-2 py-0.5 text-xs font-medium"
                         style={{
-                          background: doc.status === 'approved' ? 'var(--tz-success)20' : doc.status === 'draft' ? 'var(--tz-review)20' : 'var(--tz-neutral)20',
-                          color: doc.status === 'approved' ? 'var(--tz-success)' : doc.status === 'draft' ? 'var(--tz-review)' : 'var(--tz-neutral)',
+                          background: doc.status === 'approved' ? '#10B98120' : doc.status === 'draft' ? '#E5C84020' : '#94A3B820',
+                          color: doc.status === 'approved' ? '#10B981' : doc.status === 'draft' ? '#E5C840' : '#94A3B8',
                         }}
                       >
                         {doc.status === 'approved' ? 'Утверждён' : doc.status === 'draft' ? 'Черновик' : doc.status}
@@ -749,8 +754,8 @@ export default function ProjectDashboardPage() {
             {/* Верифицирующие документы (подтверждение УГТ от регулирующей организации / участников) */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck size={20} className="text-[var(--tz-success)]" />
-                <h2 className="tz-card-title text-tz-fg">Верифицирующие документы</h2>
+                <ShieldCheck size={20} className="text-[#10B981]" />
+                <h2 className="text-lg font-bold text-tz-fg">Верифицирующие документы</h2>
                 {project.verification_documents.length > 0 && (
                   <span className="rounded-full bg-tz-success-soft px-2.5 py-0.5 text-xs font-semibold text-tz-success">
                     {project.verification_documents.length}
@@ -796,10 +801,10 @@ export default function ProjectDashboardPage() {
             {isPriorityUser && (
               <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <UserPlus size={20} className="text-[var(--tz-success)]" />
-                  <h2 className="tz-card-title text-tz-fg">Заявки на вступление</h2>
+                  <UserPlus size={20} className="text-[#10B981]" />
+                  <h2 className="text-lg font-bold text-tz-fg">Заявки на вступление</h2>
                   {joinRequests.length > 0 && (
-                    <span className="ml-auto rounded-full bg-[var(--tz-accent)] px-2.5 py-0.5 text-xs font-semibold text-white">
+                    <span className="ml-auto rounded-full bg-[#2E5BFF] px-2.5 py-0.5 text-xs font-semibold text-white">
                       {joinRequests.length}
                     </span>
                   )}
@@ -807,7 +812,7 @@ export default function ProjectDashboardPage() {
                 {requestsError && <p className="mb-3 text-sm font-medium text-tz-danger">{requestsError}</p>}
                 {requestsLoading ? (
                   <div className="flex items-center justify-center py-6">
-                    <Loader2 size={20} className="animate-spin text-[var(--tz-accent)]" />
+                    <Loader2 size={20} className="animate-spin text-[#2E5BFF]" />
                   </div>
                 ) : joinRequests.length === 0 ? (
                   <p className="text-sm text-tz-muted">Новых заявок нет</p>
@@ -836,7 +841,7 @@ export default function ProjectDashboardPage() {
                           <button
                             onClick={() => decideJoinRequest(req.id, true)}
                             disabled={decidingId === req.id}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[var(--tz-success)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--tz-success)] disabled:opacity-50"
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#10B981] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0EA371] disabled:opacity-50"
                           >
                             <Check size={14} /> Одобрить
                           </button>
@@ -859,7 +864,7 @@ export default function ProjectDashboardPage() {
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={20} className="text-tz-muted" />
-                <h2 className="tz-card-title text-tz-fg">Аудит изменений</h2>
+                <h2 className="text-lg font-bold text-tz-fg">Аудит изменений</h2>
               </div>
               {project.audit_trail.length === 0 ? (
                 <p className="text-sm text-tz-muted">История изменений пуста</p>
@@ -870,7 +875,7 @@ export default function ProjectDashboardPage() {
                       key={entry.id}
                       className="flex items-center gap-3 rounded-lg border border-tz-border p-3"
                     >
-                      <div className="h-2 w-2 rounded-full bg-[var(--tz-accent)]" />
+                      <div className="h-2 w-2 rounded-full bg-[#2E5BFF]" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-tz-fg">{entry.action}</p>
                         {entry.created_at && (
@@ -891,16 +896,16 @@ export default function ProjectDashboardPage() {
             {/* Current level */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
-                <Award size={20} className="text-[var(--tz-accent)]" />
+                <Award size={20} className="text-[#2E5BFF]" />
                 <h3 className="font-bold text-tz-fg">Уровень УГТ</h3>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-[var(--tz-accent)]">{p.current_level}</span>
+                <span className="text-4xl font-bold text-[#2E5BFF]">{p.current_level}</span>
                 <span className="text-tz-muted">/ {p.target_level}</span>
               </div>
               <div className="mt-3 h-2 rounded-full bg-tz-surface-2 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-[var(--tz-accent)]"
+                  className="h-full rounded-full bg-[#2E5BFF]"
                   style={{ width: `${(p.current_level / p.target_level) * 100}%` }}
                 />
               </div>
@@ -909,7 +914,7 @@ export default function ProjectDashboardPage() {
             {/* Публикация в реестре (тикет 10) */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
-                <Globe size={20} className="text-[var(--tz-accent)]" />
+                <Globe size={20} className="text-[#2E5BFF]" />
                 <h3 className="font-bold text-tz-fg">Публикация в реестре</h3>
               </div>
               <p className="text-sm text-tz-muted mb-3">
@@ -949,7 +954,7 @@ export default function ProjectDashboardPage() {
             {kt1 && (
               <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <Shield size={20} className="text-[var(--tz-review)]" />
+                  <Shield size={20} className="text-[#E5C840]" />
                   <h3 className="font-bold text-tz-fg">КТ-1: Старт проекта</h3>
                 </div>
                 <div
@@ -990,16 +995,16 @@ export default function ProjectDashboardPage() {
             {isPriorityUser && (
               <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <Share2 size={20} className="text-[var(--tz-accent)]" />
+                  <Share2 size={20} className="text-[#2E5BFF]" />
                   <h3 className="font-bold text-tz-fg">Поделиться проектом</h3>
                 </div>
                 {p.join_token ? (
                   <>
-                    <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-[var(--tz-accent)]/40 bg-[var(--tz-accent-soft)] px-3 py-2.5">
-                      <span className="font-mono text-sm font-bold text-[var(--tz-accent)]">{p.join_token}</span>
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-[#2E5BFF]/40 bg-[#EAF0FF] px-3 py-2.5">
+                      <span className="font-mono text-sm font-bold text-[#2E5BFF]">{p.join_token}</span>
                       <button
                         onClick={copyJoinLink}
-                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-[var(--tz-accent)] transition hover:bg-[var(--tz-accent)]/10"
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-[#2E5BFF] transition hover:bg-[#2E5BFF]/10"
                       >
                         {tokenCopied ? (
                           <>
@@ -1038,7 +1043,7 @@ export default function ProjectDashboardPage() {
             {/* Team */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
-                <Users size={20} className="text-[var(--tz-success)]" />
+                <Users size={20} className="text-[#10B981]" />
                 <h3 className="font-bold text-tz-fg">Команда</h3>
               </div>
               {project.members.length === 0 ? (
@@ -1050,7 +1055,7 @@ export default function ProjectDashboardPage() {
                       key={m.id}
                       className="flex items-center gap-3 rounded-lg border border-tz-border p-3"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--tz-accent)] text-sm font-bold text-white">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2E5BFF] text-sm font-bold text-white">
                         {m.role_in_project[0].toUpperCase()}
                       </div>
                       <div>
@@ -1069,7 +1074,7 @@ export default function ProjectDashboardPage() {
             {canSeeBudget && (
               <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <DollarSign size={20} className="text-[var(--tz-success)]" />
+                  <DollarSign size={20} className="text-[#10B981]" />
                   <h3 className="font-bold text-tz-fg">Бюджет</h3>
                 </div>
                 <p className="text-2xl font-bold text-tz-fg">
@@ -1083,7 +1088,7 @@ export default function ProjectDashboardPage() {
             {/* Radar mini summary */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
               <div className="flex items-center gap-2 mb-3">
-                <BarChart3 size={20} className="text-[var(--tz-review)]" />
+                <BarChart3 size={20} className="text-[#E5C840]" />
                 <h3 className="font-bold text-tz-fg">Общий прогресс</h3>
               </div>
               {project.questionnaire_results.length > 0 ? (
@@ -1093,7 +1098,7 @@ export default function ProjectDashboardPage() {
                       <span className="w-16 text-xs text-tz-muted">УГТ {qr.level_id}</span>
                       <div className="flex-1 h-1.5 rounded-full bg-tz-surface-2 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[var(--tz-success)]"
+                          className="h-full rounded-full bg-[#10B981]"
                           style={{ width: `${Math.round(qr.percentage)}%` }}
                         />
                       </div>
@@ -1126,12 +1131,12 @@ export default function ProjectDashboardPage() {
                 <p className="font-mono text-xs uppercase tracking-wide text-tz-muted">
                   Документ проекта
                 </p>
-                <h3 className="mt-1 tz-card-title text-tz-fg">{viewingDoc.title}</h3>
+                <h3 className="mt-1 text-lg font-bold text-tz-fg">{viewingDoc.title}</h3>
               </div>
               <button
                 onClick={() => setViewingDoc(null)}
                 aria-label="Закрыть"
-                className="rounded-lg p-2 text-tz-muted transition hover:bg-tz-surface-2 hover:text-tz-secondary"
+                className="grid min-h-11 min-w-11 place-items-center rounded-lg p-2 text-tz-muted transition hover:bg-tz-surface-2 hover:text-tz-secondary"
               >
                 <X size={20} />
               </button>
@@ -1144,7 +1149,7 @@ export default function ProjectDashboardPage() {
             <div className="flex justify-end border-t border-tz-border p-4">
               <button
                 onClick={() => setViewingDoc(null)}
-                className="rounded-lg bg-[var(--tz-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
+                className="min-h-11 rounded-lg bg-[#2E5BFF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#244BD9]"
               >
                 Закрыть
               </button>
@@ -1169,12 +1174,12 @@ export default function ProjectDashboardPage() {
                 <p className="font-mono text-xs uppercase tracking-wide text-tz-muted">
                   Сгенерированный документ
                 </p>
-                <h3 className="mt-1 tz-card-title text-tz-fg">{generatedDoc.title}</h3>
+                <h3 className="mt-1 text-lg font-bold text-tz-fg">{generatedDoc.title}</h3>
               </div>
               <button
                 onClick={() => setGeneratedDoc(null)}
                 aria-label="Закрыть"
-                className="rounded-lg p-2 text-tz-muted transition hover:bg-tz-surface-2 hover:text-tz-secondary"
+                className="grid min-h-11 min-w-11 place-items-center rounded-lg p-2 text-tz-muted transition hover:bg-tz-surface-2 hover:text-tz-secondary"
               >
                 <X size={20} />
               </button>
@@ -1187,7 +1192,7 @@ export default function ProjectDashboardPage() {
             <div className="flex justify-end border-t border-tz-border p-4">
               <button
                 onClick={() => setGeneratedDoc(null)}
-                className="rounded-lg bg-[var(--tz-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
+                className="min-h-11 rounded-lg bg-[#2E5BFF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#244BD9]"
               >
                 Закрыть
               </button>

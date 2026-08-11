@@ -304,6 +304,14 @@
 #main-content > *:nth-child(n+6) { animation-delay: 0.35s; }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Глобальный guard (тикет 04, internal-frontend): гасит ВСЕ CSS-анимации и
+     переходы (включая Tailwind animate-pulse/animate-spin и keyframes ниже). */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
   #main-content > *,
   [data-reveal] {
     animation: none !important;
@@ -397,6 +405,7 @@
     gap: 0.5rem;
     border-radius: var(--tz-radius-btn);
     padding: 0.5625rem 1rem;
+    min-height: 2.75rem; /* touch-цель >= 44px (тикет 04) */
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.2;

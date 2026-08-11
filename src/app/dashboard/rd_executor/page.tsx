@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, ArrowRight, FolderKanban, PlayCircle, FileClock, Briefcase, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowRight, FolderKanban, PlayCircle, FileClock, Briefcase, Loader2 } from 'lucide-react';
+import { CardSkeleton, EmptyState, ErrorState } from "@/components/states";
 import JoinProjectForm from '@/components/join-project-form';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { getProjects } from "@/lib/api-client";
 import { AssessUgTCard } from "@/components/assess-ugt-card";
 
 interface Project {
@@ -33,11 +33,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'var(--tz-neutral)',
-  active: 'var(--tz-accent)',
-  review: 'var(--tz-review)',
-  completed: 'var(--tz-success)',
-  rejected: 'var(--tz-danger)',
+  draft: '#94A3B8',
+  active: '#2E5BFF',
+  review: '#E5C840',
+  completed: '#10B981',
+  rejected: '#EF4444',
 };
 
 export default function RdExecutorDashboard() {
@@ -53,13 +53,8 @@ export default function RdExecutorDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
-      });
-      if (!res.ok) {
-        throw new Error(`Не удалось загрузить проекты (${res.status}).`);
-      }
-      setProjects((await res.json()) as Project[]);
+      // Реальные проекты исполнителя (api-client); ошибка → ApiError → ErrorState.
+      setProjects(await getProjects(session.user.accessToken));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты.');
     } finally {
@@ -79,10 +74,10 @@ export default function RdExecutorDashboard() {
   const completed = projects.filter((p) => p.status === 'completed').length;
 
   const statCards = [
-    { label: 'Мои проекты', value: projects.length, icon: FolderKanban, color: 'var(--tz-accent)' },
-    { label: 'Активные проекты', value: active, icon: PlayCircle, color: 'var(--tz-success)' },
-    { label: 'На рассмотрении', value: review, icon: FileClock, color: 'var(--tz-review)' },
-    { label: 'Завершённые', value: completed, icon: Briefcase, color: 'var(--tz-ugt-2)' },
+    { label: 'Мои проекты', value: projects.length, icon: FolderKanban, color: '#2E5BFF' },
+    { label: 'Активные проекты', value: active, icon: PlayCircle, color: '#10B981' },
+    { label: 'На рассмотрении', value: review, icon: FileClock, color: '#E5C840' },
+    { label: 'Завершённые', value: completed, icon: Briefcase, color: '#FF7A2E' },
   ];
 
   return (
@@ -92,7 +87,7 @@ export default function RdExecutorDashboard() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол R&D-исполнителя
         </p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
@@ -102,7 +97,7 @@ export default function RdExecutorDashboard() {
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">Проекты</span>
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">Проекты</span>
         <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
           Реестр технологий
         </Link>
@@ -150,46 +145,27 @@ export default function RdExecutorDashboard() {
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         {/* Список проектов */}
         <div>
-          <h2 className="mb-4 tz-card-title text-tz-fg">Мои проекты</h2>
+          <h2 className="mb-4 text-lg font-bold text-tz-fg">Мои проекты</h2>
 
           {loading ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-              <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
-              <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
-            </div>
+          <CardSkeleton />
           ) : error ? (
-            <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
-              <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
-              <p className="font-semibold text-tz-danger">{error}</p>
-              <button
-                onClick={() => loadProjects()}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-              >
-                <RefreshCw size={14} /> Повторить
-              </button>
-            </div>
+          <ErrorState message={error} onRetry={() => loadProjects()} />
           ) : projects.length === 0 ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)] font-mono font-bold text-[var(--tz-accent)]">
-                01
-              </div>
-              <h2 className="tz-section-title mt-5 text-tz-fg">
-                Проектов пока нет
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
-                Присоединитесь по токену, выданному заказчиком или менеджером ЦНТР, —
-                проект сразу появится в этом списке.
-              </p>
-            </div>
+          <EmptyState
+            icon={<span className="font-mono font-bold text-[#2E5BFF]">01</span>}
+            title="Проектов пока нет"
+            text="Присоединитесь по токену, выданному заказчиком или менеджером ЦНТР, — проект сразу появится в этом списке."
+          />
           ) : (
             <div className="grid gap-4">
               {projects.map((project) => {
-                const color = STATUS_COLORS[project.status] ?? 'var(--tz-neutral)';
+                const color = STATUS_COLORS[project.status] ?? '#94A3B8';
                 return (
                   <motion.div key={project.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <Link
                       href={`/dashboard/project/${project.id}`}
-                      className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-[var(--tz-accent)] md:grid-cols-[1fr_auto_auto]"
+                      className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-[#2E5BFF] md:grid-cols-[1fr_auto_auto]"
                     >
                       <div>
                         <div className="flex items-center gap-2">
@@ -201,7 +177,7 @@ export default function RdExecutorDashboard() {
                             {STATUS_LABELS[project.status] ?? project.status}
                           </span>
                         </div>
-                        <h3 className="mt-1 tz-card-title text-tz-fg">{project.name}</h3>
+                        <h3 className="mt-1 text-lg font-bold text-tz-fg">{project.name}</h3>
                         <p className="mt-1 text-sm text-tz-secondary">
                           {project.category ?? 'Категория не указана'}
                           {project.description ? ` — ${project.description}` : ''}
@@ -209,7 +185,7 @@ export default function RdExecutorDashboard() {
                       </div>
                       <div className="md:text-right">
                         <div className="text-xs text-tz-muted">Уровень УГТ</div>
-                        <div className="mt-1 font-bold text-[var(--tz-accent)]">
+                        <div className="mt-1 font-bold text-[#2E5BFF]">
                           УГТ {project.current_level} → {project.target_level}
                         </div>
                       </div>
@@ -228,7 +204,7 @@ export default function RdExecutorDashboard() {
         <aside className="lg:sticky lg:top-8 lg:self-start">
           {loading ? (
             <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
-              <Loader2 size={22} className="animate-spin text-[var(--tz-accent)]" />
+              <Loader2 size={22} className="animate-spin text-[#2E5BFF]" />
             </div>
           ) : (
             <JoinProjectForm />

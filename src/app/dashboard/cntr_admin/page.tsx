@@ -5,46 +5,28 @@ import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  AlertCircle,
   Check,
+  History,
   Loader2,
-  RefreshCw,
   Save,
   ShieldCheck,
   UserCog,
   Users,
 } from 'lucide-react';
+import { CardSkeleton, EmptyState, ErrorState } from "@/components/states";
 import { ROLES } from '@/lib/roles';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 import { AssessUgTCard } from "@/components/assess-ugt-card";
-
-interface AdminUser {
-  id: number;
-  email: string;
-  full_name: string;
-  organization: string | null;
-  is_active: boolean;
-  roles: Array<{ role_no: number; slug: string; name: string }>;
-  created_at: string;
-}
+import {
+  getAdminAudit,
+  getAdminUsers,
+  updateAdminUser,
+  type AdminUser,
+  type AuditEntry,
+} from '@/lib/api-client';
 
 /** Подпись роли по slug — из констант src/lib/roles.ts */
 function roleName(slug: string): string {
   return ROLES.find((r) => r.slug === slug)?.name ?? slug;
-}
-
-/** Достаёт человекочитаемое сообщение об ошибке из ответа FastAPI */
-function extractError(data: unknown, fallback: string): string {
-  if (data && typeof data === 'object') {
-    const detail = (data as { detail?: unknown }).detail;
-    if (typeof detail === 'string') return detail;
-    if (Array.isArray(detail) && detail[0] && typeof detail[0] === 'object') {
-      const msg = (detail[0] as { msg?: unknown }).msg;
-      if (typeof msg === 'string') return msg;
-    }
-  }
-  return fallback;
 }
 
 /* ------------------------------------------------------------------ */
@@ -64,18 +46,9 @@ function UserRow({ user }: { user: AdminUser }) {
     setSaved(false);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/users/${user.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.user.accessToken}`,
-        },
-        body: JSON.stringify({ roles, is_active: isActive }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(extractError(data, `Не удалось сохранить пользователя (${res.status}).`));
-      }
+      // PATCH /users/{id} — реальный эндпоинт администратора; ошибка 400/403/429
+      // → ApiError (не «Сохранено»).
+      await updateAdminUser(session.user.accessToken, user.id, { roles, is_active: isActive });
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -86,7 +59,7 @@ function UserRow({ user }: { user: AdminUser }) {
   };
 
   return (
-    <tr className="border-b border-tz-card-border align-top last:border-0 hover:bg-[var(--tz-soft)]">
+    <tr className="border-b border-tz-card-border align-top last:border-0 hover:bg-[#FAFBFD]">
       <td className="px-4 py-4">
         <p className="font-semibold text-tz-fg">{user.full_name || '—'}</p>
         <p className="mt-0.5 text-sm text-tz-muted">{user.email}</p>
@@ -101,7 +74,7 @@ function UserRow({ user }: { user: AdminUser }) {
             roles.map((slug) => (
               <span
                 key={slug}
-                className="rounded-md bg-[var(--tz-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--tz-accent)]"
+                className="rounded-md bg-[#EAF0FF] px-2 py-0.5 text-[11px] font-medium text-[#2E5BFF]"
               >
                 {roleName(slug)}
               </span>
@@ -118,7 +91,7 @@ function UserRow({ user }: { user: AdminUser }) {
             setSaved(false);
             setRoles(selected);
           }}
-          className="w-full max-w-[280px] rounded-xl border border-tz-border bg-tz-surface px-2 py-1.5 text-xs text-tz-fg outline-none transition focus:border-[var(--tz-accent)]"
+          className="w-full max-w-[280px] rounded-xl border border-tz-border bg-tz-surface px-2 py-1.5 text-xs text-tz-fg outline-none transition focus:border-[#2E5BFF]"
         >
           {ROLES.map((r) => (
             <option key={r.slug} value={r.slug} className="py-0.5">
@@ -141,7 +114,7 @@ function UserRow({ user }: { user: AdminUser }) {
             setIsActive((prev) => !prev);
           }}
           className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-            isActive ? 'bg-[var(--tz-success)]' : 'bg-tz-border'
+            isActive ? 'bg-[#10B981]' : 'bg-tz-border'
           }`}
         >
           <span
@@ -164,13 +137,101 @@ function UserRow({ user }: { user: AdminUser }) {
         <button
           onClick={saveUser}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--tz-accent)] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[var(--tz-accent-hover)] disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[#2E5BFF] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#244BD9] disabled:opacity-60"
         >
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
           Сохранить
         </button>
       </td>
     </tr>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Журнал аудита (GET /admin/audit — только cntr_admin)               */
+/* ------------------------------------------------------------------ */
+function AdminAuditLog() {
+  const { data: session } = useSession();
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!session?.user?.accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      setEntries(await getAdminAudit(session.user.accessToken, 100));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось загрузить журнал аудита.');
+    } finally {
+      setLoading(false);
+    }
+  }, [session]);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  return (
+    <div className="mt-10">
+      <h2 className="mb-1 flex items-center gap-2 text-lg font-bold text-tz-fg">
+        <History size={18} className="text-tz-accent" /> Журнал аудита платформы
+      </h2>
+      <p className="mb-4 text-sm text-tz-muted">
+        Последние события из append-only журнала (GET /api/v1/admin/audit).
+      </p>
+
+      {loading ? (
+        <CardSkeleton bodyClassName="h-24" />
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => load()} />
+      ) : entries.length === 0 ? (
+        <EmptyState
+          icon={<History size={22} className="text-[#2E5BFF]" />}
+          title="Событий аудита пока нет"
+          text="Записи появляются при действиях пользователей: создание проектов, решения менеджера, изменения ролей."
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-tz-card-border bg-tz-surface">
+          <table className="w-full min-w-[760px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-tz-card-border bg-[#FAFBFD] text-xs uppercase tracking-wider text-tz-muted">
+                <th className="px-4 py-3 font-semibold">Событие</th>
+                <th className="px-4 py-3 font-semibold">Пользователь</th>
+                <th className="px-4 py-3 font-semibold">Проект</th>
+                <th className="px-4 py-3 font-semibold">Время</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry) => (
+                <tr key={entry.id} className="border-b border-tz-card-border align-top last:border-0 hover:bg-[#FAFBFD]">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-tz-fg">{entry.action}</p>
+                    {entry.details && Object.keys(entry.details).length > 0 && (
+                      <p className="mt-0.5 font-mono text-[11px] text-tz-muted">
+                        {JSON.stringify(entry.details).slice(0, 120)}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-tz-secondary">{entry.user_name}</td>
+                  <td className="px-4 py-3 font-mono text-sm text-tz-secondary">
+                    {entry.project_id ? `#${entry.project_id}` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-tz-muted">
+                    {entry.created_at
+                      ? new Date(entry.created_at).toLocaleString('ru-RU')
+                      : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -190,13 +251,7 @@ export default function CntrAdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/users`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
-      });
-      if (!res.ok) {
-        throw new Error(`Не удалось загрузить пользователей (${res.status}).`);
-      }
-      setUsers((await res.json()) as AdminUser[]);
+      setUsers(await getAdminUsers(session.user.accessToken));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить пользователей.');
     } finally {
@@ -205,7 +260,6 @@ export default function CntrAdminDashboard() {
   }, [session]);
 
   useEffect(() => {
-    // setState внутри loadUsers выполняется после await — не синхронно с телом эффекта
     (async () => {
       await loadUsers();
     })();
@@ -215,9 +269,9 @@ export default function CntrAdminDashboard() {
   const rolesAssigned = users.reduce((acc, u) => acc + u.roles.length, 0);
 
   const statCards = [
-    { label: 'Пользователи', value: users.length, icon: Users, color: 'var(--tz-accent)' },
-    { label: 'Активных', value: activeCount, icon: ShieldCheck, color: 'var(--tz-success)' },
-    { label: 'Назначений ролей', value: rolesAssigned, icon: UserCog, color: 'var(--tz-ugt-2)' },
+    { label: 'Пользователи', value: users.length, icon: Users, color: '#2E5BFF' },
+    { label: 'Активных', value: activeCount, icon: ShieldCheck, color: '#10B981' },
+    { label: 'Назначений ролей', value: rolesAssigned, icon: UserCog, color: '#FF7A2E' },
   ];
 
   return (
@@ -227,7 +281,7 @@ export default function CntrAdminDashboard() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол администратора ЦНТР
         </p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
@@ -237,7 +291,7 @@ export default function CntrAdminDashboard() {
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Пользователи
         </span>
         <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
@@ -283,41 +337,23 @@ export default function CntrAdminDashboard() {
 
       {/* Таблица пользователей */}
       <div className="mt-8">
-        <h2 className="mb-4 tz-card-title text-tz-fg">Пользователи и роли</h2>
+        <h2 className="mb-4 text-lg font-bold text-tz-fg">Пользователи и роли</h2>
 
         {loading ? (
-          <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-            <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
-            <div className="mt-4 h-24 animate-pulse rounded bg-tz-soft" />
-          </div>
-        ) : error ? (
-          <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
-            <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
-            <p className="font-semibold text-tz-danger">{error}</p>
-            <button
-              onClick={() => loadUsers()}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-            >
-              <RefreshCw size={14} /> Повторить
-            </button>
-          </div>
-        ) : users.length === 0 ? (
-          <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
-              <Users size={22} className="text-[var(--tz-accent)]" />
-            </div>
-            <h2 className="tz-section-title mt-5 text-tz-fg">
-              Пользователи не найдены
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
-              Зарегистрированные пользователи платформы появятся в этой таблице.
-            </p>
-          </div>
-        ) : (
+          <CardSkeleton bodyClassName="h-24" />
+          ) : error ? (
+          <ErrorState message={error} onRetry={() => loadUsers()} />
+          ) : users.length === 0 ? (
+          <EmptyState
+            icon={<Users size={22} className="text-[#2E5BFF]" />}
+            title="Пользователи не найдены"
+            text="Зарегистрированные пользователи платформы появятся в этой таблице."
+          />
+          ) : (
           <div className="overflow-x-auto rounded-2xl border border-tz-card-border bg-tz-surface">
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-tz-card-border bg-[var(--tz-soft)] text-xs uppercase tracking-wider text-tz-muted">
+                <tr className="border-b border-tz-card-border bg-[#FAFBFD] text-xs uppercase tracking-wider text-tz-muted">
                   <th className="px-4 py-3 font-semibold">Пользователь</th>
                   <th className="px-4 py-3 font-semibold">Организация</th>
                   <th className="px-4 py-3 font-semibold">Роли</th>
@@ -334,6 +370,9 @@ export default function CntrAdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Журнал аудита — только cntr_admin (endpoint /admin/audit) */}
+      <AdminAuditLog />
     </section>
   );
 }

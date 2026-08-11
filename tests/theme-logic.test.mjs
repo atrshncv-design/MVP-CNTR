@@ -1,92 +1,36 @@
 /**
- * Поведенческие тесты темы (тикет 16/17): реальная логика из src/lib/theme.ts
- * с минимальным DOM-стабом — проверяют переключение, сохранение и классы,
- * а не наличие строк в исходниках.
+ * Поведенческие тесты темы (тикет 16/17) — АДАПТИРОВАНЫ под дизайн-базлайн c4f0794.
+ *
+ * Дизайн-базлайн release-integration: ОДНА утверждённая тема (тёмная, графит
+ * #0b0d12 + акцент #d63031). Модуль src/lib/theme.ts и переключатель
+ * theme-toggle в базлайне отсутствуют (удалены в дизайн-эволюции).
+ * Поведенческие проверки заменены структурными гарантиями канона:
+ *  - токены tz-* определены в globals.css;
+ *  - переключателя темы в UI нет (невозможно сменить утверждённую тему);
+ *  - dashboard-шелл не ссылается на theme-toggle.
  */
 import assert from "node:assert/strict";
+import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import {
-  THEME_ORDER,
-  applyTheme,
-  cycleTheme,
-  getStoredTheme,
-} from "../src/lib/theme.ts";
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-/** Минимальный стаб document.documentElement. */
-function makeDom() {
-  const classes = new Set();
-  const attrs = new Map();
-  return {
-    documentElement: {
-      classList: {
-        toggle: (name, force) => {
-          if (force) classes.add(name);
-          else classes.delete(name);
-        },
-        contains: (name) => classes.has(name),
-      },
-      setAttribute: (name, value) => attrs.set(name, value),
-      removeAttribute: (name) => attrs.delete(name),
-      getAttribute: (name) => attrs.get(name) ?? null,
-    },
-    classes,
-    attrs,
-  };
-}
-
-function makeStorage(initial = {}) {
-  const store = new Map(Object.entries(initial));
-  return {
-    getItem: (k) => store.get(k) ?? null,
-    setItem: (k, v) => {
-      store.set(k, v);
-    },
-    dump: () => Object.fromEntries(store),
-  };
-}
-
-test("getStoredTheme: без сохранённого значения — светлая, системная тёмная учитывается", () => {
-  assert.equal(getStoredTheme(null), "light");
-  assert.equal(getStoredTheme(makeStorage(), true), "dark");
-  assert.equal(getStoredTheme(makeStorage(), false), "light");
+test("globals.css определяет базовые tz-токены (одна утверждённая тема)", () => {
+  const css = read("src/app/globals.css");
+  assert.match(css, /--tz-accent/);
+  assert.match(css, /--tz-bg/);
+  assert.match(css, /--tz-fg/);
 });
 
-test("getStoredTheme: валидные сохранённые темы возвращаются, невалидные игнорируются", () => {
-  assert.equal(getStoredTheme(makeStorage({ "tz-theme": "udmurt" })), "udmurt");
-  assert.equal(getStoredTheme(makeStorage({ "tz-theme": "dark" })), "dark");
-  assert.equal(getStoredTheme(makeStorage({ "tz-theme": "neon" })), "light");
+test("в UI отсутствует переключатель темы (одна тема — канон)", () => {
+  const shell = read("src/components/dashboard/shell.tsx");
+  assert.doesNotMatch(shell, /theme-toggle|ThemeToggle/);
+  const layout = read("src/app/layout.tsx");
+  assert.doesNotMatch(layout, /theme-toggle|ThemeToggle/);
 });
 
-test("applyTheme: udmurt ставит data-theme и не включает .dark", () => {
-  const dom = makeDom();
-  const storage = makeStorage();
-  applyTheme("udmurt", { documentElement: dom.documentElement, storage });
-  assert.equal(dom.attrs.get("data-theme"), "udmurt");
-  assert.equal(dom.classes.has("dark"), false);
-  assert.equal(storage.dump()["tz-theme"], "udmurt");
-});
-
-test("applyTheme: dark включает класс .dark и снимает data-theme", () => {
-  const dom = makeDom();
-  const storage = makeStorage();
-  applyTheme("dark", { documentElement: dom.documentElement, storage });
-  assert.equal(dom.classes.has("dark"), true);
-  assert.equal(dom.attrs.has("data-theme"), false);
-  assert.equal(storage.dump()["tz-theme"], "dark");
-});
-
-test("applyTheme: светлая снимает и класс, и data-theme", () => {
-  const dom = makeDom();
-  applyTheme("udmurt", { documentElement: dom.documentElement });
-  applyTheme("light", { documentElement: dom.documentElement });
-  assert.equal(dom.classes.has("dark"), false);
-  assert.equal(dom.attrs.has("data-theme"), false);
-});
-
-test("cycleTheme: светлая → тёмная → удмуртская → светлая", () => {
-  assert.equal(cycleTheme("light"), "dark");
-  assert.equal(cycleTheme("dark"), "udmurt");
-  assert.equal(cycleTheme("udmurt"), "light");
-  assert.deepEqual(THEME_ORDER, ["light", "dark", "udmurt"]);
+test("дизайн-ассеты baseline присутствуют в public/ (brand)", () => {
+  const out = execSync("ls -A public/brand 2>/dev/null || true", { encoding: "utf8" }).trim();
+  assert.ok(out.length > 0, "public/brand должен содержать дизайн-ассеты baseline");
 });

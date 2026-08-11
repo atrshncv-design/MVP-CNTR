@@ -7,22 +7,28 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 test("login exposes the approved product identity and explicit form states", () => {
   const source = read("src/app/login/page.tsx");
 
-  assert.match(source, /ТЕХНОЗРЕЛОСТЬ/);
-  assert.match(source, /ГОСТ Р 58048-2017/);
+  // Дизайн-базлайн c4f0794: бренд ЦНТР УР + честные состояния формы.
   assert.match(source, /aria-live="polite"/);
-  assert.match(source, /Вход…/);
+  assert.match(source, /Вход…|Войти в платформу/);
+  assert.match(source, /Удмуртской Республики|ЦНТР/);
   assert.match(source, /Неверный email или пароль/);
-  assert.match(source, /\[1, 2, 3, 4, 5, 6, 7, 8, 9\]/);
 });
 
 test("dashboard shell uses process-first global navigation", () => {
-  const source = read("src/app/dashboard/layout.tsx");
+  // Тикет 01: навигация вынесена в карту роль→пункты (src/lib/navigation.ts)
+  // и общий shell (src/components/dashboard/shell.tsx); layout — тонкая обёртка.
+  const shell = read("src/components/dashboard/shell.tsx");
+  const navMap = read("src/lib/navigation.ts");
 
-  for (const label of ["Рабочий стол", "Проекты", "Заявки", "Реестры", "Документы"]) {
-    assert.match(source, new RegExp(label));
+  for (const label of ["Рабочий стол", "Проекты", "Заявки", "Реестры", "НИОКТР", "Организации", "Профиль", "Документы"]) {
+    assert.match(navMap, new RegExp(label));
   }
-  assert.match(source, /ТЕХНОЗРЕЛОСТЬ/);
-  assert.match(source, /Перейти к основному содержимому/);
+  assert.match(shell, /ТЕХНОЗРЕЛОСТЬ/);
+  assert.match(shell, /Перейти к основному содержимому/);
+
+  const layout = read("src/app/dashboard/layout.tsx");
+  assert.match(layout, /DashboardShell/);
+  assert.match(layout, /auth\(\)/);
 });
 
 test("customer P0 workspace is honest when no project API is connected", () => {

@@ -32,6 +32,15 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# но шаблоны env — часть release candidate (negation)
+!.env.example
+!.env.production.example
+
+# локальные отчёты/инвентаризация release-integration (не в коммит)
+.scratch/
+
+# large local NIOKTR export; use the small sample in the repository
+technozrelost-backend/data/nioktr_all.json
 
 # vercel
 .vercel

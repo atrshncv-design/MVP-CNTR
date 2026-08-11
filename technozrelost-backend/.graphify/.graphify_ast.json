@@ -1,0 +1,4047 @@
+{
+  "nodes": [
+    {
+      "id": "alembic_env",
+      "label": "env.py",
+      "file_type": "code",
+      "source_file": "alembic/env.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "alembic_env_run_migrations_offline",
+      "label": "run_migrations_offline()",
+      "file_type": "code",
+      "source_file": "alembic/env.py",
+      "source_location": "L28"
+    },
+    {
+      "id": "alembic_env_run_migrations_online",
+      "label": "run_migrations_online()",
+      "file_type": "code",
+      "source_file": "alembic/env.py",
+      "source_location": "L39"
+    },
+    {
+      "id": "alembic_env_rationale_1",
+      "label": "Alembic environment for the Technozrelost backend.  Миграции используют **синхро",
+      "file_type": "rationale",
+      "source_file": "alembic/env.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0001_init_schemas",
+      "label": "0001_init_schemas.py",
+      "file_type": "code",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0001_init_schemas_sql",
+      "label": "_sql()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "versions_0001_init_schemas_upgrade",
+      "label": "upgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "versions_0001_init_schemas_downgrade",
+      "label": "downgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L31"
+    },
+    {
+      "id": "versions_0001_init_schemas_rationale_1",
+      "label": "init schemas + pgvector  Revision ID: 0001 Revises: Create Date: 2026-07-21 12:0",
+      "file_type": "rationale",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0002_rag_documents",
+      "label": "0002_rag_documents.py",
+      "file_type": "code",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0002_rag_documents_sql",
+      "label": "_sql()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "versions_0002_rag_documents_upgrade",
+      "label": "upgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "versions_0002_rag_documents_downgrade",
+      "label": "downgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L31"
+    },
+    {
+      "id": "versions_0002_rag_documents_rationale_1",
+      "label": "rag_documents table (pgvector, Hash/B-Tree indexes)  Revision ID: 0002 Revises:",
+      "file_type": "rationale",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0003_rbac",
+      "label": "0003_rbac.py",
+      "file_type": "code",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0003_rbac_sql",
+      "label": "_sql()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "versions_0003_rbac_upgrade",
+      "label": "upgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "versions_0003_rbac_downgrade",
+      "label": "downgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L31"
+    },
+    {
+      "id": "versions_0003_rbac_rationale_1",
+      "label": "rbac: roles, users, user_roles, permissions, role_permissions  Revision ID: 0003",
+      "file_type": "rationale",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0004_projects_and_questionnaire",
+      "label": "0004_projects_and_questionnaire.py",
+      "file_type": "code",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0004_projects_and_questionnaire_sql",
+      "label": "_sql()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "versions_0004_projects_and_questionnaire_upgrade",
+      "label": "upgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "versions_0004_projects_and_questionnaire_downgrade",
+      "label": "downgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L34"
+    },
+    {
+      "id": "versions_0004_projects_and_questionnaire_rationale_1",
+      "label": "projects, questionnaire_results, project_members, control_points, project_docume",
+      "file_type": "rationale",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0005_rag_metadata",
+      "label": "0005_rag_metadata.py",
+      "file_type": "code",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "versions_0005_rag_metadata_sql",
+      "label": "_sql()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "versions_0005_rag_metadata_upgrade",
+      "label": "upgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "versions_0005_rag_metadata_downgrade",
+      "label": "downgrade()",
+      "file_type": "code",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L31"
+    },
+    {
+      "id": "versions_0005_rag_metadata_rationale_1",
+      "label": "rag_metadata: add template_metadata JSONB to rag_documents  Revision ID: 0005 Re",
+      "file_type": "rationale",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_init",
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "app/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_init_rationale_1",
+      "label": "Technozrelost backend package.",
+      "file_type": "rationale",
+      "source_file": "app/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "api_init",
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "app/api/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_init",
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_auth",
+      "label": "auth.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_auth_register",
+      "label": "register()",
+      "file_type": "code",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "v1_auth_login",
+      "label": "login()",
+      "file_type": "code",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L42"
+    },
+    {
+      "id": "v1_auth_me",
+      "label": "me()",
+      "file_type": "code",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L54"
+    },
+    {
+      "id": "v1_auth_user_out",
+      "label": "_user_out()",
+      "file_type": "code",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L58"
+    },
+    {
+      "id": "v1_chat",
+      "label": "chat.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/chat.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_chat_chat",
+      "label": "chat()",
+      "file_type": "code",
+      "source_file": "app/api/v1/chat.py",
+      "source_location": "L13"
+    },
+    {
+      "id": "v1_executors",
+      "label": "executors.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_executors_get_executors",
+      "label": "get_executors()",
+      "file_type": "code",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "v1_executors_list_executors",
+      "label": "list_executors()",
+      "file_type": "code",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L69"
+    },
+    {
+      "id": "v1_generation",
+      "label": "generation.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/generation.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_generation_generate_project_document",
+      "label": "generate_project_document()",
+      "file_type": "code",
+      "source_file": "app/api/v1/generation.py",
+      "source_location": "L13"
+    },
+    {
+      "id": "v1_health",
+      "label": "health.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_health_health",
+      "label": "health()",
+      "file_type": "code",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L13"
+    },
+    {
+      "id": "v1_health_ready",
+      "label": "ready()",
+      "file_type": "code",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "v1_health_check_engine",
+      "label": "_check_engine()",
+      "file_type": "code",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L27"
+    },
+    {
+      "id": "v1_health_check_databases",
+      "label": "check_databases()",
+      "file_type": "code",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L36"
+    },
+    {
+      "id": "v1_projects",
+      "label": "projects.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_projects_get_project_detail",
+      "label": "get_project_detail()",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L30"
+    },
+    {
+      "id": "v1_projects_save_questionnaire",
+      "label": "save_questionnaire()",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L85"
+    },
+    {
+      "id": "v1_projects_qr_out",
+      "label": "_qr_out()",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L119"
+    },
+    {
+      "id": "v1_projects_cp_out",
+      "label": "_cp_out()",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L129"
+    },
+    {
+      "id": "v1_projects_doc_out",
+      "label": "_doc_out()",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L142"
+    },
+    {
+      "id": "v1_projects_mem_out",
+      "label": "_mem_out()",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L155"
+    },
+    {
+      "id": "v1_projects_at_out",
+      "label": "_at_out()",
+      "file_type": "code",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L164"
+    },
+    {
+      "id": "v1_rag",
+      "label": "rag.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_rag_upload_template",
+      "label": "upload_template()",
+      "file_type": "code",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L13"
+    },
+    {
+      "id": "v1_rag_search_rag",
+      "label": "search_rag()",
+      "file_type": "code",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L37"
+    },
+    {
+      "id": "v1_rag_get_templates",
+      "label": "get_templates()",
+      "file_type": "code",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L46"
+    },
+    {
+      "id": "v1_technologies",
+      "label": "technologies.py",
+      "file_type": "code",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "v1_technologies_list_technologies",
+      "label": "list_technologies()",
+      "file_type": "code",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L14"
+    },
+    {
+      "id": "core_init",
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "app/core/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "core_config",
+      "label": "config.py",
+      "file_type": "code",
+      "source_file": "app/core/config.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "core_config_settings",
+      "label": "Settings",
+      "file_type": "code",
+      "source_file": "app/core/config.py",
+      "source_location": "L8"
+    },
+    {
+      "id": "basesettings",
+      "label": "BaseSettings",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "core_config_settings_cors_origin_list",
+      "label": ".cors_origin_list()",
+      "file_type": "code",
+      "source_file": "app/core/config.py",
+      "source_location": "L37"
+    },
+    {
+      "id": "core_config_settings_primary_dsn",
+      "label": ".primary_dsn()",
+      "file_type": "code",
+      "source_file": "app/core/config.py",
+      "source_location": "L41"
+    },
+    {
+      "id": "core_config_settings_replica_dsn",
+      "label": ".replica_dsn()",
+      "file_type": "code",
+      "source_file": "app/core/config.py",
+      "source_location": "L48"
+    },
+    {
+      "id": "core_config_get_settings",
+      "label": "get_settings()",
+      "file_type": "code",
+      "source_file": "app/core/config.py",
+      "source_location": "L58"
+    },
+    {
+      "id": "core_database",
+      "label": "database.py",
+      "file_type": "code",
+      "source_file": "app/core/database.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "core_database_get_db",
+      "label": "get_db()",
+      "file_type": "code",
+      "source_file": "app/core/database.py",
+      "source_location": "L33"
+    },
+    {
+      "id": "core_deps",
+      "label": "deps.py",
+      "file_type": "code",
+      "source_file": "app/core/deps.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "core_deps_get_current_user",
+      "label": "get_current_user()",
+      "file_type": "code",
+      "source_file": "app/core/deps.py",
+      "source_location": "L17"
+    },
+    {
+      "id": "core_deps_require_role",
+      "label": "require_role()",
+      "file_type": "code",
+      "source_file": "app/core/deps.py",
+      "source_location": "L37"
+    },
+    {
+      "id": "core_embeddings",
+      "label": "embeddings.py",
+      "file_type": "code",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "core_embeddings_tokenize",
+      "label": "tokenize()",
+      "file_type": "code",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L10"
+    },
+    {
+      "id": "core_embeddings_embed_text",
+      "label": "embed_text()",
+      "file_type": "code",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L16"
+    },
+    {
+      "id": "core_embeddings_embed_texts",
+      "label": "embed_texts()",
+      "file_type": "code",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L33"
+    },
+    {
+      "id": "core_security",
+      "label": "security.py",
+      "file_type": "code",
+      "source_file": "app/core/security.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "core_security_hash_password",
+      "label": "hash_password()",
+      "file_type": "code",
+      "source_file": "app/core/security.py",
+      "source_location": "L14"
+    },
+    {
+      "id": "core_security_verify_password",
+      "label": "verify_password()",
+      "file_type": "code",
+      "source_file": "app/core/security.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "core_security_create_access_token",
+      "label": "create_access_token()",
+      "file_type": "code",
+      "source_file": "app/core/security.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "core_security_decode_token",
+      "label": "decode_token()",
+      "file_type": "code",
+      "source_file": "app/core/security.py",
+      "source_location": "L30"
+    },
+    {
+      "id": "db_init",
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "app/db/__init__.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "db_models",
+      "label": "models.py",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "db_models_base",
+      "label": "Base",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L48"
+    },
+    {
+      "id": "declarativebase",
+      "label": "DeclarativeBase",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "db_models_role",
+      "label": "Role",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L55"
+    },
+    {
+      "id": "db_models_permission",
+      "label": "Permission",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L76"
+    },
+    {
+      "id": "db_models_user",
+      "label": "User",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L92"
+    },
+    {
+      "id": "db_models_stmt_user_by_email",
+      "label": "stmt_user_by_email()",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L115"
+    },
+    {
+      "id": "db_models_stmt_role_by_slug",
+      "label": "stmt_role_by_slug()",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L119"
+    },
+    {
+      "id": "db_models_project",
+      "label": "Project",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L123"
+    },
+    {
+      "id": "db_models_questionnaireresult",
+      "label": "QuestionnaireResult",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L143"
+    },
+    {
+      "id": "db_models_projectmember",
+      "label": "ProjectMember",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L161"
+    },
+    {
+      "id": "db_models_controlpoint",
+      "label": "ControlPoint",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L177"
+    },
+    {
+      "id": "db_models_projectdocument",
+      "label": "ProjectDocument",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L196"
+    },
+    {
+      "id": "db_models_audittrailentry",
+      "label": "AuditTrailEntry",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L217"
+    },
+    {
+      "id": "db_models_ragdocument",
+      "label": "RagDocument",
+      "file_type": "code",
+      "source_file": "app/db/models.py",
+      "source_location": "L232"
+    },
+    {
+      "id": "db_seed_templates",
+      "label": "seed_templates.py",
+      "file_type": "code",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "db_seed_templates_seed",
+      "label": "seed()",
+      "file_type": "code",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L215"
+    },
+    {
+      "id": "db_seed_templates_rationale_1",
+      "label": "Seed RAG templates into the database.  Usage:     uv run python app/db/seed_temp",
+      "file_type": "rationale",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_main",
+      "label": "main.py",
+      "file_type": "code",
+      "source_file": "app/main.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_main_lifespan",
+      "label": "lifespan()",
+      "file_type": "code",
+      "source_file": "app/main.py",
+      "source_location": "L21"
+    },
+    {
+      "id": "app_main_create_app",
+      "label": "create_app()",
+      "file_type": "code",
+      "source_file": "app/main.py",
+      "source_location": "L27"
+    },
+    {
+      "id": "app_schemas",
+      "label": "schemas.py",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_schemas_roleout",
+      "label": "RoleOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L6"
+    },
+    {
+      "id": "basemodel",
+      "label": "BaseModel",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "app_schemas_registerin",
+      "label": "RegisterIn",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L12"
+    },
+    {
+      "id": "app_schemas_loginin",
+      "label": "LoginIn",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L20"
+    },
+    {
+      "id": "app_schemas_userout",
+      "label": "UserOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L25"
+    },
+    {
+      "id": "app_schemas_tokenout",
+      "label": "TokenOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L34"
+    },
+    {
+      "id": "app_schemas_projectout",
+      "label": "ProjectOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L42"
+    },
+    {
+      "id": "app_schemas_questionnaireresultin",
+      "label": "QuestionnaireResultIn",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L56"
+    },
+    {
+      "id": "app_schemas_questionnaireresultout",
+      "label": "QuestionnaireResultOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L63"
+    },
+    {
+      "id": "app_schemas_controlpointout",
+      "label": "ControlPointOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L73"
+    },
+    {
+      "id": "app_schemas_projectdocumentout",
+      "label": "ProjectDocumentOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L86"
+    },
+    {
+      "id": "app_schemas_projectmemberout",
+      "label": "ProjectMemberOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L99"
+    },
+    {
+      "id": "app_schemas_audittrailentryout",
+      "label": "AuditTrailEntryOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L107"
+    },
+    {
+      "id": "app_schemas_projectdetailout",
+      "label": "ProjectDetailOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L116"
+    },
+    {
+      "id": "app_schemas_ragdocumentout",
+      "label": "RagDocumentOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L128"
+    },
+    {
+      "id": "app_schemas_ragdocumentin",
+      "label": "RagDocumentIn",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L139"
+    },
+    {
+      "id": "app_schemas_ragsearchin",
+      "label": "RagSearchIn",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L148"
+    },
+    {
+      "id": "app_schemas_ragsearchresult",
+      "label": "RagSearchResult",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L155"
+    },
+    {
+      "id": "app_schemas_generateddocumentout",
+      "label": "GeneratedDocumentOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L163"
+    },
+    {
+      "id": "app_schemas_executorout",
+      "label": "ExecutorOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L174"
+    },
+    {
+      "id": "app_schemas_technologyout",
+      "label": "TechnologyOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L184"
+    },
+    {
+      "id": "app_schemas_chatin",
+      "label": "ChatIn",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L200"
+    },
+    {
+      "id": "app_schemas_chatmessage",
+      "label": "ChatMessage",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L205"
+    },
+    {
+      "id": "app_schemas_chatout",
+      "label": "ChatOut",
+      "file_type": "code",
+      "source_file": "app/schemas.py",
+      "source_location": "L210"
+    },
+    {
+      "id": "services_ai_assistant",
+      "label": "ai_assistant.py",
+      "file_type": "code",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "services_ai_assistant_build_rag_context",
+      "label": "build_rag_context()",
+      "file_type": "code",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "services_ai_assistant_ask_gigachat",
+      "label": "ask_gigachat()",
+      "file_type": "code",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L28"
+    },
+    {
+      "id": "services_ai_assistant_process_chat",
+      "label": "process_chat()",
+      "file_type": "code",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L67"
+    },
+    {
+      "id": "services_document_generator",
+      "label": "document_generator.py",
+      "file_type": "code",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "services_document_generator_resolve_variable",
+      "label": "_resolve_variable()",
+      "file_type": "code",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "services_document_generator_generate_document",
+      "label": "generate_document()",
+      "file_type": "code",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L64"
+    },
+    {
+      "id": "services_rag",
+      "label": "rag.py",
+      "file_type": "code",
+      "source_file": "app/services/rag.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "services_rag_upsert_document",
+      "label": "upsert_document()",
+      "file_type": "code",
+      "source_file": "app/services/rag.py",
+      "source_location": "L43"
+    },
+    {
+      "id": "services_rag_search_documents",
+      "label": "search_documents()",
+      "file_type": "code",
+      "source_file": "app/services/rag.py",
+      "source_location": "L86"
+    },
+    {
+      "id": "services_rag_list_templates",
+      "label": "list_templates()",
+      "file_type": "code",
+      "source_file": "app/services/rag.py",
+      "source_location": "L122"
+    },
+    {
+      "id": "sql_0001_init_schemas",
+      "label": "0001_init_schemas.sql",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0001_init_schemas.sql",
+      "source_location": "L1"
+    },
+    {
+      "id": "sql_0001_init_schemas_public_db_migration_log",
+      "label": "public.db_migration_log",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0001_init_schemas.sql",
+      "source_location": "L34"
+    },
+    {
+      "id": "sql_0002_rag_documents",
+      "label": "0002_rag_documents.sql",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0002_rag_documents.sql",
+      "source_location": "L1"
+    },
+    {
+      "id": "sql_0002_rag_documents_public_rag_documents",
+      "label": "public.rag_documents",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0002_rag_documents.sql",
+      "source_location": "L6"
+    },
+    {
+      "id": "sql_0003_rbac",
+      "label": "0003_rbac.sql",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L1"
+    },
+    {
+      "id": "sql_0003_rbac_public_roles",
+      "label": "public.roles",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L10"
+    },
+    {
+      "id": "sql_0003_rbac_public_permissions",
+      "label": "public.permissions",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L31"
+    },
+    {
+      "id": "sql_0003_rbac_public_role_permissions",
+      "label": "public.role_permissions",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L43"
+    },
+    {
+      "id": "sql_0003_rbac_public_users",
+      "label": "public.users",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L55"
+    },
+    {
+      "id": "sql_0003_rbac_public_user_roles",
+      "label": "public.user_roles",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L88"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire",
+      "label": "0004_projects_and_questionnaire.sql",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L1"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_projects",
+      "label": "public.projects",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L2"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_users",
+      "label": "public.users",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L11"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_questionnaire_results",
+      "label": "public.questionnaire_results",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L17"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_project_members",
+      "label": "public.project_members",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L29"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_control_points",
+      "label": "public.control_points",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L39"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_project_documents",
+      "label": "public.project_documents",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L53"
+    },
+    {
+      "id": "sql_0004_projects_and_questionnaire_public_audit_trail",
+      "label": "public.audit_trail",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L67"
+    },
+    {
+      "id": "sql_0005_rag_metadata",
+      "label": "0005_rag_metadata.sql",
+      "file_type": "code",
+      "source_file": "db/migrations/sql/0005_rag_metadata.sql",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_health",
+      "label": "test_health.py",
+      "file_type": "code",
+      "source_file": "tests/test_health.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_health_test_health_reports_service_identity",
+      "label": "test_health_reports_service_identity()",
+      "file_type": "code",
+      "source_file": "tests/test_health.py",
+      "source_location": "L9"
+    },
+    {
+      "id": "tests_test_health_test_openapi_exposes_health_contract",
+      "label": "test_openapi_exposes_health_contract()",
+      "file_type": "code",
+      "source_file": "tests/test_health.py",
+      "source_location": "L19"
+    },
+    {
+      "id": "tests_test_health_test_ready_reports_checked_database_roles",
+      "label": "test_ready_reports_checked_database_roles()",
+      "file_type": "code",
+      "source_file": "tests/test_health.py",
+      "source_location": "L26"
+    },
+    {
+      "id": "tests_test_health_test_ready_fails_closed_when_database_check_fails",
+      "label": "test_ready_fails_closed_when_database_check_fails()",
+      "file_type": "code",
+      "source_file": "tests/test_health.py",
+      "source_location": "L41"
+    }
+  ],
+  "edges": [
+    {
+      "source": "alembic_env",
+      "target": "logging_config",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/env.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "alembic_env",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/env.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "alembic_env",
+      "target": "alembic",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/env.py",
+      "source_location": "L14",
+      "weight": 1
+    },
+    {
+      "source": "alembic_env",
+      "target": "app_core_config",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/env.py",
+      "source_location": "L15",
+      "weight": 1
+    },
+    {
+      "source": "alembic_env",
+      "target": "alembic_env_run_migrations_offline",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/env.py",
+      "source_location": "L28",
+      "weight": 1
+    },
+    {
+      "source": "alembic_env",
+      "target": "alembic_env_run_migrations_online",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/env.py",
+      "source_location": "L39",
+      "weight": 1
+    },
+    {
+      "source": "alembic_env_rationale_1",
+      "target": "alembic_env",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/env.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "versions_0001_init_schemas",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "versions_0001_init_schemas",
+      "target": "alembic",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "versions_0001_init_schemas",
+      "target": "versions_0001_init_schemas_sql",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L22",
+      "weight": 1
+    },
+    {
+      "source": "versions_0001_init_schemas",
+      "target": "versions_0001_init_schemas_upgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L26",
+      "weight": 1
+    },
+    {
+      "source": "versions_0001_init_schemas",
+      "target": "versions_0001_init_schemas_downgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L31",
+      "weight": 1
+    },
+    {
+      "source": "versions_0001_init_schemas_upgrade",
+      "target": "versions_0001_init_schemas_sql",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L27",
+      "weight": 1
+    },
+    {
+      "source": "versions_0001_init_schemas_rationale_1",
+      "target": "versions_0001_init_schemas",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0001_init_schemas.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "versions_0002_rag_documents",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "versions_0002_rag_documents",
+      "target": "alembic",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "versions_0002_rag_documents",
+      "target": "versions_0002_rag_documents_sql",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L22",
+      "weight": 1
+    },
+    {
+      "source": "versions_0002_rag_documents",
+      "target": "versions_0002_rag_documents_upgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L26",
+      "weight": 1
+    },
+    {
+      "source": "versions_0002_rag_documents",
+      "target": "versions_0002_rag_documents_downgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L31",
+      "weight": 1
+    },
+    {
+      "source": "versions_0002_rag_documents_upgrade",
+      "target": "versions_0002_rag_documents_sql",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L27",
+      "weight": 1
+    },
+    {
+      "source": "versions_0002_rag_documents_rationale_1",
+      "target": "versions_0002_rag_documents",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0002_rag_documents.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "versions_0003_rbac",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "versions_0003_rbac",
+      "target": "alembic",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "versions_0003_rbac",
+      "target": "versions_0003_rbac_sql",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L22",
+      "weight": 1
+    },
+    {
+      "source": "versions_0003_rbac",
+      "target": "versions_0003_rbac_upgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L26",
+      "weight": 1
+    },
+    {
+      "source": "versions_0003_rbac",
+      "target": "versions_0003_rbac_downgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L31",
+      "weight": 1
+    },
+    {
+      "source": "versions_0003_rbac_upgrade",
+      "target": "versions_0003_rbac_sql",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L27",
+      "weight": 1
+    },
+    {
+      "source": "versions_0003_rbac_rationale_1",
+      "target": "versions_0003_rbac",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0003_rbac.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "versions_0004_projects_and_questionnaire",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "versions_0004_projects_and_questionnaire",
+      "target": "alembic",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "versions_0004_projects_and_questionnaire",
+      "target": "versions_0004_projects_and_questionnaire_sql",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L22",
+      "weight": 1
+    },
+    {
+      "source": "versions_0004_projects_and_questionnaire",
+      "target": "versions_0004_projects_and_questionnaire_upgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L26",
+      "weight": 1
+    },
+    {
+      "source": "versions_0004_projects_and_questionnaire",
+      "target": "versions_0004_projects_and_questionnaire_downgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L34",
+      "weight": 1
+    },
+    {
+      "source": "versions_0004_projects_and_questionnaire_upgrade",
+      "target": "versions_0004_projects_and_questionnaire_sql",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L27",
+      "weight": 1
+    },
+    {
+      "source": "versions_0004_projects_and_questionnaire_rationale_1",
+      "target": "versions_0004_projects_and_questionnaire",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0004_projects_and_questionnaire.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "versions_0005_rag_metadata",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "versions_0005_rag_metadata",
+      "target": "alembic",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "versions_0005_rag_metadata",
+      "target": "versions_0005_rag_metadata_sql",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L22",
+      "weight": 1
+    },
+    {
+      "source": "versions_0005_rag_metadata",
+      "target": "versions_0005_rag_metadata_upgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L26",
+      "weight": 1
+    },
+    {
+      "source": "versions_0005_rag_metadata",
+      "target": "versions_0005_rag_metadata_downgrade",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L31",
+      "weight": 1
+    },
+    {
+      "source": "versions_0005_rag_metadata_upgrade",
+      "target": "versions_0005_rag_metadata_sql",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L27",
+      "weight": 1
+    },
+    {
+      "source": "versions_0005_rag_metadata_rationale_1",
+      "target": "versions_0005_rag_metadata",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "alembic/versions/0005_rag_metadata.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "app_init_rationale_1",
+      "target": "app_init",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app/__init__.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "sqlalchemy_exc",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "app_core_security",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "v1_auth_register",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L15",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "v1_auth_login",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L42",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "v1_auth_me",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L54",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth",
+      "target": "v1_auth_user_out",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L58",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth_register",
+      "target": "v1_auth_user_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L38",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth_login",
+      "target": "v1_auth_user_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L50",
+      "weight": 1
+    },
+    {
+      "source": "v1_auth_me",
+      "target": "v1_auth_user_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/auth.py",
+      "source_location": "L55",
+      "weight": 1
+    },
+    {
+      "source": "v1_chat",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/chat.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_chat",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/chat.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "v1_chat",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/chat.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "v1_chat",
+      "target": "app_services_ai_assistant",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/chat.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_chat",
+      "target": "v1_chat_chat",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/chat.py",
+      "source_location": "L13",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors",
+      "target": "v1_executors_get_executors",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L15",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors",
+      "target": "v1_executors_list_executors",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L69",
+      "weight": 1
+    },
+    {
+      "source": "v1_executors_list_executors",
+      "target": "v1_executors_get_executors",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/executors.py",
+      "source_location": "L74",
+      "weight": 1
+    },
+    {
+      "source": "v1_generation",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/generation.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_generation",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/generation.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "v1_generation",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/generation.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "v1_generation",
+      "target": "app_services_document_generator",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/generation.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_generation",
+      "target": "v1_generation_generate_project_document",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/generation.py",
+      "source_location": "L13",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "sqlalchemy_ext_asyncio",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "app_core_database",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "v1_health_health",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L13",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "v1_health_ready",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L18",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "v1_health_check_engine",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L27",
+      "weight": 1
+    },
+    {
+      "source": "v1_health",
+      "target": "v1_health_check_databases",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L36",
+      "weight": 1
+    },
+    {
+      "source": "v1_health_ready",
+      "target": "v1_health_check_databases",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L19",
+      "weight": 1
+    },
+    {
+      "source": "v1_health_check_databases",
+      "target": "v1_health_check_engine",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/health.py",
+      "source_location": "L37",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L15",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "v1_projects_get_project_detail",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L30",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "v1_projects_save_questionnaire",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L85",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "v1_projects_qr_out",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L119",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "v1_projects_cp_out",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L129",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "v1_projects_doc_out",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L142",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "v1_projects_mem_out",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L155",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects",
+      "target": "v1_projects_at_out",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L164",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects_get_project_detail",
+      "target": "v1_projects_qr_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L72",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects_get_project_detail",
+      "target": "v1_projects_cp_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L73",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects_get_project_detail",
+      "target": "v1_projects_doc_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L74",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects_get_project_detail",
+      "target": "v1_projects_mem_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L75",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects_get_project_detail",
+      "target": "v1_projects_at_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L76",
+      "weight": 1
+    },
+    {
+      "source": "v1_projects_save_questionnaire",
+      "target": "v1_projects_qr_out",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/projects.py",
+      "source_location": "L116",
+      "weight": 1
+    },
+    {
+      "source": "v1_rag",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_rag",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "v1_rag",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "v1_rag",
+      "target": "app_services_rag",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_rag",
+      "target": "v1_rag_upload_template",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L13",
+      "weight": 1
+    },
+    {
+      "source": "v1_rag",
+      "target": "v1_rag_search_rag",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L37",
+      "weight": 1
+    },
+    {
+      "source": "v1_rag",
+      "target": "v1_rag_get_templates",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/rag.py",
+      "source_location": "L46",
+      "weight": 1
+    },
+    {
+      "source": "v1_technologies",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "v1_technologies",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "v1_technologies",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "v1_technologies",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "v1_technologies",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "v1_technologies",
+      "target": "v1_technologies_list_technologies",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/v1/technologies.py",
+      "source_location": "L14",
+      "weight": 1
+    },
+    {
+      "source": "core_config",
+      "target": "functools",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "core_config",
+      "target": "pydantic_settings",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "core_config",
+      "target": "core_config_settings",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "core_config_settings",
+      "target": "basesettings",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "core_config_settings",
+      "target": "core_config_settings_cors_origin_list",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L37",
+      "weight": 1
+    },
+    {
+      "source": "core_config_settings",
+      "target": "core_config_settings_primary_dsn",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L41",
+      "weight": 1
+    },
+    {
+      "source": "core_config_settings",
+      "target": "core_config_settings_replica_dsn",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L48",
+      "weight": 1
+    },
+    {
+      "source": "core_config",
+      "target": "core_config_get_settings",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L58",
+      "weight": 1
+    },
+    {
+      "source": "core_config_get_settings",
+      "target": "core_config_settings",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/config.py",
+      "source_location": "L59",
+      "weight": 1
+    },
+    {
+      "source": "core_database",
+      "target": "collections_abc",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/database.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "core_database",
+      "target": "sqlalchemy_ext_asyncio",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/database.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "core_database",
+      "target": "app_core_config",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/database.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "core_database",
+      "target": "core_database_get_db",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/database.py",
+      "source_location": "L33",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "typing",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "fastapi_security",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "sqlalchemy_ext_asyncio",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "app_core_database",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "app_core_security",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L11",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "core_deps_get_current_user",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L17",
+      "weight": 1
+    },
+    {
+      "source": "core_deps",
+      "target": "core_deps_require_role",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/deps.py",
+      "source_location": "L37",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings",
+      "target": "hashlib",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings",
+      "target": "math",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings",
+      "target": "re",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings",
+      "target": "core_embeddings_tokenize",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings",
+      "target": "core_embeddings_embed_text",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L16",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings",
+      "target": "core_embeddings_embed_texts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L33",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings_embed_text",
+      "target": "core_embeddings_tokenize",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L17",
+      "weight": 1
+    },
+    {
+      "source": "core_embeddings_embed_texts",
+      "target": "core_embeddings_embed_text",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/embeddings.py",
+      "source_location": "L34",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "datetime",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "typing",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "jose",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "passlib_context",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "app_core_config",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "core_security_hash_password",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L14",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "core_security_verify_password",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L18",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "core_security_create_access_token",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L22",
+      "weight": 1
+    },
+    {
+      "source": "core_security",
+      "target": "core_security_decode_token",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/core/security.py",
+      "source_location": "L30",
+      "weight": 1
+    },
+    {
+      "source": "db_init",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/__init__.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "datetime",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "pgvector_sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "sqlalchemy_dialects_postgresql",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L25",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "sqlalchemy_orm",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L26",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L48",
+      "weight": 1
+    },
+    {
+      "source": "db_models_base",
+      "target": "declarativebase",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L48",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_role",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L55",
+      "weight": 1
+    },
+    {
+      "source": "db_models_role",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L55",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_permission",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L76",
+      "weight": 1
+    },
+    {
+      "source": "db_models_permission",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L76",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_user",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L92",
+      "weight": 1
+    },
+    {
+      "source": "db_models_user",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L92",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_stmt_user_by_email",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L115",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_stmt_role_by_slug",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L119",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_project",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L123",
+      "weight": 1
+    },
+    {
+      "source": "db_models_project",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L123",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_questionnaireresult",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L143",
+      "weight": 1
+    },
+    {
+      "source": "db_models_questionnaireresult",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L143",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_projectmember",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L161",
+      "weight": 1
+    },
+    {
+      "source": "db_models_projectmember",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L161",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_controlpoint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L177",
+      "weight": 1
+    },
+    {
+      "source": "db_models_controlpoint",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L177",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_projectdocument",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L196",
+      "weight": 1
+    },
+    {
+      "source": "db_models_projectdocument",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L196",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_audittrailentry",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L217",
+      "weight": 1
+    },
+    {
+      "source": "db_models_audittrailentry",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L217",
+      "weight": 1
+    },
+    {
+      "source": "db_models",
+      "target": "db_models_ragdocument",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L232",
+      "weight": 1
+    },
+    {
+      "source": "db_models_ragdocument",
+      "target": "db_models_base",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/models.py",
+      "source_location": "L232",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates",
+      "target": "asyncio",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates",
+      "target": "hashlib",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates",
+      "target": "app_core_database",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates",
+      "target": "app_core_embeddings",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L13",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L14",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates",
+      "target": "db_seed_templates_seed",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L215",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates_rationale_1",
+      "target": "db_seed_templates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "collections_abc",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "contextlib",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "fastapi_middleware_cors",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_auth",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_chat",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_executors",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L11",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_generation",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_health",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L13",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_projects",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L14",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_rag",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L15",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_api_v1_technologies",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L16",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_core_config",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L17",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_main_lifespan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L21",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "app_main_create_app",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L27",
+      "weight": 1
+    },
+    {
+      "source": "app_main",
+      "target": "uvicorn",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/main.py",
+      "source_location": "L56",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "pydantic",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_roleout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_roleout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_registerin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_registerin",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L12",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_loginin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L20",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_loginin",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L20",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_userout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L25",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_userout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L25",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_tokenout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L34",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_tokenout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L34",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_projectout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L42",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_projectout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L42",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_questionnaireresultin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L56",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_questionnaireresultin",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L56",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_questionnaireresultout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L63",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_questionnaireresultout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L63",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_controlpointout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L73",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_controlpointout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L73",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_projectdocumentout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L86",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_projectdocumentout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L86",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_projectmemberout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L99",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_projectmemberout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L99",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_audittrailentryout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L107",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_audittrailentryout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L107",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_projectdetailout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L116",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_projectdetailout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L116",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_ragdocumentout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L128",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_ragdocumentout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L128",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_ragdocumentin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L139",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_ragdocumentin",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L139",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_ragsearchin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L148",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_ragsearchin",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L148",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_ragsearchresult",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L155",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_ragsearchresult",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L155",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_generateddocumentout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L163",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_generateddocumentout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L163",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_executorout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L174",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_executorout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L174",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_technologyout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L184",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_technologyout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L184",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_chatin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L200",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_chatin",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L200",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_chatmessage",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L205",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_chatmessage",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L205",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas",
+      "target": "app_schemas_chatout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L210",
+      "weight": 1
+    },
+    {
+      "source": "app_schemas_chatout",
+      "target": "basemodel",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "app/schemas.py",
+      "source_location": "L210",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "uuid",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "httpx",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "app_core_config",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "app_services_rag",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "services_ai_assistant_build_rag_context",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L15",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "services_ai_assistant_ask_gigachat",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L28",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant",
+      "target": "services_ai_assistant_process_chat",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L67",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant_process_chat",
+      "target": "services_ai_assistant_build_rag_context",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L74",
+      "weight": 1
+    },
+    {
+      "source": "services_ai_assistant_process_chat",
+      "target": "services_ai_assistant_ask_gigachat",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/ai_assistant.py",
+      "source_location": "L93",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator",
+      "target": "re",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L13",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator",
+      "target": "services_document_generator_resolve_variable",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L18",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator",
+      "target": "services_document_generator_generate_document",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L64",
+      "weight": 1
+    },
+    {
+      "source": "services_document_generator_generate_document",
+      "target": "services_document_generator_resolve_variable",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/document_generator.py",
+      "source_location": "L96",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "hashlib",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L5",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "app_core_deps",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L7",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "app_core_embeddings",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L8",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "app_db_models",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "app_schemas",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "services_rag_upsert_document",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L43",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "services_rag_search_documents",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L86",
+      "weight": 1
+    },
+    {
+      "source": "services_rag",
+      "target": "services_rag_list_templates",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/services/rag.py",
+      "source_location": "L122",
+      "weight": 1
+    },
+    {
+      "source": "sql_0001_init_schemas",
+      "target": "sql_0001_init_schemas_public_db_migration_log",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0001_init_schemas.sql",
+      "source_location": "L34",
+      "weight": 1
+    },
+    {
+      "source": "sql_0002_rag_documents",
+      "target": "sql_0002_rag_documents_public_rag_documents",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0002_rag_documents.sql",
+      "source_location": "L6",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac",
+      "target": "sql_0003_rbac_public_roles",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L10",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac",
+      "target": "sql_0003_rbac_public_permissions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L31",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac",
+      "target": "sql_0003_rbac_public_role_permissions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L43",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac_public_role_permissions",
+      "target": "sql_0003_rbac_public_roles",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L44",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac_public_role_permissions",
+      "target": "sql_0003_rbac_public_permissions",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L45",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac",
+      "target": "sql_0003_rbac_public_users",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L55",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac",
+      "target": "sql_0003_rbac_public_user_roles",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L88",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac_public_user_roles",
+      "target": "sql_0003_rbac_public_users",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L89",
+      "weight": 1
+    },
+    {
+      "source": "sql_0003_rbac_public_user_roles",
+      "target": "sql_0003_rbac_public_roles",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0003_rbac.sql",
+      "source_location": "L90",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire",
+      "target": "sql_0004_projects_and_questionnaire_public_projects",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L2",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire",
+      "target": "sql_0004_projects_and_questionnaire_public_users",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L11",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_projects",
+      "target": "sql_0004_projects_and_questionnaire_public_users",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L11",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire",
+      "target": "sql_0004_projects_and_questionnaire_public_questionnaire_results",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L17",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_questionnaire_results",
+      "target": "sql_0004_projects_and_questionnaire_public_projects",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L19",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire",
+      "target": "sql_0004_projects_and_questionnaire_public_project_members",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L29",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_project_members",
+      "target": "sql_0004_projects_and_questionnaire_public_projects",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L31",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_project_members",
+      "target": "sql_0004_projects_and_questionnaire_public_users",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L32",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire",
+      "target": "sql_0004_projects_and_questionnaire_public_control_points",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L39",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_control_points",
+      "target": "sql_0004_projects_and_questionnaire_public_projects",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L41",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_control_points",
+      "target": "sql_0004_projects_and_questionnaire_public_users",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L47",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire",
+      "target": "sql_0004_projects_and_questionnaire_public_project_documents",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L53",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_project_documents",
+      "target": "sql_0004_projects_and_questionnaire_public_projects",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L55",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_project_documents",
+      "target": "sql_0004_projects_and_questionnaire_public_users",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L61",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire",
+      "target": "sql_0004_projects_and_questionnaire_public_audit_trail",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L67",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_audit_trail",
+      "target": "sql_0004_projects_and_questionnaire_public_projects",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L69",
+      "weight": 1
+    },
+    {
+      "source": "sql_0004_projects_and_questionnaire_public_audit_trail",
+      "target": "sql_0004_projects_and_questionnaire_public_users",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "db/migrations/sql/0004_projects_and_questionnaire.sql",
+      "source_location": "L70",
+      "weight": 1
+    },
+    {
+      "source": "tests_test_health",
+      "target": "fastapi_testclient",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_health.py",
+      "source_location": "L1",
+      "weight": 1
+    },
+    {
+      "source": "tests_test_health",
+      "target": "app_api_v1",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_health.py",
+      "source_location": "L3",
+      "weight": 1
+    },
+    {
+      "source": "tests_test_health",
+      "target": "app_main",
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_health.py",
+      "source_location": "L4",
+      "weight": 1
+    },
+    {
+      "source": "tests_test_health",
+      "target": "tests_test_health_test_health_reports_service_identity",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_health.py",
+      "source_location": "L9",
+      "weight": 1
+    },
+    {
+      "source": "tests_test_health",
+      "target": "tests_test_health_test_openapi_exposes_health_contract",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_health.py",
+      "source_location": "L19",
+      "weight": 1
+    },
+    {
+      "source": "tests_test_health",
+      "target": "tests_test_health_test_ready_reports_checked_database_roles",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_health.py",
+      "source_location": "L26",
+      "weight": 1
+    },
+    {
+      "source": "tests_test_health",
+      "target": "tests_test_health_test_ready_fails_closed_when_database_check_fails",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_health.py",
+      "source_location": "L41",
+      "weight": 1
+    },
+    {
+      "source": "db_seed_templates_rationale_1",
+      "target": "db_models_ragdocument",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "app/db/seed_templates.py",
+      "source_location": "L14",
+      "weight": 0.8
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "hyperedges": []
+}

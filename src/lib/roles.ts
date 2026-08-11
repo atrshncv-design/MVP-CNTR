@@ -97,6 +97,24 @@ export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
     "cntr_admin",
     "cntr_manager",
   ],
+  // Разделы «В разработке» (тикет 06, operations-modules).
+  // Скрытие UI не заменяет backend: доступ к маршруту закрыт middleware
+  // (src/middleware.ts) и backend-авторизацией независимо от навигации.
+  // «Новости и мероприятия» — все авторизованные роли (общий информационный раздел).
+  "/dashboard/news": [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "regulating_organization",
+    "auditor",
+    "investor",
+    "cntr_admin",
+    "cntr_manager",
+  ],
+  // Сценарное прогнозирование и эффективность мероприятий — только сотрудники Центра.
+  "/dashboard/forecasting": ["cntr_admin", "cntr_manager"],
+  "/dashboard/effectiveness": ["cntr_admin", "cntr_manager"],
 };
 
 export function isProtectedRoute(pathname: string): boolean {

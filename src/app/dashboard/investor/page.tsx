@@ -5,37 +5,22 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
-  AlertCircle,
   Building2,
-  RefreshCw,
   Search,
   TrendingUp,
   Wallet,
 } from 'lucide-react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+import { getProjectRegistry, type RegistryProject } from "@/lib/api-client";
 import { AssessUgTCard } from "@/components/assess-ugt-card";
+import { CardSkeleton, EmptyState, ErrorState } from "@/components/states";
 
-/** Реестр технологий = опубликованные проекты УГТ 7+ (решение №14): RegistryProjectOut. */
-interface Technology {
-  id: number;
-  name: string;
-  category: string | null;
-  current_level: number;
-  preliminary_level: number | null;
-  target_level: number;
-  budget: number | null;
-  organization: string | null;
-  created_at: string | null;
-}
-
-const PUBLISHED_COLOR = 'var(--tz-success)';
+const PUBLISHED_COLOR = '#10B981';
 
 const UGT_OPTIONS = [7, 8, 9];
 
 export default function InvestorDashboard() {
   const { data: session } = useSession();
-  const [technologies, setTechnologies] = useState<Technology[]>([]);
+  const [technologies, setTechnologies] = useState<RegistryProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,14 +35,8 @@ export default function InvestorDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ ugt_min: String(minLevel) });
-      const res = await fetch(`${API_URL}/api/v1/projects/registry?${params}`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
-      });
-      if (!res.ok) {
-        throw new Error(`Не удалось загрузить реестр технологий (${res.status}).`);
-      }
-      setTechnologies((await res.json()) as Technology[]);
+      const list = await getProjectRegistry(session.user.accessToken, { ugt_min: minLevel });
+      setTechnologies(list);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить реестр технологий.');
     } finally {
@@ -100,7 +79,7 @@ export default function InvestorDashboard() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол инвестора
         </p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">
+        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
@@ -115,7 +94,7 @@ export default function InvestorDashboard() {
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
+        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
           Реестр технологий
         </span>
       </nav>
@@ -130,7 +109,7 @@ export default function InvestorDashboard() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по названию…"
-              className="w-full rounded-xl border border-tz-border bg-tz-surface py-2.5 pl-9 pr-3 text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-[var(--tz-accent)]"
+              className="w-full rounded-xl border border-tz-border bg-tz-surface py-2.5 pl-9 pr-3 text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-[#2E5BFF]"
             />
           </div>
           <div>
@@ -141,7 +120,7 @@ export default function InvestorDashboard() {
               id="inv-category"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[var(--tz-accent)]"
+              className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
               <option value="all">Все категории</option>
               {categories.map((c) => (
@@ -159,7 +138,7 @@ export default function InvestorDashboard() {
               id="inv-level"
               value={minLevel}
               onChange={(e) => setMinLevel(Number(e.target.value))}
-              className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[var(--tz-accent)]"
+              className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF]"
             >
               {UGT_OPTIONS.map((l) => (
                 <option key={l} value={l}>
@@ -173,38 +152,20 @@ export default function InvestorDashboard() {
 
       {/* Реестр */}
       <div className="mt-6">
-        <h2 className="tz-card-title mb-4 text-tz-fg">
+        <h2 className="mb-4 text-lg font-bold text-tz-fg">
           Реестр технологий <span className="text-sm font-normal text-tz-muted">({filtered.length})</span>
         </h2>
 
         {loading ? (
-          <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-            <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
-            <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
-          </div>
+          <CardSkeleton />
         ) : error ? (
-          <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
-            <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
-            <p className="font-semibold text-tz-danger">{error}</p>
-            <button
-              onClick={() => loadTechnologies()}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-            >
-              <RefreshCw size={14} /> Повторить
-            </button>
-          </div>
+          <ErrorState message={error} onRetry={() => loadTechnologies()} />
         ) : filtered.length === 0 ? (
-          <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
-              <TrendingUp size={22} className="text-[var(--tz-accent)]" />
-            </div>
-            <h2 className="tz-section-title mt-5 text-tz-fg">
-              Технологии не найдены
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
-              Измените параметры фильтров или дождитесь появления новых технологий в реестре.
-            </p>
-          </div>
+          <EmptyState
+            icon={<TrendingUp size={22} className="text-[#2E5BFF]" />}
+            title="Технологии не найдены"
+            text="Измените параметры фильтров или дождитесь появления новых технологий в реестре."
+          />
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {filtered.map((tech) => {
@@ -233,17 +194,17 @@ export default function InvestorDashboard() {
                   <div className="mt-4">
                     <div className="mb-1 flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1 text-tz-muted">
-                        <Activity size={13} className="text-[var(--tz-accent)]" />
+                        <Activity size={13} className="text-[#2E5BFF]" />
                         Зрелость УГТ
                       </span>
-                      <span className="font-semibold text-[var(--tz-accent)]">
+                      <span className="font-semibold text-[#2E5BFF]">
                         УГТ {tech.current_level} → {tech.target_level}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-tz-surface-2">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-[var(--tz-accent)] to-[var(--tz-success)] transition-all duration-500"
+                          className="h-full rounded-full bg-gradient-to-r from-[#2E5BFF] to-[#10B981] transition-all duration-500"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
@@ -254,7 +215,7 @@ export default function InvestorDashboard() {
                   <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-tz-muted">
                     {tech.organization && (
                       <span className="flex items-center gap-1.5">
-                        <Building2 size={14} className="text-[var(--tz-ugt-2)]" />
+                        <Building2 size={14} className="text-[#FF7A2E]" />
                         {tech.organization}
                       </span>
                     )}

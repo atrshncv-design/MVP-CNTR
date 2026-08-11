@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -59,8 +59,7 @@ const STATUS_BADGE: Record<string, string> = {
   rejected: "tz-badge-danger",
 };
 
-/** Категории из API реестра технологий */
-const CATEGORIES = ["AI/ML", "НИОКТР"];
+/** Категории вычисляются из данных реестра (тикет 29) — без захардкоженного списка. */
 
 /** Уровни УГТ по ГОСТ Р 58048-2017 (1–9) */
 const UGT_LEVELS = Array.from({ length: 9 }, (_, i) => i + 1);
@@ -154,6 +153,12 @@ export default function TechnologiesPage() {
     return true;
   });
 
+  // Категории — из фактических данных реестра (без хардкода).
+  const categories = useMemo(
+    () => [...new Set(projects.map((p) => p.category).filter((c): c is string => Boolean(c)))].sort(),
+    [projects],
+  );
+
   const hasFilters = statusFilter !== "all" || categoryFilter !== "all" ||
     minLevel !== "all" || maxLevel !== "all" || search !== "";
 
@@ -245,7 +250,7 @@ export default function TechnologiesPage() {
                 className="tz-select w-auto"
               >
                 <option value="all">Все</option>
-                {CATEGORIES.map((c) => (
+                {categories.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>

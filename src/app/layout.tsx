@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import BrowserSupport from "@/components/browser-support";
 import Providers from "@/components/providers";
 
 const manrope = Manrope({
@@ -34,7 +35,10 @@ export default function RootLayout({
       className={`${manrope.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <Providers>
+          <BrowserSupport />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -69,6 +69,10 @@ export default function ProfilePage() {
   const [orgRegion, setOrgRegion] = useState("");
   const [orgDesc, setOrgDesc] = useState("");
   const [joinOrgId, setJoinOrgId] = useState("");
+  const [curPassword, setCurPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const load = async () => {
     if (!token) return;
@@ -183,6 +187,24 @@ export default function ProfilePage() {
     );
   }
 
+
+  const changePassword = async () => {
+    setError(null); setNotice(null);
+    if (!newPassword || newPassword.length < 8) { setError("Новый пароль должен быть не короче 8 символов."); return; }
+    if (newPassword !== confirmPassword) { setError("Пароли не совпадают."); return; }
+    setPasswordBusy(true);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/users/me/password`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ current_password: curPassword, new_password: newPassword }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => null); throw new Error((d && (d as { detail?: string }).detail) || `HTTP ${res.status}`); }
+      setCurPassword(""); setNewPassword(""); setConfirmPassword(""); setNotice("Пароль изменён. Сессии обновлены.");
+    } catch (e) { setError(e instanceof Error ? e.message : "Не удалось сменить пароль."); }
+    finally { setPasswordBusy(false); }
+  };
+
   return (
     <section className="mx-auto max-w-3xl">
       <div className="border-b border-tz-border pb-6">
@@ -195,12 +217,12 @@ export default function ProfilePage() {
       </div>
 
       {error && (
-        <div role="alert" className="mt-4 rounded-xl border border-tz-danger-border bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger-fg">
+        <div id="profile-error" role="alert" className="mt-4 rounded-xl border border-tz-danger-border bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger-fg">
           {error}
         </div>
       )}
       {notice && (
-        <div role="status" className="mt-4 rounded-xl border border-tz-success-border bg-tz-success-soft px-4 py-3 text-sm text-tz-success-fg">
+        <div id="profile-notice" role="status" className="mt-4 rounded-xl border border-tz-success-border bg-tz-success-soft px-4 py-3 text-sm text-tz-success-fg">
           {notice}
         </div>
       )}
@@ -234,6 +256,7 @@ export default function ProfilePage() {
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 disabled={!editable}
+                aria-describedby="profile-error"
                 className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
                 placeholder="Например: ведущий инженер-исследователь"
               />
@@ -274,14 +297,14 @@ export default function ProfilePage() {
             <button
               onClick={saveProfile}
               disabled={!editable}
-              className="inline-flex items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
             >
               <CheckCircle2 size={16} /> Сохранить
             </button>
             <button
               onClick={submitProfile}
               disabled={!editable}
-              className="inline-flex items-center gap-2 rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
             >
               <Send size={16} /> Отправить на проверку
             </button>
@@ -321,25 +344,26 @@ export default function ProfilePage() {
         <div className="mt-6 grid gap-3 border-t border-tz-border pt-5">
           <p className="text-sm font-semibold text-tz-fg">Создать организацию</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Название *" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgOgrn} onChange={(e) => setOrgOgrn(e.target.value)} placeholder="ОГРН" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgType} onChange={(e) => setOrgType(e.target.value)} placeholder="Тип (НИИ, ООО…)" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgRegion} onChange={(e) => setOrgRegion(e.target.value)} placeholder="Регион" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgName} onChange={(e) => setOrgName(e.target.value)} aria-label="Название новой организации" placeholder="Название *" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgOgrn} onChange={(e) => setOrgOgrn(e.target.value)} aria-label="ОГРН организации" placeholder="ОГРН" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgType} onChange={(e) => setOrgType(e.target.value)} aria-label="Тип организации" placeholder="Тип (НИИ, ООО…)" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgRegion} onChange={(e) => setOrgRegion(e.target.value)} aria-label="Регион организации" placeholder="Регион" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
           </div>
-          <textarea value={orgDesc} onChange={(e) => setOrgDesc(e.target.value)} rows={2} placeholder="Описание" className="w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+          <textarea value={orgDesc} onChange={(e) => setOrgDesc(e.target.value)} rows={2} aria-label="Описание организации" placeholder="Описание" className="w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
           <button
             onClick={createOrg}
             disabled={!orgName.trim()}
-            className="inline-flex w-fit items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
+            className="inline-flex w-fit min-h-11 items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
           >
             <PlusCircle size={16} /> Создать
           </button>
 
           <p className="mt-2 text-sm font-semibold text-tz-fg">Вступить по номеру</p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <input
               value={joinOrgId}
               onChange={(e) => setJoinOrgId(e.target.value)}
+              aria-label="id организации для вступления"
               placeholder="id организации"
               inputMode="numeric"
               className="w-48 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg"
@@ -347,12 +371,25 @@ export default function ProfilePage() {
             <button
               onClick={joinOrg}
               disabled={!joinOrgId.trim()}
-              className="rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
+              className="min-h-11 rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
             >
               Вступить
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-tz-border bg-tz-card p-6">
+        <p className="text-sm font-semibold text-tz-fg">Смена пароля</p>
+        <p className="mt-1 text-sm text-tz-secondary">После смены активные сессии обновляются.</p>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <input type="password" value={curPassword} onChange={(e) => setCurPassword(e.target.value)} placeholder="Текущий пароль" autoComplete="current-password" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" aria-label="Текущий пароль" />
+          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Новый пароль (мин. 8)" autoComplete="new-password" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" aria-label="Новый пароль" />
+          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Повторите новый пароль" autoComplete="new-password" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" aria-label="Повтор нового пароля" />
+        </div>
+        <button onClick={changePassword} disabled={passwordBusy || !curPassword || !newPassword} className="mt-4 inline-flex w-fit items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50">
+          {passwordBusy ? "Сохранение…" : "Сменить пароль"}
+        </button>
       </div>
     </section>
   );

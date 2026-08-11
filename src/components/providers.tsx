@@ -1,6 +1,7 @@
 "use client";
 
 import { signOut, useSession, SessionProvider } from "next-auth/react";
+import { MotionConfig } from "framer-motion";
 import { useEffect } from "react";
 
 function SessionExpiryWatcher() {
@@ -21,8 +22,10 @@ function SessionExpiryWatcher() {
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <SessionExpiryWatcher />
-      {children}
+      <MotionConfig reducedMotion="user">
+        <SessionExpiryWatcher />
+        {children}
+      </MotionConfig>
     </SessionProvider>
   );
 }
