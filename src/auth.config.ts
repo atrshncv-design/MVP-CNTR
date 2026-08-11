@@ -1,7 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+// Серверный URL бэкенда. Не NEXT_PUBLIC_: читается в рантайме и не инлайнится
+// в клиентские бандлы (клиент ходит в API относительным путём через rewrites).
+const API_URL = process.env.API_URL_INTERNAL ?? "http://127.0.0.1:8000";
 
 interface ApiUser {
   id: number;

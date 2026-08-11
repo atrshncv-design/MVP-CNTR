@@ -86,7 +86,7 @@ function UserRow({ user }: { user: AdminUser }) {
   };
 
   return (
-    <tr className="border-b border-tz-card-border align-top last:border-0 hover:bg-[#FAFBFD]">
+    <tr className="border-b border-tz-card-border align-top last:border-0 hover:bg-[var(--tz-soft)]">
       <td className="px-4 py-4">
         <p className="font-semibold text-tz-fg">{user.full_name || '—'}</p>
         <p className="mt-0.5 text-sm text-tz-muted">{user.email}</p>
@@ -101,7 +101,7 @@ function UserRow({ user }: { user: AdminUser }) {
             roles.map((slug) => (
               <span
                 key={slug}
-                className="rounded-md bg-[#EAF0FF] px-2 py-0.5 text-[11px] font-medium text-[#2E5BFF]"
+                className="rounded-md bg-[var(--tz-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--tz-accent)]"
               >
                 {roleName(slug)}
               </span>
@@ -118,7 +118,7 @@ function UserRow({ user }: { user: AdminUser }) {
             setSaved(false);
             setRoles(selected);
           }}
-          className="w-full max-w-[280px] rounded-xl border border-tz-border bg-tz-surface px-2 py-1.5 text-xs text-tz-fg outline-none transition focus:border-[#2E5BFF]"
+          className="w-full max-w-[280px] rounded-xl border border-tz-border bg-tz-surface px-2 py-1.5 text-xs text-tz-fg outline-none transition focus:border-[var(--tz-accent)]"
         >
           {ROLES.map((r) => (
             <option key={r.slug} value={r.slug} className="py-0.5">
@@ -141,7 +141,7 @@ function UserRow({ user }: { user: AdminUser }) {
             setIsActive((prev) => !prev);
           }}
           className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-            isActive ? 'bg-[#10B981]' : 'bg-tz-border'
+            isActive ? 'bg-[var(--tz-success)]' : 'bg-tz-border'
           }`}
         >
           <span
@@ -164,7 +164,7 @@ function UserRow({ user }: { user: AdminUser }) {
         <button
           onClick={saveUser}
           disabled={saving}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[#2E5BFF] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#244BD9] disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--tz-accent)] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[var(--tz-accent-hover)] disabled:opacity-60"
         >
           {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
           Сохранить
@@ -215,9 +215,9 @@ export default function CntrAdminDashboard() {
   const rolesAssigned = users.reduce((acc, u) => acc + u.roles.length, 0);
 
   const statCards = [
-    { label: 'Пользователи', value: users.length, icon: Users, color: '#2E5BFF' },
-    { label: 'Активных', value: activeCount, icon: ShieldCheck, color: '#10B981' },
-    { label: 'Назначений ролей', value: rolesAssigned, icon: UserCog, color: '#FF7A2E' },
+    { label: 'Пользователи', value: users.length, icon: Users, color: 'var(--tz-accent)' },
+    { label: 'Активных', value: activeCount, icon: ShieldCheck, color: 'var(--tz-success)' },
+    { label: 'Назначений ролей', value: rolesAssigned, icon: UserCog, color: 'var(--tz-ugt-2)' },
   ];
 
   return (
@@ -227,7 +227,7 @@ export default function CntrAdminDashboard() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол администратора ЦНТР
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
+        <h1 className="tz-page-title mt-2 text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
@@ -237,7 +237,7 @@ export default function CntrAdminDashboard() {
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
+        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
           Пользователи
         </span>
         <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
@@ -283,7 +283,7 @@ export default function CntrAdminDashboard() {
 
       {/* Таблица пользователей */}
       <div className="mt-8">
-        <h2 className="mb-4 text-lg font-bold text-tz-fg">Пользователи и роли</h2>
+        <h2 className="mb-4 tz-card-title text-tz-fg">Пользователи и роли</h2>
 
         {loading ? (
           <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
@@ -303,10 +303,10 @@ export default function CntrAdminDashboard() {
           </div>
         ) : users.length === 0 ? (
           <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
-              <Users size={22} className="text-[#2E5BFF]" />
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
+              <Users size={22} className="text-[var(--tz-accent)]" />
             </div>
-            <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
+            <h2 className="tz-section-title mt-5 text-tz-fg">
               Пользователи не найдены
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
@@ -317,7 +317,7 @@ export default function CntrAdminDashboard() {
           <div className="overflow-x-auto rounded-2xl border border-tz-card-border bg-tz-surface">
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-tz-card-border bg-[#FAFBFD] text-xs uppercase tracking-wider text-tz-muted">
+                <tr className="border-b border-tz-card-border bg-[var(--tz-soft)] text-xs uppercase tracking-wider text-tz-muted">
                   <th className="px-4 py-3 font-semibold">Пользователь</th>
                   <th className="px-4 py-3 font-semibold">Организация</th>
                   <th className="px-4 py-3 font-semibold">Роли</th>

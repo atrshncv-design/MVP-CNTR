@@ -108,7 +108,7 @@ export default function NotificationBell() {
       >
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[#EF4444] px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-tz-danger px-1 text-[10px] font-bold text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
@@ -138,7 +138,7 @@ export default function NotificationBell() {
                     {n.is_read ? (
                       <Check size={14} className="text-tz-muted" />
                     ) : (
-                      <span className="block h-2 w-2 rounded-full bg-[#2E5BFF]" />
+                      <span className="block h-2 w-2 rounded-full bg-tz-accent" />
                     )}
                   </span>
                   <span className="min-w-0">

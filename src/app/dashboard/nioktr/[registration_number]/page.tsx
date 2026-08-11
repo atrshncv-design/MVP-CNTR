@@ -112,7 +112,7 @@ export default function NioktrCardPage() {
       {card && !error && (
         <div className="overflow-hidden rounded-2xl border border-tz-border bg-tz-surface">
           {/* Шапка */}
-          <div className="border-b border-tz-border bg-gradient-to-br from-[#0d1526] via-[#121b33] to-[#0a101f] p-6 sm:p-8">
+          <div className="border-b border-tz-border bg-gradient-to-br from-[#2a1518] via-[#3a1a1c] to-[#1a1213] p-6 sm:p-8">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               {card.is_ai_area && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-tz-accent-soft px-3 py-1 text-xs font-semibold text-tz-accent">

@@ -98,7 +98,7 @@ export default function AiAssistantPage() {
     <div className="flex h-[calc(100vh-100px)] flex-col">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-tz-fg">AI-ассистент</h1>
+          <h1 className="tz-page-title text-tz-fg">AI-ассистент</h1>
           <p className="text-sm text-tz-muted">
             Задавайте вопросы по ГОСТ Р 58048-2017, уровням УГТ и документации
           </p>
@@ -125,19 +125,19 @@ export default function AiAssistantPage() {
             <div
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
                 msg.role === 'user'
-                  ? 'bg-[#2E5BFF]'
+                  ? 'bg-[var(--tz-accent)]'
                   : 'bg-tz-surface-2'
               }`}
             >
               {msg.role === 'user'
                 ? <User size={16} className="text-white" />
-                : <Bot size={16} className="text-[#2E5BFF]" />
+                : <Bot size={16} className="text-[var(--tz-accent)]" />
               }
             </div>
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                 msg.role === 'user'
-                  ? 'bg-[#2E5BFF] text-white'
+                  ? 'bg-[var(--tz-accent)] text-white'
                   : 'bg-tz-soft text-tz-fg'
               }`}
             >
@@ -149,12 +149,12 @@ export default function AiAssistantPage() {
                   </p>
                   {msg.sources.map((s) => (
                     <div key={s.id} className="flex items-start gap-2">
-                      <FileText size={14} className="mt-0.5 shrink-0 text-[#2E5BFF]" />
+                      <FileText size={14} className="mt-0.5 shrink-0 text-[var(--tz-accent)]" />
                       <div className="min-w-0">
                         <p className="text-xs leading-snug text-tz-fg">{s.title}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           {typeof s.ugt_level === 'number' && s.ugt_level > 0 && (
-                            <span className="rounded bg-[#2E5BFF]/10 px-1.5 py-px text-[10px] font-medium text-[#2E5BFF]">
+                            <span className="rounded bg-[var(--tz-accent)]/10 px-1.5 py-px text-[10px] font-medium text-[var(--tz-accent)]">
                               УГТ {s.ugt_level}
                             </span>
                           )}
@@ -163,7 +163,7 @@ export default function AiAssistantPage() {
                               href={s.source_uri}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-0.5 text-[10px] text-tz-muted underline decoration-gray-300 underline-offset-2 hover:text-[#2E5BFF]"
+                              className="inline-flex items-center gap-0.5 text-[10px] text-tz-muted underline decoration-gray-300 underline-offset-2 hover:text-[var(--tz-accent)]"
                             >
                               раздел ГОСТа <ExternalLink size={10} />
                             </a>
@@ -183,10 +183,10 @@ export default function AiAssistantPage() {
         {sending && (
           <div className="flex gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-tz-surface-2">
-              <Bot size={16} className="text-[#2E5BFF]" />
+              <Bot size={16} className="text-[var(--tz-accent)]" />
             </div>
             <div className="rounded-2xl bg-tz-soft px-4 py-3">
-              <Loader2 size={16} className="animate-spin text-[#2E5BFF]" />
+              <Loader2 size={16} className="animate-spin text-[var(--tz-accent)]" />
             </div>
           </div>
         )}
@@ -206,12 +206,12 @@ export default function AiAssistantPage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Введите вопрос по ГОСТ Р 58048-2017..."
-          className="flex-1 rounded-xl border border-tz-border bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[#2E5BFF]"
+          className="flex-1 rounded-xl border border-tz-border bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[var(--tz-accent)]"
         />
         <button
           onClick={sendMessage}
           disabled={sending || !input.trim()}
-          className="flex items-center gap-2 rounded-xl bg-[#2E5BFF] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1a4be0] disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl bg-[var(--tz-accent)] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--tz-accent-hover)] disabled:opacity-50"
         >
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           Отправить

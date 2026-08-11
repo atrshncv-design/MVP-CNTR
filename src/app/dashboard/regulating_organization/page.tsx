@@ -84,8 +84,8 @@ export default function RegulatingOrganizationDashboard() {
   const totalDocs = projects.reduce((acc, p) => acc + p.docs_count, 0);
 
   const statCards = [
-    { label: 'Проекты', value: projects.length, icon: FolderKanban, color: '#2E5BFF' },
-    { label: 'Верифицирующие документы', value: totalDocs, icon: FileCheck, color: '#10B981' },
+    { label: 'Проекты', value: projects.length, icon: FolderKanban, color: 'var(--tz-accent)' },
+    { label: 'Верифицирующие документы', value: totalDocs, icon: FileCheck, color: 'var(--tz-success)' },
   ];
 
   return (
@@ -95,7 +95,7 @@ export default function RegulatingOrganizationDashboard() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол регулирующей организации
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
+        <h1 className="tz-page-title mt-2 text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
@@ -105,7 +105,7 @@ export default function RegulatingOrganizationDashboard() {
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
+        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
           Документы подтверждения
         </span>
         <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
@@ -167,7 +167,7 @@ export default function RegulatingOrganizationDashboard() {
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         {/* Проекты, к которым присоединилась организация */}
         <div>
-          <h2 className="mb-4 text-lg font-bold text-tz-fg">Мои проекты</h2>
+          <h2 className="mb-4 tz-card-title text-tz-fg">Мои проекты</h2>
 
           {loading ? (
             <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
@@ -187,10 +187,10 @@ export default function RegulatingOrganizationDashboard() {
             </div>
           ) : projects.length === 0 ? (
             <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
-                <FolderKanban size={22} className="text-[#2E5BFF]" />
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
+                <FolderKanban size={22} className="text-[var(--tz-accent)]" />
               </div>
-              <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
+              <h2 className="tz-section-title mt-5 text-tz-fg">
                 Пока нет проектов
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
@@ -212,7 +212,7 @@ export default function RegulatingOrganizationDashboard() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
-                        <span className="rounded-full bg-[#EAF0FF] px-2 py-0.5 text-[11px] font-medium text-[#2E5BFF]">
+                        <span className="rounded-full bg-[var(--tz-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--tz-accent)]">
                           УГТ {p.current_level} → {p.target_level}
                         </span>
                         <span className="rounded-full bg-tz-success-soft px-2 py-0.5 text-[11px] font-medium text-tz-success">
@@ -221,14 +221,14 @@ export default function RegulatingOrganizationDashboard() {
                       </div>
                       <Link
                         href={`/dashboard/project/${p.id}`}
-                        className="mt-1 block text-lg font-bold text-tz-fg transition hover:text-[#2E5BFF]"
+                        className="mt-1 block tz-card-title text-tz-fg transition hover:text-[var(--tz-accent)]"
                       >
                         {p.name}
                       </Link>
                     </div>
                     <Link
                       href={`/dashboard/project/${p.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#2E5BFF] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1E4BD8]"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--tz-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
                     >
                       <FileCheck size={15} /> Документы проекта
                     </Link>
@@ -247,7 +247,7 @@ export default function RegulatingOrganizationDashboard() {
         <aside className="lg:sticky lg:top-8 lg:self-start">
           {loading ? (
             <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
-              <Loader2 size={22} className="animate-spin text-[#2E5BFF]" />
+              <Loader2 size={22} className="animate-spin text-[var(--tz-accent)]" />
             </div>
           ) : (
             <JoinProjectForm />

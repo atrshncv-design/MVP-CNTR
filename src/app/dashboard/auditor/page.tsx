@@ -56,11 +56,11 @@ const PROJECT_STATUS_LABELS: Record<string, string> = {
 };
 
 const PROJECT_STATUS_COLORS: Record<string, string> = {
-  draft: '#94A3B8',
-  active: '#2E5BFF',
-  review: '#E5C840',
-  completed: '#10B981',
-  rejected: '#EF4444',
+  draft: 'var(--tz-neutral)',
+  active: 'var(--tz-accent)',
+  review: 'var(--tz-review)',
+  completed: 'var(--tz-success)',
+  rejected: 'var(--tz-danger)',
 };
 
 const CP_STATUS_LABELS: Record<string, string> = {
@@ -73,12 +73,12 @@ const CP_STATUS_LABELS: Record<string, string> = {
 };
 
 const CP_STATUS_COLORS: Record<string, string> = {
-  pending: '#E5C840',
-  in_review: '#2E5BFF',
-  approved: '#10B981',
-  rejected: '#EF4444',
-  verified: '#10B981',
-  closed: '#94A3B8',
+  pending: 'var(--tz-review)',
+  in_review: 'var(--tz-accent)',
+  approved: 'var(--tz-success)',
+  rejected: 'var(--tz-danger)',
+  verified: 'var(--tz-success)',
+  closed: 'var(--tz-neutral)',
 };
 
 /** Точки, по которым решение уже принято — кнопки не показываем */
@@ -193,10 +193,10 @@ export default function AuditorDashboard() {
   );
 
   const statCards = [
-    { label: 'Проекты на аудите', value: projects.length, icon: ClipboardList, color: '#2E5BFF' },
-    { label: 'Ожидают Go/No-Go', value: pendingPoints, icon: ShieldCheck, color: '#E5C840' },
-    { label: 'Go (ТЭО обосновано)', value: goCount, icon: ThumbsUp, color: '#10B981' },
-    { label: 'No-Go (ТЭО не обосновано)', value: noGoCount, icon: ThumbsDown, color: '#EF4444' },
+    { label: 'Проекты на аудите', value: projects.length, icon: ClipboardList, color: 'var(--tz-accent)' },
+    { label: 'Ожидают Go/No-Go', value: pendingPoints, icon: ShieldCheck, color: 'var(--tz-review)' },
+    { label: 'Go (ТЭО обосновано)', value: goCount, icon: ThumbsUp, color: 'var(--tz-success)' },
+    { label: 'No-Go (ТЭО не обосновано)', value: noGoCount, icon: ThumbsDown, color: 'var(--tz-danger)' },
   ];
 
   return (
@@ -206,7 +206,7 @@ export default function AuditorDashboard() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Рабочий стол аудитора
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">
+        <h1 className="tz-page-title mt-2 text-tz-fg">
           Добро пожаловать, {displayName}
         </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
@@ -216,7 +216,7 @@ export default function AuditorDashboard() {
       </div>
 
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[#2E5BFF] py-4 font-semibold text-tz-fg">
+        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
           Аудит проектов
         </span>
         <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
@@ -270,7 +270,7 @@ export default function AuditorDashboard() {
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         {/* Проекты со списком КТ */}
         <div>
-          <h2 className="mb-4 text-lg font-bold text-tz-fg">Проекты</h2>
+          <h2 className="tz-card-title mb-4 text-tz-fg">Проекты</h2>
 
           {loading ? (
             <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
@@ -290,10 +290,10 @@ export default function AuditorDashboard() {
             </div>
           ) : projects.length === 0 ? (
             <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[#EAF0FF]">
-                <ClipboardList size={22} className="text-[#2E5BFF]" />
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
+                <ClipboardList size={22} className="text-[var(--tz-accent)]" />
               </div>
-              <h2 className="mt-5 text-2xl font-bold tracking-[-0.02em] text-tz-fg">
+              <h2 className="tz-section-title mt-5 text-tz-fg">
                 Проектов на аудите нет
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
@@ -305,7 +305,7 @@ export default function AuditorDashboard() {
             <div className="grid gap-5">
               {projects.map((detail) => {
                 const p = detail.project;
-                const color = PROJECT_STATUS_COLORS[p.status] ?? '#94A3B8';
+                const color = PROJECT_STATUS_COLORS[p.status] ?? 'var(--tz-neutral)';
                 return (
                   <motion.div
                     key={p.id}
@@ -326,7 +326,7 @@ export default function AuditorDashboard() {
                         </div>
                         <Link
                           href={`/dashboard/project/${p.id}`}
-                          className="mt-1 block text-lg font-bold text-tz-fg transition hover:text-[#2E5BFF]"
+                          className="mt-1 block text-lg font-bold text-tz-fg transition hover:text-[var(--tz-accent)]"
                         >
                           {p.name}
                         </Link>
@@ -335,7 +335,7 @@ export default function AuditorDashboard() {
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 text-sm text-tz-muted">
-                        <FileText size={14} className="text-[#FF7A2E]" />
+                        <FileText size={14} className="text-[var(--tz-ugt-2)]" />
                         {detail.documents.length} док.
                       </div>
                     </div>
@@ -346,7 +346,7 @@ export default function AuditorDashboard() {
                       ) : (
                         detail.control_points.map((cp) => {
                           const isGate = cp.point_type === 'gate' && cp.title.includes('КТ-1');
-                          const cpColor = CP_STATUS_COLORS[cp.status] ?? '#94A3B8';
+                          const cpColor = CP_STATUS_COLORS[cp.status] ?? 'var(--tz-neutral)';
                           const isDecided = DECIDED_STATUSES.has(cp.status);
                           const isBusy = deciding?.projectId === p.id && deciding?.cpId === cp.id;
                           return (
@@ -354,7 +354,7 @@ export default function AuditorDashboard() {
                               key={cp.id}
                               className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
                                 isGate
-                                  ? 'border-[#2E5BFF]/40 bg-[#F5F8FF]'
+                                  ? 'border-[var(--tz-accent)]/40 bg-[var(--tz-soft)]'
                                   : 'border-tz-border bg-tz-soft'
                               }`}
                             >
@@ -362,7 +362,7 @@ export default function AuditorDashboard() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <p className="font-semibold text-tz-fg">{cp.title}</p>
                                   {isGate ? (
-                                    <span className="rounded-full bg-[#2E5BFF] px-2 py-0.5 text-[11px] font-semibold text-white">
+                                    <span className="rounded-full bg-[var(--tz-accent)] px-2 py-0.5 text-[11px] font-semibold text-white">
                                       КТ-1 · Ворота
                                     </span>
                                   ) : (
@@ -391,7 +391,7 @@ export default function AuditorDashboard() {
                                   <button
                                     onClick={() => decideControlPoint(p.id, cp.id, 'approved')}
                                     disabled={deciding !== null}
-                                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#10B981] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0EA371] disabled:opacity-50"
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--tz-success)] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[var(--tz-success)] disabled:opacity-50"
                                   >
                                     {isBusy ? (
                                       <Loader2 size={13} className="animate-spin" />
@@ -426,7 +426,7 @@ export default function AuditorDashboard() {
         <aside className="lg:sticky lg:top-8 lg:self-start">
           {loading ? (
             <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
-              <Loader2 size={22} className="animate-spin text-[#2E5BFF]" />
+              <Loader2 size={22} className="animate-spin text-[var(--tz-accent)]" />
             </div>
           ) : (
             <JoinProjectForm />

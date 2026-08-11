@@ -163,7 +163,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MessageSquare size={18} className="text-tz-accent" />
-          <h2 className="text-lg font-bold text-tz-fg">Заявки и обсуждение</h2>
+          <h2 className="tz-card-title">Заявки и обсуждение</h2>
         </div>
         <button onClick={() => void loadRequests()} className="tz-btn tz-btn-ghost" aria-label="Обновить">
           <RefreshCw size={15} />

@@ -3,24 +3,12 @@ import type { Metadata } from "next";
 import {
   ArrowRight,
   ClipboardCheck,
-  Layers,
   Route,
   ShieldCheck,
-  Building2,
-  FlaskConical,
-  Factory,
-  Landmark,
-  GraduationCap,
-  Users,
-  Settings,
-  TrendingUp,
-  BarChart3,
 } from "lucide-react";
 import Reveal from "@/components/landing/reveal";
-import LivingRadar from "@/components/landing/living-radar";
-import { UGTScaleStrip } from "@/components/landing/ugt-card";
-import { UGT_LEVELS } from "@/lib/ugt-data";
-import { ROLES } from "@/lib/roles";
+import UGTInteractiveScale from "@/components/landing/ugt-interactive-scale";
+import { SHOWCASE_PROJECTS } from "@/lib/showcase";
 
 export const metadata: Metadata = {
   title: "Технозрелость — цифровая платформа трансфера технологий ЦНТР УР",
@@ -49,63 +37,40 @@ const STEPS = [
   },
 ];
 
-const ROLE_META: Record<string, { icon: typeof Users; desc: string }> = {
-  gk_customer: {
-    icon: Building2,
-    desc: "Оценивает УГТ, создаёт проекты, управляет командой и бюджетом, генерирует ТЗ, паспорт и ТЭО.",
-  },
-  rd_executor: {
-    icon: FlaskConical,
-    desc: "Ведёт работы по проектам, загружает отчёты и документы этапов, инициирует автозаявку на повышение УГТ.",
-  },
-  scientific_org: {
-    icon: GraduationCap,
-    desc: "Формирует научный задел: публикации, патентные исследования, мини-технические задания.",
-  },
-  serial_manufacturer: {
-    icon: Factory,
-    desc: "Находит технологии УГТ 7+ в реестре и подаёт заявки на лицензирование.",
-  },
-  regulating_organization: {
-    icon: Landmark,
-    desc: "Присоединяется к проекту по токену и добавляет верифицирующие документы — подтверждение УГТ для менеджера.",
-  },
-  auditor: {
-    icon: BarChart3,
-    desc: "Принимает решения Go/No-Go по контрольным точкам проекта.",
-  },
-  investor: {
-    icon: TrendingUp,
-    desc: "Изучает реестры проектов и технологий, видит радар зрелости разработок.",
-  },
-  cntr_admin: {
-    icon: Settings,
-    desc: "Управляет пользователями и ролями, загружает ГОСТы и шаблоны в базу знаний платформы.",
-  },
-  cntr_manager: {
-    icon: Users,
-    desc: "Ведёт очереди проектов и заявок: присваивает официальный УГТ и верифицирует переходы N→N+1.",
-  },
-};
-
 export default function LandingHome() {
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="relative mx-auto max-w-6xl px-4 pb-20 pt-12 sm:px-6 sm:pt-20">
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_620px]">
-          <div className="max-w-2xl">
+      <section className="relative flex items-center overflow-hidden" style={{ minHeight: "100vh" }}>
+        {/* Фоновое видео (инновационная подложка, фокус слева) */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 h-full w-full object-cover"
+          aria-hidden="true"
+        >
+          <source src="/videos/hero-bg.mp4" type="video/mp4" />
+        </video>
+        {/* Градиент слева для читаемости текста */}
+        <div className="absolute inset-0 bg-gradient-to-l from-tz-bg via-tz-bg/85 to-tz-bg/10" />
+        {/* Удмуртский орнамент-паттерн (overlay) */}
+        <div className="tz-ornament-pattern pointer-events-none absolute inset-0" />
+        <div className="relative mx-auto w-full max-w-[1280px] px-6 py-20">
+          <div className="ml-auto max-w-2xl">
             <Reveal>
               <p className="tz-eyebrow">ЦНТР Удмуртии · Цифровая платформа трансфера технологий</p>
             </Reveal>
             <Reveal delay={0.05}>
-              <h1 className="mt-4 font-display text-[clamp(2rem,5vw+0.5rem,3.2rem)] font-extrabold leading-[1.08] tracking-tight text-tz-fg">
+              <h1 className="tz-hero-title mt-4">
                 Путь технологии от идеи до серийного производства —{" "}
-                <span className="tz-grad-text">на одной платформе</span>
+                <span className="whitespace-nowrap tz-grad-text">на одной платформе</span>
               </h1>
             </Reveal>
             <Reveal delay={0.1}>
-              <p className="mt-5 text-[15.5px] leading-relaxed text-tz-secondary">
+              <p className="mt-8 text-[15.5px] leading-relaxed text-tz-secondary">
                 «Технозрелость» — цифровая инфраструктура Центра технологического развития
                 Удмуртской Республики. Оценивайте уровень готовности технологий (УГТ) по
                 ГОСТ Р 58048-2017, ведите проект уровнями N→N+1 и доводите разработку до
@@ -113,7 +78,7 @@ export default function LandingHome() {
               </p>
             </Reveal>
             <Reveal delay={0.15}>
-              <div className="mt-7 flex flex-wrap items-center gap-3">
+              <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link href="/register" className="tz-btn tz-btn-primary tz-btn-lg">
                   Оценить УГТ своего проекта
                   <ArrowRight className="h-4 w-4" />
@@ -124,18 +89,11 @@ export default function LandingHome() {
               </div>
             </Reveal>
           </div>
-
-          {/* Живой радар (D10) */}
-          <Reveal delay={0.15} className="hidden lg:block">
-            <div className="tz-glass relative flex aspect-square items-center justify-center rounded-3xl p-8 text-tz-accent">
-              <LivingRadar className="w-full max-w-[620px] px-20 py-4" />
-            </div>
-          </Reveal>
         </div>
       </section>
 
       {/* ── Тёплая шкала УГТ ─────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+      <section className="mx-auto max-w-[1280px] px-6 pt-8 pb-16 md:pt-12 md:pb-24">
         <Reveal>
           <div className="flex items-center justify-between gap-4">
             <h2 className="tz-section-title">Уровни готовности технологий 1–9</h2>
@@ -149,8 +107,8 @@ export default function LandingHome() {
           </p>
         </Reveal>
         <Reveal delay={0.08}>
-          <div className="mt-6">
-            <UGTScaleStrip />
+          <div className="mt-14">
+            <UGTInteractiveScale />
           </div>
         </Reveal>
       </section>
@@ -187,85 +145,47 @@ export default function LandingHome() {
         </div>
       </section>
 
-      {/* ── 9 ролей ──────────────────────────────────────────────── */}
+      {/* ── Витрина проектов (тизер) ─────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <Reveal>
-          <p className="tz-eyebrow">Экосистема участников</p>
-          <h2 className="mt-3 max-w-2xl tz-page-title">
-            Девять ролей — каждый участник работает в своём кабинете
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="tz-eyebrow">Реестр платформы</p>
+              <h2 className="mt-3 max-w-xl tz-page-title">Проекты, которые уже проходят оценку</h2>
+            </div>
+            <Link href="/projects" className="tz-btn tz-btn-ghost tz-btn-sm">
+              Вся витрина <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </Reveal>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ROLES.map((r, i) => {
-            const meta = ROLE_META[r.slug] ?? { icon: Users, desc: "" };
-            return (
-              <Reveal key={r.slug} delay={(i % 3) * 0.06}>
-                <div className="tz-card tz-card-hover h-full p-5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-tz-border bg-tz-soft text-tz-accent-hover">
-                      <meta.icon className="h-4.5 w-4.5" />
-                    </span>
-                    <h3 className="font-display text-[14.5px] font-bold leading-snug text-tz-fg">
-                      {r.name}
-                    </h3>
-                  </div>
-                  <p className="mt-3 text-[13px] leading-relaxed text-tz-secondary">
-                    {meta.desc}
-                  </p>
+          {SHOWCASE_PROJECTS.slice(0, 3).map((p, i) => (
+            <Reveal key={p.id} delay={i * 0.06}>
+              <div className="tz-card tz-card-hover flex h-full flex-col p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className="rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold"
+                    style={{
+                      backgroundColor: `var(--tz-ugt-${p.current_level})18`,
+                      color: `var(--tz-ugt-${p.current_level})`,
+                    }}
+                  >
+                    УГТ {p.current_level}
+                  </span>
+                  <span className="font-mono text-[11px] font-medium text-tz-muted">
+                    {p.category}
+                  </span>
                 </div>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── УГТ-уровни (сетка) ───────────────────────────────────── */}
-      <section className="border-y border-tz-border/60 bg-tz-surface/40">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <Reveal>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="tz-eyebrow">Методика</p>
-                <h2 className="mt-3 tz-page-title">Что означает каждый уровень</h2>
+                <h3 className="tz-card-title mt-3 leading-snug">{p.name}</h3>
+                <p className="mt-2 flex-1 text-[13px] leading-relaxed text-tz-secondary">
+                  {p.description}
+                </p>
+                <p className="mt-3 border-t border-tz-border/60 pt-3 text-[11.5px] text-tz-muted">
+                  {p.region} · {p.org}
+                </p>
               </div>
-              <Link href="/methodology" className="tz-btn tz-btn-ghost tz-btn-sm">
-                Методика оценки <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {UGT_LEVELS.map((lvl, i) => (
-              <Reveal key={lvl.id} delay={(i % 3) * 0.06}>
-                <Link
-                  href={`/levels/${lvl.id}`}
-                  className="tz-card tz-card-hover block h-full p-5"
-                >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="font-mono text-sm font-bold"
-                      style={{
-                        color:
-                          lvl.id <= 3
-                            ? "var(--color-tz-ugt-low)"
-                            : lvl.id <= 6
-                              ? "var(--color-tz-ugt-mid)"
-                              : "var(--color-tz-ugt-high)",
-                      }}
-                    >
-                      УГТ {lvl.id}
-                    </span>
-                    <Layers className="h-4 w-4 text-tz-muted" />
-                  </div>
-                  <h3 className="mt-3 font-display text-[15px] font-bold text-tz-fg">
-                    {lvl.name}
-                  </h3>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-tz-secondary">
-                    {lvl.short}
-                  </p>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
+            </Reveal>
+          ))}
         </div>
       </section>
 

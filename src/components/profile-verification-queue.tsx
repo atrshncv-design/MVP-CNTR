@@ -102,7 +102,7 @@ export default function ProfileVerificationQueue() {
   return (
     <div className="mt-10 space-y-8">
       <div className="flex items-center gap-2">
-        <h2 className="text-xl font-bold text-tz-fg">Проверка профилей и организаций</h2>
+        <h2 className="tz-card-title text-tz-fg">Проверка профилей и организаций</h2>
         <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label="Обновить очереди">
           <RefreshCw size={15} />
         </button>

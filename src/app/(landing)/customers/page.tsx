@@ -38,13 +38,13 @@ const CUSTOMERS = [
 
 export default function CustomersPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       <Reveal>
         <p className="tz-eyebrow">Заказчикам</p>
-        <h1 className="mt-3 max-w-2xl tz-page-title">
+        <h1 className="tz-page-title mt-3 max-w-2xl">
           Кому платформа помогает принимать решения о технологиях
         </h1>
-        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-tz-secondary">
+        <p className="tz-lead mt-4 max-w-2xl">
           Платформа превращает оценку технологий из экспертного мнения в проверяемый
           процесс: официальный УГТ, документы этапов и решения менеджера ЦНТР видны
           всем сторонам проекта.
@@ -60,7 +60,7 @@ export default function CustomersPage() {
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-tz-border bg-tz-soft text-tz-accent-hover">
                     <c.icon className="h-5 w-5" />
                   </span>
-                  <h2 className="font-display text-[16px] font-bold text-tz-fg">{c.title}</h2>
+                  <h2 className="tz-card-title">{c.title}</h2>
                 </div>
                 <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-tz-secondary">
                   {c.text}

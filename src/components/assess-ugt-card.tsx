@@ -41,7 +41,7 @@ export function AssessUgTCard() {
           <Gauge size={20} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="font-bold text-tz-fg">Оценка УГТ проекта</p>
+          <p className="tz-card-title">Оценка УГТ проекта</p>
           <p className="mt-1 text-sm leading-relaxed text-tz-muted">
             Экспресс-оценка по ГОСТ Р 58048-2017: 4 категории × 9 уровней. Результат —
             черновик проекта с предварительным уровнем УГТ.

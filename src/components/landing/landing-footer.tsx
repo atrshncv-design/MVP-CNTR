@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TolezeLogo from "@/components/brand/toleze-logo";
 
 const SECTIONS = [
   { href: "/about", label: "О центре" },
@@ -15,9 +16,7 @@ export default function LandingFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg tz-grad-bg font-mono text-xs font-bold text-white">
-              Т
-            </span>
+            <TolezeLogo size={28} />
             <span className="font-display text-sm font-bold text-tz-fg">Технозрелость</span>
           </div>
           <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-tz-muted">

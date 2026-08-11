@@ -149,10 +149,10 @@ export default function NioktrPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#2e5bff] via-[#7c5cff] to-[#00d4c8] shadow-[0_4px_18px_rgba(90,100,255,0.35)]">
+            <span className="grid h-9 w-9 place-items-center rounded-xl tz-grad-bg shadow-[0_4px_18px_rgba(214,48,49,0.3)]">
               <FlaskConical className="h-4.5 w-4.5 text-white" size={18} />
             </span>
-            <h1 className="text-xl font-bold text-tz-fg sm:text-2xl">Реестр НИОКТР</h1>
+            <h1 className="tz-page-title text-tz-fg">Реестр НИОКТР</h1>
           </div>
           <p className="mt-1.5 text-sm text-tz-secondary">
             Научно-исследовательские работы из федерального реестра — поиск по названию,
@@ -187,7 +187,7 @@ export default function NioktrPage() {
             type="checkbox"
             checked={aiOnly}
             onChange={(e) => setAiOnly(e.target.checked)}
-            className="h-4 w-4 accent-[#2e5bff]"
+            className="h-4 w-4 accent-tz-accent"
           />
           <Sparkles className="h-4 w-4 text-tz-accent" />
           Только ИИ-направление
@@ -216,7 +216,7 @@ export default function NioktrPage() {
             </option>
           ))}
         </select>
-        <span className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#2e5bff] to-[#7c5cff] px-4 py-2.5 text-sm font-semibold text-white">
+        <span className="tz-grad-bg inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white">
           <Filter className="h-4 w-4" />
           Фильтры применяются автоматически
         </span>

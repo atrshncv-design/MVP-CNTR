@@ -134,7 +134,7 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileUp size={18} className="text-tz-accent" />
-          <h2 className="text-lg font-bold text-tz-fg">Файлы проекта</h2>
+          <h2 className="tz-card-title">Файлы проекта</h2>
         </div>
         <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label="Обновить">
           <RefreshCw size={15} />

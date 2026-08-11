@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import ThemeToggle from "@/components/theme-toggle";
+import TolezeLogo from "@/components/brand/toleze-logo";
 
 const PRIMARY_LINKS = [
   { href: "/", label: "Главная" },
+  { href: "/projects", label: "Проекты" },
   { href: "/about", label: "О центре" },
   { href: "/methodology", label: "Методика" },
   { href: "/levels", label: "Уровни УГТ" },
@@ -51,9 +52,7 @@ export default function LandingNav({
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         {/* Лого */}
         <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-tz-accent font-mono text-sm font-bold text-white">
-            Т
-          </span>
+          <TolezeLogo size={32} />
           <span className="font-display text-[15px] font-bold tracking-tight text-tz-fg">
             Технозрелость
           </span>
@@ -116,7 +115,6 @@ export default function LandingNav({
 
         {/* Правая часть */}
         <div className="hidden items-center gap-2.5 lg:flex">
-          <ThemeToggle />
           {signedIn && dashboardHref ? (
             <>
               {accountLabel && (
@@ -143,7 +141,6 @@ export default function LandingNav({
 
         {/* Мобильный бургер */}
         <div className="flex items-center gap-2 lg:hidden">
-          <ThemeToggle />
           <button
             type="button"
             aria-label="Меню"

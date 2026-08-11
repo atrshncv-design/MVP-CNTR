@@ -187,7 +187,7 @@ export default function ProfilePage() {
     <section className="mx-auto max-w-3xl">
       <div className="border-b border-tz-border pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">Профиль специалиста</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em] text-tz-fg">Мой профиль</h1>
+        <h1 className="tz-page-title mt-2 text-tz-fg">Мой профиль</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
           Основная роль аккаунта определяет профильный реестр, но не проектные полномочия. После проверки
           менеджером центра профиль попадает в публичный реестр специалистов.
@@ -295,7 +295,7 @@ export default function ProfilePage() {
             <Building2 size={20} />
           </span>
           <div>
-            <h2 className="text-lg font-bold text-tz-fg">Мои организации</h2>
+            <h2 className="tz-section-title text-tz-fg">Мои организации</h2>
             <p className="text-sm text-tz-muted">Можно состоять в нескольких организациях</p>
           </div>
         </div>

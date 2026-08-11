@@ -1,203 +1,14 @@
 @import "tailwindcss";
 
 /* ════════════════════════════════════════════════════════════════════════
-   ТЕХНОЗРЕЛОСТЬ — дизайн-система 3.0
-   Ink-blue акцент · тёплая УГТ-шкала · двойная тема · живые анимации
-   Решения D1–D10 дизайн-интервью 03.08.2026
+   ТЕХНОЗРЕЛОСТЬ — дизайн-система 3.1
+   Удмуртская тема как единственная база (тикет 01–04)
+   Чёрно-красно-белая: бумажный фон, белые карточки, красный акцент,
+   графитовый текст. Восьмилучевой мотив — восемь уровней УГТ.
    ════════════════════════════════════════════════════════════════════════ */
 
-/* ─── TOKEHы светлой темы (дефолт) ────────────────────────────────────── */
+/* ─── Токены удмуртской темы (единственная база в :root) ──────────────── */
 :root {
-  /* Базовые поверхности */
-  --tz-bg: #f6f8fc;
-  --tz-surface: #ffffff;
-  --tz-surface-2: #f1f5f9;
-  --tz-soft: #eef2f8;
-  --tz-fg: #0c1424;
-  --tz-secondary: #475569;
-  --tz-muted: #64748b;
-  --tz-border: #e2e8f0;
-  --tz-card-border: #e6ebf2;
-
-  /* Акцент — глубокий ink-синий (D2) */
-  --tz-accent: #1e3a8a;
-  --tz-accent-hover: #1d4ed8;
-  --tz-accent-soft: rgba(30, 58, 138, 0.08);
-  --tz-accent-strong: #172554;
-
-  /* Бренд-градиент: ink-blue → blue → indigo (монохром, не неон) */
-  --tz-grad-1: #1e3a8a;
-  --tz-grad-2: #2563eb;
-  --tz-grad-3: #3b82f6;
-
-  /* Hero */
-  --tz-hero-bg: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #1e293b 100%);
-  --tz-hero-fg: #f8fafc;
-  --tz-hero-muted: #cbd5e1;
-
-  /* УГТ-шкала (тёплая): красный → оранжевый → жёлтый → зелёный (1→9) */
-  --tz-ugt-1: #ef4444;
-  --tz-ugt-2: #f97316;
-  --tz-ugt-3: #fb923c;
-  --tz-ugt-4: #f59e0b;
-  --tz-ugt-5: #eab308;
-  --tz-ugt-6: #ca8a04;
-  --tz-ugt-7: #84cc16;
-  --tz-ugt-8: #65a30d;
-  --tz-ugt-9: #16a34a;
-  --tz-ugt-soft: rgba(245, 158, 11, 0.1);
-
-  /* Статусы */
-  --tz-success: #15803d;
-  --tz-warning: #b45309;
-  --tz-review: #2563eb;
-  --tz-danger: #dc2626;
-  --tz-neutral: #64748b;
-
-  --tz-success-soft: rgba(22, 163, 74, 0.1);
-  --tz-warning-soft: rgba(217, 119, 6, 0.1);
-  --tz-review-soft: rgba(37, 99, 235, 0.1);
-  --tz-danger-soft: rgba(220, 38, 38, 0.1);
-  --tz-neutral-soft: rgba(100, 116, 139, 0.1);
-
-  /* Геометрия и тени */
-  --tz-radius-card: 0.875rem;
-  --tz-radius-btn: 0.5rem;
-  --tz-shadow-card: 0 1px 3px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.04);
-  --tz-shadow-pop: 0 8px 32px rgb(0 0 0 / 0.1);
-  --tz-shadow-glow: 0 0 0 1px rgba(30, 58, 138, 0.2), 0 6px 24px rgba(30, 58, 138, 0.15);
-
-  /* Нейтральная палитра (инвертируется в .dark) */
-  --tz-p-white: #ffffff;
-  --tz-p-gray-50: #f8fafc;
-  --tz-p-gray-100: #f1f5f9;
-  --tz-p-gray-200: #e2e8f0;
-  --tz-p-gray-300: #cbd5e1;
-  --tz-p-gray-400: #94a3b8;
-  --tz-p-gray-500: #64748b;
-  --tz-p-gray-600: #475569;
-  --tz-p-gray-700: #334155;
-  --tz-p-gray-800: #1e293b;
-  --tz-p-gray-900: #0f172a;
-  --tz-p-gray-950: #020617;
-  --tz-p-slate-50: #f8fafc;
-  --tz-p-slate-100: #f1f5f9;
-  --tz-p-slate-200: #e2e8f0;
-  --tz-p-slate-300: #cbd5e1;
-  --tz-p-slate-400: #94a3b8;
-  --tz-p-slate-500: #64748b;
-  --tz-p-slate-600: #475569;
-  --tz-p-slate-700: #334155;
-  --tz-p-slate-800: #1e293b;
-  --tz-p-slate-900: #0f172a;
-  --tz-p-slate-950: #020617;
-  --tz-p-neutral-50: #fafafa;
-  --tz-p-neutral-100: #f5f5f5;
-  --tz-p-neutral-200: #e5e5e5;
-  --tz-p-neutral-300: #d4d4d4;
-  --tz-p-neutral-400: #a3a3a3;
-  --tz-p-neutral-500: #737373;
-  --tz-p-neutral-600: #525252;
-  --tz-p-neutral-700: #404040;
-  --tz-p-neutral-800: #262626;
-  --tz-p-neutral-900: #171717;
-}
-
-/* ─── Токены тёмной темы ──────────────────────────────────────────────── */
-.dark {
-  --tz-bg: #080d1a;
-  --tz-surface: #0e1525;
-  --tz-surface-2: #131c30;
-  --tz-soft: #1a2540;
-  --tz-fg: #e8edf7;
-  --tz-secondary: #a9b7d0;
-  --tz-muted: #6b7d9e;
-  --tz-border: #1e2a44;
-  --tz-card-border: #213055;
-
-  --tz-accent: #2563eb;
-  --tz-accent-hover: #60a5fa;
-  --tz-accent-soft: rgba(59, 130, 246, 0.14);
-  --tz-accent-strong: #1e3a8a;
-
-  --tz-grad-1: #1e3a8a;
-  --tz-grad-2: #2563eb;
-  --tz-grad-3: #3b82f6;
-
-  --tz-hero-bg: linear-gradient(135deg, #080d1a 0%, #0f1e3d 50%, #0a1428 100%);
-  --tz-hero-fg: #f1f5ff;
-  --tz-hero-muted: #94a3b8;
-
-  --tz-ugt-1: #f87171;
-  --tz-ugt-2: #fb923c;
-  --tz-ugt-3: #fbbf24;
-  --tz-ugt-4: #fbbf24;
-  --tz-ugt-5: #eab308;
-  --tz-ugt-6: #eab308;
-  --tz-ugt-7: #84cc16;
-  --tz-ugt-8: #65a30d;
-  --tz-ugt-9: #4ade80;
-  --tz-ugt-soft: rgba(251, 191, 36, 0.12);
-
-  --tz-success: #34d399;
-  --tz-warning: #fbbf24;
-  --tz-review: #60a5fa;
-  --tz-danger: #ef4444;
-  --tz-neutral: #7f90b3;
-
-  --tz-success-soft: rgba(52, 211, 153, 0.12);
-  --tz-warning-soft: rgba(251, 191, 36, 0.12);
-  --tz-review-soft: rgba(96, 165, 250, 0.12);
-  --tz-danger-soft: rgba(248, 113, 113, 0.12);
-  --tz-neutral-soft: rgba(127, 144, 179, 0.12);
-
-  --tz-shadow-card: 0 4px 20px rgb(0 0 0 / 0.3);
-  --tz-shadow-pop: 0 12px 40px rgb(0 0 0 / 0.4);
-  --tz-shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.3), 0 6px 30px rgba(59, 130, 246, 0.2);
-
-  /* Инверсия нейтральной палитры для тёмной темы */
-  --tz-p-white: #ffffff; /* text-white на кнопках остаётся белым */
-  --tz-p-gray-50: #0e1525;
-  --tz-p-gray-100: #131c30;
-  --tz-p-gray-200: #1a2540;
-  --tz-p-gray-300: #213055;
-  --tz-p-gray-400: #2d3d63;
-  --tz-p-gray-500: #5a6d92;
-  --tz-p-gray-600: #7e90b5;
-  --tz-p-gray-700: #a3b2d4;
-  --tz-p-gray-800: #c3cfe6;
-  --tz-p-gray-900: #e8edf7;
-  --tz-p-gray-950: #f1f5ff;
-  --tz-p-slate-50: #0e1525;
-  --tz-p-slate-100: #131c30;
-  --tz-p-slate-200: #1a2540;
-  --tz-p-slate-300: #213055;
-  --tz-p-slate-400: #2d3d63;
-  --tz-p-slate-500: #5a6d92;
-  --tz-p-slate-600: #7e90b5;
-  --tz-p-slate-700: #a3b2d4;
-  --tz-p-slate-800: #c3cfe6;
-  --tz-p-slate-900: #e8edf7;
-  --tz-p-slate-950: #f1f5ff;
-  --tz-p-neutral-50: #0e1525;
-  --tz-p-neutral-100: #131c30;
-  --tz-p-neutral-200: #1a2540;
-  --tz-p-neutral-300: #213055;
-  --tz-p-neutral-400: #2d3d63;
-  --tz-p-neutral-500: #5a6d92;
-  --tz-p-neutral-600: #7e90b5;
-  --tz-p-neutral-700: #a3b2d4;
-  --tz-p-neutral-800: #c3cfe6;
-  --tz-p-neutral-900: #e8edf7;
-
-  /* bg-white в тёмной теме → поверхность */
-  --tz-p-bg-white: var(--tz-surface);
-}
-
-/* ─── Токены удмуртской темы (тикет 16, концепция А «Техно-геометрия») ──
-   Чёрно-красно-белая: бумажный фон, белые карточки, красный акцент,
-   графитовый текст. Восьмилучевой мотив — восемь уровней УГТ. */
-[data-theme="udmurt"] {
   /* Базовые поверхности: бумага + белый */
   --tz-bg: #f4f2ee;
   --tz-surface: #ffffff;
@@ -220,13 +31,13 @@
   --tz-grad-2: #8e1c1d;
   --tz-grad-3: #0b0d12;
 
-  /* Hero: чёрный → тёмно-красный */
-  --tz-hero-bg: linear-gradient(135deg, #0b0d12 0%, #5c1012 55%, #17181c 100%);
+  /* Hero: тёмно-красный градиент (тикет 02 — облегчён) */
+  --tz-hero-bg: linear-gradient(135deg, #1a1213 0%, #4a1318 40%, #2a1518 70%, #5c2a2c 100%);
   --tz-hero-fg: #f6f4f0;
   --tz-hero-muted: #cfc8bc;
 
   /* УГТ-шкала: красный старт концепции, далее тёплая → зелёная */
-  --tz-ugt-1: #d63031;
+  --tz-ugt-1: #9a2a2b; /* тикет 02 — тёмный коричнево-красный */
   --tz-ugt-2: #e0522f;
   --tz-ugt-3: #e06a2a;
   --tz-ugt-4: #f59e0b;
@@ -235,26 +46,29 @@
   --tz-ugt-7: #84cc16;
   --tz-ugt-8: #65a30d;
   --tz-ugt-9: #16a34a;
-  --tz-ugt-soft: rgba(214, 48, 49, 0.1);
+  --tz-ugt-soft: rgba(154, 42, 43, 0.1); /* тикет 02 */
 
   /* Статусы: красная семантика, зелёный/янтарный — по смыслу */
   --tz-success: #15803d;
   --tz-warning: #b45309;
-  --tz-review: #8e1c1d;
+  --tz-review: #b45309; /* тикет 02 — янтарный */
   --tz-danger: #c02526;
   --tz-neutral: #5a5d64;
 
   --tz-success-soft: rgba(21, 128, 61, 0.1);
   --tz-warning-soft: rgba(180, 83, 9, 0.1);
-  --tz-review-soft: rgba(142, 28, 29, 0.1);
+  --tz-review-soft: rgba(180, 83, 9, 0.1); /* тикет 02 */
   --tz-danger-soft: rgba(192, 37, 38, 0.1);
   --tz-neutral-soft: rgba(90, 93, 100, 0.1);
 
+  /* Геометрия и тени */
+  --tz-radius-card: 0.875rem;
+  --tz-radius-btn: 0.5rem;
   --tz-shadow-card: 0 1px 3px rgb(11 13 18 / 0.07), 0 4px 16px rgb(11 13 18 / 0.05);
   --tz-shadow-pop: 0 8px 32px rgb(11 13 18 / 0.12);
   --tz-shadow-glow: 0 0 0 1px rgba(214, 48, 49, 0.25), 0 6px 24px rgba(214, 48, 49, 0.14);
 
-  /* Нейтральная палитра: тёплый бумажный оттенок (светлая, как :root) */
+  /* Нейтральная палитра: тёплый бумажный оттенок (светлая) */
   --tz-p-white: #ffffff;
   --tz-p-gray-50: #faf8f3;
   --tz-p-gray-100: #f2efe8;
@@ -322,7 +136,7 @@
   --color-tz-ugt-high: var(--tz-ugt-9);
   --color-tz-ugt-soft: var(--tz-ugt-soft);
 
-  /* Нейтральная палитра → каскадируется через .dark */
+  /* Нейтральная палитра */
   --color-gray-50: var(--tz-p-gray-50);
   --color-gray-100: var(--tz-p-gray-100);
   --color-gray-200: var(--tz-p-gray-200);
@@ -373,21 +187,18 @@
     -webkit-font-smoothing: antialiased;
     color-scheme: light;
   }
-  html.dark {
-    color-scheme: dark;
-  }
 
   body {
     background: var(--tz-bg);
     color: var(--tz-fg);
     font-family: var(--font-sans);
-    font-size: 15px;
+    font-size: 1rem; /* тикет 03 — 16px вместо 15px */
     font-variant-numeric: tabular-nums;
     position: relative;
     min-height: 100vh;
   }
 
-  /* Градиент фона (D7 — оставляем) */
+  /* Красные радиальные свечения на бумажном фоне (тикет 01) */
   body::before {
     content: "";
     position: fixed;
@@ -395,15 +206,8 @@
     z-index: -2;
     pointer-events: none;
     background:
-      radial-gradient(1000px 500px at 85% -10%, rgba(59, 130, 246, 0.07), transparent 60%),
-      radial-gradient(900px 480px at -10% 15%, rgba(30, 58, 138, 0.06), transparent 60%),
-      var(--tz-bg);
-  }
-  .dark body::before {
-    background:
-      radial-gradient(1100px 520px at 88% -12%, rgba(37, 99, 235, 0.12), transparent 62%),
-      radial-gradient(950px 520px at -12% 18%, rgba(30, 58, 138, 0.14), transparent 62%),
-      radial-gradient(900px 640px at 55% 112%, rgba(59, 130, 246, 0.06), transparent 60%),
+      radial-gradient(1000px 500px at 85% -10%, rgba(214, 48, 49, 0.07), transparent 60%),
+      radial-gradient(900px 480px at -10% 15%, rgba(11, 13, 18, 0.05), transparent 60%),
       var(--tz-bg);
   }
 
@@ -422,12 +226,6 @@
     mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
     -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
   }
-  .dark body::after {
-    opacity: 0.5;
-    background-image:
-      linear-gradient(rgba(148, 170, 220, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 170, 220, 0.035) 1px, transparent 1px);
-  }
 
   h1, h2, h3 {
     letter-spacing: -0.025em;
@@ -435,11 +233,8 @@
   }
 
   ::selection {
-    background: rgba(30, 58, 138, 0.2);
+    background: rgba(214, 48, 49, 0.18); /* тикет 01 */
     color: inherit;
-  }
-  .dark ::selection {
-    background: rgba(59, 130, 246, 0.3);
   }
 
   :where(a, button, input, select, textarea, summary):focus-visible {
@@ -523,24 +318,45 @@
    ════════════════════════════════════════════════════════════════════════ */
 @layer components {
 
-  /* ── Типографика ─────────────────────────────────────────────── */
+  /* ── Типографика (тикет 03 — флюидная шкала) ────────────────── */
+  .tz-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3.5vw + 0.25rem, 3rem);
+    line-height: 1.08;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: inherit;
+    text-wrap: balance;
+  }
   .tz-page-title {
     font-family: var(--font-display);
-    font-size: clamp(1.625rem, 2vw + 0.875rem, 2.125rem);
-    line-height: 1.15;
+    font-size: clamp(2rem, 3vw + 1rem, 3rem);
+    line-height: 1.1;
     font-weight: 800;
     letter-spacing: -0.025em;
     color: var(--tz-fg);
   }
   .tz-section-title {
-    font-size: 1.125rem;
-    line-height: 1.35;
+    font-size: clamp(1.5rem, 1vw + 1rem, 2rem);
+    line-height: 1.2;
     font-weight: 700;
     color: var(--tz-fg);
   }
+  .tz-card-title {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 700;
+    color: var(--tz-fg);
+  }
+  .tz-lead {
+    font-size: clamp(1rem, 0.5vw + 0.875rem, 1.25rem);
+    line-height: 1.5;
+    font-weight: 400;
+    color: var(--tz-muted);
+  }
   .tz-eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: 0.75rem; /* тикет 03 — было 0.6875rem */
     line-height: 1.3;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -572,10 +388,6 @@
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.12);
   }
-  .dark .tz-glass {
-    background: rgba(14, 21, 37, 0.6);
-    border-color: rgba(148, 170, 220, 0.1);
-  }
 
   /* ── Кнопки ──────────────────────────────────────────────────── */
   .tz-btn {
@@ -600,14 +412,11 @@
   .tz-btn-primary {
     background: var(--tz-accent);
     color: #fff;
-    box-shadow: 0 2px 12px rgba(30, 58, 138, 0.25);
-  }
-  .dark .tz-btn-primary {
-    box-shadow: 0 2px 16px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 12px rgba(214, 48, 49, 0.28); /* тикет 01 */
   }
   .tz-btn-primary:hover:not(:disabled) {
     background: var(--tz-accent-hover);
-    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.35);
+    box-shadow: 0 4px 20px rgba(214, 48, 49, 0.35); /* тикет 01 */
     transform: translateY(-1px);
   }
 
@@ -673,7 +482,7 @@
     line-height: 1.4;
     letter-spacing: 0.01em;
   }
-  .tz-ugt-1 { background: rgba(239, 68, 68, 0.12); color: var(--tz-ugt-1); }
+  .tz-ugt-1 { background: rgba(154, 42, 43, 0.12); color: var(--tz-ugt-1); } /* тикет 02 */
   .tz-ugt-2 { background: rgba(249, 115, 22, 0.12); color: var(--tz-ugt-2); }
   .tz-ugt-3 { background: rgba(251, 146, 60, 0.12); color: var(--tz-ugt-3); }
   .tz-ugt-4 { background: rgba(245, 158, 11, 0.12); color: var(--tz-ugt-4); }
@@ -954,7 +763,7 @@
    УТИЛИТЫ
    ════════════════════════════════════════════════════════════════════════ */
 
-/* Градиентный текст (монохром ink-blue) */
+/* Градиентный текст (красный → графит) */
 .tz-grad-text {
   background: linear-gradient(100deg, var(--tz-grad-1) 0%, var(--tz-grad-2) 50%, var(--tz-grad-3) 100%);
   -webkit-background-clip: text;
@@ -962,9 +771,17 @@
   color: transparent;
 }
 
-/* Градиентная плашка (монохром ink-blue) */
+/* Градиентная плашка (красный → графит) */
 .tz-grad-bg {
   background: linear-gradient(135deg, var(--tz-grad-1), var(--tz-grad-3));
+}
+
+/* Орнамент-паттерн (тикет 04) — восьмилучевая удмуртская звезда */
+.tz-ornament-pattern {
+  background-image: url('/ornaments/udmurt-star-white.svg');
+  background-repeat: repeat;
+  background-size: 64px;
+  opacity: 0.04;
 }
 
 /* Дыхание радара (D10) */
@@ -986,34 +803,4 @@
   .tz-stagger-4, .tz-stagger-5, .tz-stagger-6 {
     animation: none !important;
   }
-}
-
-/* bg-white → поверхность в тёмной теме (D1) */
-.dark .bg-white { background-color: var(--tz-surface) !important; }
-
-/* ═══ Удмуртская тема: акцентные детали (тикет 16, концепция А) ═══ */
-
-/* Красные свечения вместо синих на бумажном фоне */
-[data-theme="udmurt"] body::before {
-  background:
-    radial-gradient(1000px 500px at 85% -10%, rgba(214, 48, 49, 0.07), transparent 60%),
-    radial-gradient(900px 480px at -10% 15%, rgba(11, 13, 18, 0.05), transparent 60%),
-    var(--tz-bg);
-}
-
-[data-theme="udmurt"] ::selection {
-  background: rgba(214, 48, 49, 0.18);
-}
-
-/* Красные свечения кнопок вместо синих */
-[data-theme="udmurt"] .tz-btn-primary {
-  box-shadow: 0 2px 12px rgba(214, 48, 49, 0.28);
-}
-[data-theme="udmurt"] .tz-btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 20px rgba(214, 48, 49, 0.35);
-}
-
-/* Радарные свечения на hero в красной гамме */
-[data-theme="udmurt"] .tz-breathe {
-  box-shadow: 0 0 42px rgba(214, 48, 49, 0.22);
 }

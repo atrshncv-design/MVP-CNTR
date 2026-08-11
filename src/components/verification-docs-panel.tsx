@@ -125,7 +125,7 @@ export default function VerificationDocsPanel() {
         </span>
         <div>
           <p className="tz-eyebrow">Документы подтверждения</p>
-          <h2 className="mt-1 text-xl font-bold text-tz-fg">
+          <h2 className="tz-card-title mt-1">
             Верифицирующие документы УГТ
           </h2>
           <p className="mt-1 text-sm text-tz-muted">

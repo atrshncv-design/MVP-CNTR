@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth.config";
 import { ApiError, getProjects } from "@/lib/api-client";
+import ProjectRadar from "@/components/dashboard/project-radar";
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Черновик",
@@ -22,7 +23,7 @@ export default async function ProjectsPage() {
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
           Проекты
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em]">Не удалось загрузить проекты</h1>
+        <h1 className="tz-page-title mt-2">Не удалось загрузить проекты</h1>
         <div className="mt-7 rounded-[14px] border border-tz-danger bg-tz-surface p-6">
           <p className="font-semibold text-tz-danger">
             {unavailable ? "Сервис проектов временно недоступен" : "Нет доступа к данным проектов"}
@@ -42,13 +43,13 @@ export default async function ProjectsPage() {
           <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
             Единый рабочий контур
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-[-0.03em]">Проекты</h1>
+          <h1 className="tz-page-title mt-2">Проекты</h1>
           <p className="mt-2 text-tz-secondary">Доступны только проекты в области вашей роли.</p>
         </div>
         {session?.user.roles.includes("gk_customer") && (
           <Link
             href="/dashboard/gk_customer/projects/new"
-            className="rounded-lg bg-[#2E5BFF] px-4 py-2.5 font-bold text-white hover:bg-[#244BD9]"
+            className="tz-btn tz-btn-primary"
           >
             Создать заявку
           </Link>
@@ -57,7 +58,7 @@ export default async function ProjectsPage() {
 
       {projects.length === 0 ? (
         <div className="mt-8 rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center">
-          <h2 className="text-2xl font-bold">Проектов пока нет</h2>
+          <h2 className="tz-section-title">Проектов пока нет</h2>
           <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
             В вашей области доступа ещё нет созданных проектов.
           </p>
@@ -68,16 +69,22 @@ export default async function ProjectsPage() {
             <Link
               key={project.id}
               href={`/dashboard/project/${project.id}`}
-              className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-[#2E5BFF] md:grid-cols-[1fr_auto_auto]"
+              className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-tz-accent md:grid-cols-[1fr_auto_auto_auto]"
             >
               <div>
                 <div className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</div>
-                <h2 className="mt-1 text-lg font-bold">{project.name}</h2>
+                <h2 className="tz-card-title mt-1">{project.name}</h2>
                 <p className="mt-1 text-sm text-tz-secondary">{project.category ?? "Категория не указана"}</p>
               </div>
+              <ProjectRadar
+                currentLevel={project.current_level}
+                documents={[]}
+                size={112}
+                className="mx-auto md:self-center"
+              />
               <div className="md:text-right">
                 <div className="text-xs text-tz-muted">Текущий уровень</div>
-                <div className="mt-1 font-bold text-[#2E5BFF]">УГТ {project.current_level}</div>
+                <div className="mt-1 font-bold text-tz-accent">УГТ {project.current_level}</div>
               </div>
               <div className="md:min-w-28 md:text-right">
                 <div className="text-xs text-tz-muted">Статус</div>

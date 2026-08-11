@@ -29,13 +29,13 @@ const POINTS = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       <Reveal>
         <p className="tz-eyebrow">О центре</p>
-        <h1 className="mt-3 max-w-2xl tz-page-title">
+        <h1 className="tz-page-title mt-3 max-w-2xl">
           Центр технологического развития Удмуртской Республики
         </h1>
-        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-tz-secondary">
+        <p className="tz-lead mt-4 max-w-2xl">
           «Технозрелость» — цифровая платформа Центра НТР УР. Она переводит оценку
           технологической зрелости из разрозненных экспертных практик в прозрачный
           стандартизированный процесс: каждая технология получает уровень по ГОСТ
@@ -51,7 +51,7 @@ export default function AboutPage() {
               <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-tz-border bg-tz-soft text-tz-accent-hover">
                 <p.icon className="h-5 w-5" />
               </span>
-              <h2 className="mt-4 font-display text-[15px] font-bold text-tz-fg">{p.title}</h2>
+              <h2 className="tz-card-title mt-4">{p.title}</h2>
               <p className="mt-2 text-[13.5px] leading-relaxed text-tz-secondary">{p.text}</p>
             </div>
           </Reveal>

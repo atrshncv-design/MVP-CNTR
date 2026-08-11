@@ -30,9 +30,9 @@ const ROLE_NAMES: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  rd_executor: '#2E5BFF',
-  scientific_org: '#10B981',
-  serial_manufacturer: '#FF7A2E',
+  rd_executor: 'var(--tz-accent)',
+  scientific_org: 'var(--tz-success)',
+  serial_manufacturer: 'var(--tz-ugt-2)',
 };
 
 /** Русская плюрализация: 1 проект, 2 проекта, 5 проектов */
@@ -85,7 +85,7 @@ export default function ExecutorsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2E5BFF] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-tz-accent border-t-transparent" />
       </div>
     );
   }
@@ -93,7 +93,7 @@ export default function ExecutorsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-tz-fg">Каталог исполнителей</h1>
+        <h1 className="tz-page-title text-tz-fg">Каталог исполнителей</h1>
         <p className="mt-2 text-tz-muted">
           R&D-стартапы, научные организации и производители
         </p>
@@ -122,7 +122,7 @@ export default function ExecutorsPage() {
             placeholder="Поиск по названию или организации..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-tz-border bg-tz-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#2E5BFF]"
+            className="w-full rounded-xl border border-tz-border bg-tz-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-tz-accent"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export default function ExecutorsPage() {
               onClick={() => setRoleFilter(slug)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 roleFilter === slug
-                  ? 'bg-[#2E5BFF] text-white'
+                  ? 'bg-tz-accent text-white'
                   : 'bg-tz-surface-2 text-tz-secondary hover:bg-tz-soft'
               }`}
             >
@@ -167,7 +167,7 @@ export default function ExecutorsPage() {
               <div className="flex items-start justify-between">
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold text-white"
-                  style={{ background: ROLE_COLORS[exec.role_slug] ?? '#2E5BFF' }}
+                  style={{ background: ROLE_COLORS[exec.role_slug] ?? 'var(--tz-accent)' }}
                 >
                   {exec.full_name[0]?.toUpperCase() ?? '?'}
                 </div>
@@ -187,15 +187,15 @@ export default function ExecutorsPage() {
                   <span
                     className="rounded-full px-2.5 py-0.5 text-xs font-medium"
                     style={{
-                      background: `${ROLE_COLORS[exec.role_slug] ?? '#2E5BFF'}15`,
-                      color: ROLE_COLORS[exec.role_slug] ?? '#2E5BFF',
+                      background: `color-mix(in srgb, ${ROLE_COLORS[exec.role_slug] ?? 'var(--tz-accent)'} 10%, transparent)`,
+                      color: ROLE_COLORS[exec.role_slug] ?? 'var(--tz-accent)',
                     }}
                   >
                     {exec.role_name}
                   </span>
                 </div>
               </div>
-              <h3 className="mt-4 font-bold text-tz-fg">{exec.full_name}</h3>
+              <h3 className="tz-card-title mt-4 text-tz-fg">{exec.full_name}</h3>
               {exec.organization && (
                 <p className="mt-1 flex items-center gap-1 text-sm text-tz-muted">
                   <Building2 size={14} /> {exec.organization}
@@ -203,7 +203,7 @@ export default function ExecutorsPage() {
               )}
               <div className="mt-3 flex items-center gap-4 text-sm text-tz-muted">
                 <span className="flex items-center gap-1">
-                  <CheckCircle size={14} className="text-[#10B981]" />
+                  <CheckCircle size={14} className="text-tz-success" />
                   {exec.completed_projects}{' '}
                   {pluralize(exec.completed_projects, 'проект', 'проекта', 'проектов')}
                 </span>
@@ -221,7 +221,7 @@ export default function ExecutorsPage() {
                       </span>
                     ))}
                     {exec.competencies.length > MAX_COMPETENCIES && (
-                      <span className="rounded-full bg-[#2E5BFF]/10 px-2 py-0.5 text-xs font-medium text-[#2E5BFF]">
+                      <span className="rounded-full bg-tz-accent-soft px-2 py-0.5 text-xs font-medium text-tz-accent">
                         +{exec.competencies.length - MAX_COMPETENCIES}
                       </span>
                     )}
