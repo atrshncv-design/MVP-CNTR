@@ -1,76 +1,73 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import {
-  Activity,
-  AlertCircle,
-  Beaker,
-  Briefcase,
-  Building2,
-  Clock,
-  Filter,
-  Layers,
-  RotateCcw,
-  Rocket,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  List,
   Search,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
+import type { RegistryProject } from "@/lib/api-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-interface Technology {
-  id: number;
-  name: string;
-  description: string | null;
-  category: string | null;
-  status: string;
-  current_level: number;
-  target_level: number;
-  organization: string | null;
-  created_by_name: string | null;
-  created_at: string | null;
-}
+type ViewMode = "cards" | "table";
+type RegistryTab = "projects" | "technologies";
 
-interface ProjectSummary {
-  id: number;
-  name: string;
-  description: string | null;
-  category: string | null;
-  status: string;
-  current_level: number;
-  target_level: number;
-  budget: number | null;
-}
+const VIEW_KEY = "tz-registries-view";
+const FILTERS_KEY = "tz-registries-filters";
+const PAGE_SIZE = 9;
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Черновик",
-  auto_confirmed: "Подтверждён автоматически", active: "Активен",
-  review: "На проверке",
-  completed: "Завершён",
-  rejected: "Отклонён",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  draft: "tz-badge-neutral",
-  active: "tz-badge-accent",
-  review: "tz-badge-review",
-  completed: "tz-badge-success",
-  rejected: "tz-badge-danger",
-};
-
-/** Категории из API реестра технологий */
-const CATEGORIES = ["AI/ML", "НИОКТР"];
-
-/** Уровни УГТ по ГОСТ Р 58048-2017 (1–9) */
 const UGT_LEVELS = Array.from({ length: 9 }, (_, i) => i + 1);
 
-const levelOptions = (): Array<{ value: string; label: string }> => [
-  { value: "all", label: "Любой" },
-  ...UGT_LEVELS.map((l) => ({ value: String(l), label: `УГТ ${l}` })),
+const SORT_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "level_desc", label: "УГТ: выше уровень" },
+  { value: "level_asc", label: "УГТ: ниже уровень" },
+  { value: "name_asc", label: "Название (А–Я)" },
+  { value: "name_desc", label: "Название (Я–А)" },
+  { value: "budget_desc", label: "Бюджет: больше" },
+  { value: "budget_asc", label: "Бюджет: меньше" },
+  { value: "date_desc", label: "Сначала новые" },
+  { value: "org_asc", label: "Организация (А–Я)" },
 ];
 
-type RegistryTab = "projects" | "technologies";
+interface SavedFilters {
+  tab: RegistryTab;
+  query: string;
+  category: string;
+  ugtMin: string;
+  ugtMax: string;
+  sort: string;
+  page: number;
+}
+
+/** Компактная страница-список: от 1 до total, с многоточиями на длинных списках. */
+function pageList(current: number, total: number): Array<number | "…"> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const candidates = new Set([1, total, current - 1, current, current + 1]);
+  const sorted = [...candidates]
+    .filter((n) => n >= 1 && n <= total)
+    .sort((a, b) => a - b);
+  const result: Array<number | "…"> = [];
+  let prev = 0;
+  for (const n of sorted) {
+    if (n - prev > 1) result.push("…");
+    result.push(n);
+    prev = n;
+  }
+  return result;
+}
+
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("ru-RU");
+}
 
 function formatBudget(budget: number | null): string {
   if (budget == null) return "Бюджет не указан";
@@ -81,124 +78,262 @@ function formatBudget(budget: number | null): string {
   }).format(budget);
 }
 
+/** ugtClass — цветной бейдж уровня УГТ по ГОСТ Р 58048-2017. */
+const ugtClass = (level: number) => `tz-ugt tz-ugt-${Math.min(9, Math.max(1, level))}`;
+
+/**
+ * Реестры проектов и технологий (тикет 05 internal-ux-redesign):
+ * два таба («Проекты» / «Технологии УГТ 7+») поверх публичного реестра
+ * /api/v1/projects/registry — без выдуманных полей (у API нет status —
+ * показываем только реальные поля). Переключатель «карточки/таблица»,
+ * поиск, фильтры (категория, диапазон УГТ), сортировка, пагинация.
+ * Состояние — в URL (?tab&view&q&category&ugt_min&ugt_max&sort&page)
+ * и дублируется в localStorage (tz-registries-view / tz-registries-filters);
+ * URL приоритетнее. Карточки компактные, без радара; подробности — на
+ * странице проекта /dashboard/project/[id] (тикет 04).
+ */
 export default function TechnologiesPage() {
   const { data: session } = useSession();
+
   const [tab, setTab] = useState<RegistryTab>("projects");
+  const [view, setView] = useState<ViewMode>("cards");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [ugtMin, setUgtMin] = useState("all");
+  const [ugtMax, setUgtMax] = useState("all");
+  const [sort, setSort] = useState("level_desc");
+  const [page, setPage] = useState(1);
 
-  // Реестр проектов
-  const [projects, setProjects] = useState<ProjectSummary[]>([]);
-
-  // Реестр технологий УГТ 7+
-  const [technologies, setTechnologies] = useState<Technology[]>([]);
-
+  const [projects, setProjects] = useState<RegistryProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [minLevel, setMinLevel] = useState<string>(tab === "technologies" ? "7" : "all");
-  const [maxLevel, setMaxLevel] = useState<string>("all");
 
+  const restored = useRef(false);
+  const firstRender = useRef(true);
+
+  // Гидрация из URL (приоритет) и localStorage — в эффекте (async-IIFE).
+  useEffect(() => {
+    (async () => {
+      if (restored.current) return;
+      restored.current = true;
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get("tab");
+        if (tabParam === "projects" || tabParam === "technologies") setTab(tabParam);
+        if (params.get("view") === "table" || params.get("view") === "cards") {
+          setView(params.get("view") as ViewMode);
+        }
+        const q = params.get("q");
+        if (q != null) setQuery(q);
+        const cat = params.get("category");
+        if (cat != null) setCategory(cat);
+        const min = params.get("ugt_min");
+        if (min != null) setUgtMin(min);
+        const max = params.get("ugt_max");
+        if (max != null) setUgtMax(max);
+        const s = params.get("sort");
+        if (s != null) setSort(s);
+        const p = Number(params.get("page"));
+        if (Number.isInteger(p) && p > 1) setPage(p);
+
+        if (params.size > 0) return;
+        // URL пуст — восстанавливаем сохранённые фильтры из localStorage.
+        const savedView = window.localStorage.getItem(VIEW_KEY);
+        if (savedView === "table" || savedView === "cards") setView(savedView);
+        const saved = JSON.parse(
+          window.localStorage.getItem(FILTERS_KEY) ?? "null",
+        ) as Partial<SavedFilters> | null;
+        if (saved && typeof saved === "object") {
+          if (saved.tab === "projects" || saved.tab === "technologies") setTab(saved.tab);
+          if (typeof saved.query === "string") setQuery(saved.query);
+          if (typeof saved.category === "string") setCategory(saved.category);
+          if (typeof saved.ugtMin === "string") setUgtMin(saved.ugtMin);
+          if (typeof saved.ugtMax === "string") setUgtMax(saved.ugtMax);
+          if (typeof saved.sort === "string") setSort(saved.sort);
+          if (typeof saved.page === "number" && saved.page > 1) setPage(saved.page);
+        }
+      } catch {
+        /* localStorage недоступен — остаёмся на значениях по умолчанию */
+      }
+    })();
+  }, []);
+
+  // Загрузка реестра: все публичные проекты, фильтрация — клиентская.
   useEffect(() => {
     if (!session?.user?.accessToken) return;
+    let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams();
-        if (statusFilter !== "all") params.set("status", statusFilter);
-        if (categoryFilter !== "all") params.set("category", categoryFilter);
-        if (minLevel !== "all") params.set("ugt_min", minLevel);
-        if (maxLevel !== "all") params.set("ugt_max", maxLevel);
-
-        const response = await fetch(`${API_URL}/api/v1/projects/registry?${params}`, {
+        const res = await fetch(`${API_URL}/api/v1/projects/registry`, {
           headers: { Authorization: `Bearer ${session.user.accessToken}` },
         });
-        const data = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(`Не удалось загрузить реестр (${response.status}).`);
-        const registry = data as Array<ProjectSummary & { organization: string | null; created_at: string | null }>;
-        setProjects(registry);
-        setTechnologies(registry.filter((p) => p.current_level >= 7).map((p) => ({
-          id: p.id, name: p.name, description: p.description, category: p.category, status: "published",
-          current_level: p.current_level, target_level: p.target_level, organization: p.organization,
-          created_by_name: p.organization, created_at: p.created_at,
-        })));
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data: RegistryProject[] = await res.json();
+        if (cancelled) return;
+        setProjects(data);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Не удалось загрузить реестр.");
+        if (!cancelled) setError(e instanceof Error ? e.message : "Ошибка загрузки");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchData();
-  }, [session, statusFilter, categoryFilter, minLevel, maxLevel]);
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.accessToken]);
 
-  // Клиентская фильтрация поверх серверной: поиск + диапазон УГТ (проекты)
-  const filteredProjects = projects.filter((p) => {
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) &&
-        !p.description?.toLowerCase().includes(search.toLowerCase())) {
-      return false;
+  // Write-through: URL + localStorage (после первого рендера).
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
     }
-    if (statusFilter !== "all" && p.status !== statusFilter) return false;
-    if (minLevel !== "all" && p.current_level < Number(minLevel)) return false;
-    if (maxLevel !== "all" && p.current_level > Number(maxLevel)) return false;
-    return true;
-  });
-
-  const filteredTechnologies = technologies.filter((t) => {
-    if (search && !t.name.toLowerCase().includes(search.toLowerCase()) &&
-        !t.description?.toLowerCase().includes(search.toLowerCase())) {
-      return false;
+    const params = new URLSearchParams();
+    if (tab !== "projects") params.set("tab", tab);
+    if (view !== "cards") params.set("view", view);
+    const q = query.trim();
+    if (q) params.set("q", q);
+    if (category !== "all") params.set("category", category);
+    if (ugtMin !== "all") params.set("ugt_min", ugtMin);
+    if (ugtMax !== "all") params.set("ugt_max", ugtMax);
+    if (sort !== "level_desc") params.set("sort", sort);
+    if (page > 1) params.set("page", String(page));
+    const qs = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+    );
+    try {
+      window.localStorage.setItem(VIEW_KEY, view);
+      window.localStorage.setItem(
+        FILTERS_KEY,
+        JSON.stringify({ tab, query, category, ugtMin, ugtMax, sort, page } satisfies SavedFilters),
+      );
+    } catch {
+      /* ignore */
     }
-    if (minLevel !== "all" && t.current_level < Number(minLevel)) return false;
-    if (maxLevel !== "all" && t.current_level > Number(maxLevel)) return false;
-    return true;
-  });
+  }, [tab, view, query, category, ugtMin, ugtMax, sort, page]);
 
-  const hasFilters = statusFilter !== "all" || categoryFilter !== "all" ||
-    minLevel !== "all" || maxLevel !== "all" || search !== "";
+  const categories = useMemo(() => {
+    const seen = new Set<string>();
+    for (const p of projects) if (p.category) seen.add(p.category);
+    return [...seen].sort((a, b) => a.localeCompare(b, "ru"));
+  }, [projects]);
+
+  // Технологии УГТ 7+ — клиентский срез реестра (как и раньше, но без
+  // выдуманного status: API registry не возвращает статус).
+  const baseList = useMemo(() => {
+    const min = tab === "technologies" ? Number(ugtMin === "all" ? 7 : ugtMin) : Number(ugtMin);
+    const max = ugtMax === "all" ? 9 : Number(ugtMax);
+    return projects.filter(
+      (p) => (Number.isNaN(min) || p.current_level >= min) && (Number.isNaN(max) || p.current_level <= max),
+    );
+  }, [projects, tab, ugtMin, ugtMax]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let list = baseList;
+    if (q) {
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.category ?? "").toLowerCase().includes(q) ||
+          (p.organization ?? "").toLowerCase().includes(q),
+      );
+    }
+    if (category !== "all") list = list.filter((p) => p.category === category);
+    const sorted = [...list];
+    switch (sort) {
+      case "name_asc":
+        sorted.sort((a, b) => a.name.localeCompare(b.name, "ru"));
+        break;
+      case "name_desc":
+        sorted.sort((a, b) => b.name.localeCompare(a.name, "ru"));
+        break;
+      case "level_asc":
+        sorted.sort((a, b) => a.current_level - b.current_level);
+        break;
+      case "budget_desc":
+        sorted.sort((a, b) => (b.budget ?? 0) - (a.budget ?? 0));
+        break;
+      case "budget_asc":
+        sorted.sort((a, b) => (a.budget ?? 0) - (b.budget ?? 0));
+        break;
+      case "date_desc":
+        sorted.sort((a, b) => (b.published_at ?? b.created_at ?? "").localeCompare(a.published_at ?? a.created_at ?? ""));
+        break;
+      case "org_asc":
+        sorted.sort((a, b) => (a.organization ?? "").localeCompare(b.organization ?? "", "ru"));
+        break;
+      default:
+        sorted.sort((a, b) => b.current_level - a.current_level);
+    }
+    return sorted;
+  }, [baseList, query, category, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, totalPages);
+  const pageItems = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
+
+  const hasActiveFilters =
+    query.trim() !== "" || category !== "all" || ugtMin !== "all" || ugtMax !== "all";
 
   const resetFilters = () => {
-    setSearch("");
-    setStatusFilter("all");
-    setCategoryFilter("all");
-    setMinLevel(tab === "technologies" ? "7" : "all");
-    setMaxLevel("all");
+    setQuery("");
+    setCategory("all");
+    setUgtMin(tab === "technologies" ? "7" : "all");
+    setUgtMax("all");
+    setSort("level_desc");
+    setPage(1);
   };
 
   const switchTab = (next: RegistryTab) => {
     setTab(next);
-    setStatusFilter("all");
-    setCategoryFilter("all");
-    setMinLevel(next === "technologies" ? "7" : "all");
-    setMaxLevel("all");
-    setSearch("");
+    setCategory("all");
+    setUgtMin(next === "technologies" ? "7" : "all");
+    setUgtMax("all");
+    setQuery("");
+    setPage(1);
   };
 
-  const list = tab === "projects" ? filteredProjects : filteredTechnologies;
+  const switchView = (next: ViewMode) => setView(next);
+
+  const filterSelectClass = "bg-transparent text-tz-fg outline-none";
+  const filterWrapClass =
+    "flex items-center gap-2 rounded-lg border border-tz-border bg-tz-surface px-3 py-2.5 text-sm text-tz-secondary";
+  const viewButtonClass = (active: boolean) =>
+    `inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition ${
+      active
+        ? "bg-tz-accent-soft text-tz-accent"
+        : "text-tz-secondary hover:bg-tz-surface-2 hover:text-tz-fg"
+    }`;
 
   return (
-    <div data-od-id="registries">
-      {/* Hero */}
+    <div data-od-id="registries" className="space-y-6">
+      {/* Заголовок */}
       <div className="border-b border-tz-border pb-6">
         <p className="tz-eyebrow">Реестры платформы</p>
         <h1 className="tz-page-title mt-2">Реестры проектов и технологий</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
-          Общая витрина проектов платформы и реестр технологий с уровнем УГТ 7+ —
-          по ГОСТ Р 58048-2017. Фильтры: область технологии, статус, диапазон УГТ, бюджет.
+          Общая витрина публичных проектов и реестр технологий с уровнем УГТ 7+ —
+          по ГОСТ Р 58048-2017. Фильтры: категория, диапазон УГТ.
         </p>
       </div>
 
-      {/* Переключатель реестров — тикет 29 */}
-      <div className="tz-tabs mt-8" role="tablist" aria-label="Реестры">
+      {/* Переключатель реестров */}
+      <div className="tz-tabs" role="tablist" aria-label="Реестры">
         <button
           role="tab"
           aria-selected={tab === "projects"}
           onClick={() => switchTab("projects")}
           className={`tz-tab ${tab === "projects" ? "tz-tab-active" : ""}`}
         >
-          <Layers size={15} className="mr-1.5 inline" aria-hidden="true" />
           Проекты
-          <span className="tz-tab-count">{loading ? "…" : projects.length}</span>
+          <span className="tz-tab-count">{loading ? "…" : baseList.length}</span>
         </button>
         <button
           role="tab"
@@ -206,208 +341,349 @@ export default function TechnologiesPage() {
           onClick={() => switchTab("technologies")}
           className={`tz-tab ${tab === "technologies" ? "tz-tab-active" : ""}`}
         >
-          <Rocket size={15} className="mr-1.5 inline" aria-hidden="true" />
           Технологии УГТ 7+
-          <span className="tz-tab-count">{loading ? "…" : technologies.length}</span>
+          <span className="tz-tab-count">
+            {loading
+              ? "…"
+              : projects.filter((p) => p.current_level >= 7).length}
+          </span>
         </button>
       </div>
 
-      {/* Фильтры */}
-      <div className="mt-6 space-y-4">
-        <div className="relative max-w-md">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" aria-hidden="true" />
-          <input
-            type="text"
-            placeholder="Поиск по названию…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="tz-input pl-10"
+      {/* Панель инструментов */}
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="relative min-w-0 flex-1 basis-64">
+          <span className="sr-only">Поиск по названию</span>
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted"
+            aria-hidden
           />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Filter size={16} className="text-tz-muted" aria-hidden="true" />
-          {tab === "projects" && (
-            <>
-              <span className="tz-eyebrow mr-1">Статус:</span>
-              {["all", "draft", "active", "review", "completed"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={`tz-chip ${statusFilter === s ? "tz-chip-active" : ""}`}
-                >
-                  {STATUS_LABELS[s] ?? s}
-                </button>
-              ))}
-              <span className="tz-eyebrow ml-2 mr-1">Категория:</span>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="tz-select w-auto"
-              >
-                <option value="all">Все</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </>
-          )}
-          <span className="tz-eyebrow ml-2 mr-1">УГТ от:</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Поиск по названию…"
+            className="tz-input pl-9"
+          />
+        </label>
+
+        <label className={filterWrapClass}>
+          <SlidersHorizontal size={15} className="shrink-0 text-tz-muted" aria-hidden />
+          <span className="hidden text-tz-secondary sm:inline">Категория</span>
           <select
-            value={minLevel}
-            onChange={(e) => setMinLevel(e.target.value)}
-            className="tz-select w-auto"
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPage(1);
+            }}
+            className={filterSelectClass}
+            aria-label="Фильтр по категории"
           >
-            {levelOptions().map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+            <option value="all">Все</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
           </select>
-          <span className="tz-eyebrow mr-1">до:</span>
+        </label>
+
+        <label className={filterWrapClass}>
+          <span className="hidden text-tz-secondary sm:inline">УГТ от</span>
           <select
-            value={maxLevel}
-            onChange={(e) => setMaxLevel(e.target.value)}
-            className="tz-select w-auto"
+            value={ugtMin}
+            onChange={(e) => {
+              setUgtMin(e.target.value);
+              setPage(1);
+            }}
+            className={filterSelectClass}
+            aria-label="Фильтр по минимальному уровню УГТ"
           >
-            {levelOptions().map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+            <option value="all">Любой</option>
+            {UGT_LEVELS.map((level) => (
+              <option key={level} value={String(level)}>
+                УГТ {level}
+              </option>
             ))}
           </select>
-          {hasFilters && (
-            <button
-              onClick={resetFilters}
-              className="tz-btn tz-btn-ghost tz-btn-sm"
-            >
-              <RotateCcw size={12} aria-hidden="true" />
-              Сбросить
-            </button>
-          )}
+        </label>
+
+        <label className={filterWrapClass}>
+          <span className="hidden text-tz-secondary sm:inline">до</span>
+          <select
+            value={ugtMax}
+            onChange={(e) => {
+              setUgtMax(e.target.value);
+              setPage(1);
+            }}
+            className={filterSelectClass}
+            aria-label="Фильтр по максимальному уровню УГТ"
+          >
+            <option value="all">УГТ 9</option>
+            {UGT_LEVELS.map((level) => (
+              <option key={level} value={String(level)}>
+                УГТ {level}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={filterWrapClass}>
+          <span className="hidden text-tz-secondary sm:inline">Сортировка</span>
+          <select
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(1);
+            }}
+            className={filterSelectClass}
+            aria-label="Сортировка"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* Переключатель «карточки / таблица» — выбор сохраняется в localStorage */}
+        <div
+          role="group"
+          aria-label="Вид реестра"
+          className="flex shrink-0 overflow-hidden rounded-lg border border-tz-border bg-tz-surface"
+        >
+          <button
+            type="button"
+            onClick={() => switchView("cards")}
+            aria-pressed={view === "cards"}
+            className={viewButtonClass(view === "cards")}
+          >
+            <LayoutGrid size={15} aria-hidden />
+            <span className="hidden sm:inline">Карточки</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => switchView("table")}
+            aria-pressed={view === "table"}
+            className={viewButtonClass(view === "table")}
+          >
+            <List size={15} aria-hidden />
+            <span className="hidden sm:inline">Таблица</span>
+          </button>
         </div>
       </div>
 
-      {/* Контент */}
+      {/* Строка результата и сброс фильтров */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-tz-secondary">
+          Найдено: <span className="font-semibold text-tz-fg">{filtered.length}</span>
+        </p>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
+          >
+            <X size={14} aria-hidden />
+            Сбросить фильтры
+          </button>
+        )}
+      </div>
+
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-tz-accent border-t-transparent" />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-40 animate-pulse rounded-[14px] border border-tz-border bg-tz-surface"
+            />
+          ))}
         </div>
       ) : error ? (
-        <div className="tz-card tz-empty mt-6">
-          <span className="tz-empty-icon"><AlertCircle size={22} aria-hidden="true" /></span>
-          <h2 className="tz-empty-title">Не удалось загрузить реестр</h2>
-          <p className="tz-empty-text">{error}</p>
-          <button className="tz-btn tz-btn-secondary" onClick={() => window.location.reload()}>Повторить</button>
+        <div className="rounded-[14px] border border-tz-danger bg-tz-surface p-8 text-center">
+          <h2 className="tz-section-title">Не удалось загрузить реестр</h2>
+          <p className="mt-2 text-tz-secondary">{error}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="tz-btn tz-btn-secondary mt-5"
+          >
+            Повторить
+          </button>
         </div>
-      ) : list.length === 0 ? (
-        <div className="tz-card tz-empty mt-6">
-          <span className="tz-empty-icon">
-            <Beaker size={22} aria-hidden="true" />
-          </span>
-          <h2 className="tz-empty-title">
+      ) : filtered.length === 0 ? (
+        <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center">
+          <h2 className="tz-section-title">
             {tab === "projects" ? "Проектов не найдено" : "Технологий УГТ 7+ пока нет"}
           </h2>
-          <p className="tz-empty-text">
-            {tab === "projects"
-              ? "Проекты появляются в реестре после апрува карточки менеджером ЦНТР."
-              : "Технология попадает в этот реестр автоматически при подтверждении уровня УГТ 7 и выше."}
+          <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
+            Измените поиск или сбросьте фильтры.
           </p>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="tz-btn tz-btn-secondary mt-5"
+            >
+              Сбросить фильтры
+            </button>
+          )}
+        </div>
+      ) : view === "table" ? (
+        /* Таблица */
+        <div
+          className="overflow-x-auto rounded-[14px] border border-tz-border bg-tz-surface"
+          tabIndex={0}
+          aria-label="Таблица реестра — листается горизонтально"
+        >
+          <table className="tz-table w-full min-w-[760px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-tz-border">
+                <th scope="col" className="px-4 py-3">Название</th>
+                <th scope="col" className="px-4 py-3">Категория</th>
+                <th scope="col" className="px-4 py-3">УГТ</th>
+                <th scope="col" className="px-4 py-3">Бюджет</th>
+                <th scope="col" className="px-4 py-3">Организация</th>
+                <th scope="col" className="px-4 py-3">Опубликован</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pageItems.map((p) => (
+                <tr key={p.id}>
+                  <td className="px-4 py-3">
+                    <Link href={`/dashboard/project/${p.id}`} className="block max-w-[300px]">
+                      <span className="block truncate font-semibold text-tz-fg transition hover:text-tz-accent">
+                        {p.name}
+                      </span>
+                      <span className="block font-mono text-[11px] text-tz-muted">
+                        ЦНТР-{p.id}
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="max-w-[200px] truncate px-4 py-3 text-tz-secondary">
+                    {p.category ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={ugtClass(p.current_level)}>УГТ {p.current_level}</span>
+                    <span className="mx-1 text-tz-muted" aria-hidden>→</span>
+                    <span className="font-mono text-xs font-bold text-tz-muted">{p.target_level}</span>
+                  </td>
+                  <td className="px-4 py-3 text-tz-secondary">{formatBudget(p.budget)}</td>
+                  <td className="max-w-[220px] truncate px-4 py-3 text-tz-secondary">
+                    {p.organization ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-tz-secondary">
+                    {formatDate(p.published_at ?? p.created_at)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {list.map((item, idx) => {
-            if (tab === "projects") {
-              const p = item as ProjectSummary;
-              const badge = STATUS_BADGE[p.status] ?? "tz-badge-neutral";
-              return (
-                <motion.div
-                  key={`p-${p.id}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.04 * idx, duration: 0.3 }}
-                  className="tz-card tz-card-hover p-5"
-                >
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
-                    <span className={`tz-badge ${badge}`}>{STATUS_LABELS[p.status] ?? p.status}</span>
-                    {p.category && <span className="tz-badge tz-badge-neutral">{p.category}</span>}
-                  </div>
-                  <h3 className="font-bold text-tz-fg">{p.name}</h3>
-                  {p.description && (
-                    <p className="mb-3 mt-1 text-sm text-tz-muted line-clamp-2">{p.description}</p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-tz-muted">
-                    <span className="flex items-center gap-1.5">
-                      <Activity size={14} className="text-tz-accent" aria-hidden="true" />
-                      <span className="tz-ugt">УГТ {p.current_level}</span>
-                      <span aria-hidden="true">→</span>
-                      <span className="tz-ugt">{p.target_level}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Briefcase size={14} className="text-tz-muted" aria-hidden="true" />
-                      {formatBudget(p.budget)}
-                    </span>
-                  </div>
-                </motion.div>
-              );
-            }
-            const t = item as Technology;
-            const badge = STATUS_BADGE[t.status] ?? "tz-badge-neutral";
-            const progress = t.target_level > 0
-              ? Math.min(100, Math.round((t.current_level / t.target_level) * 100))
-              : 0;
-            return (
-              <motion.div
-                key={`t-${t.id}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.04 * idx, duration: 0.3 }}
-                className="tz-card tz-card-hover p-5"
+        /* Компактные карточки БЕЗ радара: название, категория, УГТ, бюджет, организация */
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {pageItems.map((p) => (
+            <li key={p.id} className="min-w-0">
+              <Link
+                href={`/dashboard/project/${p.id}`}
+                className="group flex h-full flex-col gap-3 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-tz-accent hover:shadow-[var(--tz-shadow-card)]"
               >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <h3 className="font-bold text-tz-fg">{t.name}</h3>
-                  <span className={`tz-badge ${badge}`}>{STATUS_LABELS[t.status] ?? t.status}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-tz-muted">
+                      ЦНТР-{p.id}
+                    </p>
+                    <h3
+                      className="mt-1 truncate font-semibold text-tz-fg transition group-hover:text-tz-accent"
+                      title={p.name}
+                    >
+                      {p.name}
+                    </h3>
+                  </div>
+                  {p.category && <span className="tz-badge tz-badge-neutral shrink-0">{p.category}</span>}
                 </div>
-                {t.description && (
-                  <p className="mb-3 text-sm text-tz-muted line-clamp-2">{t.description}</p>
-                )}
-                {t.organization && (
-                  <p className="mb-3 flex items-center gap-1.5 text-sm text-tz-muted">
-                    <Building2 size={14} className="shrink-0 text-tz-success" aria-hidden="true" />
-                    <span>
-                      Исполнитель: <span className="font-medium text-tz-secondary">{t.organization}</span>
-                    </span>
-                  </p>
-                )}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-tz-muted">
-                  <span className="flex items-center gap-1.5">
-                    <Activity size={14} className="text-tz-accent" aria-hidden="true" />
-                    <span className="tz-ugt tz-ugt-strong">УГТ {t.current_level}</span>
-                    <span aria-hidden="true">→</span>
-                    <span className="tz-ugt">{t.target_level}</span>
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-tz-border pt-3">
+                  <span className={ugtClass(p.current_level)}>
+                    УГТ {p.current_level}
+                    <span className="mx-1 text-tz-muted" aria-hidden>→</span>
+                    {p.target_level}
                   </span>
-                  {t.category && (
-                    <span className="tz-badge tz-badge-neutral">
-                      <Beaker size={11} aria-hidden="true" />
-                      {t.category}
-                    </span>
-                  )}
-                  {t.created_by_name && (
-                    <span className="flex items-center gap-1">
-                      <Clock size={14} className="text-tz-muted" aria-hidden="true" />
-                      {t.created_by_name}
-                    </span>
-                  )}
+                  <span className="truncate text-xs text-tz-muted" title={p.organization ?? ""}>
+                    {p.organization ?? formatBudget(p.budget)}
+                  </span>
                 </div>
-                <div className="mt-3">
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs text-tz-muted">Прогресс УГТ</span>
-                    <span className="font-mono text-xs font-medium text-tz-accent">{progress}%</span>
-                  </div>
-                  <div className="tz-progress">
-                    <div className="tz-progress-fill" style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Пагинация */}
+      {filtered.length > 0 && (
+        <nav
+          className="flex flex-wrap items-center justify-between gap-3 border-t border-tz-border pt-4"
+          aria-label="Пагинация"
+        >
+          <p className="text-sm text-tz-secondary">
+            Показано{" "}
+            <span className="font-semibold text-tz-fg">
+              {(current - 1) * PAGE_SIZE + 1}–
+              {Math.min(current * PAGE_SIZE, filtered.length)}
+            </span>{" "}
+            из {filtered.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage(current - 1)}
+              disabled={current <= 1}
+              aria-label="Предыдущая страница"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-tz-border text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft size={16} aria-hidden />
+            </button>
+            {pageList(current, totalPages).map((n, index) =>
+              n === "…" ? (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="grid h-10 w-10 place-items-center text-tz-muted"
+                  aria-hidden
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPage(n)}
+                  aria-current={n === current ? "page" : undefined}
+                  className={`grid h-10 min-w-10 place-items-center rounded-lg border px-2 text-sm font-medium transition ${
+                    n === current
+                      ? "border-tz-accent bg-tz-accent-soft text-tz-accent"
+                      : "border-tz-border text-tz-secondary hover:bg-tz-surface-2 hover:text-tz-fg"
+                  }`}
+                >
+                  {n}
+                </button>
+              ),
+            )}
+            <button
+              type="button"
+              onClick={() => setPage(current + 1)}
+              disabled={current >= totalPages}
+              aria-label="Следующая страница"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-tz-border text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight size={16} aria-hidden />
+            </button>
+          </div>
+        </nav>
       )}
     </div>
   );

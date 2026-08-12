@@ -103,7 +103,7 @@ export default function NotificationBell() {
           setOpen((o) => !o);
           if (!open) void load();
         }}
-        className="relative grid h-9 w-9 place-items-center rounded-xl text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
+        className="relative grid h-10 w-10 place-items-center rounded-xl text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
         aria-label={`Уведомления${unread ? `, ${unread} непрочитанных` : ""}`}
       >
         <Bell size={18} />
@@ -115,7 +115,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 w-80 rounded-2xl border border-tz-border bg-tz-surface p-2 shadow-2xl">
+        <div className="absolute right-0 top-11 z-50 w-80 rounded-2xl border border-tz-border bg-tz-surface p-2 shadow-2xl">
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-sm font-bold text-tz-fg">Уведомления</span>
 

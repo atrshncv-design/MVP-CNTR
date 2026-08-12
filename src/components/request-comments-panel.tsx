@@ -171,7 +171,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
       </div>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl border border-tz-danger-border bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger-fg">
+        <div role="alert" className="mt-3 rounded-xl border border-tz-danger/30 bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
           {error}
         </div>
       )}
@@ -204,7 +204,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
                 <p className="text-sm text-tz-secondary">
                   УГТ {selected.from_level} → УГТ {selected.to_level}
                   {selected.rejection_reason && (
-                    <span className="ml-2 text-tz-danger-fg">Причина: {selected.rejection_reason}</span>
+                    <span className="ml-2 text-tz-danger">Причина: {selected.rejection_reason}</span>
                   )}
                 </p>
                 {(selected.status === "approved" || selected.status === "rejected") && (
@@ -243,6 +243,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
                       if (e.key === "Enter" && !e.shiftKey) void send();
                     }}
                     placeholder="Комментарий для менеджера…"
+                    aria-label="Комментарий для менеджера"
                   />
                   <button
                     onClick={() => void send()}

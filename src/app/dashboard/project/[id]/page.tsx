@@ -11,13 +11,10 @@ import {
   Download,
   Globe,
   ArrowUp,
-  Award,
-  BarChart3,
   Check,
   CheckCircle,
   Clock,
   Copy,
-  DollarSign,
   Eye,
   FileText,
   Loader2,
@@ -42,70 +39,12 @@ import StageProgressPanel from '@/components/stage-progress-panel';
 import ProjectTeamPanel from '@/components/project-team-panel';
 import ProjectFilesPanel from '@/components/project-files-panel';
 import RequestCommentsPanel from '@/components/request-comments-panel';
-import ProjectRadar from '@/components/dashboard/project-radar';
+import UgtTrajectory from '@/components/dashboard/ugt-trajectory';
+import { AchievementsCollection } from '@/components/achievements-collection';
+import { useBreadcrumb } from '@/components/dashboard/dashboard-breadcrumb';
+import type { ProjectDetail as ProjectData } from '@/lib/api-client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
-
-interface ProjectData {
-  project: {
-    id: number;
-    name: string;
-    description: string | null;
-    category: string | null;
-    target_level: number;
-    current_level: number;
-    preliminary_level?: number | null;
-    status: string;
-    budget: number | null;
-    created_by: number | null;
-    join_token: string | null;
-    is_public?: boolean;
-    show_preliminary?: boolean;
-  };
-  questionnaire_results: Array<{
-    id: number;
-    level_id: number;
-    percentage: number;
-    checked_items: string[];
-  }>;
-  control_points: Array<{
-    id: number;
-    title: string;
-    description: string | null;
-    point_type: string;
-    status: string;
-    decision: string | null;
-  }>;
-  documents: Array<{
-    id: number;
-    title: string;
-    doc_type: string;
-    status: string;
-    version: number;
-    file_url: string | null;
-  }>;
-  verification_documents: Array<{
-    id: number;
-    title: string;
-    comment: string | null;
-    file_ref: string | null;
-    uploader_name: string | null;
-    created_at: string | null;
-  }>;
-  members: Array<{
-    id: number;
-    user_id: number;
-    role_in_project: string;
-    is_priority: boolean;
-  }>;
-  audit_trail: Array<{
-    id: number;
-    user_id: number | null;
-    action: string;
-    details: Record<string, unknown>;
-    created_at: string | null;
-  }>;
-}
 
 interface GeneratedDocument {
   doc_type: string;
@@ -136,6 +75,7 @@ const STATUS_COLORS: Record<string, string> = {
   active: 'var(--tz-accent)',
   completed: 'var(--tz-success)',
   rejected: 'var(--tz-danger)',
+  archived: 'var(--tz-neutral)',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -145,6 +85,7 @@ const STATUS_LABELS: Record<string, string> = {
   active: 'Активен',
   completed: 'Завершён',
   rejected: 'Отклонён',
+  archived: 'В архиве',
 };
 
 const UGT_LEVEL_NAMES = [
@@ -461,6 +402,19 @@ export default function ProjectDashboardPage() {
     [session, params.id, loadJoinRequests],
   );
 
+  /** Хлебные крошки (тикет 03): Рабочий стол / Проекты / <название проекта>. */
+  const breadcrumbItems = useMemo(
+    () =>
+      project
+        ? [
+            { label: 'Проекты', href: '/dashboard/projects' },
+            { label: project.project.name },
+          ]
+        : null,
+    [project],
+  );
+  useBreadcrumb(breadcrumbItems);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -486,200 +440,184 @@ export default function ProjectDashboardPage() {
 
   const kt1 = project.control_points.find((cp) => cp.point_type === 'gate' && cp.title.includes('КТ-1'));
 
+  /** Форматирование даты для сводки (— если дата отсутствует). */
+  const formatDate = (value: string | null | undefined): string => {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('ru-RU');
+  };
+
   return (
     <div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        {/* Header */}
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-5">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span
-                className="tz-badge font-mono text-xs font-semibold"
-                style={{ background: `${statusColor}20`, color: statusColor }}
-              >
-                {STATUS_LABELS[p.status] ?? p.status}
-              </span>
-              {p.category && (
-                <span className="tz-badge tz-badge-neutral">{p.category}</span>
-              )}
-              <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
-            </div>
-            <h1 className="tz-page-title">{p.name}</h1>
-            {p.description && (
-              <p className="mt-2 max-w-2xl text-tz-muted">{p.description}</p>
-            )}
+        {/* Шапка (часть «Сводка»): имя, описание, бейджи */}
+        <div className="mb-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.7fr)] lg:items-end">
+          <div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span
+              className="tz-badge font-mono text-xs font-semibold"
+              style={{ background: `${statusColor}20`, color: statusColor }}
+            >
+              {STATUS_LABELS[p.status] ?? p.status}
+            </span>
+            {p.category && <span className="tz-badge tz-badge-neutral">{p.category}</span>}
+            <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
           </div>
-          <div className="flex flex-wrap items-start gap-4">
-            <div className="tz-card shrink-0 p-4">
-              <ProjectRadar
-                currentLevel={p.current_level}
-                documents={project.documents.map((d) => ({ doc_type: d.doc_type }))}
-                size={120}
-              />
-            </div>
-            <div className="tz-card shrink-0 px-4 py-3">
-              <div className="tz-eyebrow">Уровень УГТ</div>
-              <div className="mt-1.5 flex items-center gap-1.5">
-                <span className="tz-ugt">{`УГТ ${p.current_level}`}</span>
-                <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
-                <span className="tz-ugt tz-ugt-strong">{p.target_level}</span>
-              </div>
-              {p.preliminary_level != null && p.preliminary_level !== p.current_level && (
-                <p className="mt-1 text-xs text-tz-muted">
-                  Предварительный: УГТ {p.preliminary_level}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-tz-muted">по ГОСТ Р 58048-2017</p>
-            </div>
+          <h1 className="tz-page-title break-words">{p.name}</h1>
+          {p.description && <p className="mt-2 max-w-2xl text-tz-muted">{p.description}</p>}
           </div>
+          <AchievementsCollection projectId={p.id} />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Main column */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Основная колонка: сводка → статус/УГТ → документы → команда → история → аналитика */}
+          <div className="min-w-0 space-y-6 lg:col-span-2">
+            <UgtTrajectory currentLevel={p.current_level} targetLevel={Math.min(p.current_level + 1, 9)} onAddDocuments={() => document.querySelector('[data-od-id="stage-progress"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+            {/* 1. Сводка */}
+            <section className="rounded-2xl border border-tz-border bg-tz-surface p-6" aria-labelledby="project-summary">
+              <h2 id="project-summary" className="tz-card-title mb-4 text-tz-fg">Сводка</h2>
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                <div className="min-w-0">
+                  <dt className="text-xs text-tz-muted">Категория</dt>
+                  <dd className="mt-1 break-words text-sm font-medium text-tz-fg">{p.category ?? 'Не указана'}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs text-tz-muted">Идентификатор</dt>
+                  <dd className="mt-1 font-mono text-sm font-medium text-tz-fg">ЦНТР-{p.id}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs text-tz-muted">Создан</dt>
+                  <dd className="mt-1 text-sm font-medium text-tz-fg">{formatDate(p.created_at)}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs text-tz-muted">Обновлён</dt>
+                  <dd className="mt-1 text-sm font-medium text-tz-fg">{formatDate(p.updated_at)}</dd>
+                </div>
+                {p.created_by != null && (
+                  <div className="min-w-0">
+                    <dt className="text-xs text-tz-muted">Создатель (ID)</dt>
+                    <dd className="mt-1 font-mono text-sm font-medium text-tz-fg">{p.created_by}</dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+
+            {/* 2. Статус и УГТ */}
+            <section className="rounded-2xl border border-tz-border bg-tz-surface p-6" aria-labelledby="project-status">
+              <h2 id="project-status" className="tz-card-title mb-4 text-tz-fg">Статус и УГТ</h2>
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="tz-badge font-mono text-xs font-semibold"
+                    style={{ background: `${statusColor}20`, color: statusColor }}
+                  >
+                    {STATUS_LABELS[p.status] ?? p.status}
+                  </span>
+                  <span className="text-sm text-tz-muted">по ГОСТ Р 58048-2017</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-xl border border-tz-border bg-tz-soft px-4 py-3">
+                    <div className="tz-eyebrow">Уровень УГТ</div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <span className="tz-ugt">{`УГТ ${p.current_level}`}</span>
+                      <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
+                      <span className="tz-ugt tz-ugt-strong">{p.target_level}</span>
+                    </div>
+                    {p.preliminary_level != null && p.preliminary_level !== p.current_level && (
+                      <p className="mt-1 text-xs text-tz-muted">Предварительный: УГТ {p.preliminary_level}</p>
+                    )}
+                  </div>
+                  <p className="max-w-xs text-sm text-tz-muted">
+                    {UGT_LEVEL_NAMES[p.current_level - 1] ?? `УГТ ${p.current_level}`} →{' '}
+                    {UGT_LEVEL_NAMES[p.target_level - 1] ?? `УГТ ${p.target_level}`}
+                  </p>
+                </div>
+
+                {/* КТ-1: стартовые ворота проекта */}
+                {kt1 && (
+                  <div
+                    className={`rounded-xl p-4 ${
+                      kt1.status === 'approved'
+                        ? 'bg-tz-success-soft border border-tz-success/30'
+                        : kt1.status === 'rejected'
+                          ? 'bg-tz-danger-soft border border-tz-danger'
+                          : 'bg-tz-warning-soft border border-tz-warning/30'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      {kt1.status === 'approved' ? (
+                        <>
+                          <CheckCircle size={20} className="text-tz-success" />
+                          <span className="font-semibold text-tz-success">КТ-1: Go — проект одобрен</span>
+                        </>
+                      ) : kt1.status === 'rejected' ? (
+                        <>
+                          <XCircle size={20} className="text-tz-danger" />
+                          <span className="font-semibold text-tz-danger">КТ-1: No-Go — проект отклонён</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock size={20} className="text-tz-warning" />
+                          <span className="font-semibold text-tz-warning">КТ-1: Ожидает решения</span>
+                        </>
+                      )}
+                    </div>
+                    {kt1.description && <p className="mt-2 text-sm text-tz-secondary">{kt1.description}</p>}
+                  </div>
+                )}
+
+                {/* Контрольные точки (ворота) */}
+                <div>
+                  <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-tz-fg">
+                    <Shield size={16} className="text-[var(--tz-review)]" />
+                    Контрольные точки
+                  </h3>
+                  {project.control_points.length === 0 ? (
+                    <p className="text-sm text-tz-muted">Контрольные точки не заданы</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {project.control_points.map((cp) => (
+                        <li
+                          key={cp.id}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tz-border bg-tz-soft p-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-tz-fg">{cp.title}</p>
+                            {cp.description && <p className="mt-0.5 text-sm text-tz-muted">{cp.description}</p>}
+                          </div>
+                          <div className="shrink-0 text-right">
+                            {cp.status === 'approved' ? (
+                              <span className="flex items-center gap-1 text-sm font-semibold text-tz-success">
+                                <CheckCircle size={15} /> Одобрено
+                              </span>
+                            ) : cp.status === 'rejected' ? (
+                              <span className="flex items-center gap-1 text-sm font-semibold text-tz-danger">
+                                <XCircle size={15} /> Отклонено
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-sm font-semibold text-tz-warning">
+                                <Clock size={15} /> Ожидает
+                              </span>
+                            )}
+                            {cp.decision && <p className="mt-0.5 text-xs text-tz-muted">Решение: {cp.decision}</p>}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Этап доработки (подблок «Статус и УГТ» — продвижение к следующему уровню) */}
             <StageProgressPanel projectId={p.id} currentLevel={p.current_level} status={p.status} />
-            <ProjectTeamPanel projectId={p.id} />
-            <ProjectFilesPanel projectId={p.id} />
-            <RequestCommentsPanel projectId={p.id} />
-            {/* Radar chart */}
-            <div className="tz-card p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity size={20} className="text-[var(--tz-accent)]" />
-                <h2 className="tz-card-title text-tz-fg">УГТ-профиль</h2>
-              </div>
-              <div className="flex items-center justify-center">
-                <ResponsiveContainer width="100%" height={320}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="var(--tz-border)" />
-                    <PolarAngleAxis
-                      dataKey="level"
-                      tick={{ fontSize: 11, fill: 'var(--tz-muted)' }}
-                    />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar
-                      name="Цель"
-                      dataKey="target"
-                      stroke="var(--tz-review)"
-                      fill="var(--tz-review)"
-                      fillOpacity={0.1}
-                      strokeWidth={2}
-                      strokeDasharray="4 4"
-                    />
-                    <Radar
-                      name="Прогресс"
-                      dataKey="progress"
-                      stroke="var(--tz-accent)"
-                      fill="var(--tz-accent)"
-                      fillOpacity={0.15}
-                      strokeWidth={2}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-6 mt-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-6 rounded bg-[var(--tz-accent)]" />
-                  <span className="text-tz-muted">Текущий</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-6 rounded border-2 border-dashed border-[var(--tz-review)]" />
-                  <span className="text-tz-muted">Цель</span>
-                </div>
-              </div>
-            </div>
 
-            {/* UGT Levels progress */}
-            <div className="tz-card p-6">
-              <h2 className="tz-card-title text-tz-fg mb-4">Прогресс по уровням УГТ</h2>
-              <div className="space-y-3">
-                {UGT_LEVEL_NAMES.map((name, i) => {
-                  const level = i + 1;
-                  const qr = project.questionnaire_results.find((r) => r.level_id === level);
-                  const progress = qr ? Math.round(qr.percentage) : 0;
-                  const isCurrent = level === p.current_level;
-                  const isTarget = level <= p.target_level;
-
-                  return (
-                    <div key={level} className="flex items-center gap-4">
-                      <span className={`w-9 font-mono text-xs font-bold ${isCurrent ? 'text-tz-accent' : 'text-tz-muted'}`}>
-                        УГТ {level}
-                      </span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-tz-secondary">{name.replace(/УГТ \d+: /, '')}</span>
-                          <span className="text-xs text-tz-muted">{progress}%</span>
-                        </div>
-                        <div className="tz-progress">
-                          <div
-                            className="tz-progress-fill"
-                            style={{
-                              width: `${progress}%`,
-                              background: progress >= 80 ? 'var(--tz-success)' : progress >= 40 ? 'var(--tz-accent)' : 'var(--tz-review)',
-                            }}
-                          />
-                        </div>
-                      </div>
-                      {isCurrent && <ArrowUp size={16} className="text-[var(--tz-accent)]" />}
-                      {!isTarget && <XCircle size={14} className="text-tz-muted" />}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Control Points */}
-            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield size={20} className="text-[var(--tz-review)]" />
-                <h2 className="tz-card-title text-tz-fg">Контрольные точки (КТ)</h2>
-              </div>
-              {project.control_points.length === 0 ? (
-                <p className="text-sm text-tz-muted">Контрольные точки не заданы</p>
-              ) : (
-                <div className="space-y-3">
-                  {project.control_points.map((cp) => (
-                    <div
-                      key={cp.id}
-                      className="flex items-center justify-between rounded-xl border border-tz-border bg-tz-soft p-4"
-                    >
-                      <div>
-                        <p className="font-semibold text-tz-fg">{cp.title}</p>
-                        {cp.description && (
-                          <p className="mt-1 text-sm text-tz-muted">{cp.description}</p>
-                        )}
-                        <span className="mt-1 inline-block rounded bg-tz-soft px-2 py-0.5 text-xs text-tz-secondary">
-                          {cp.point_type === 'gate' ? 'Ворота' : cp.point_type}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        {cp.status === 'approved' ? (
-                          <span className="flex items-center gap-1 text-sm font-semibold text-tz-success">
-                            <CheckCircle size={16} /> Одобрено
-                          </span>
-                        ) : cp.status === 'rejected' ? (
-                          <span className="flex items-center gap-1 text-sm font-semibold text-tz-danger">
-                            <XCircle size={16} /> Отклонено
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-sm font-semibold text-tz-warning">
-                            <Clock size={16} /> Ожидает
-                          </span>
-                        )}
-                        {cp.decision && (
-                          <p className="mt-1 text-xs text-tz-muted">Решение: {cp.decision}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Documents */}
-            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-4">
+            {/* 3. Документы */}
+            <section className="rounded-2xl border border-tz-border bg-tz-surface p-6" aria-labelledby="project-documents">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
                 <FileText size={20} className="text-[var(--tz-ugt-2)]" />
-                <h2 className="tz-card-title text-tz-fg">Документы</h2>
+                <h2 id="project-documents" className="tz-card-title text-tz-fg">Документы</h2>
               </div>
 
               {/* Генерация документов — доступна всем участникам */}
@@ -706,22 +644,20 @@ export default function ProjectDashboardPage() {
               {project.documents.length === 0 ? (
                 <p className="text-sm text-tz-muted">Документы не загружены</p>
               ) : (
-                <div className="space-y-2">
+                <ul className="space-y-2">
                   {project.documents.map((doc) => (
-                    <div
+                    <li
                       key={doc.id}
-                      className="flex items-center justify-between rounded-lg border border-tz-border p-3"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-tz-border p-3"
                     >
-                      <div className="flex items-center gap-3">
-                        <FileText size={18} className="text-tz-muted" />
-                        <div>
-                          <p className="font-medium text-tz-fg">{doc.title}</p>
-                          <p className="text-xs text-tz-muted">
-                            {doc.doc_type} · v{doc.version}
-                          </p>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <FileText size={18} className="shrink-0 text-tz-muted" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-tz-fg">{doc.title}</p>
+                          <p className="text-xs text-tz-muted">{doc.doc_type} · v{doc.version}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex shrink-0 items-center gap-2">
                         {doc.file_url && (
                           <button
                             onClick={() => setViewingDoc({ title: doc.title, content: doc.file_url ?? '' })}
@@ -730,195 +666,294 @@ export default function ProjectDashboardPage() {
                             <Eye size={14} /> Просмотр
                           </button>
                         )}
+                        <span
+                          className="rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={{
+                            background: doc.status === 'approved' ? 'var(--tz-success)20' : doc.status === 'draft' ? 'var(--tz-review)20' : 'var(--tz-neutral)20',
+                            color: doc.status === 'approved' ? 'var(--tz-success)' : doc.status === 'draft' ? 'var(--tz-review)' : 'var(--tz-neutral)',
+                          }}
+                        >
+                          {doc.status === 'approved' ? 'Утверждён' : doc.status === 'draft' ? 'Черновик' : doc.status}
+                        </span>
                       </div>
-                      <span
-                        className="rounded-full px-2 py-0.5 text-xs font-medium"
-                        style={{
-                          background: doc.status === 'approved' ? 'var(--tz-success)20' : doc.status === 'draft' ? 'var(--tz-review)20' : 'var(--tz-neutral)20',
-                          color: doc.status === 'approved' ? 'var(--tz-success)' : doc.status === 'draft' ? 'var(--tz-review)' : 'var(--tz-neutral)',
-                        }}
-                      >
-                        {doc.status === 'approved' ? 'Утверждён' : doc.status === 'draft' ? 'Черновик' : doc.status}
-                      </span>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
-            </div>
 
-            {/* Верифицирующие документы (подтверждение УГТ от регулирующей организации / участников) */}
-            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck size={20} className="text-[var(--tz-success)]" />
-                <h2 className="tz-card-title text-tz-fg">Верифицирующие документы</h2>
+              {/* Верифицирующие документы (подтверждение УГТ) */}
+              <h3 className="mb-3 mt-6 flex flex-wrap items-center gap-2 text-sm font-semibold text-tz-fg">
+                <ShieldCheck size={16} className="text-tz-success" />
+                Верифицирующие документы
                 {project.verification_documents.length > 0 && (
                   <span className="rounded-full bg-tz-success-soft px-2.5 py-0.5 text-xs font-semibold text-tz-success">
                     {project.verification_documents.length}
                   </span>
                 )}
-              </div>
+              </h3>
               {project.verification_documents.length === 0 ? (
                 <p className="text-sm text-tz-muted">
                   Документы подтверждения УГТ не загружены. Регулирующая организация
                   или участники могут добавить их после вступления в проект.
                 </p>
               ) : (
-                <div className="space-y-2">
+                <ul className="space-y-2">
                   {project.verification_documents.map((v) => (
-                    <div
+                    <li
                       key={v.id}
-                      className="flex items-start justify-between gap-4 rounded-lg border border-tz-success bg-tz-success-soft/40 p-3"
+                      className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-tz-success bg-tz-success-soft/40 p-3"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
                         <ShieldCheck size={18} className="mt-0.5 shrink-0 text-tz-success" />
-                        <div>
+                        <div className="min-w-0">
                           <p className="font-medium text-tz-fg">{v.title}</p>
                           <p className="text-xs text-tz-muted">
                             {v.uploader_name ?? 'Пользователь'}
                             {v.created_at ? ` · ${new Date(v.created_at).toLocaleDateString('ru-RU')}` : ''}
                           </p>
                           {v.comment && <p className="mt-1 text-xs text-tz-muted">{v.comment}</p>}
-                          {v.file_ref && (
-                            <p className="mt-1 break-all font-mono text-xs text-tz-muted">{v.file_ref}</p>
-                          )}
+                          {v.file_ref && <p className="mt-1 break-all font-mono text-xs text-tz-muted">{v.file_ref}</p>}
                         </div>
                       </div>
                       <span className="shrink-0 rounded-full bg-tz-success-soft px-2 py-0.5 text-xs font-medium text-tz-success">
                         Подтверждение УГТ
                       </span>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
-            </div>
+            </section>
 
-            {/* Join requests — только приоритетным участникам */}
-            {isPriorityUser && (
-              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <UserPlus size={20} className="text-[var(--tz-success)]" />
-                  <h2 className="tz-card-title text-tz-fg">Заявки на вступление</h2>
-                  {joinRequests.length > 0 && (
-                    <span className="ml-auto rounded-full bg-[var(--tz-accent)] px-2.5 py-0.5 text-xs font-semibold text-white">
-                      {joinRequests.length}
-                    </span>
+            {/* Файлы проекта (подблок «Документы») */}
+            <ProjectFilesPanel projectId={p.id} />
+
+            {/* 4. Команда */}
+            <section className="rounded-2xl border border-tz-border bg-tz-surface p-6" aria-labelledby="project-team">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Users size={20} className="text-[var(--tz-success)]" />
+                <h2 id="project-team" className="tz-card-title text-tz-fg">Команда</h2>
+              </div>
+              {project.members.length === 0 ? (
+                <p className="text-sm text-tz-muted">Участники не назначены</p>
+              ) : (
+                <ul className="space-y-2">
+                  {project.members.map((m) => (
+                    <li key={m.id} className="flex items-center gap-3 rounded-lg border border-tz-border p-3">
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--tz-accent)] text-sm font-bold text-white">
+                        {m.role_in_project[0].toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-tz-fg">{m.role_in_project}</p>
+                        <p className="text-xs text-tz-muted">ID: {m.user_id}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Заявки на вступление — только приоритетным участникам */}
+              {isPriorityUser && (
+                <div className="mt-6">
+                  <h3 className="mb-3 flex flex-wrap items-center gap-2 text-sm font-semibold text-tz-fg">
+                    <UserPlus size={16} className="text-tz-success" />
+                    Заявки на вступление
+                    {joinRequests.length > 0 && (
+                      <span className="rounded-full bg-[var(--tz-accent)] px-2.5 py-0.5 text-xs font-semibold text-white">
+                        {joinRequests.length}
+                      </span>
+                    )}
+                  </h3>
+                  {requestsError && <p className="mb-3 text-sm font-medium text-tz-danger">{requestsError}</p>}
+                  {requestsLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 size={20} className="animate-spin text-[var(--tz-accent)]" />
+                    </div>
+                  ) : joinRequests.length === 0 ? (
+                    <p className="text-sm text-tz-muted">Новых заявок нет</p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {joinRequests.map((req) => (
+                        <li
+                          key={req.id}
+                          className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-tz-border bg-tz-soft p-4"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-tz-fg">{req.user_name}</p>
+                            <p className="text-xs text-tz-muted">{req.user_email}</p>
+                            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                              <span className="inline-block rounded bg-tz-soft px-2 py-0.5 text-xs text-tz-secondary">
+                                {req.role_in_project}
+                              </span>
+                              {req.invited_by_name && (
+                                <span className="text-xs text-tz-muted">пригласил: {req.invited_by_name}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button
+                              onClick={() => decideJoinRequest(req.id, true)}
+                              disabled={decidingId === req.id}
+                              className="inline-flex items-center gap-1 rounded-lg bg-[var(--tz-success)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--tz-success)] disabled:opacity-50"
+                            >
+                              <Check size={14} /> Одобрить
+                            </button>
+                            <button
+                              onClick={() => decideJoinRequest(req.id, false)}
+                              disabled={decidingId === req.id}
+                              className="inline-flex items-center gap-1 rounded-lg bg-tz-danger-soft px-3 py-2 text-xs font-semibold text-tz-danger transition hover:bg-red-600 disabled:opacity-50"
+                            >
+                              <XCircle size={14} /> Отклонить
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
-                {requestsError && <p className="mb-3 text-sm font-medium text-tz-danger">{requestsError}</p>}
-                {requestsLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 size={20} className="animate-spin text-[var(--tz-accent)]" />
-                  </div>
-                ) : joinRequests.length === 0 ? (
-                  <p className="text-sm text-tz-muted">Новых заявок нет</p>
-                ) : (
-                  <div className="space-y-3">
-                    {joinRequests.map((req) => (
-                      <div
-                        key={req.id}
-                        className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-tz-border bg-tz-soft p-4"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-semibold text-tz-fg">{req.user_name}</p>
-                          <p className="text-xs text-tz-muted">{req.user_email}</p>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                            <span className="inline-block rounded bg-tz-soft px-2 py-0.5 text-xs text-tz-secondary">
-                              {req.role_in_project}
-                            </span>
-                            {req.invited_by_name && (
-                              <span className="text-xs text-tz-muted">
-                                пригласил: {req.invited_by_name}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-shrink-0 gap-2">
-                          <button
-                            onClick={() => decideJoinRequest(req.id, true)}
-                            disabled={decidingId === req.id}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[var(--tz-success)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--tz-success)] disabled:opacity-50"
-                          >
-                            <Check size={14} /> Одобрить
-                          </button>
-                          <button
-                            onClick={() => decideJoinRequest(req.id, false)}
-                            disabled={decidingId === req.id}
-                            className="inline-flex items-center gap-1 rounded-lg bg-tz-danger-soft px-3 py-2 text-xs font-semibold text-tz-danger-fg transition hover:bg-red-600 disabled:opacity-50"
-                          >
-                            <XCircle size={14} /> Отклонить
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </section>
 
-            {/* Audit Trail */}
-            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-4">
+            {/* Приглашения в команду (подблок «Команда») */}
+            <ProjectTeamPanel projectId={p.id} />
+
+            {/* 5. История */}
+            <section className="rounded-2xl border border-tz-border bg-tz-surface p-6" aria-labelledby="project-history">
+              <div className="mb-4 flex items-center gap-2">
                 <Clock size={20} className="text-tz-muted" />
-                <h2 className="tz-card-title text-tz-fg">Аудит изменений</h2>
+                <h2 id="project-history" className="tz-card-title text-tz-fg">История</h2>
               </div>
               {project.audit_trail.length === 0 ? (
                 <p className="text-sm text-tz-muted">История изменений пуста</p>
               ) : (
-                <div className="space-y-2">
+                <ol className="space-y-2">
                   {project.audit_trail.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center gap-3 rounded-lg border border-tz-border p-3"
-                    >
-                      <div className="h-2 w-2 rounded-full bg-[var(--tz-accent)]" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-tz-fg">{entry.action}</p>
+                    <li key={entry.id} className="flex items-start gap-3 rounded-lg border border-tz-border p-3">
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--tz-accent)]" />
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-medium text-tz-fg">{entry.action}</p>
                         {entry.created_at && (
-                          <p className="text-xs text-tz-muted">
-                            {new Date(entry.created_at).toLocaleString('ru-RU')}
-                          </p>
+                          <p className="text-xs text-tz-muted">{new Date(entry.created_at).toLocaleString('ru-RU')}</p>
                         )}
                       </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ol>
               )}
-            </div>
+            </section>
+
+            {/* Заявки и обсуждение (хронология активности — подблок «История») */}
+            <RequestCommentsPanel projectId={p.id} />
+
+            {/* 6. Аналитика */}
+            <section className="rounded-2xl border border-tz-border bg-tz-surface p-6" aria-labelledby="project-analytics">
+              <div className="mb-4 flex items-center gap-2">
+                <Activity size={20} className="text-[var(--tz-accent)]" />
+                <h2 id="project-analytics" className="tz-card-title text-tz-fg">Аналитика</h2>
+              </div>
+
+              <h3 className="mb-3 text-sm font-semibold text-tz-fg">УГТ-профиль</h3>
+              <div className="flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={320}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="var(--tz-border)" />
+                    <PolarAngleAxis dataKey="level" tick={{ fontSize: 11, fill: 'var(--tz-muted)' }} />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+                    <Radar
+                      name="Цель"
+                      dataKey="target"
+                      stroke="var(--tz-review)"
+                      fill="var(--tz-review)"
+                      fillOpacity={0.1}
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                    />
+                    <Radar
+                      name="Прогресс"
+                      dataKey="progress"
+                      stroke="var(--tz-accent)"
+                      fill="var(--tz-accent)"
+                      fillOpacity={0.15}
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-2 flex justify-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-6 rounded bg-[var(--tz-accent)]" />
+                  <span className="text-tz-muted">Текущий</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-6 rounded border-2 border-dashed border-[var(--tz-review)]" />
+                  <span className="text-tz-muted">Цель</span>
+                </div>
+              </div>
+
+              <h3 className="mb-3 mt-6 text-sm font-semibold text-tz-fg">Прогресс по уровням УГТ</h3>
+              <div className="space-y-3">
+                {UGT_LEVEL_NAMES.map((name, i) => {
+                  const level = i + 1;
+                  const qr = project.questionnaire_results.find((r) => r.level_id === level);
+                  const progress = qr ? Math.round(qr.percentage) : 0;
+                  const isCurrent = level === p.current_level;
+                  const isTarget = level <= p.target_level;
+                  return (
+                    <div key={level} className="flex items-center gap-4">
+                      <span className={`w-9 shrink-0 font-mono text-xs font-bold ${isCurrent ? 'text-tz-accent' : 'text-tz-muted'}`}>
+                        УГТ {level}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <span className="truncate text-sm text-tz-secondary">{name.replace(/УГТ \d+: /, '')}</span>
+                          <span className="shrink-0 text-xs text-tz-muted">{progress}%</span>
+                        </div>
+                        <div className="tz-progress">
+                          <div
+                            className="tz-progress-fill"
+                            style={{
+                              width: `${progress}%`,
+                              background: progress >= 80 ? 'var(--tz-success)' : progress >= 40 ? 'var(--tz-accent)' : 'var(--tz-review)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                      {isCurrent && <ArrowUp size={16} className="shrink-0 text-[var(--tz-accent)]" />}
+                      {!isTarget && <XCircle size={14} className="shrink-0 text-tz-muted" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Current level */}
-            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Award size={20} className="text-[var(--tz-accent)]" />
-                <h3 className="font-bold text-tz-fg">Уровень УГТ</h3>
+          {/* Боковая колонка: бюджет и публикация */}
+          <aside className="min-w-0 space-y-6">
+            {/* Бюджет */}
+            {canSeeBudget && (
+              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <span aria-hidden="true" className="font-mono text-2xl leading-none text-[var(--tz-success)]">₽</span>
+                  <h3 className="font-bold text-tz-fg">Бюджет</h3>
+                </div>
+                <p className="break-words text-2xl font-bold text-tz-fg">
+                  {p.budget != null ? `${p.budget.toLocaleString('ru-RU')} ₽` : 'Не указан'}
+                </p>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-[var(--tz-accent)]">{p.current_level}</span>
-                <span className="text-tz-muted">/ {p.target_level}</span>
-              </div>
-              <div className="mt-3 h-2 rounded-full bg-tz-surface-2 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[var(--tz-accent)]"
-                  style={{ width: `${(p.current_level / p.target_level) * 100}%` }}
-                />
-              </div>
-            </div>
+            )}
 
             {/* Публикация в реестре (тикет 10) */}
             <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="mb-3 flex items-center gap-2">
                 <Globe size={20} className="text-[var(--tz-accent)]" />
                 <h3 className="font-bold text-tz-fg">Публикация в реестре</h3>
               </div>
-              <p className="text-sm text-tz-muted mb-3">
+              <p className="mb-3 text-sm text-tz-muted">
                 {p.is_public
                   ? 'Проект виден в общем реестре и реестре технологий.'
                   : 'Проект скрыт из реестров. Публикация доступна после подтверждения УГТ.'}
               </p>
               {publishError && (
-                <p role="alert" className="mb-3 text-sm text-tz-danger-fg">{publishError}</p>
+                <p role="alert" className="mb-3 text-sm text-tz-danger">{publishError}</p>
               )}
               <button
                 onClick={() => void togglePublication()}
@@ -941,65 +976,24 @@ export default function ProjectDashboardPage() {
                 </button>
               </div>
               {archiveError && (
-                <p role="alert" className="mt-2 text-sm text-tz-danger-fg">{archiveError}</p>
+                <p role="alert" className="mt-2 text-sm text-tz-danger">{archiveError}</p>
               )}
             </div>
 
-            {/* KТ-1 Control Point */}
-            {kt1 && (
-              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Shield size={20} className="text-[var(--tz-review)]" />
-                  <h3 className="font-bold text-tz-fg">КТ-1: Старт проекта</h3>
-                </div>
-                <div
-                  className={`rounded-xl p-4 ${
-                    kt1.status === 'approved'
-                      ? 'bg-tz-success-soft border border-tz-success/30'
-                      : kt1.status === 'rejected'
-                        ? 'bg-tz-danger-soft border border-tz-danger'
-                        : 'bg-tz-warning-soft border border-tz-warning/30'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {kt1.status === 'approved' ? (
-                      <>
-                        <CheckCircle size={20} className="text-tz-success" />
-                        <span className="font-semibold text-tz-success">Go: Проект одобрен</span>
-                      </>
-                    ) : kt1.status === 'rejected' ? (
-                      <>
-                        <XCircle size={20} className="text-tz-danger" />
-                        <span className="font-semibold text-tz-danger">No-Go: Проект отклонён</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clock size={20} className="text-tz-warning" />
-                        <span className="font-semibold text-tz-warning">Ожидает решения</span>
-                      </>
-                    )}
-                  </div>
-                  {kt1.description && (
-                    <p className="mt-2 text-sm text-tz-secondary">{kt1.description}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Share project — только приоритетным участникам */}
+            {/* Поделиться проектом — только приоритетным участникам */}
             {isPriorityUser && (
               <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="mb-3 flex items-center gap-2">
                   <Share2 size={20} className="text-[var(--tz-accent)]" />
                   <h3 className="font-bold text-tz-fg">Поделиться проектом</h3>
                 </div>
                 {p.join_token ? (
                   <>
                     <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-[var(--tz-accent)]/40 bg-[var(--tz-accent-soft)] px-3 py-2.5">
-                      <span className="font-mono text-sm font-bold text-[var(--tz-accent)]">{p.join_token}</span>
+                      <span className="break-all font-mono text-sm font-bold text-[var(--tz-accent)]">{p.join_token}</span>
                       <button
                         onClick={copyJoinLink}
-                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-[var(--tz-accent)] transition hover:bg-[var(--tz-accent)]/10"
+                        className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-[var(--tz-accent)] transition hover:bg-[var(--tz-accent)]/10"
                       >
                         {tokenCopied ? (
                           <>
@@ -1034,78 +1028,7 @@ export default function ProjectDashboardPage() {
                 {shareError && <p className="mt-2 text-xs font-medium text-tz-danger">{shareError}</p>}
               </div>
             )}
-
-            {/* Team */}
-            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Users size={20} className="text-[var(--tz-success)]" />
-                <h3 className="font-bold text-tz-fg">Команда</h3>
-              </div>
-              {project.members.length === 0 ? (
-                <p className="text-sm text-tz-muted">Участники не назначены</p>
-              ) : (
-                <div className="space-y-2">
-                  {project.members.map((m) => (
-                    <div
-                      key={m.id}
-                      className="flex items-center gap-3 rounded-lg border border-tz-border p-3"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--tz-accent)] text-sm font-bold text-white">
-                        {m.role_in_project[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-tz-fg">
-                          {m.role_in_project}
-                        </p>
-                        <p className="text-xs text-tz-muted">ID: {m.user_id}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Budget */}
-            {canSeeBudget && (
-              <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign size={20} className="text-[var(--tz-success)]" />
-                  <h3 className="font-bold text-tz-fg">Бюджет</h3>
-                </div>
-                <p className="text-2xl font-bold text-tz-fg">
-                  {p.budget != null
-                    ? `${p.budget.toLocaleString('ru-RU')} ₽`
-                    : 'Не указан'}
-                </p>
-              </div>
-            )}
-
-            {/* Radar mini summary */}
-            <div className="rounded-2xl border border-tz-border bg-tz-surface p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 size={20} className="text-[var(--tz-review)]" />
-                <h3 className="font-bold text-tz-fg">Общий прогресс</h3>
-              </div>
-              {project.questionnaire_results.length > 0 ? (
-                <div className="space-y-2">
-                  {project.questionnaire_results.map((qr) => (
-                    <div key={qr.id} className="flex items-center gap-2">
-                      <span className="w-16 text-xs text-tz-muted">УГТ {qr.level_id}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-tz-surface-2 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-[var(--tz-success)]"
-                          style={{ width: `${Math.round(qr.percentage)}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-tz-muted">{Math.round(qr.percentage)}%</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-tz-muted">Нет данных</p>
-              )}
-            </div>
-          </div>
+          </aside>
         </div>
       </motion.div>
 

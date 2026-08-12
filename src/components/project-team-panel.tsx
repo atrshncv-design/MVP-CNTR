@@ -201,7 +201,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
       </div>
 
       {notice && (
-        <div role="status" className="rounded-xl border border-tz-success-border bg-tz-success-soft px-4 py-3 text-sm text-tz-success-fg">
+        <div role="status" className="rounded-xl border border-tz-success/30 bg-tz-success-soft px-4 py-3 text-sm text-tz-success">
           {notice}
         </div>
       )}
@@ -213,6 +213,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
           <select
             value={inviteType}
             onChange={(e) => setInviteType(e.target.value as "single" | "bulk")}
+            aria-label="Тип приглашения"
             className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
           >
             <option value="single">Одноразовое</option>
@@ -224,6 +225,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
               onChange={(e) => setMaxUses(e.target.value)}
               inputMode="numeric"
               placeholder="Лимит использований"
+              aria-label="Лимит использований приглашения"
               className="w-40 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
           )}
@@ -231,6 +233,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
             value={allowedRoles}
             onChange={(e) => setAllowedRoles(e.target.value)}
             placeholder="Роли через запятую (participant)"
+            aria-label="Разрешённые роли через запятую"
             className="w-72 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
           />
           <button onClick={() => void createInvite()} className="tz-btn tz-btn-primary">
@@ -247,7 +250,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <Link2 size={14} className="text-tz-muted" />
                   <code className="font-mono text-xs text-tz-fg">{invite.token}</code>
-                  <span className={`text-xs ${invite.revoked_at ? "text-tz-danger-fg" : "text-tz-muted"}`}>
+                  <span className={`text-xs ${invite.revoked_at ? "text-tz-danger" : "text-tz-muted"}`}>
                     {invite.revoked_at
                       ? "отозвано"
                       : `${invite.invite_type === "single" ? "одноразовое" : "массовое"} · ${invite.used_count}/${invite.max_uses}`}
@@ -263,7 +266,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
                 {!invite.revoked_at && (
                   <button
                     onClick={() => void revokeInvite(invite.id)}
-                    className="inline-flex items-center gap-1 text-xs text-tz-danger-fg hover:underline"
+                    className="inline-flex items-center gap-1 text-xs text-tz-danger hover:underline"
                   >
                     <Ban size={12} /> Отозвать
                   </button>
@@ -283,6 +286,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
           onChange={(e) => setTransferUserId(e.target.value)}
           inputMode="numeric"
           placeholder="id участника"
+          aria-label="ID участника для передачи администрирования"
           className="w-36 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
         />
         <button onClick={() => void transferAdmin()} className="tz-btn tz-btn-secondary">
@@ -302,24 +306,28 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
               value={legalForm.legal_owner}
               onChange={(e) => setLegalForm((f) => ({ ...f, legal_owner: e.target.value }))}
               placeholder="Договорный владелец"
+              aria-label="Договорный владелец"
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
             <input
               value={legalForm.rights_holder}
               onChange={(e) => setLegalForm((f) => ({ ...f, rights_holder: e.target.value }))}
               placeholder="Правообладатель"
+              aria-label="Правообладатель"
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
             <input
               value={legalForm.contract_number}
               onChange={(e) => setLegalForm((f) => ({ ...f, contract_number: e.target.value }))}
               placeholder="Номер договора"
+              aria-label="Номер договора"
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
             <input
               value={legalForm.contract_basis}
               onChange={(e) => setLegalForm((f) => ({ ...f, contract_basis: e.target.value }))}
               placeholder="Основание договора"
+              aria-label="Основание договора"
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
           </div>

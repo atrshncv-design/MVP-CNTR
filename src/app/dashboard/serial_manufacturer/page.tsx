@@ -1,21 +1,22 @@
-'use client';
+"use client";
 
-import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Activity,
   AlertCircle,
   Building2,
   Factory,
+  Layers,
   Loader2,
   RefreshCw,
   Wallet,
-} from 'lucide-react';
-import JoinProjectForm from '@/components/join-project-form';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+} from "lucide-react";
+import JoinProjectForm from "@/components/join-project-form";
 import { AssessUgTCard } from "@/components/assess-ugt-card";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 /** Реестр технологий = опубликованные проекты УГТ 7+ (решение №14): RegistryProjectOut. */
 interface Technology {
@@ -30,15 +31,21 @@ interface Technology {
   created_at: string | null;
 }
 
-const PUBLISHED_COLOR = 'var(--tz-success)';
+const PUBLISHED_COLOR = "var(--tz-success)";
 
+/**
+ * Рабочий стол серийного производителя (тикет 06 internal-ux-redesign).
+ * Единый паттерн кабинета: заголовок, статистика (из данных реестра),
+ * список технологий УГТ 7+ (данные), боковая колонка — действия и следующий
+ * шаг (оценка УГТ + вступление по токену). Без mock-success.
+ */
 export default function SerialManufacturerDashboard() {
   const { data: session } = useSession();
   const [technologies, setTechnologies] = useState<Technology[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const displayName = session?.user?.name ?? session?.user?.email ?? 'Серийный производитель';
+  const displayName = session?.user?.name ?? session?.user?.email ?? "Серийный производитель";
 
   const loadTechnologies = useCallback(async () => {
     if (!session?.user?.accessToken) return;
@@ -53,104 +60,128 @@ export default function SerialManufacturerDashboard() {
       }
       setTechnologies((await res.json()) as Technology[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить технологии.');
+      setError(e instanceof Error ? e.message : "Не удалось загрузить технологии.");
     } finally {
       setLoading(false);
     }
   }, [session]);
 
   useEffect(() => {
-    // setState внутри loadTechnologies выполняется после await — не синхронно с телом эффекта
     (async () => {
       await loadTechnologies();
     })();
   }, [loadTechnologies]);
 
+  /** Честная статистика — производные от реальных данных реестра. */
+  const stats = useMemo(() => {
+    const categories = new Set(technologies.map((t) => t.category).filter(Boolean));
+    const orgs = new Set(technologies.map((t) => t.organization).filter(Boolean));
+    const progress =
+      technologies.length === 0
+        ? 0
+        : Math.round(
+            technologies.reduce(
+              (acc, t) => acc + (t.target_level > 0 ? Math.round((t.current_level / t.target_level) * 100) : 0),
+              0,
+            ) / technologies.length,
+          );
+    return { count: technologies.length, categories: categories.size, orgs: orgs.size, progress };
+  }, [technologies]);
+
+  const statCards = [
+    { label: "Технологии УГТ 7+", value: stats.count, icon: Factory, color: "var(--tz-accent)" },
+    { label: "Категории", value: stats.categories, icon: Layers, color: "var(--tz-success)" },
+    { label: "Организации-разработчики", value: stats.orgs, icon: Building2, color: "var(--tz-review)" },
+    { label: "Средняя готовность", value: stats.count === 0 ? "—" : `${stats.progress}%`, icon: Activity, color: "var(--tz-ugt-2)" },
+  ];
+
   return (
     <section>
-      {/* Hero-блок в стиле ЛК ГК */}
+      {/* Заголовок страницы */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
-          Рабочий стол серийного производителя
-        </p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">
-          Добро пожаловать, {displayName}
-        </h1>
+        <p className="tz-eyebrow">Рабочий стол серийного производителя</p>
+        <h1 className="tz-page-title mt-2">Добро пожаловать, {displayName}</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
           Здесь представлены технологии уровня УГТ 7 и выше, готовые к опытному
           образцу, квалификации и серийному выпуску.
         </p>
       </div>
 
-      {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
-      <div className="mt-6">
-        <AssessUgTCard />
+      {/* Данные: статистика из данных реестра */}
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((card, idx) => {
+          const Icon = card.icon;
+          return (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 * idx, duration: 0.4 }}
+              className="tz-card tz-stat p-5"
+            >
+              <div className="tz-stat-label">
+                {card.label}
+                <span className="tz-stat-icon" style={{ background: `${card.color}15`, color: card.color }}>
+                  <Icon size={18} />
+                </span>
+              </div>
+              {loading ? (
+                <div className="h-8 w-16 animate-pulse rounded bg-tz-soft" />
+              ) : (
+                <p className="tz-stat-value">{card.value}</p>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
-          Технологии УГТ 7+
-        </span>
-        <a href="#join" className="py-4 text-tz-secondary hover:text-tz-fg">
-          Присоединиться к проекту
-        </a>
-        <a href="#registry" className="py-4 text-tz-secondary hover:text-tz-fg">
-          Каталог исполнителей
-        </a>
-      </nav>
-
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Реестр технологий УГТ 7+ */}
-        <div id="registry">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      {/* Данные (реестр) + действия/следующий шаг (боковая колонка) */}
+      <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="tz-card-title text-tz-fg">Технологии УГТ 7+</h2>
-              <p className="text-sm text-tz-muted">Опубликованные проекты, подтверждённые менеджером ЦНТР</p>
+              <h2 className="tz-card-title">Технологии УГТ 7+</h2>
+              <p className="mt-1 text-sm text-tz-muted">
+                Опубликованные проекты, подтверждённые менеджером ЦНТР
+              </p>
             </div>
           </div>
 
           {loading ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-              <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+            <div className="tz-card mt-4 p-6">
+              <div className="h-5 w-48 animate-pulse rounded bg-tz-soft" />
               <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
-              <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
-              <p className="font-semibold text-tz-danger">{error}</p>
-              <button
-                onClick={() => loadTechnologies()}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-              >
-                <RefreshCw size={14} /> Повторить
+            <div className="tz-card tz-empty mt-4">
+              <AlertCircle className="text-tz-danger" size={32} />
+              <p className="tz-empty-title">{error}</p>
+              <button className="tz-btn tz-btn-secondary mt-6" onClick={() => void loadTechnologies()}>
+                <RefreshCw size={15} /> Повторить
               </button>
             </div>
           ) : technologies.length === 0 ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
-                <Factory size={22} className="text-[var(--tz-accent)]" />
-              </div>
-              <h2 className="tz-section-title mt-5 text-tz-fg">
-                Технологий УГТ 7+ пока нет
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
+            <div className="tz-card tz-empty mt-4">
+              <span className="tz-empty-icon">
+                <Factory size={22} />
+              </span>
+              <h2 className="tz-empty-title">Технологий УГТ 7+ пока нет</h2>
+              <p className="tz-empty-text">
                 Как только технология достигнет уровня опытного образца, она появится
                 в этом реестре для оценки готовности к серийному выпуску.
               </p>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="mt-4 grid gap-4">
               {technologies.map((tech) => {
                 const progress =
                   tech.target_level > 0
-                    ? Math.round((tech.current_level / tech.target_level) * 100)
+                    ? Math.min(100, Math.round((tech.current_level / tech.target_level) * 100))
                     : 0;
                 return (
-                  <motion.div
+                  <div
                     key={tech.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition-all hover:shadow-md"
+                    className="tz-card tz-card-hover p-5"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -168,7 +199,7 @@ export default function SerialManufacturerDashboard() {
                             </span>
                           )}
                         </div>
-                        <h3 className="mt-1.5 tz-card-title text-tz-fg">{tech.name}</h3>
+                        <h3 className="tz-card-title mt-1.5">{tech.name}</h3>
                         <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-tz-muted">
                           {tech.organization && (
                             <span className="flex items-center gap-1.5">
@@ -177,13 +208,13 @@ export default function SerialManufacturerDashboard() {
                             </span>
                           )}
                           <span className="flex items-center gap-1.5">
-                            <Activity size={14} className="text-[var(--tz-accent)]" />
+                            <Activity size={14} className="text-tz-accent" />
                             УГТ {tech.current_level} / {tech.target_level}
                           </span>
                           {tech.budget != null && (
                             <span className="flex items-center gap-1.5">
                               <Wallet size={14} className="text-tz-muted" />
-                              {tech.budget.toLocaleString('ru-RU')} млн ₽
+                              {tech.budget.toLocaleString("ru-RU")} млн ₽
                             </span>
                           )}
                         </div>
@@ -191,28 +222,29 @@ export default function SerialManufacturerDashboard() {
                       <div className="w-36 shrink-0">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-tz-muted">Готовность</span>
-                          <span className="font-semibold text-[var(--tz-accent)]">{progress}%</span>
+                          <span className="font-semibold text-tz-accent">{progress}%</span>
                         </div>
                         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-tz-surface-2">
                           <div
-                            className="h-full rounded-full bg-[var(--tz-accent)] transition-all duration-500"
+                            className="h-full rounded-full bg-tz-accent transition-all duration-500"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
           )}
         </div>
 
-        {/* Вступление по токену */}
-        <aside id="join" className="lg:sticky lg:top-8 lg:self-start">
+        {/* Действия и следующий шаг */}
+        <aside className="space-y-6 lg:sticky lg:top-20">
+          <AssessUgTCard />
           {loading ? (
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
-              <Loader2 size={22} className="animate-spin text-[var(--tz-accent)]" />
+            <div className="flex h-40 items-center justify-center tz-card">
+              <Loader2 size={22} className="animate-spin text-tz-accent" />
             </div>
           ) : (
             <JoinProjectForm />

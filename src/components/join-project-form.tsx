@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { KeyRound, Loader2, LogIn, CheckCircle2, AlertCircle } from 'lucide-react';
+import { KeyRound, Loader2, LogIn } from 'lucide-react';
+import { FormAlert, SelectField, TextField } from '@/components/ui/fields';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
@@ -48,6 +49,7 @@ export default function JoinProjectForm() {
   const [token, setToken] = useState('');
   const [role, setRole] = useState<string>('rd_executor');
   const [loading, setLoading] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -58,9 +60,10 @@ export default function JoinProjectForm() {
 
     const normalized = token.trim();
     if (!normalized) {
-      setError('Введите токен доступа.');
+      setTokenError('Введите токен доступа.');
       return;
     }
+    setTokenError(null);
     if (!session?.user?.accessToken) {
       setError('Сессия недоступна — войдите в систему заново.');
       return;
@@ -116,45 +119,39 @@ export default function JoinProjectForm() {
       </div>
 
       <div className="mt-4 space-y-3">
-        <input
+        <TextField
+          label="Токен доступа"
+          name="token"
           type="text"
           value={token}
-          onChange={(e) => setToken(e.target.value)}
+          onChange={(e) => {
+            setToken(e.target.value);
+            if (tokenError) setTokenError(null);
+          }}
           placeholder="TZ-XXXXXX"
+          autoComplete="off"
+          spellCheck={false}
+          required
+          error={tokenError}
           disabled={loading}
-          className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-2.5 font-mono text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-tz-accent disabled:opacity-60"
+          className="font-mono"
         />
-        <div>
-          <label htmlFor="join-role" className="mb-1 block text-xs font-medium text-tz-muted">
-            Роль в проекте
-          </label>
-          <select
-            id="join-role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            disabled={loading}
-            className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2.5 text-sm text-tz-fg outline-none transition focus:border-tz-accent disabled:opacity-60"
-          >
-            {JOIN_ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Роль в проекте"
+          name="role_in_project"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          disabled={loading}
+        >
+          {JOIN_ROLES.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </SelectField>
 
-        {error && (
-          <p className="flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-3 py-2.5 text-sm text-tz-danger">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            {error}
-          </p>
-        )}
-        {info && (
-          <p className="flex items-start gap-2 rounded-xl border border-tz-success bg-tz-success-soft px-3 py-2.5 text-sm text-tz-success">
-            <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
-            {info}
-          </p>
-        )}
+        <FormAlert>{error}</FormAlert>
+        <FormAlert type="success">{info}</FormAlert>
 
         <button
           type="submit"

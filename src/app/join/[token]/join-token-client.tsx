@@ -119,6 +119,7 @@ export default function JoinTokenClient({
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
+            aria-label="Роль в проекте"
             className="mb-4 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg focus:border-tz-accent focus:outline-none focus:ring-1 focus:ring-tz-accent"
           >
             {JOIN_ROLES.map((r) => (

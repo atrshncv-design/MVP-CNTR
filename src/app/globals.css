@@ -196,6 +196,9 @@
     font-variant-numeric: tabular-nums;
     position: relative;
     min-height: 100vh;
+    /* Тикет 03: защита от горизонтального переполнения на 320px. clip (а не
+       hidden) не создаёт scroll-container — sticky-шапка продолжает работать. */
+    overflow-x: clip;
   }
 
   /* Красные радиальные свечения на бумажном фоне (тикет 01) */
@@ -313,6 +316,20 @@
   }
 }
 
+/* Глобальное отключение анимаций/переходов при prefers-reduced-motion
+   (тикет 03): покрывает skeleton-пульсацию, сворачивание панелей,
+   chevron и любые другие transition/animation в ЛК. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ════════════════════════════════════════════════════════════════════════
    КОМПОНЕНТЫ
    ════════════════════════════════════════════════════════════════════════ */
@@ -395,6 +412,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    min-height: 2.5rem; /* тикет 07 — touch target ≥ 40px */
     border-radius: var(--tz-radius-btn);
     padding: 0.5625rem 1rem;
     font-size: 0.875rem;
@@ -447,7 +465,7 @@
     filter: brightness(1.1);
   }
 
-  .tz-btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; border-radius: 0.375rem; }
+  .tz-btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; border-radius: 0.375rem; min-height: 2.5rem; }
   .tz-btn-lg { padding: 0.75rem 1.5rem; font-size: 0.9375rem; border-radius: 0.625rem; }
 
   /* ── Бейджи ──────────────────────────────────────────────────── */
@@ -542,6 +560,7 @@
   }
   .tz-input, .tz-select, .tz-textarea {
     width: 100%;
+    min-height: 2.5rem; /* тикет 07 — touch target ≥ 40px */
     background: var(--tz-surface);
     border: 1px solid var(--tz-border);
     border-radius: var(--tz-radius-btn);
@@ -561,6 +580,19 @@
   .tz-select option {
     background: var(--tz-surface);
     color: var(--tz-fg);
+  }
+
+  /* Единые error states (тикет 07): красная рамка + мягкое свечение */
+  .tz-input-error, .tz-select-error, .tz-textarea-error {
+    border-color: var(--tz-danger);
+  }
+  .tz-input-error:focus, .tz-select-error:focus, .tz-textarea-error:focus {
+    outline: none;
+    border-color: var(--tz-danger);
+    box-shadow: 0 0 0 3px var(--tz-danger-soft);
+  }
+  .tz-input-error::placeholder, .tz-textarea-error::placeholder {
+    color: var(--tz-danger);
   }
 
   /* ── Табы ────────────────────────────────────────────────────── */
@@ -756,6 +788,22 @@
     background-size: 40px 40px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 90%);
     -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 90%);
+  }
+
+  /* ── Сворачиваемые боковые панели (тикет 03) ────────────────── */
+  /* Раскрытие/сворачивание через grid-template-rows 1fr ↔ 0fr:
+     плавно на desktop, мгновенно при prefers-reduced-motion
+     (глобальное правило выше обнуляет transition-duration). */
+  .tz-sidebar-collapse {
+    max-height: 28rem;
+    overflow: hidden;
+    transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .tz-sidebar-collapse[data-collapsed="true"] {
+    max-height: 0;
+  }
+  .tz-sidebar-collapse > * {
+    min-height: 0;
   }
 }
 

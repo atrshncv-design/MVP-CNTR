@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Building2, CheckCircle2, Clock, FileX2, PlusCircle, Send, UserRound } from "lucide-react";
+import { TextAreaField, TextField } from "@/components/ui/fields";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
@@ -31,23 +32,38 @@ interface Organization {
 }
 
 const STATE_LABELS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
-  draft: { label: "Черновик", cls: "bg-tz-surface-2 text-tz-secondary", icon: FileX2 },
-  pending: { label: "На проверке", cls: "bg-tz-warning-soft text-tz-warning-fg", icon: Clock },
-  verified: { label: "Подтверждён", cls: "bg-tz-success-soft text-tz-success-fg", icon: CheckCircle2 },
-  rejected: { label: "Отклонён", cls: "bg-tz-danger-soft text-tz-danger-fg", icon: FileX2 },
+  draft: { label: "Черновик", cls: "tz-badge-neutral", icon: FileX2 },
+  pending: { label: "На проверке", cls: "tz-badge-warning", icon: Clock },
+  verified: { label: "Подтверждён", cls: "tz-badge-success", icon: CheckCircle2 },
+  rejected: { label: "Отклонён", cls: "tz-badge-danger", icon: FileX2 },
+};
+
+/** Честная подсказка следующего шага — по фактическому состоянию профиля. */
+const NEXT_STEP_HINTS: Record<string, string> = {
+  draft: "Заполните профиль и отправьте его на проверку менеджеру центра.",
+  pending: "Профиль находится на проверке у менеджера центра — ожидайте решения.",
+  verified: "Профиль подтверждён и доступен в реестре специалистов.",
+  rejected: "Профиль отклонён: исправьте замечания проверки и отправьте повторно.",
 };
 
 function StateBadge({ state }: { state: string }) {
   const meta = STATE_LABELS[state] ?? STATE_LABELS.draft;
   const Icon = meta.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${meta.cls}`}>
+    <span className={`tz-badge ${meta.cls}`}>
       <Icon size={13} />
       {meta.label}
     </span>
   );
 }
 
+/**
+ * Профиль пользователя (тикет 06 internal-ux-redesign).
+ * Единый паттерн кабинета: заголовок (tz-eyebrow + tz-page-title), карточки
+ * на токенах (tz-card/tz-btn/tz-input), данные профиля и организаций,
+ * действия (сохранить/отправить/создать) и честный следующий шаг по
+ * фактическому состоянию. Без mock-success.
+ */
 export default function ProfilePage() {
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
@@ -185,9 +201,10 @@ export default function ProfilePage() {
 
   return (
     <section className="mx-auto max-w-3xl">
+      {/* Заголовок страницы */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">Профиль специалиста</p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">Мой профиль</h1>
+        <p className="tz-eyebrow">Профиль пользователя</p>
+        <h1 className="tz-page-title mt-2">Мой профиль</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
           Основная роль аккаунта определяет профильный реестр, но не проектные полномочия. После проверки
           менеджером центра профиль попадает в публичный реестр специалистов.
@@ -195,18 +212,19 @@ export default function ProfilePage() {
       </div>
 
       {error && (
-        <div role="alert" className="mt-4 rounded-xl border border-tz-danger-border bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger-fg">
+        <div role="alert" className="mt-4 rounded-xl border border-tz-danger/30 bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
           {error}
         </div>
       )}
       {notice && (
-        <div role="status" className="mt-4 rounded-xl border border-tz-success-border bg-tz-success-soft px-4 py-3 text-sm text-tz-success-fg">
+        <div role="status" className="mt-4 rounded-xl border border-tz-success/30 bg-tz-success-soft px-4 py-3 text-sm text-tz-success">
           {notice}
         </div>
       )}
 
+      {/* Данные и действия: карточка профиля */}
       {profile && (
-        <div className="mt-6 rounded-2xl border border-tz-card-border bg-tz-surface p-6">
+        <div className="tz-card mt-6 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-tz-accent-soft text-tz-accent">
@@ -227,45 +245,51 @@ export default function ProfilePage() {
             </div>
           )}
 
+          {/* Следующий шаг — честная подсказка по состоянию */}
+          <div className="mt-4 rounded-xl border border-tz-card-border bg-tz-soft px-4 py-3 text-sm text-tz-secondary">
+            <span className="font-semibold text-tz-fg">Следующий шаг. </span>
+            {NEXT_STEP_HINTS[profile.state] ?? "Проверьте данные профиля."}
+          </div>
+
           <div className="mt-6 grid gap-4">
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">Должность (обязательно для отправки)</span>
+              <span className="tz-label">Должность (обязательно для отправки)</span>
               <input
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 disabled={!editable}
-                className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
+                className="tz-input disabled:opacity-60"
                 placeholder="Например: ведущий инженер-исследователь"
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">Регион</span>
+              <span className="tz-label">Регион</span>
               <input
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 disabled={!editable}
-                className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
+                className="tz-input disabled:opacity-60"
                 placeholder="Удмуртская Республика"
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">Компетенции (через запятую)</span>
+              <span className="tz-label">Компетенции (через запятую)</span>
               <input
                 value={skills}
                 onChange={(e) => setSkills(e.target.value)}
                 disabled={!editable}
-                className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
+                className="tz-input disabled:opacity-60"
                 placeholder="машинное обучение, компьютерное зрение"
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">О себе</span>
+              <span className="tz-label">О себе</span>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 disabled={!editable}
                 rows={3}
-                className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
+                className="tz-textarea disabled:opacity-60"
               />
             </label>
           </div>
@@ -274,14 +298,14 @@ export default function ProfilePage() {
             <button
               onClick={saveProfile}
               disabled={!editable}
-              className="inline-flex items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
+              className="tz-btn tz-btn-primary disabled:opacity-50"
             >
               <CheckCircle2 size={16} /> Сохранить
             </button>
             <button
               onClick={submitProfile}
               disabled={!editable}
-              className="inline-flex items-center gap-2 rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
+              className="tz-btn tz-btn-secondary disabled:opacity-50"
             >
               <Send size={16} /> Отправить на проверку
             </button>
@@ -289,13 +313,14 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="mt-8 rounded-2xl border border-tz-card-border bg-tz-surface p-6">
+      {/* Данные и действия: организации */}
+      <div className="tz-card mt-8 p-6">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-tz-accent-soft text-tz-accent">
             <Building2 size={20} />
           </span>
           <div>
-            <h2 className="tz-section-title text-tz-fg">Мои организации</h2>
+            <h2 className="tz-section-title">Мои организации</h2>
             <p className="text-sm text-tz-muted">Можно состоять в нескольких организациях</p>
           </div>
         </div>
@@ -321,33 +346,34 @@ export default function ProfilePage() {
         <div className="mt-6 grid gap-3 border-t border-tz-border pt-5">
           <p className="text-sm font-semibold text-tz-fg">Создать организацию</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Название *" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgOgrn} onChange={(e) => setOrgOgrn(e.target.value)} placeholder="ОГРН" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgType} onChange={(e) => setOrgType(e.target.value)} placeholder="Тип (НИИ, ООО…)" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgRegion} onChange={(e) => setOrgRegion(e.target.value)} placeholder="Регион" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <TextField label="Название организации" placeholder="Например: ООО «Технопром»" value={orgName} onChange={(e) => setOrgName(e.target.value)} required />
+            <TextField label="ОГРН" placeholder="13 цифр" value={orgOgrn} onChange={(e) => setOrgOgrn(e.target.value)} inputMode="numeric" />
+            <TextField label="Тип организации" placeholder="НИИ, ООО, АО…" value={orgType} onChange={(e) => setOrgType(e.target.value)} />
+            <TextField label="Регион" placeholder="Удмуртская Республика" value={orgRegion} onChange={(e) => setOrgRegion(e.target.value)} />
           </div>
-          <textarea value={orgDesc} onChange={(e) => setOrgDesc(e.target.value)} rows={2} placeholder="Описание" className="w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+          <TextAreaField label="Описание" placeholder="Краткое описание деятельности организации" value={orgDesc} onChange={(e) => setOrgDesc(e.target.value)} rows={2} />
           <button
             onClick={createOrg}
             disabled={!orgName.trim()}
-            className="inline-flex w-fit items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
+            className="tz-btn tz-btn-primary w-fit disabled:opacity-50"
           >
             <PlusCircle size={16} /> Создать
           </button>
 
           <p className="mt-2 text-sm font-semibold text-tz-fg">Вступить по номеру</p>
           <div className="flex gap-3">
-            <input
-              value={joinOrgId}
-              onChange={(e) => setJoinOrgId(e.target.value)}
+            <TextField
+              label="ID организации"
               placeholder="id организации"
               inputMode="numeric"
-              className="w-48 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg"
+              value={joinOrgId}
+              onChange={(e) => setJoinOrgId(e.target.value)}
+              className="w-48"
             />
             <button
               onClick={joinOrg}
               disabled={!joinOrgId.trim()}
-              className="rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
+              className="tz-btn tz-btn-secondary self-end disabled:opacity-50"
             >
               Вступить
             </button>

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -14,9 +14,9 @@ import {
   PlusCircle,
   Users,
 } from "lucide-react";
+import { AssessUgTCard } from "@/components/assess-ugt-card";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
-import { AssessUgTCard } from "@/components/assess-ugt-card";
 
 interface ProjectSummary {
   id: number;
@@ -35,11 +35,19 @@ interface Stats {
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Черновик",
-  auto_confirmed: "Подтверждён автоматически", active: "В работе",
+  auto_confirmed: "Подтверждён автоматически",
+  active: "В работе",
   review: "На проверке",
   completed: "Завершён",
 };
 
+/**
+ * Рабочий стол заказчика (тикет 06 internal-ux-redesign).
+ * Единый паттерн кабинета роли: заголовок (tz-eyebrow + tz-page-title),
+ * статистика из реального API, список проектов (данные), быстрые действия
+ * и следующий шаг в боковой колонке. Никаких mock-значений: при недоступном
+ * API карточки показывают нули, список — честное пустое состояние.
+ */
 export default function GkCustomerDashboard() {
   const { data: session } = useSession();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -89,42 +97,40 @@ export default function GkCustomerDashboard() {
     { label: "Исполнители", value: stats.executors, icon: Users, color: "var(--tz-ugt-2)" },
   ];
 
+  const quickActions = [
+    {
+      href: "/dashboard/gk_customer/projects/new",
+      icon: PlusCircle,
+      title: "Новая заявка",
+      text: "Оценить и подать проект",
+    },
+    {
+      href: "/dashboard/executors",
+      icon: Building2,
+      title: "Каталог исполнителей",
+      text: "Найти R&D-партнёра",
+    },
+    {
+      href: "/dashboard/technologies",
+      icon: Database,
+      title: "Реестр технологий",
+      text: "Каталог готовых решений",
+    },
+  ];
+
   return (
     <section>
+      {/* Заголовок страницы */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
-          Рабочий стол заказчика
-        </p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">
-          Добро пожаловать, {displayName}
-        </h1>
+        <p className="tz-eyebrow">Рабочий стол заказчика</p>
+        <h1 className="tz-page-title mt-2">Добро пожаловать, {displayName}</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
           Здесь появятся проекты вашей организации и их путь от заявки до
           внедрения технологии.
         </p>
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
-          Проекты
-        </span>
-        <Link href="/dashboard/gk_customer/projects/new" className="py-4 text-tz-secondary hover:text-tz-fg">
-          Новая заявка
-        </Link>
-        <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
-          Реестр технологий
-        </Link>
-        <Link href="/dashboard/executors" className="py-4 text-tz-secondary hover:text-tz-fg">
-          Каталог исполнителей
-        </Link>
-      </nav>
-
-      {/* Статистика из API */}
-      {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
-      <div className="mt-6">
-        <AssessUgTCard />
-      </div>
-
+      {/* Данные: статистика из API */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
@@ -134,136 +140,125 @@ export default function GkCustomerDashboard() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 * idx, duration: 0.4 }}
-              className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
+              className="tz-card tz-stat p-5"
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: `${card.color}15`, color: card.color }}
-                >
+              <div className="tz-stat-label">
+                {card.label}
+                <span className="tz-stat-icon" style={{ background: `${card.color}15`, color: card.color }}>
                   <Icon size={18} />
                 </span>
               </div>
               {loading ? (
-                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-tz-surface-2" />
+                <div className="h-8 w-16 animate-pulse rounded bg-tz-soft" />
               ) : (
-                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">
-                  {card.value}
-                </p>
+                <p className="tz-stat-value">{card.value}</p>
               )}
             </motion.div>
           );
         })}
       </div>
 
-      {/* Быстрые действия */}
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Link
-          href="/dashboard/gk_customer/projects/new"
-          className="group flex items-center justify-between rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition hover:border-[var(--tz-accent)]"
-        >
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--tz-accent-soft)] text-[var(--tz-accent)]">
-              <PlusCircle size={20} />
-            </span>
+      {/* Данные (проекты) + действия/следующий шаг (боковая колонка) */}
+      <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div>
+          {loading ? (
+            <div className="tz-card p-6">
+              <div className="h-5 w-48 animate-pulse rounded bg-tz-soft" />
+              <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="tz-card tz-empty">
+              <span className="tz-empty-icon">
+                <FolderKanban size={22} />
+              </span>
+              <h2 className="tz-empty-title">Проектов пока нет</h2>
+              <p className="tz-empty-text">
+                Начните с фиксированной заявки. После сохранения она станет карточкой
+                проекта и будет передана менеджеру ЦНТР на рассмотрение.
+              </p>
+              <Link
+                href="/dashboard/gk_customer/projects/new"
+                className="tz-btn tz-btn-primary mt-7"
+              >
+                <PlusCircle size={16} /> Создать первую заявку
+              </Link>
+            </div>
+          ) : (
             <div>
-              <p className="font-bold text-tz-fg">Новая заявка</p>
-              <p className="text-sm text-tz-muted">Оценить и подать проект</p>
-            </div>
-          </div>
-          <ArrowRight size={18} className="text-tz-muted transition group-hover:translate-x-1 group-hover:text-[var(--tz-accent)]" />
-        </Link>
-        <Link
-          href="/dashboard/executors"
-          className="group flex items-center justify-between rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition hover:border-[var(--tz-accent)]"
-        >
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--tz-accent-soft)] text-[var(--tz-accent)]">
-              <Building2 size={20} />
-            </span>
-            <div>
-              <p className="font-bold text-tz-fg">Каталог исполнителей</p>
-              <p className="text-sm text-tz-muted">Найти R&D-партнёра</p>
-            </div>
-          </div>
-          <ArrowRight size={18} className="text-tz-muted transition group-hover:translate-x-1 group-hover:text-[var(--tz-accent)]" />
-        </Link>
-        <Link
-          href="/dashboard/technologies"
-          className="group flex items-center justify-between rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition hover:border-[var(--tz-accent)]"
-        >
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--tz-accent-soft)] text-[var(--tz-accent)]">
-              <Database size={20} />
-            </span>
-            <div>
-              <p className="font-bold text-tz-fg">Реестр технологий</p>
-              <p className="text-sm text-tz-muted">Каталог готовых решений</p>
-            </div>
-          </div>
-          <ArrowRight size={18} className="text-tz-muted transition group-hover:translate-x-1 group-hover:text-[var(--tz-accent)]" />
-        </Link>
-      </div>
-
-      {/* Список проектов */}
-      <div className="mt-8">
-        {loading ? (
-          <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-            <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
-            <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)] font-mono font-bold text-[var(--tz-accent)]">
-              01
-            </div>
-            <h2 className="tz-section-title mt-5 text-tz-fg">
-              Проектов пока нет
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
-              Начните с фиксированной заявки. После сохранения она станет карточкой
-              проекта и будет передана менеджеру ЦНТР на рассмотрение.
-            </p>
-            <Link
-              href="/dashboard/gk_customer/projects/new"
-              className="mt-7 inline-flex rounded-lg bg-[var(--tz-accent)] px-5 py-3 font-bold text-white transition hover:bg-[var(--tz-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tz-accent)]"
-            >
-              Создать первую заявку
-            </Link>
-          </div>
-        ) : (
-          <div>
-            <h2 className="tz-card-title mb-4 text-tz-fg">Мои проекты</h2>
-            <div className="grid gap-4">
-              {projects.map((project) => (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="tz-card-title">Мои проекты</h2>
                 <Link
-                  key={project.id}
-                  href={`/dashboard/project/${project.id}`}
-                  className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-[var(--tz-accent)] md:grid-cols-[1fr_auto_auto]"
+                  href="/dashboard/projects"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-tz-accent transition hover:text-tz-accent-hover"
                 >
-                  <div>
-                    <div className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</div>
-                    <h3 className="mt-1 text-lg font-bold text-tz-fg">{project.name}</h3>
-                    <p className="mt-1 text-sm text-tz-secondary">
-                      {project.category ?? "Категория не указана"}
-                    </p>
-                  </div>
-                  <div className="md:text-right">
-                    <div className="text-xs text-tz-muted">Текущий уровень</div>
-                    <div className="mt-1 font-bold text-[var(--tz-accent)]">УГТ {project.current_level}</div>
-                  </div>
-                  <div className="md:min-w-28 md:text-right">
-                    <div className="text-xs text-tz-muted">Статус</div>
-                    <div className="mt-1 font-semibold text-tz-fg">
-                      {STATUS_LABELS[project.status] ?? project.status}
-                    </div>
-                  </div>
+                  Все проекты <ArrowRight size={15} />
                 </Link>
-              ))}
+              </div>
+              <div className="mt-4 grid gap-4">
+                {projects.map((project) => (
+                  <Link
+                    key={project.id}
+                    href={`/dashboard/project/${project.id}`}
+                    className="tz-card tz-card-hover grid gap-4 p-5 md:grid-cols-[1fr_auto_auto]"
+                  >
+                    <div>
+                      <div className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</div>
+                      <h3 className="tz-card-title mt-1">{project.name}</h3>
+                      <p className="mt-1 text-sm text-tz-secondary">
+                        {project.category ?? "Категория не указана"}
+                      </p>
+                    </div>
+                    <div className="md:text-right">
+                      <div className="text-xs text-tz-muted">Текущий уровень</div>
+                      <div className="mt-1 font-bold text-tz-accent">УГТ {project.current_level}</div>
+                    </div>
+                    <div className="md:min-w-28 md:text-right">
+                      <div className="text-xs text-tz-muted">Статус</div>
+                      <div className="mt-1 font-semibold text-tz-fg">
+                        {STATUS_LABELS[project.status] ?? project.status}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Действия и следующий шаг */}
+        <aside className="space-y-6 lg:sticky lg:top-20">
+          <AssessUgTCard />
+          <div className="tz-card p-5">
+            <h2 className="tz-card-title">Быстрые действия</h2>
+            <p className="mt-1 text-sm text-tz-muted">
+              Следующий шаг — подача заявки или поиск партнёров.
+            </p>
+            <div className="mt-4 space-y-2">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    className="group flex items-center gap-3 rounded-xl border border-tz-card-border bg-tz-surface p-3.5 transition hover:border-tz-accent"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-tz-accent-soft text-tz-accent">
+                      <Icon size={17} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-tz-fg">{action.title}</span>
+                      <span className="block truncate text-xs text-tz-muted">{action.text}</span>
+                    </span>
+                    <ArrowRight
+                      size={16}
+                      className="shrink-0 text-tz-muted transition group-hover:translate-x-0.5 group-hover:text-tz-accent"
+                    />
+                  </Link>
+                );
+              })}
             </div>
           </div>
-        )}
+        </aside>
       </div>
     </section>
   );

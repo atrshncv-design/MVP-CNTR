@@ -156,6 +156,7 @@ export default function ProfileVerificationQueue() {
                       value={comments[`profiles-${p.id}`] ?? ""}
                       onChange={(e) => setComments((c) => ({ ...c, [`profiles-${p.id}`]: e.target.value }))}
                       placeholder="Причина отклонения (обязательна)"
+                      aria-label="Причина отклонения"
                       className="w-64 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
                     />
                     <div className="flex gap-2">
@@ -214,6 +215,7 @@ export default function ProfileVerificationQueue() {
                       value={comments[`orgs-${o.id}`] ?? ""}
                       onChange={(e) => setComments((c) => ({ ...c, [`orgs-${o.id}`]: e.target.value }))}
                       placeholder="Причина отклонения (обязательна)"
+                      aria-label="Причина отклонения"
                       className="w-64 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
                     />
                     <div className="flex gap-2">

@@ -98,8 +98,9 @@ export default function AiAssistantPage() {
     <div className="flex h-[calc(100vh-100px)] flex-col">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h1 className="tz-page-title text-tz-fg">AI-ассистент</h1>
-          <p className="text-sm text-tz-muted">
+          <p className="tz-eyebrow">Документы · AI-ассистент</p>
+          <h1 className="tz-page-title mt-2">AI-ассистент</h1>
+          <p className="mt-2 text-sm text-tz-muted">
             Задавайте вопросы по ГОСТ Р 58048-2017, уровням УГТ и документации
           </p>
         </div>
@@ -192,7 +193,7 @@ export default function AiAssistantPage() {
         )}
         <div ref={bottomRef} />
       </div>
-      <div className="mx-4 mb-3 rounded-lg border border-tz-warning/30 bg-tz-warning-soft px-4 py-2.5 text-sm text-tz-fg">
+      <div className="mx-4 mt-4 flex-none rounded-lg border border-tz-warning/30 bg-tz-warning-soft px-4 py-2.5 text-sm text-tz-fg">
         <strong>Поиск по ГОСТам временно недоступен.</strong> Ассистент отвечает
         на основе общих знаний модели, без цитирования разделов ГОСТов из базы
         платформы. Цитирование будет восстановлено после подключения
@@ -206,7 +207,8 @@ export default function AiAssistantPage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Введите вопрос по ГОСТ Р 58048-2017..."
-          className="flex-1 rounded-xl border border-tz-border bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[var(--tz-accent)]"
+          aria-label="Вопрос по ГОСТ Р 58048-2017"
+          className="min-h-10 flex-1 rounded-xl border border-tz-border bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[var(--tz-accent)]"
         />
         <button
           onClick={sendMessage}

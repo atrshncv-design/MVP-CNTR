@@ -1,14 +1,19 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { auth } from "@/auth.config";
 import { ApiError, getProjects } from "@/lib/api-client";
-import ProjectRadar from "@/components/dashboard/project-radar";
+import CollapsibleSidebar from "@/components/dashboard/collapsible-sidebar";
+import ProjectsExplorer from "./projects-explorer";
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Черновик",
-  auto_confirmed: "Подтверждён автоматически", active: "В работе",
-  review: "На проверке",
-  completed: "Завершён",
-};
+/** Честные ссылки для сворачиваемой панели «Навигация по разделу» (тикет 03). */
+const SECTION_LINKS = [
+  { href: "/dashboard", label: "Рабочий стол" },
+  { href: "/dashboard/projects", label: "Проекты" },
+  { href: "/dashboard/gk_customer/projects/new", label: "Заявки" },
+  { href: "/dashboard/nioktr", label: "НИОКТР" },
+  { href: "/dashboard/organizations", label: "Организации" },
+  { href: "/dashboard/technologies", label: "Реестры" },
+];
 
 export default async function ProjectsPage() {
   const session = await auth();
@@ -56,44 +61,41 @@ export default async function ProjectsPage() {
         )}
       </div>
 
-      {projects.length === 0 ? (
-        <div className="mt-8 rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center">
-          <h2 className="tz-section-title">Проектов пока нет</h2>
-          <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
-            В вашей области доступа ещё нет созданных проектов.
-          </p>
+      {/* Тикет 03: CollapsibleSidebar — сворачиваемая боковая панель
+          (состояние в localStorage tz-sidebar-projects-nav). Desktop: колонка
+          260px + контент; mobile: панель над списком. */}
+      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <CollapsibleSidebar
+          id="projects-nav"
+          title="Навигация по разделу"
+          defaultOpen={false}
+          className="lg:sticky lg:top-20"
+        >
+          <nav aria-label="Разделы платформы">
+            <ul className="space-y-0.5">
+              {SECTION_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="block rounded-lg px-2.5 py-1.5 text-sm text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </CollapsibleSidebar>
+        <div className="min-w-0">
+          {/* Suspense — документированный паттерн для useSearchParams:
+              клиентский проводник читает фильтры из URL без деоптимизации страницы.
+              Рендерится всегда (даже при пустом списке), чтобы поиск/фильтры/
+              переключатель вида/пагинация были доступны — тикет 04/07. */}
+          <Suspense fallback={null}>
+            <ProjectsExplorer projects={projects} />
+          </Suspense>
         </div>
-      ) : (
-        <div className="mt-8 grid gap-4">
-          {projects.map((project) => (
-            <Link
-              key={project.id}
-              href={`/dashboard/project/${project.id}`}
-              className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-tz-accent md:grid-cols-[1fr_auto_auto_auto]"
-            >
-              <div>
-                <div className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</div>
-                <h2 className="tz-card-title mt-1">{project.name}</h2>
-                <p className="mt-1 text-sm text-tz-secondary">{project.category ?? "Категория не указана"}</p>
-              </div>
-              <ProjectRadar
-                currentLevel={project.current_level}
-                documents={[]}
-                size={112}
-                className="mx-auto md:self-center"
-              />
-              <div className="md:text-right">
-                <div className="text-xs text-tz-muted">Текущий уровень</div>
-                <div className="mt-1 font-bold text-tz-accent">УГТ {project.current_level}</div>
-              </div>
-              <div className="md:min-w-28 md:text-right">
-                <div className="text-xs text-tz-muted">Статус</div>
-                <div className="mt-1 font-semibold">{STATUS_LABELS[project.status] ?? project.status}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      </div>
     </section>
   );
 }

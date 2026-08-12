@@ -1,15 +1,23 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { AlertCircle, FileCheck, FolderKanban, Loader2, RefreshCw } from 'lucide-react';
-import JoinProjectForm from '@/components/join-project-form';
-import { AssessUgTCard } from '@/components/assess-ugt-card';
-import VerificationDocsPanel from '@/components/verification-docs-panel';
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  AlertCircle,
+  FileCheck,
+  FolderKanban,
+  Gauge,
+  Layers,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import JoinProjectForm from "@/components/join-project-form";
+import { AssessUgTCard } from "@/components/assess-ugt-card";
+import VerificationDocsPanel from "@/components/verification-docs-panel";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 interface JoinedProject {
   id: number;
@@ -21,24 +29,30 @@ interface JoinedProject {
 
 /** Достаёт человекочитаемое сообщение об ошибке из ответа FastAPI */
 function extractError(data: unknown, fallback: string): string {
-  if (data && typeof data === 'object') {
+  if (data && typeof data === "object") {
     const detail = (data as { detail?: unknown }).detail;
-    if (typeof detail === 'string') return detail;
-    if (Array.isArray(detail) && detail[0] && typeof detail[0] === 'object') {
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail) && detail[0] && typeof detail[0] === "object") {
       const msg = (detail[0] as { msg?: unknown }).msg;
-      if (typeof msg === 'string') return msg;
+      if (typeof msg === "string") return msg;
     }
   }
   return fallback;
 }
 
+/**
+ * Рабочий стол регулирующей организации (тикет 06 internal-ux-redesign).
+ * Единый паттерн кабинета: заголовок, статистика из API, список проектов
+ * с документами подтверждения (данные), боковая колонка — действия и
+ * следующий шаг. Без mock-success: честные loading/error/empty состояния.
+ */
 export default function RegulatingOrganizationDashboard() {
   const { data: session } = useSession();
   const [projects, setProjects] = useState<JoinedProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const displayName = session?.user?.name ?? session?.user?.email ?? 'Регулирующая организация';
+  const displayName = session?.user?.name ?? session?.user?.email ?? "Регулирующая организация";
 
   const loadProjects = useCallback(async () => {
     if (!session?.user?.accessToken) return;
@@ -69,7 +83,7 @@ export default function RegulatingOrganizationDashboard() {
         })),
       );
     } catch (e) {
-      setError(extractError(e, 'Не удалось загрузить проекты.'));
+      setError(extractError(e, "Не удалось загрузить проекты."));
     } finally {
       setLoading(false);
     }
@@ -81,44 +95,37 @@ export default function RegulatingOrganizationDashboard() {
     })();
   }, [loadProjects]);
 
-  const totalDocs = projects.reduce((acc, p) => acc + p.docs_count, 0);
+  /** Честная статистика — производные от данных проектов. */
+  const stats = useMemo(() => {
+    const totalDocs = projects.reduce((acc, p) => acc + p.docs_count, 0);
+    const withDocs = projects.filter((p) => p.docs_count > 0).length;
+    const avgLevel =
+      projects.length === 0
+        ? 0
+        : Math.round(projects.reduce((acc, p) => acc + p.current_level, 0) / projects.length);
+    return { projects: projects.length, totalDocs, withDocs, avgLevel };
+  }, [projects]);
 
   const statCards = [
-    { label: 'Проекты', value: projects.length, icon: FolderKanban, color: 'var(--tz-accent)' },
-    { label: 'Верифицирующие документы', value: totalDocs, icon: FileCheck, color: 'var(--tz-success)' },
+    { label: "Проекты", value: stats.projects, icon: FolderKanban, color: "var(--tz-accent)" },
+    { label: "Верифицирующие документы", value: stats.totalDocs, icon: FileCheck, color: "var(--tz-success)" },
+    { label: "Проекты с документами", value: stats.withDocs, icon: Layers, color: "var(--tz-review)" },
+    { label: "Средняя зрелость УГТ", value: stats.projects === 0 ? "—" : `УГТ ${stats.avgLevel}`, icon: Gauge, color: "var(--tz-ugt-2)" },
   ];
 
   return (
     <section>
-      {/* Hero-блок */}
+      {/* Заголовок страницы */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
-          Рабочий стол регулирующей организации
-        </p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">
-          Добро пожаловать, {displayName}
-        </h1>
+        <p className="tz-eyebrow">Рабочий стол регулирующей организации</p>
+        <h1 className="tz-page-title mt-2">Добро пожаловать, {displayName}</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
           Присоединяйтесь к карточке проекта по токену TZ-XXXXXX и добавляйте
           документы подтверждения УГТ — они станут основанием для решения менеджера ЦНТР.
         </p>
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
-          Документы подтверждения
-        </span>
-        <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
-          Реестр технологий
-        </Link>
-      </nav>
-
-      {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
-      <div className="mt-6">
-        <AssessUgTCard />
-      </div>
-
-      {/* Статистика */}
+      {/* Данные: статистика из API */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
@@ -128,23 +135,18 @@ export default function RegulatingOrganizationDashboard() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08 * idx, duration: 0.4 }}
-              className="rounded-2xl border border-tz-card-border bg-tz-surface p-5"
+              className="tz-card tz-stat p-5"
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: `${card.color}15`, color: card.color }}
-                >
+              <div className="tz-stat-label">
+                {card.label}
+                <span className="tz-stat-icon" style={{ background: `${card.color}15`, color: card.color }}>
                   <Icon size={18} />
                 </span>
               </div>
               {loading ? (
-                <div className="mt-3 h-8 w-16 animate-pulse rounded-lg bg-tz-surface-2" />
+                <div className="h-8 w-16 animate-pulse rounded bg-tz-soft" />
               ) : (
-                <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">
-                  {card.value}
-                </p>
+                <p className="tz-stat-value">{card.value}</p>
               )}
             </motion.div>
           );
@@ -152,88 +154,75 @@ export default function RegulatingOrganizationDashboard() {
       </div>
 
       {error && (
-        <div className="mt-6 flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
+        <div role="alert" className="mt-6 flex items-start gap-2 rounded-xl border border-tz-danger bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          {error}
-          <button
-            onClick={() => loadProjects()}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
-          >
+          <span className="min-w-0 flex-1">{error}</span>
+          <button className="tz-btn tz-btn-secondary tz-btn-sm shrink-0" onClick={() => void loadProjects()}>
             <RefreshCw size={13} /> Повторить
           </button>
         </div>
       )}
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Проекты, к которым присоединилась организация */}
+      {/* Данные (проекты и документы) + действия/следующий шаг (боковая колонка) */}
+      <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div>
-          <h2 className="mb-4 tz-card-title text-tz-fg">Мои проекты</h2>
+          <h2 className="tz-card-title">Мои проекты</h2>
 
           {loading ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface p-6">
-              <div className="h-5 w-48 animate-pulse rounded bg-tz-surface-2" />
+            <div className="tz-card mt-4 p-6">
+              <div className="h-5 w-48 animate-pulse rounded bg-tz-soft" />
               <div className="mt-4 h-16 animate-pulse rounded bg-tz-soft" />
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
-              <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
-              <p className="font-semibold text-tz-danger">{error}</p>
-              <button
-                onClick={() => loadProjects()}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-              >
-                <RefreshCw size={14} /> Повторить
+            <div className="tz-card tz-empty mt-4">
+              <AlertCircle className="text-tz-danger" size={32} />
+              <p className="tz-empty-title">{error}</p>
+              <button className="tz-btn tz-btn-secondary mt-6" onClick={() => void loadProjects()}>
+                <RefreshCw size={15} /> Повторить
               </button>
             </div>
           ) : projects.length === 0 ? (
-            <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
-                <FolderKanban size={22} className="text-[var(--tz-accent)]" />
-              </div>
-              <h2 className="tz-section-title mt-5 text-tz-fg">
-                Пока нет проектов
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
+            <div className="tz-card tz-empty mt-4">
+              <span className="tz-empty-icon">
+                <FolderKanban size={22} />
+              </span>
+              <h2 className="tz-empty-title">Пока нет проектов</h2>
+              <p className="tz-empty-text">
                 Присоединитесь к карточке проекта по токену TZ — и она появится
                 в этом списке. После вступления вам станет доступна загрузка
                 верифицирующих документов.
               </p>
             </div>
           ) : (
-            <div className="grid gap-5">
+            <div className="mt-4 grid gap-4">
               {projects.map((p) => (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl border border-tz-card-border bg-tz-surface p-5 sm:p-6"
-                >
+                <div key={p.id} className="tz-card p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs text-tz-muted">ЦНТР-{p.id}</span>
-                        <span className="rounded-full bg-[var(--tz-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--tz-accent)]">
+                        <span className="rounded-full bg-tz-accent-soft px-2 py-0.5 text-[11px] font-medium text-tz-accent">
                           УГТ {p.current_level} → {p.target_level}
                         </span>
                         <span className="rounded-full bg-tz-success-soft px-2 py-0.5 text-[11px] font-medium text-tz-success">
                           {p.docs_count} доказ.
-                      </span>
+                        </span>
                       </div>
                       <Link
                         href={`/dashboard/project/${p.id}`}
-                        className="mt-1 block tz-card-title text-tz-fg transition hover:text-[var(--tz-accent)]"
+                        className="tz-card-title mt-1 block transition hover:text-tz-accent"
                       >
                         {p.name}
                       </Link>
                     </div>
                     <Link
                       href={`/dashboard/project/${p.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--tz-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
+                      className="tz-btn tz-btn-primary tz-btn-sm"
                     >
                       <FileCheck size={15} /> Документы проекта
                     </Link>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
@@ -243,11 +232,12 @@ export default function RegulatingOrganizationDashboard() {
           </div>
         </div>
 
-        {/* Вступление по токену */}
-        <aside className="lg:sticky lg:top-8 lg:self-start">
+        {/* Действия и следующий шаг */}
+        <aside className="space-y-6 lg:sticky lg:top-20">
+          <AssessUgTCard />
           {loading ? (
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-tz-card-border bg-tz-surface">
-              <Loader2 size={22} className="animate-spin text-[var(--tz-accent)]" />
+            <div className="flex h-40 items-center justify-center tz-card">
+              <Loader2 size={22} className="animate-spin text-tz-accent" />
             </div>
           ) : (
             <JoinProjectForm />

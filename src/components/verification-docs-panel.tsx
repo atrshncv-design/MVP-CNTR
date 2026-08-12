@@ -139,6 +139,7 @@ export default function VerificationDocsPanel() {
         <select
           className="tz-select"
           value={projectId}
+          aria-label="Проект для загрузки документа"
           onChange={(e) => {
             setProjectId(e.target.value);
             void loadDocs(e.target.value);
@@ -201,18 +202,21 @@ export default function VerificationDocsPanel() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Название документа"
+          aria-label="Название документа"
         />
         <input
           className="tz-input"
           value={fileRef}
           onChange={(e) => setFileRef(e.target.value)}
           placeholder="Ссылка или идентификатор файла (необязательно)"
+          aria-label="Ссылка или идентификатор файла"
         />
         <textarea
           className="tz-input min-h-20"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Комментарий для менеджера"
+          aria-label="Комментарий для менеджера"
         />
         <button className="tz-btn tz-btn-primary" disabled={state === 'loading'}>
           {state === 'loading' ? (

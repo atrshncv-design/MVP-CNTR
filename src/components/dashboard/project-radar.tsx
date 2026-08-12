@@ -159,44 +159,19 @@ export default function ProjectRadar({
   const points = RADAR_CATEGORIES.map((axis) => pointFor(axis.id));
   const polygonPoints = points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
 
-  const axisLabel = (index: number) => {
-    const axis = RADAR_CATEGORIES[index];
-    const p = points[index];
-    const positionClass =
-      index === 0
-        ? "left-1/2 top-0 -translate-x-1/2 text-center"
-        : index === 1
-          ? "right-2 top-1/2 -translate-y-1/2 text-right"
-          : index === 2
-            ? "bottom-0 left-1/2 -translate-x-1/2 text-center"
-            : "left-2 top-1/2 -translate-y-1/2 text-left";
-    return (
-      <span
-        key={axis.id}
-        className={`pointer-events-none absolute ${positionClass} leading-tight`}
-      >
-        <span className="block whitespace-nowrap text-[9px] font-semibold tracking-wide text-tz-secondary">
-          {axis.label}
-        </span>
-        <span
-          className="block whitespace-nowrap font-mono text-[10px] font-bold"
-          style={{ color: accent }}
-        >
-          {formatAxisValue(p.value)}
-        </span>
-      </span>
-    );
-  };
-
   return (
     <MotionConfig reducedMotion="user">
       <div
-        className={`relative ${className}`}
-        style={{ width: size, height: size }}
+        className={`flex flex-col items-stretch ${className}`}
+        style={{ width: size >= 160 ? "100%" : size }}
         role="img"
         aria-label={`Радар готовности проекта: научная ${formatAxisValue(values.scientific)}, техническая ${formatAxisValue(values.technical)}, организационная ${formatAxisValue(values.organizational)}, производственная ${formatAxisValue(values.production)} из 9`}
       >
-        <svg viewBox="0 0 200 200" className="aspect-square w-full">
+        <svg
+          viewBox="0 0 200 200"
+          className="mx-auto aspect-square"
+          style={{ width: `min(100%, ${size}px)` }}
+        >
           {/* Сетка: кольца уровней 3 / 6 / 9 */}
           {[1 / 3, 2 / 3, 1].map((scale) => (
             <circle
@@ -264,8 +239,23 @@ export default function ProjectRadar({
           <circle cx={cx} cy={cy} r="2" fill="var(--color-tz-muted)" />
         </svg>
 
-        {/* Подписи осей в желобе контейнера (как у LivingRadar) */}
-        {RADAR_CATEGORIES.map((_, i) => axisLabel(i))}
+        {/* Подписи вынесены из области графика, чтобы не перекрывать радар. */}
+        <ul
+          aria-label="Категории готовности"
+          className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1.5"
+        >
+          {RADAR_CATEGORIES.map((axis) => (
+            <li
+              key={axis.id}
+              className="flex min-w-0 items-center justify-between gap-2 text-[10px] leading-tight"
+            >
+              <span className="min-w-0 whitespace-nowrap text-tz-secondary">{axis.label}</span>
+              <span className="shrink-0 font-mono font-bold" style={{ color: accent }}>
+                {formatAxisValue(values[axis.id])}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </MotionConfig>
   );

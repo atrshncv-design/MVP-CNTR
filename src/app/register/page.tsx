@@ -193,7 +193,14 @@ export default function RegisterPage() {
               />
             </div>
 
-            <p aria-live="polite" className="min-h-5 text-sm text-tz-danger">
+            <p
+              aria-live="polite"
+              className={`min-h-5 text-sm ${
+                status === "error"
+                  ? "flex items-start gap-2 rounded-xl border border-tz-danger/30 bg-tz-danger-soft px-3 py-2.5 text-tz-danger"
+                  : ""
+              }`}
+            >
               {status === "error" ? error : ""}
             </p>
 

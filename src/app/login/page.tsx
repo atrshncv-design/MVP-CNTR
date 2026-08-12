@@ -67,7 +67,14 @@ function LoginForm() {
           className="w-full rounded-lg border border-tz-border bg-tz-surface px-4 py-3 text-tz-fg outline-none transition placeholder:text-tz-secondary focus:border-[var(--tz-accent)] focus:ring-2 focus:ring-[var(--tz-accent)]/20"
         />
       </div>
-      <p aria-live="polite" className="min-h-5 text-sm text-tz-danger">
+      <p
+        aria-live="polite"
+        className={`min-h-5 text-sm ${
+          status === "error"
+            ? "flex items-start gap-2 rounded-xl border border-tz-danger/30 bg-tz-danger-soft px-3 py-2.5 text-tz-danger"
+            : ""
+        }`}
+      >
         {status === "error" ? error : ""}
       </p>
       <button

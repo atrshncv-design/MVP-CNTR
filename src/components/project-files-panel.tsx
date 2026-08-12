@@ -145,12 +145,12 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
       </p>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl border border-tz-danger-border bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger-fg">
+        <div role="alert" className="mt-3 rounded-xl border border-tz-danger/30 bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
           {error}
         </div>
       )}
       {notice && (
-        <div role="status" className="mt-3 rounded-xl border border-tz-success-border bg-tz-success-soft px-4 py-3 text-sm text-tz-success-fg">
+        <div role="status" className="mt-3 rounded-xl border border-tz-success/30 bg-tz-success-soft px-4 py-3 text-sm text-tz-success">
           {notice}
         </div>
       )}
@@ -194,7 +194,7 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
                 </div>
                 <div className="flex items-center gap-2">
                   {file.scan_status === "clean" ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-tz-success-fg">
+                    <span className="inline-flex items-center gap-1 text-xs text-tz-success">
                       <ShieldCheck size={13} /> проверен
                     </span>
                   ) : (

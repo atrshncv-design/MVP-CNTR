@@ -16,8 +16,11 @@ test("project API client sends the session token and never serves stale project 
 
 test("shared projects route renders loading-independent empty and error states", () => {
   const source = read("src/app/dashboard/projects/page.tsx");
+  const explorer = read("src/app/dashboard/projects/projects-explorer.tsx");
 
-  assert.match(source, /Проектов пока нет/);
+  // Пустое состояние живёт в клиентском проводнике (рендерится всегда),
+  // error-состояние и данные — на серверной странице.
   assert.match(source, /Не удалось загрузить проекты/);
   assert.match(source, /getProjects/);
+  assert.match(explorer, /Проектов пока нет/);
 });
