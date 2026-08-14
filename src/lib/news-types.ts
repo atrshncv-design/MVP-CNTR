@@ -43,13 +43,23 @@ export interface NewsDetail extends NewsCard {
   content: string;
   author_id: number;
   author_name: string | null;
-  status: string;
+  status: NewsStatus;
   scheduled_at: string | null;
   source: string;
   created_automatically: boolean;
   media: NewsMedia[];
   updated_at: string | null;
 }
+
+/** Статусы новости (спека §3.3): draft → scheduled → published. */
+export type NewsStatus = "draft" | "scheduled" | "published";
+
+/** Человекочитаемые подписи статусов для ЛК (консоль, лента, редактор). */
+export const NEWS_STATUS_LABELS: Record<NewsStatus, string> = {
+  draft: "Черновик",
+  scheduled: "Запланирована",
+  published: "Опубликована",
+};
 
 /** Страница публичной ленты (page/per_page). */
 export interface NewsFeed {

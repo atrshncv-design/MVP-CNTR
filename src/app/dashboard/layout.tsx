@@ -10,6 +10,7 @@ const navigation = [
   { href: "/dashboard/technologies", label: "Реестры" },
   { href: "/dashboard/nioktr", label: "НИОКТР" },
   { href: "/dashboard/organizations", label: "Организации" },
+  { href: "/dashboard/news", label: "Новости" },
   { href: "/dashboard/profile", label: "Профиль" },
   { href: "/dashboard/ai-assistant", label: "Документы" },
 ];
