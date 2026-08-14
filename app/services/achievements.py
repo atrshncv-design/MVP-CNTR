@@ -25,7 +25,7 @@ project_achievements для тех же (project_id, achievement_id). Награ
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 from sqlalchemy import delete, func, select
@@ -533,3 +533,222 @@ async def revoke_for_event(db: AsyncSession, event_ref: str) -> dict[str, int]:
         )
         project_records += res.rowcount if isinstance(res, CursorResult) else 0
     return {"user_records": user_records, "project_records": project_records}
+
+
+# ─── Админ-аналитика достижений (тикет 09, спека §4.7) ─────────────────────
+
+
+async def achievement_stats(db: AsyncSession) -> dict[str, Any]:
+    """Агрегаты начислений для админ-панели (GET /admin/achievements/stats).
+
+    Читает фактические таблицы начислений; пустая БД отдаёт нули и пустые
+    списки без ошибок. Все срезы по времени считаются в UTC (явный
+    ``timezone('UTC', ...)`` — результат не зависит от timezone сессии БД),
+    недели — с понедельника (ISO).
+
+    Время проверки менеджера: отдельного столбца decided_at в схеме нет,
+    момент решения ≈ updated_at заявки (onupdate=func.now() срабатывает в
+    decide_promotion). Единица — календарные часы между created_at и
+    updated_at (календаря рабочих часов на платформе нет; документированное
+    решение тикета 09).
+    """
+    from datetime import timedelta
+
+    now = datetime.now(UTC)
+
+    # ── сводные счётчики ────────────────────────────────────────────────────
+    total_awards = int(
+        await db.scalar(select(func.count(UserAchievement.id))) or 0
+    )
+    awards_last_week = int(
+        await db.scalar(
+            select(func.count(UserAchievement.id)).where(
+                UserAchievement.awarded_at >= now - timedelta(days=7)
+            )
+        )
+        or 0
+    )
+    unique_users = int(
+        await db.scalar(select(func.count(func.distinct(UserAchievement.user_id))))
+        or 0
+    )
+    project_ids: set[int] = set()
+    for row in await db.execute(
+        select(func.distinct(UserAchievement.project_id)).where(
+            UserAchievement.project_id.isnot(None)
+        )
+    ):
+        if row[0] is not None:
+            project_ids.add(int(row[0]))
+    for row in await db.execute(
+        select(func.distinct(ProjectAchievement.project_id))
+    ):
+        project_ids.add(int(row[0]))
+
+    # ── динамика: 30 дней и 12 недель (пустые периоды — нули) ───────────────
+    day_trunc = func.date_trunc(
+        "day", func.timezone("UTC", UserAchievement.awarded_at)
+    )
+    day_rows = await db.execute(
+        select(day_trunc.label("bucket"), func.count(UserAchievement.id)).group_by(
+            "bucket"
+        )
+    )
+    day_counts = {row[0].date(): int(row[1]) for row in day_rows}
+    by_day: list[dict[str, Any]] = []
+    for i in range(29, -1, -1):
+        day = (now - timedelta(days=i)).date()
+        by_day.append({"date": day.isoformat(), "count": day_counts.get(day, 0)})
+
+    week_trunc = func.date_trunc(
+        "week", func.timezone("UTC", UserAchievement.awarded_at)
+    )
+    week_rows = await db.execute(
+        select(week_trunc.label("bucket"), func.count(UserAchievement.id)).group_by(
+            "bucket"
+        )
+    )
+    week_counts = {row[0].date(): int(row[1]) for row in week_rows}
+    this_monday = (now - timedelta(days=now.weekday())).date()
+    by_week: list[dict[str, Any]] = []
+    for i in range(11, -1, -1):
+        start = this_monday - timedelta(weeks=i)
+        by_week.append({"date": start.isoformat(), "count": week_counts.get(start, 0)})
+
+    # ── распределения по группам и редкости (join каталога) ─────────────────
+    by_group: list[dict[str, Any]] = []
+    by_rarity: list[dict[str, Any]] = []
+    if total_awards > 0:
+        group_rows = await db.execute(
+            select(Achievement.group, func.count(UserAchievement.id))
+            .join(Achievement, UserAchievement.achievement_id == Achievement.id)
+            .group_by(Achievement.group)
+            .order_by(func.count(UserAchievement.id).desc())
+        )
+        by_group = [
+            {
+                "key": group_,
+                "count": int(count),
+                "percent": round(count * 100.0 / total_awards, 1),
+            }
+            for group_, count in group_rows
+        ]
+        rarity_rows = await db.execute(
+            select(Achievement.rarity, func.count(UserAchievement.id))
+            .join(Achievement, UserAchievement.achievement_id == Achievement.id)
+            .group_by(Achievement.rarity)
+            .order_by(func.count(UserAchievement.id).desc())
+        )
+        by_rarity = [
+            {
+                "key": rarity,
+                "count": int(count),
+                "percent": round(count * 100.0 / total_awards, 1),
+            }
+            for rarity, count in rarity_rows
+        ]
+
+    # ── отраслевые срезы: командные медали по category проектов ─────────────
+    sector_rows = await db.execute(
+        select(
+            Project.category,
+            func.count(ProjectAchievement.id),
+            func.count(func.distinct(ProjectAchievement.project_id)),
+        )
+        .join(Project, ProjectAchievement.project_id == Project.id)
+        .group_by(Project.category)
+        .order_by(func.count(ProjectAchievement.id).desc())
+    )
+    by_sector: list[dict[str, Any]] = []
+    for category, count, projects in sector_rows:
+        label = (category or "").strip() or "Без категории"
+        by_sector.append(
+            {"category": label, "count": int(count), "projects": int(projects)}
+        )
+
+    # ── топ-10 медалей по числу персональных начислений ─────────────────────
+    top_rows = await db.execute(
+        select(
+            Achievement.slug,
+            Achievement.title,
+            Achievement.group,
+            Achievement.rarity,
+            func.count(UserAchievement.id),
+        )
+        .join(Achievement, UserAchievement.achievement_id == Achievement.id)
+        .group_by(
+            Achievement.slug,
+            Achievement.title,
+            Achievement.group,
+            Achievement.rarity,
+        )
+        .order_by(func.count(UserAchievement.id).desc(), Achievement.slug)
+        .limit(10)
+    )
+    top_achievements = [
+        {
+            "slug": slug,
+            "title": title,
+            "group": group_,
+            "rarity": rarity,
+            "count": int(count),
+        }
+        for slug, title, group_, rarity, count in top_rows
+    ]
+
+    # ── застрявшие проекты: published, уровень 1..8, без обновлений 90+ дней ─
+    stalled_rows = await db.execute(
+        select(Project.id, Project.name, Project.current_level, Project.updated_at)
+        .where(
+            Project.status == "published",
+            Project.current_level >= 1,
+            Project.current_level < 9,
+            Project.updated_at < now - timedelta(days=90),
+        )
+        .order_by(Project.updated_at.asc())
+    )
+    stalled_projects = [
+        {
+            "id": project_id,
+            "name": name,
+            "current_level": level,
+            "days": (now - updated).days,
+        }
+        for project_id, name, level, updated in stalled_rows
+    ]
+
+    # ── время проверки менеджеров: среднее (updated_at - created_at) ────────
+    review_row = await db.execute(
+        select(
+            func.extract(
+                "epoch",
+                func.avg(PromotionRequest.updated_at - PromotionRequest.created_at),
+            )
+            / 3600,
+            func.count(PromotionRequest.id),
+        ).where(PromotionRequest.status.in_(("approved", "rejected")))
+    )
+    avg_epoch_hours, decided_count = review_row.one()
+    manager_review = {
+        "avg_hours": (
+            round(float(avg_epoch_hours), 1) if avg_epoch_hours is not None else None
+        ),
+        "decided_count": int(decided_count),
+    }
+
+    return {
+        "totals": {
+            "total_awards": total_awards,
+            "awards_last_week": awards_last_week,
+            "unique_users": unique_users,
+            "unique_projects": len(project_ids),
+        },
+        "by_day": by_day,
+        "by_week": by_week,
+        "by_group": by_group,
+        "by_rarity": by_rarity,
+        "by_sector": by_sector,
+        "top_achievements": top_achievements,
+        "stalled_projects": stalled_projects,
+        "manager_review": manager_review,
+    }
