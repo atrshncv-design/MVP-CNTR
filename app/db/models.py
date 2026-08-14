@@ -12,6 +12,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     MetaData,
     Numeric,
@@ -20,6 +21,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
     false,
     func,
     select,
@@ -881,4 +883,93 @@ class Achievement(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class UserAchievement(Base):
+    """Персональная медаль пользователя (спека §4.2, тикет 02).
+
+    Одна запись = одна выданная медаль. Дедупликация «один раз за событие» —
+    UNIQUE (user_id, achievement_id, event_ref); логическая дедупликация
+    «одна медаль за раз» дополнительно проверяется сервисом наградчиков
+    (app/services/achievements.py), т.к. PostgreSQL считает NULL-значения
+    event_ref различными в UNIQUE-индексе.
+
+    - event_ref — уникальный ключ события-источника (например ``ugt:<pid>:<N>``),
+      по нему revoke_for_event отзывает медали при отмене подтверждения.
+    - times — счётчик повторений (для ступеней хранит значение порога,
+      напр. doc-5 → times=5).
+    - project_id — заполняется для проектных медалей (УГТ, отраслевые, quality).
+    """
+
+    __tablename__ = "user_achievements"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
+    )
+    achievement_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.achievements.id", ondelete="CASCADE"), nullable=False
+    )
+    project_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=True
+    )
+    event_ref: Mapped[str | None] = mapped_column(String(120))
+    times: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    awarded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        # Точный поиск по пользователю/медали — Hash (правило проекта).
+        Index("ix_user_achievements_user_id_hash", "user_id", postgresql_using="hash"),
+        Index(
+            "ix_user_achievements_achievement_id_hash",
+            "achievement_id",
+            postgresql_using="hash",
+        ),
+        Index("ix_user_achievements_project_id_hash", "project_id", postgresql_using="hash"),
+        UniqueConstraint(
+            "user_id",
+            "achievement_id",
+            "event_ref",
+            name="uq_user_achievements_user_achievement_event",
+        ),
+    )
+
+
+class ProjectAchievement(Base):
+    """Командная медаль проекта (спека §4.2, тикет 02).
+
+    Выдаётся всем активным участникам проекта на момент события через
+    user_achievements (project_id заполнен); здесь хранится сам факт
+    «проект получил медаль» для витрины проекта. UNIQUE (project_id,
+    achievement_id) — каждая медаль проекту выдаётся один раз.
+    """
+
+    __tablename__ = "project_achievements"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    achievement_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.achievements.id", ondelete="CASCADE"), nullable=False
+    )
+    awarded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_project_achievements_project_id_hash", "project_id", postgresql_using="hash"),
+        Index(
+            "ix_project_achievements_achievement_id_hash",
+            "achievement_id",
+            postgresql_using="hash",
+        ),
+        UniqueConstraint(
+            "project_id",
+            "achievement_id",
+            name="uq_project_achievements_project_achievement",
+        ),
     )
