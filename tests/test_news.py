@@ -393,3 +393,75 @@ def test_mine_returns_own_all_statuses(client: TestClient) -> None:
     guest = client.get("/api/v1/news/mine", headers=_auth(guest_token))
     assert guest.status_code == 200, guest.text
     assert guest.json() == []
+
+
+# ── Консоль /admin-list (тикет 08) ─────────────────────────────────────────
+
+
+def test_admin_list_admin_sees_all_statuses_and_foreign(
+    client: TestClient,
+) -> None:
+    admin_token, _ = _register(client, "cntr_admin")
+    manager_token, _ = _register(client, "cntr_manager")
+    foreign = _create_news(client, manager_token, title="Чужой черновик")
+    assert foreign.status_code == 201, foreign.text
+    own = _create_news(client, admin_token, title="Свой черновик")
+    assert own.status_code == 201, own.text
+    published = _create_news(
+        client, admin_token, title="Своя опубликованная", status="published"
+    )
+    assert published.status_code == 201, published.text
+
+    response = client.get("/api/v1/news/admin-list", headers=_auth(admin_token))
+    assert response.status_code == 200, response.text
+    body = response.json()
+    titles = [n["title"] for n in body]
+    assert {"Чужой черновик", "Свой черновик", "Своя опубликованная"} <= set(
+        titles
+    )
+    # Сортировка created_at DESC (последняя созданная — первой).
+    assert body[0]["title"] == "Своя опубликованная"
+    # Поля NewsDetailOut доступны консоли.
+    assert body[0]["author_id"] and body[0]["status"] in {
+        "draft",
+        "scheduled",
+        "published",
+    }
+
+    filtered = client.get(
+        "/api/v1/news/admin-list",
+        headers=_auth(admin_token),
+        params={"status": "draft"},
+    )
+    assert filtered.status_code == 200, filtered.text
+    filtered_titles = {n["title"] for n in filtered.json()}
+    assert "Чужой черновик" in filtered_titles
+    assert "Свой черновик" in filtered_titles
+    assert "Своя опубликованная" not in filtered_titles
+
+
+def test_admin_list_manager_sees_only_own(client: TestClient) -> None:
+    author_token, _ = _register(client, "cntr_manager")
+    _create_news(client, author_token, title="Своя")
+    other_token, _ = _register(client, "cntr_manager")
+    _create_news(client, other_token, title="Чужая")
+
+    response = client.get("/api/v1/news/admin-list", headers=_auth(author_token))
+    assert response.status_code == 200, response.text
+    titles = [n["title"] for n in response.json()]
+    assert "Своя" in titles
+    assert "Чужая" not in titles
+
+
+def test_admin_list_requires_staff_and_valid_status(client: TestClient) -> None:
+    guest_token, _ = _register(client, "gk_customer")
+    forbidden = client.get("/api/v1/news/admin-list", headers=_auth(guest_token))
+    assert forbidden.status_code == 403, forbidden.text
+
+    admin_token, _ = _register(client, "cntr_admin")
+    bad = client.get(
+        "/api/v1/news/admin-list",
+        headers=_auth(admin_token),
+        params={"status": "nope"},
+    )
+    assert bad.status_code == 422, bad.text

@@ -242,6 +242,52 @@ async def my_news(db: DBSession, user: CurrentUser) -> list[NewsDetailOut]:
     return [_detail_out(p, user.full_name) for p in rows]
 
 
+@router.get("/admin-list", response_model=list[NewsDetailOut])
+async def admin_news_list(
+    db: DBSession,
+    user: Annotated[User, Depends(require_role("cntr_admin", "cntr_manager"))],
+    status_filter: str | None = Query(
+        None, alias="status", description="draft|scheduled|published"
+    ),
+) -> list[NewsDetailOut]:
+    """Консоль новостей (тикет 08): cntr_admin — все новости, cntr_manager —
+    только свои. Фильтр по статусу, сортировка created_at DESC, поля
+    NewsDetailOut (как /mine, но для всей платформы у администратора)."""
+    if (
+        status_filter is not None
+        and status_filter not in {"draft", "scheduled", "published"}
+    ):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "status должен быть draft|scheduled|published",
+        )
+    base = select(NewsPost)
+    if not has_role(user, "cntr_admin"):
+        base = base.where(NewsPost.author_id == user.id)
+    if status_filter:
+        base = base.where(NewsPost.status == status_filter)
+    rows = (
+        (
+            await db.execute(
+                base.order_by(NewsPost.created_at.desc(), NewsPost.id.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    # Один запрос на имена авторов вместо N+1 (паттерн /projects registry).
+    author_ids = {p.author_id for p in rows}
+    authors: dict[int, str] = {}
+    if author_ids:
+        author_rows = (
+            (await db.execute(select(User).where(User.id.in_(author_ids))))
+            .scalars()
+            .all()
+        )
+        authors = {u.id: u.full_name for u in author_rows if u.full_name}
+    return [_detail_out(p, authors.get(p.author_id)) for p in rows]
+
+
 @router.get("/categories", response_model=list[NewsCategoryOut])
 async def news_categories(db: ReadDBSession) -> list[NewsCategoryOut]:
     """Список категорий для фильтров и редактора (публичный)."""
