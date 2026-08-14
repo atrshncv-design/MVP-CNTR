@@ -830,3 +830,140 @@ class AchievementCatalogOut(BaseModel):
     secret: bool
     sort_order: int
     icon_key: str
+
+
+# ─── Витрина достижений (тикет 03, спека §4.6) ──────────────────────────────
+
+
+class AchievementOut(BaseModel):
+    """Медаль каталога, вложенная в витрину (mine / project-achievements)."""
+
+    id: int
+    slug: str
+    title: str
+    description: str
+    group: str
+    rarity: str
+    sector_slug: str | None = None
+    threshold: int | None = None
+    ugt_level: int | None = None
+    secret: bool
+    sort_order: int
+    icon_key: str
+
+
+class AchievementProgressOut(BaseModel):
+    """Прогресс до следующей ступени пороговой медали (doc-*/m-*).
+
+    ``current_count`` — последний подтверждённый порог (times выданной
+    ступени группы), ``next_threshold`` — следующий порог из каталога
+    (None, если достигнута максимальная ступень).
+    """
+
+    current_count: int
+    next_threshold: int | None = None
+
+
+class UserAchievementOut(BaseModel):
+    """Персональная медаль в витрине пользователя (спека §4.6).
+
+    ``progress`` заполняется только для пороговых ступеней групп
+    documents/member (doc-*, m-*): текущее число повторений против
+    следующего порога каталога («5/10 документов — осталось 5»).
+    """
+
+    achievement: AchievementOut
+    times: int
+    awarded_at: str  # ISO 8601 (datetime → хелпер-сериализатор)
+    project_id: int | None = None
+    project_name: str | None = None
+    progress: AchievementProgressOut | None = None
+
+
+class ProjectAchievementOut(BaseModel):
+    """Командная медаль проекта (спека §4.6, «Достижения команды»)."""
+
+    achievement: AchievementOut
+    awarded_at: str  # ISO 8601 (datetime → хелпер-сериализатор)
+
+
+
+# ─── Админ-аналитика достижений (тикет 09, спека §4.7) ──────────────────────
+
+
+class AchievementStatsTotals(BaseModel):
+    """Сводные счётчики начислений (тикет 09)."""
+
+    total_awards: int
+    awards_last_week: int
+    unique_users: int
+    unique_projects: int
+
+
+class AchievementStatsPoint(BaseModel):
+    """Точка динамики начислений: день или начало недели (UTC, ISO-дата)."""
+
+    date: str
+    count: int
+
+
+class AchievementStatsGroupItem(BaseModel):
+    """Срез начислений по ключу (group каталога или rarity)."""
+
+    key: str
+    count: int
+    percent: float
+
+
+class AchievementStatsSectorItem(BaseModel):
+    """Отраслевой срез: начисления командных медалей по category проектов."""
+
+    category: str
+    count: int
+    projects: int
+
+
+class AchievementTopItem(BaseModel):
+    """Медаль в топе начислений."""
+
+    slug: str
+    title: str
+    group: str
+    rarity: str
+    count: int
+
+
+class AchievementStalledProject(BaseModel):
+    """Проект, застрявший на уровне N дольше 90 дней."""
+
+    id: int
+    name: str
+    current_level: int
+    days: int
+
+
+class AchievementManagerReview(BaseModel):
+    """Среднее время проверки менеджерами (календарные часы).
+
+    Момент решения ≈ updated_at заявки (столбца decided_at в схеме нет,
+    onupdate срабатывает в decide_promotion). avg_hours = None, если
+    решённых заявок ещё нет.
+    """
+
+    avg_hours: float | None = None
+    decided_count: int = 0
+
+
+class AdminAchievementsStatsOut(BaseModel):
+    """Ответ GET /admin/achievements/stats (спека §4.7)."""
+
+    generated_at: str
+    totals: AchievementStatsTotals
+    by_day: list[AchievementStatsPoint]
+    by_week: list[AchievementStatsPoint]
+    by_group: list[AchievementStatsGroupItem]
+    by_rarity: list[AchievementStatsGroupItem]
+    by_sector: list[AchievementStatsSectorItem]
+    top_achievements: list[AchievementTopItem]
+    stalled_projects: list[AchievementStalledProject]
+    manager_review: AchievementManagerReview

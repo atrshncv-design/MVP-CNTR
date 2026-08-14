@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import uuid
+from datetime import datetime
 
 import psycopg
 import pytest
@@ -519,3 +520,150 @@ def test_sector_medal_by_project_category(client: TestClient, seeded_catalog) ->
         slugs = {r[0] for r in _user_medal_rows(owner_id)}
         assert expected_slug in slugs, f"{category} → {expected_slug}: {slugs}"
         assert expected_slug in _project_medal_slugs(project_id)
+
+
+# ── Витрина: GET /achievements/mine (тикет 03, спека §4.6) ───────────────────
+
+
+def test_mine_requires_auth(client: TestClient, seeded_catalog) -> None:
+    """Витрина mine — только для авторизованных (401 без токена)."""
+    response = client.get("/api/v1/achievements/mine")
+    assert response.status_code == 401
+
+
+def test_mine_returns_medals_progress_and_history(
+    client: TestClient, seeded_catalog
+) -> None:
+    """mine: медали с полями, историей (дата/проект) и прогрессом ступеней."""
+    owner_token, owner_id = _register(client)
+    mgr_token, _ = _register(client, "cntr_manager")
+    project_id, _join_token = _published_project(client, owner_token, mgr_token)
+
+    # УГТ 3 → командные медали (ugt-3, sector-it, q-first-try) + doc-first +
+    # m-first-medal + m-5-medals (total=5 → ступень 5 мета-медалей)
+    with _mock_llm_ok():
+        request_id = _promotion_request(client, owner_token, project_id)
+    approve = client.post(
+        f"/api/v1/manager/queue/promotions/{request_id}/decide",
+        headers=_auth(mgr_token),
+        json={"approve": True},
+    )
+    assert approve.status_code == 200, approve.text
+
+    # ещё 9 уникальных документов → всего 10 → doc-5 и doc-10
+    reqs = _requirements(client, owner_token, project_id)
+    requirement_id = reqs[0]["id"]
+    with _mock_llm_ok():
+        for title in (f"doc-extra-{i}" for i in range(9)):
+            up = _upload_text(
+                client, owner_token, project_id, requirement_id, title
+            )
+            assert up.status_code == 201, up.text
+
+    response = client.get("/api/v1/achievements/mine", headers=_auth(owner_token))
+    assert response.status_code == 200, response.text
+    items = response.json()
+    by_slug = {item["achievement"]["slug"]: item for item in items}
+
+    for slug in (
+        "doc-first",
+        "doc-5",
+        "doc-10",
+        "m-first-medal",
+        "m-5-medals",
+        "ugt-3",
+        "sector-it",
+        "q-first-try",
+    ):
+        assert slug in by_slug, f"missing {slug}: {sorted(by_slug)}"
+
+    # поля записи: times, awarded_at ISO, project_id/имя проекта
+    doc10 = by_slug["doc-10"]
+    assert doc10["times"] == 10
+    assert doc10["project_id"] == project_id
+    assert doc10["project_name"] == "Проект-достижения"
+    datetime.fromisoformat(doc10["awarded_at"])  # ISO 8601
+    assert doc10["achievement"]["title"] == "Рабочий ритм — 10 документов"
+
+    # прогресс ступеней: doc-10 → current 10, следующая doc-25 (порог 25)
+    assert doc10["progress"] == {"current_count": 10, "next_threshold": 25}
+    assert by_slug["doc-5"]["progress"] == {
+        "current_count": 10,
+        "next_threshold": 25,
+    }
+    # doc-first — не ступень: прогресса нет
+    assert by_slug["doc-first"]["progress"] is None
+    # мета-ступень m-5-medals (times=5) → следующая m-15-medals
+    assert by_slug["m-5-medals"]["progress"] == {
+        "current_count": 5,
+        "next_threshold": 15,
+    }
+    # командная медаль УГТ: project_id заполнен, прогресса нет
+    assert by_slug["ugt-3"]["project_id"] == project_id
+    assert by_slug["ugt-3"]["progress"] is None
+
+    # история: свежие начисления сверху (awarded_at не возрастает)
+    dates = [datetime.fromisoformat(item["awarded_at"]) for item in items]
+    assert dates == sorted(dates, reverse=True)
+    assert owner_id  # регистрация прошла
+
+
+# ── Витрина: GET /projects/{id}/achievements (тикет 03, спека §4.6) ──────────
+
+
+def test_project_achievements_access_and_public(
+    client: TestClient, seeded_catalog
+) -> None:
+    """Командные медали: участник видит; аноним — 404 для приватного,
+    медали видны после публикации проекта (is_public=True)."""
+    owner_token, _ = _register(client)
+    mgr_token, _ = _register(client, "cntr_manager")
+    project_id, _join_token = _published_project(client, owner_token, mgr_token)
+
+    with _mock_llm_ok():
+        request_id = _promotion_request(client, owner_token, project_id)
+    approve = client.post(
+        f"/api/v1/manager/queue/promotions/{request_id}/decide",
+        headers=_auth(mgr_token),
+        json={"approve": True},
+    )
+    assert approve.status_code == 200, approve.text
+
+    # участник видит командные медали проекта
+    response = client.get(
+        f"/api/v1/projects/{project_id}/achievements", headers=_auth(owner_token)
+    )
+    assert response.status_code == 200, response.text
+    items = response.json()
+    slugs = {item["achievement"]["slug"] for item in items}
+    assert {"ugt-3", "sector-it", "q-first-try"} <= slugs
+    for item in items:
+        datetime.fromisoformat(item["awarded_at"])
+        assert item["achievement"]["title"]
+
+    # аноним: приватный проект → 404 (существование не раскрываем)
+    anon = client.get(f"/api/v1/projects/{project_id}/achievements")
+    assert anon.status_code == 404
+
+    # посторонний авторизованный (не участник) → 404
+    outsider_token, _ = _register(client)
+    outsider = client.get(
+        f"/api/v1/projects/{project_id}/achievements",
+        headers=_auth(outsider_token),
+    )
+    assert outsider.status_code == 404
+
+    # публикация проекта → аноним видит те же медали
+    pub = client.put(
+        f"/api/v1/projects/{project_id}/publish",
+        headers=_auth(owner_token),
+        json={"is_public": True},
+    )
+    assert pub.status_code == 200, pub.text
+    anon_public = client.get(f"/api/v1/projects/{project_id}/achievements")
+    assert anon_public.status_code == 200, anon_public.text
+    assert {item["achievement"]["slug"] for item in anon_public.json()} == slugs
+
+    # несуществующий проект → 404
+    missing = client.get("/api/v1/projects/999999/achievements")
+    assert missing.status_code == 404
