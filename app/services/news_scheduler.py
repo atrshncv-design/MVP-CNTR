@@ -30,6 +30,7 @@ async def process_scheduled_posts(db: DBSession) -> list[int]:
             UPDATE public.news_posts
             SET status = 'published',
                 published_at = COALESCE(published_at, now()),
+                scheduled_at = NULL,
                 updated_at = now()
             WHERE status = 'scheduled' AND scheduled_at <= now()
             RETURNING id
