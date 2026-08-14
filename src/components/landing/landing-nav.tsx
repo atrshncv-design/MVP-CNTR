@@ -16,6 +16,7 @@ const PRIMARY_LINKS = [
 ];
 
 const MORE_LINKS = [
+  { href: "/news", label: "Новости" },
   { href: "/customers", label: "Заказчики" },
   { href: "/performers", label: "Исполнители" },
 ];

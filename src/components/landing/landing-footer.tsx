@@ -3,6 +3,7 @@ import TolezeLogo from "@/components/brand/toleze-logo";
 
 const SECTIONS = [
   { href: "/about", label: "О центре" },
+  { href: "/news", label: "Новости" },
   { href: "/methodology", label: "Методика оценки" },
   { href: "/levels", label: "Уровни УГТ" },
   { href: "/customers", label: "Заказчикам" },
