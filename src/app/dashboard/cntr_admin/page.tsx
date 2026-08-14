@@ -6,14 +6,23 @@ import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
+  Award,
+  BarChart3,
   Check,
+  Clock,
+  Layers,
   Loader2,
+  Medal,
   RefreshCw,
   Save,
   ShieldCheck,
+  Timer,
+  TrendingUp,
+  Trophy,
   UserCog,
   Users,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { ROLES } from '@/lib/roles';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
@@ -177,11 +186,396 @@ function UserRow({ user }: { user: AdminUser }) {
 /* ------------------------------------------------------------------ */
 /*  Страница администрирования                                         */
 /* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/*  Аналитика достижений (тикет 09, спека §4.7)                        */
+/* ------------------------------------------------------------------ */
+
+interface AchievementStats {
+  generated_at: string;
+  totals: {
+    total_awards: number;
+    awards_last_week: number;
+    unique_users: number;
+    unique_projects: number;
+  };
+  by_day: Array<{ date: string; count: number }>;
+  by_week: Array<{ date: string; count: number }>;
+  by_group: Array<{ key: string; count: number; percent: number }>;
+  by_rarity: Array<{ key: string; count: number; percent: number }>;
+  by_sector: Array<{ category: string; count: number; projects: number }>;
+  top_achievements: Array<{
+    slug: string;
+    title: string;
+    group: string;
+    rarity: string;
+    count: number;
+  }>;
+  stalled_projects: Array<{
+    id: number;
+    name: string;
+    current_level: number;
+    days: number;
+  }>;
+  manager_review: { avg_hours: number | null; decided_count: number };
+}
+
+const GROUP_LABELS: Record<string, string> = {
+  ugt: 'Уровни УГТ',
+  documents: 'Документы',
+  project: 'Проекты',
+  quality: 'Качество',
+  sector: 'Отрасли',
+  role: 'Роли',
+  member: 'Участники',
+  organization: 'Организации',
+  secret: 'Секретные',
+};
+
+const RARITY_LABELS: Record<string, string> = {
+  common: 'Обычная',
+  epic: 'Эпическая',
+  legendary: 'Легендарная',
+  secret: 'Секретная',
+};
+
+const RARITY_COLORS: Record<string, string> = {
+  common: 'var(--tz-neutral)',
+  epic: 'var(--tz-accent)',
+  legendary: 'var(--tz-warning)',
+  secret: 'var(--tz-danger)',
+};
+
+/** Часы → компактная подпись («36 ч», «4.2 дн.»); null → «—». */
+function formatHours(hours: number | null): string {
+  if (hours === null) return '—';
+  const rounded = Math.round(hours * 10) / 10;
+  if (rounded >= 24) {
+    const days = Math.round((rounded / 24) * 10) / 10;
+    return `${days} дн.`;
+  }
+  return `${rounded} ч`;
+}
+
+/** Карточка-контейнер блока аналитики. */
+function AnalyticsCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-tz-card-border bg-tz-surface p-5">
+      <h3 className="tz-card-title mb-4 flex items-center gap-2 text-tz-fg">
+        <span className="text-[var(--tz-accent)]">{icon}</span>
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+/** Столбчатая диаграмма по неделям — чистый CSS (flex + высоты в px). */
+function WeekBars({ data }: { data: Array<{ date: string; count: number }> }) {
+  const max = Math.max(1, ...data.map((d) => d.count));
+  const BAR_MAX_PX = 88;
+  return (
+    <div className="flex h-44 items-end gap-1.5">
+      {data.map((d) => (
+        <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <span className="h-3.5 text-[10px] font-medium leading-none tabular-nums text-tz-muted">
+            {d.count > 0 ? d.count : ''}
+          </span>
+          <div
+            title={`Неделя с ${d.date}: ${d.count} начислений`}
+            className="w-full max-w-[30px] rounded-t-[4px] bg-[var(--tz-accent)]"
+            style={{
+              height: `${Math.max(
+                d.count > 0 ? 6 : 2,
+                Math.round((d.count / max) * BAR_MAX_PX),
+              )}px`,
+            }}
+          />
+          <span className="text-[9px] leading-none text-tz-muted">
+            {d.date.slice(5).replace('-', '.')}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Горизонтальные полосы распределения (группы / редкость). */
+function PercentRows({
+  items,
+  color,
+}: {
+  items: Array<{ key: string; count: number; percent: number }>;
+  color: string | ((key: string) => string);
+}) {
+  if (items.length === 0) {
+    return <p className="text-sm text-tz-muted">Пока нет данных</p>;
+  }
+  return (
+    <div className="space-y-3">
+      {items.map((item) => (
+        <div key={item.key}>
+          <div className="mb-1 flex items-baseline justify-between gap-3">
+            <span className="text-sm font-medium text-tz-fg">{item.key}</span>
+            <span className="text-xs tabular-nums text-tz-muted">
+              {item.count} · {item.percent}%
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-tz-soft">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.max(item.count > 0 ? 2 : 0, item.percent)}%`,
+                backgroundColor:
+                  typeof color === 'function' ? color(item.key) : color,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Отраслевые срезы: полосы по category проектов (проценты считаются здесь). */
+function SectorRows({
+  items,
+}: {
+  items: Array<{ category: string; count: number; projects: number }>;
+}) {
+  if (items.length === 0) {
+    return <p className="text-sm text-tz-muted">Пока нет отраслевых начислений</p>;
+  }
+  const total = items.reduce((acc, s) => acc + s.count, 0);
+  return (
+    <div className="space-y-3">
+      {items.map((s) => {
+        const percent = total > 0 ? Math.round((s.count / total) * 1000) / 10 : 0;
+        return (
+          <div key={s.category}>
+            <div className="mb-1 flex items-baseline justify-between gap-3">
+              <span className="text-sm font-medium text-tz-fg">{s.category}</span>
+              <span className="text-xs tabular-nums text-tz-muted">
+                {s.count} медалей · {s.projects} проект(ов) · {percent}%
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-tz-soft">
+              <div
+                className="h-full rounded-full bg-[var(--tz-accent)]"
+                style={{ width: `${Math.max(s.count > 0 ? 2 : 0, percent)}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Экран «Аналитика достижений»: счётчики, графики, топ, застрявшие проекты. */
+function AchievementsAnalytics({
+  stats,
+  loading,
+  error,
+  onRetry,
+}: {
+  stats: AchievementStats | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  if (loading) {
+    return (
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-28 animate-pulse rounded-2xl border border-tz-card-border bg-tz-surface"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-6 rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
+        <AlertCircle className="mx-auto mb-2 text-tz-danger" size={36} />
+        <p className="font-semibold text-tz-danger">{error}</p>
+        <button
+          onClick={onRetry}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+        >
+          <RefreshCw size={14} /> Повторить
+        </button>
+      </div>
+    );
+  }
+
+  const totals = stats?.totals ?? {
+    total_awards: 0,
+    awards_last_week: 0,
+    unique_users: 0,
+    unique_projects: 0,
+  };
+  const hasAwards = totals.total_awards > 0;
+  const groupItems =
+    stats?.by_group.map((g) => ({
+      key: GROUP_LABELS[g.key] ?? g.key,
+      count: g.count,
+      percent: g.percent,
+    })) ?? [];
+  const rarityItems =
+    stats?.by_rarity.map((r) => ({
+      key: RARITY_LABELS[r.key] ?? r.key,
+      count: r.count,
+      percent: r.percent,
+    })) ?? [];
+
+  const counterCards = [
+    { label: 'Всего начислений', value: totals.total_awards, icon: Award, color: 'var(--tz-accent)' },
+    { label: 'За неделю', value: totals.awards_last_week, icon: TrendingUp, color: 'var(--tz-success)' },
+    { label: 'Уникальных пользователей', value: totals.unique_users, icon: Users, color: 'var(--tz-ugt-mid)' },
+    {
+      label: 'Среднее время проверки',
+      value: formatHours(stats?.manager_review.avg_hours ?? null),
+      icon: Clock,
+      color: 'var(--tz-warning)',
+    },
+  ];
+
+  return (
+    <div className="mt-6 space-y-6">
+      {/* Счётчики */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {counterCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.label} className="rounded-2xl border border-tz-card-border bg-tz-surface p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-tz-muted">{card.label}</span>
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{ background: `${card.color}15`, color: card.color }}
+                >
+                  <Icon size={18} />
+                </span>
+              </div>
+              <p className="mt-2 text-3xl font-bold tracking-[-0.02em] text-tz-fg">{card.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Графики */}
+      {!hasAwards ? (
+        <div className="rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center sm:px-10">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)]">
+            <Medal size={22} className="text-[var(--tz-accent)]" />
+          </div>
+          <h2 className="tz-section-title mt-5 text-tz-fg">Начислений пока нет</h2>
+          <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
+            Графики и распределения заполнятся после первых подтверждённых
+            событий УГТ и документов.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <AnalyticsCard title="Начисления по неделям" icon={<BarChart3 size={16} />}>
+            <WeekBars data={stats?.by_week ?? []} />
+          </AnalyticsCard>
+          <AnalyticsCard title="Распределение по группам" icon={<Layers size={16} />}>
+            <PercentRows items={groupItems} color="var(--tz-accent)" />
+          </AnalyticsCard>
+          <AnalyticsCard title="Редкость медалей" icon={<Medal size={16} />}>
+            <PercentRows items={rarityItems} color={(key) => RARITY_COLORS[key] ?? 'var(--tz-neutral)'} />
+          </AnalyticsCard>
+          <AnalyticsCard title="Отраслевые срезы" icon={<Layers size={16} />}>
+            <SectorRows items={stats?.by_sector ?? []} />
+          </AnalyticsCard>
+        </div>
+      )}
+
+      {/* Топ-10 медалей */}
+      <AnalyticsCard title="Топ-10 медалей" icon={<Trophy size={16} />}>
+        {!hasAwards || !stats || stats.top_achievements.length === 0 ? (
+          <p className="text-sm text-tz-muted">Пока нет данных</p>
+        ) : (
+          <ol className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {stats.top_achievements.map((m, i) => (
+              <li
+                key={m.slug}
+                className="flex items-center gap-3 rounded-xl border border-tz-card-border bg-tz-surface px-3 py-2"
+              >
+                <span className="w-6 text-right font-mono text-sm text-tz-muted">{i + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-tz-fg">{m.title}</p>
+                  <p className="text-[11px] text-tz-muted">
+                    {GROUP_LABELS[m.group] ?? m.group} · {RARITY_LABELS[m.rarity] ?? m.rarity}
+                  </p>
+                </div>
+                <span className="rounded-md bg-[var(--tz-accent-soft)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--tz-accent)]">
+                  {m.count}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </AnalyticsCard>
+
+      {/* Застрявшие проекты */}
+      <AnalyticsCard
+        title="Застрявшие проекты (90+ дней без движения)"
+        icon={<Timer size={16} />}
+      >
+        {!stats || stats.stalled_projects.length === 0 ? (
+          <p className="text-sm text-tz-muted">Застрявших проектов нет</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-tz-card-border bg-[var(--tz-soft)] text-xs uppercase tracking-wider text-tz-muted">
+                  <th className="px-3 py-2.5 font-semibold">Проект</th>
+                  <th className="px-3 py-2.5 font-semibold">Уровень УГТ</th>
+                  <th className="px-3 py-2.5 font-semibold">Дней без движения</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.stalled_projects.map((p) => (
+                  <tr key={p.id} className="border-b border-tz-card-border last:border-0">
+                    <td className="px-3 py-2.5 text-sm font-medium text-tz-fg">{p.name}</td>
+                    <td className="px-3 py-2.5 text-sm tabular-nums text-tz-secondary">
+                      {p.current_level}
+                    </td>
+                    <td className="px-3 py-2.5 text-sm tabular-nums text-tz-warning">{p.days}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </AnalyticsCard>
+    </div>
+  );
+}
+
 export default function CntrAdminDashboard() {
   const { data: session } = useSession();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'users' | 'achievements'>('users');
+  const [stats, setStats] = useState<AchievementStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   const displayName = session?.user?.name ?? session?.user?.email ?? 'Администратор ЦНТР';
 
@@ -211,6 +605,33 @@ export default function CntrAdminDashboard() {
     })();
   }, [loadUsers]);
 
+
+  const loadStats = useCallback(async () => {
+    if (!session?.user?.accessToken) return;
+    setStatsLoading(true);
+    setStatsError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/admin/achievements/stats`, {
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      });
+      if (!res.ok) {
+        throw new Error(`Не удалось загрузить аналитику (${res.status}).`);
+      }
+      setStats((await res.json()) as AchievementStats);
+    } catch (e) {
+      setStatsError(e instanceof Error ? e.message : 'Не удалось загрузить аналитику.');
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [session]);
+
+  useEffect(() => {
+    // setState внутри loadStats выполняется после await — не синхронно с телом эффекта
+    (async () => {
+      await loadStats();
+    })();
+  }, [loadStats]);
+
   const activeCount = users.filter((u) => u.is_active).length;
   const rolesAssigned = users.reduce((acc, u) => acc + u.roles.length, 0);
 
@@ -236,15 +657,37 @@ export default function CntrAdminDashboard() {
         </p>
       </div>
 
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 border-b border-tz-border">
-        <span className="border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg">
+      <nav aria-label="Разделы рабочего стола" className="flex flex-wrap gap-x-6 border-b border-tz-border">
+        <button
+          type="button"
+          onClick={() => setView('users')}
+          aria-current={view === 'users' ? 'page' : undefined}
+          className={
+            view === 'users'
+              ? 'border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg'
+              : 'py-4 text-tz-secondary hover:text-tz-fg'
+          }
+        >
           Пользователи
-        </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setView('achievements')}
+          aria-current={view === 'achievements' ? 'page' : undefined}
+          className={
+            view === 'achievements'
+              ? 'border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg'
+              : 'py-4 text-tz-secondary hover:text-tz-fg'
+          }
+        >
+          Аналитика достижений
+        </button>
         <Link href="/dashboard/technologies" className="py-4 text-tz-secondary hover:text-tz-fg">
           Реестр технологий
         </Link>
       </nav>
 
+      <div className={view === 'users' ? '' : 'hidden'}>
       {/* Экспресс-оценка УГТ — тикет 26: доступна любой роли */}
       <div className="mt-6">
         <AssessUgTCard />
@@ -334,6 +777,16 @@ export default function CntrAdminDashboard() {
           </div>
         )}
       </div>
+      </div>
+
+      {view === 'achievements' && (
+        <AchievementsAnalytics
+          stats={stats}
+          loading={statsLoading}
+          error={statsError}
+          onRetry={() => loadStats()}
+        />
+      )}
     </section>
   );
 }
