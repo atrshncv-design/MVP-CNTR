@@ -1,0 +1,50 @@
+/* ════════════════════════════════════════════════════════════════════
+   Медали (тикет 04): подложка, кольца редкости, состояния, анимация.
+   Групповые оттенки — расширение палитры tz: синий/фиолетовый/золото
+   отсутствуют в базовых токенах, поэтому определены здесь, приглушённые,
+   контрастные и на светлом, и на тёмном фоне (подложка медали —
+   var(--tz-surface), глифы — tz-токены).
+   ════════════════════════════════════════════════════════════════════ */
+:root {
+  --medal-documents: #3a6f8f; /* приглушённый синий (документы) */
+  --medal-member: #6d4a9e; /* фиолетовый (мета-медали) */
+  --medal-gold-1: #e8c35a; /* золото легенды — светлый */
+  --medal-gold-2: #a87808; /* золото легенды — тёмный */
+}
+
+.tz-medal {
+  display: inline-block;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.tz-medal svg {
+  display: block;
+}
+
+/* Появление: scale + fade (keyframes tz-scale-in из globals.css) */
+.tz-medal--animate {
+  animation: tz-scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Locked — затемнённый силуэт, кольцо приглушено */
+.tz-medal--locked .tz-medal-glyph {
+  filter: grayscale(1);
+  opacity: 0.3;
+}
+
+.tz-medal--locked [data-medal-ring] {
+  opacity: 0.4;
+}
+
+/* Secret — силуэт до раскрытия */
+.tz-medal--secret .tz-medal-glyph {
+  filter: grayscale(1);
+  opacity: 0.14;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tz-medal--animate {
+    animation: none !important;
+  }
+}
