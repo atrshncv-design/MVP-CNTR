@@ -40,6 +40,7 @@ import {
 } from 'recharts';
 import StageProgressPanel from '@/components/stage-progress-panel';
 import ProjectTeamPanel from '@/components/project-team-panel';
+import ProjectAchievements from '@/components/dashboard/project-achievements';
 import ProjectFilesPanel from '@/components/project-files-panel';
 import RequestCommentsPanel from '@/components/request-comments-panel';
 import ProjectRadar from '@/components/dashboard/project-radar';
@@ -539,6 +540,7 @@ export default function ProjectDashboardPage() {
           <div className="lg:col-span-2 space-y-6">
             <StageProgressPanel projectId={p.id} currentLevel={p.current_level} status={p.status} />
             <ProjectTeamPanel projectId={p.id} />
+            <ProjectAchievements projectId={p.id} />
             <ProjectFilesPanel projectId={p.id} />
             <RequestCommentsPanel projectId={p.id} />
             {/* Radar chart */}
