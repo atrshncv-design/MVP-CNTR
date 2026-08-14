@@ -189,7 +189,8 @@ def _clean_tables() -> Iterator[None]:
             "public.project_invites, public.promotion_requests, "
             "public.promotion_request_documents, notification_outbox, "
             "public.news_post_media, public.news_post_tags, public.news_posts, "
-            "public.news_tags, public.news_categories "
+            "public.news_tags, public.news_categories, "
+            "public.achievements, public.user_achievements, public.project_achievements "
             "RESTART IDENTITY CASCADE"
         )
     finally:

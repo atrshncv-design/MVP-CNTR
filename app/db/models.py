@@ -842,3 +842,43 @@ class NewsPostMedia(Base):
     )
 
     post: Mapped[NewsPost] = relationship(back_populates="media")
+
+
+# ─── Достижения (тикет 01, спека §4.2) ───────────────────────────────────────
+
+
+class Achievement(Base):
+    """Медаль каталога достижений (спека §4.2).
+
+    Каталог наполняется идемпотентным seed-скриптом
+    (``app/db/seed_achievements.py``): 66 записей, slug = icon_key.
+    Секретные медали (secret=True) присутствуют в каталоге; раскрытие
+    секрета делает витрина по состоянию пользователя (тикет 03).
+    """
+
+    __tablename__ = "achievements"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    # `group` — зарезервированное слово PostgreSQL; SQLAlchemy сам
+    # экранирует его в DDL/запросах (в SQL-миграции 0028 — "group").
+    group: Mapped[str] = mapped_column(String(30), nullable=False)
+    rarity: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="common", server_default="common"
+    )
+    sector_slug: Mapped[str | None] = mapped_column(String(40))
+    threshold: Mapped[int | None] = mapped_column(Integer)
+    ugt_level: Mapped[int | None] = mapped_column(Integer)
+    secret: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    icon_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )

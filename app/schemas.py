@@ -805,3 +805,28 @@ class NewsFeedOut(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+# ─── Достижения (тикет 01, спека §4.2) ───────────────────────────────────────
+
+
+class AchievementCatalogOut(BaseModel):
+    """Запись публичного каталога достижений (спека §4.2).
+
+    Секретные медали (secret=True) присутствуют в каталоге: флаг и описание
+    видны, раскрытие секрета делает витрина по состоянию пользователя
+    (тикет 03).
+    """
+
+    id: int
+    slug: str
+    title: str
+    description: str
+    group: str
+    rarity: str
+    sector_slug: str | None = None
+    threshold: int | None = None
+    ugt_level: int | None = None
+    secret: bool
+    sort_order: int
+    icon_key: str
