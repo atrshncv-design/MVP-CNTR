@@ -102,7 +102,8 @@ def test_upload_rejects_oversize(client: TestClient) -> None:
 
     big = b"%PDF-1.4\n" + b"x" * (26 * 1024 * 1024)
     response = _upload(client, token, project_id, big, "big.pdf")
-    assert response.status_code == 422
+    # Таск 04: чтение обрывается на лимите — 413 (было: полный read → 422)
+    assert response.status_code == 413
 
 
 # ── Версионирование ──────────────────────────────────────────────────────────

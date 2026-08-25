@@ -39,6 +39,10 @@ class FileStorageError(Exception):
     """Ошибка хранилища (MinIO недоступен и т.п.)."""
 
 
+class FileSizeExceeded(Exception):
+    """Загрузка превышает MAX_FILE_SIZE — чтение оборвано до записи."""
+
+
 @dataclass
 class StoredFile:
     storage_key: str
@@ -214,3 +218,27 @@ def store_project_file(
 
 def read_stored_file(storage_key: str) -> bytes:
     return storage.get(storage_key)
+
+
+READ_CHUNK = 1024 * 1024
+
+
+async def read_upload_limited(file, max_bytes: int = MAX_FILE_SIZE) -> bytes:
+    """Читает UploadFile порциями, обрывая поток сверх лимита (DoS-защита).
+
+    Тело запроса не буферизуется целиком до проверки: как только прочитано
+    больше max_bytes, чтение прекращается и поднимается FileSizeExceeded.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(READ_CHUNK)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise FileSizeExceeded(
+                f"Файл превышает лимит {max_bytes // (1024 * 1024)} МБ"
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)

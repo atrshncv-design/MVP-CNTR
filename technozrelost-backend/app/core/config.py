@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_JWT_SECRET = "change_me_super_secret_at_least_32_chars_long_for_hs256"
 
 
 class Settings(BaseSettings):
@@ -31,7 +34,7 @@ class Settings(BaseSettings):
     db_schema_test: str = "test"
     vector_dimension: int = 1536
 
-    jwt_secret: str = "change_me_super_secret_at_least_32_chars_long_for_hs256"
+    jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 60
     refresh_token_ttl_days: int = 14
@@ -54,6 +57,21 @@ class Settings(BaseSettings):
     clamav_port: int = 3310
     clamav_enabled: bool = True
     max_file_size_mb: int = 25
+    # Глобальный лимит тела запроса (R05.5): чуть выше max_file_size_mb,
+    # чтобы легитимные multipart-загрузки проходили, а мусор — отклонялся.
+    max_request_body_mb: int = 32
+
+    @model_validator(mode="after")
+    def _production_secrets_guard(self) -> Settings:
+        """Прод-guard (R05.2): в production дефолтный/пустой JWT-секрет запрещён."""
+        if self.app_env == "production" and (
+            not self.jwt_secret or self.jwt_secret == DEFAULT_JWT_SECRET
+        ):
+            raise ValueError(
+                "jwt_secret: в production требуется настоящий секрет "
+                "(задайте JWT_SECRET в окружении, дефолтное значение запрещено)"
+            )
+        return self
 
     @property
     def cors_origin_list(self) -> list[str]:

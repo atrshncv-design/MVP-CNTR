@@ -3,8 +3,9 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.admin import router as admin_router
 from app.api.v1.assessments import router as assessments_router
@@ -34,6 +35,30 @@ from app.services.metrics import PrometheusMetricsMiddleware, install_db_listene
 
 setup_logging()
 
+# Глобальный лимит тела запроса (R05.5). Проверка по Content-Length до
+# попадания в обработчик; для chunked-запросов без длины лимитирует
+# потоковое чтение загрузок (read_upload_limited). Переопределяется в тестах.
+max_request_body_bytes = settings.max_request_body_mb * 1024 * 1024
+
+
+async def limit_request_body(request: Request, call_next):
+    length = request.headers.get("content-length", "")
+    if length.isdigit() and int(length) > max_request_body_bytes:
+        return JSONResponse(
+            {"detail": "Тело запроса превышает допустимый размер"},
+            status_code=413,
+        )
+    return await call_next(request)
+
+
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    # OWASP-базовая линия (R05): минимальные заголовки защиты на всех ответах
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -56,6 +81,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.middleware("http")(limit_request_body)
+    app.middleware("http")(security_headers)
     # Метрики: route-шаблоны для меток (Starlette кладёт endpoint в scope при
     # роутинге; маппинг endpoint -> путь даёт ограниченную кардинальность).
     route_templates: dict[int, str] = {}

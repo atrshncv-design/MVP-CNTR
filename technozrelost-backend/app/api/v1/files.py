@@ -18,8 +18,10 @@ from app.core.deps import CurrentUser, DBSession
 from app.db.models import ProjectDocument
 from app.schemas import DocumentFileOut
 from app.services.file_storage import (
+    FileSizeExceeded,
     FileStorageError,
     read_stored_file,
+    read_upload_limited,
     scanner,
     store_project_file,
 )
@@ -76,7 +78,10 @@ async def upload_project_file(
 ) -> DocumentFileOut:
     await require_project_access(db, project_id, user)
 
-    data = await file.read()
+    try:
+        data = await read_upload_limited(file)
+    except FileSizeExceeded as exc:
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, str(exc)) from exc
     try:
         stored = store_project_file(project_id, file.filename or "document", data)
     except ValueError as exc:
@@ -129,8 +134,15 @@ async def download_project_file(
     if doc is None or doc.storage_key is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Файл не найден")
     await require_project_access(db, doc.project_id, user)
-    if doc.scan_status == "infected":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Файл заблокирован антивирусом")
+    # Fail-closed (R05.3): скачивание разрешено только clean-файлам —
+    # infected, pending и error (clamd недоступен) блокируются.
+    if doc.scan_status != "clean":
+        detail = (
+            "Файл заблокирован антивирусом"
+            if doc.scan_status == "infected"
+            else "Антивирусная проверка не пройдена — скачивание недоступно"
+        )
+        raise HTTPException(status.HTTP_409_CONFLICT, detail)
     try:
         data = read_stored_file(doc.storage_key)
     except FileStorageError as exc:

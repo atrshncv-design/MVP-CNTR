@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -18,6 +18,7 @@ from app.core.security import (
 )
 from app.db.models import RefreshToken, User, stmt_role_by_slug, stmt_user_by_email
 from app.schemas import LoginIn, RefreshTokenIn, RegisterIn, RoleOut, TokenOut, UserOut
+from app.services import auth_throttle
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -70,10 +71,17 @@ async def register(payload: RegisterIn, db: DBSession) -> TokenOut:
 
 
 @router.post("/login", response_model=TokenOut)
-async def login(payload: LoginIn, db: DBSession) -> TokenOut:
+async def login(payload: LoginIn, request: Request, db: DBSession) -> TokenOut:
+    # Брутфорс: после серии неудачных попыток с одного источника — 429 (R05.5);
+    # источник — первый IP из X-Forwarded-For (доверенный прокси), иначе client.host
+    client_host = auth_throttle.source_from_request(request)
+    if auth_throttle.is_blocked(payload.email, client_host):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток входа")
     user = await db.scalar(stmt_user_by_email(payload.email))
     if user is None or not verify_password(payload.password, user.password_hash):
+        auth_throttle.record_failure(payload.email, client_host)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный email или пароль")
+    auth_throttle.record_success(payload.email, client_host)
     if not user.is_active:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Аккаунт деактивирован")
     await db.refresh(user, attribute_names=["roles"])
