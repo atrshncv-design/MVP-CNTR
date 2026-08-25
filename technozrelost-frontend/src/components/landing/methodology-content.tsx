@@ -9,10 +9,6 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronUp,
-  FlaskConical,
-  Layers,
-  Gauge,
-  TrendingUp,
 } from "lucide-react";
 import {
   UGT_LEVELS,

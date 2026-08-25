@@ -1,7 +1,7 @@
 // medal.tsx — обёртка медали (тикет 04): подложка, кольцо редкости,
 // состояния locked/secret, анимация появления scale+fade.
 // Иконки: src/components/achievements/icons/<slug>.tsx (66 ручных SVG).
-import type { ComponentType, SVGProps } from "react";
+import type { SVGProps } from "react";
 
 import { medalIcons } from "./icons";
 import "./medals.css";

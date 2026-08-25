@@ -96,7 +96,7 @@ export default function UGTInteractiveScale() {
 
       {/* ── Фазы (вариант В) ───────────────────────────────────────── */}
       <div className="mx-auto mt-8 grid max-w-[900px] grid-cols-3 gap-3">
-        {PHASES.map((phase, pi) => (
+        {PHASES.map((phase) => (
           <div
             key={phase.label}
             className={`rounded-xl border px-4 py-3 text-center transition-colors ${

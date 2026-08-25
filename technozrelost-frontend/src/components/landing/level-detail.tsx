@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft,
   ArrowRight,
   AlertTriangle,
   Check,
@@ -22,15 +21,6 @@ import { UGT_LEVELS, type UGTLevel, type RiskItem } from "@/lib/ugt-data";
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
-
-function getStageLabel(id: number): string {
-  if (id <= 2) return "Исследование";
-  if (id <= 4) return "Подтверждение концепции";
-  if (id <= 6) return "Прототипирование";
-  if (id === 7) return "Полевые испытания";
-  if (id === 8) return "Квалификация";
-  return "Эксплуатация";
-}
 
 function getKpiIcon(label: string) {
   if (label.includes("Публикации")) return FileText;
@@ -53,7 +43,6 @@ function getProbabilityConfig(probability: RiskItem["probability"]) {
 
 export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
   const color = ugtColor(level.id);
-  const prevLevel = UGT_LEVELS.find((l) => l.id === level.id - 1) ?? null;
   const nextLevel = UGT_LEVELS.find((l) => l.id === level.id + 1) ?? null;
 
   // Чек-лист
