@@ -58,26 +58,45 @@ export default function NotificationBell() {
     }
   }, [token]);
 
-  // SSE-подписка: live-события + звук
+  // SSE-подписка: live-события + звук (тикет 05: JWT не передаётся в query —
+  // сначала одноразовый sse-ticket, затем EventSource по ticket)
   useEffect(() => {
     if (!token) return;
-    const es = new EventSource(
-      `${API_URL}/api/v1/notifications/stream?access_token=${encodeURIComponent(token)}`,
-    );
-    esRef.current = es;
-    es.addEventListener("notification", () => {
-      beep();
-      void load();
-    });
-    es.addEventListener("snapshot", (e) => {
+    let es: EventSource | null = null;
+    let stale = false;
+    void (async () => {
       try {
-        const data = JSON.parse((e as MessageEvent).data) as { unread: number };
-        setUnread(data.unread);
+        const res = await fetch(`${API_URL}/api/v1/notifications/sse-ticket`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || stale) return;
+        const body = (await res.json()) as { ticket: string };
+        if (stale) return;
+        es = new EventSource(
+          `${API_URL}/api/v1/notifications/stream?ticket=${encodeURIComponent(body.ticket)}`,
+        );
+        esRef.current = es;
+        es.addEventListener("notification", () => {
+          beep();
+          void load();
+        });
+        es.addEventListener("snapshot", (e) => {
+          try {
+            const data = JSON.parse((e as MessageEvent).data) as { unread: number };
+            setUnread(data.unread);
+          } catch {
+            /* ignore */
+          }
+        });
       } catch {
         /* ignore */
       }
-    });
-    return () => es.close();
+    })();
+    return () => {
+      stale = true;
+      es?.close();
+      esRef.current = null;
+    };
   }, [token, load]);
 
   const markRead = async (id: number) => {
@@ -108,7 +127,7 @@ export default function NotificationBell() {
       >
         <Bell size={18} />
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[#EF4444] px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-tz-danger px-1 text-[10px] font-bold text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
@@ -138,7 +157,7 @@ export default function NotificationBell() {
                     {n.is_read ? (
                       <Check size={14} className="text-tz-muted" />
                     ) : (
-                      <span className="block h-2 w-2 rounded-full bg-[#2E5BFF]" />
+                      <span className="block h-2 w-2 rounded-full bg-tz-accent" />
                     )}
                   </span>
                   <span className="min-w-0">

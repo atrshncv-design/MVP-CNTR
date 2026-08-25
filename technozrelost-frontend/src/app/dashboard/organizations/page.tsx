@@ -116,10 +116,10 @@ export default function OrganizationsPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#2e5bff] via-[#7c5cff] to-[#00d4c8] shadow-[0_4px_18px_rgba(90,100,255,0.35)]">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[var(--tz-accent)] via-[var(--tz-accent-strong)] to-[var(--tz-fg)] shadow-[0_4px_18px_rgba(90,100,255,0.35)]">
               <Building2 className="h-4.5 w-4.5 text-white" size={18} />
             </span>
-            <h1 className="text-xl font-bold text-tz-fg sm:text-2xl">
+            <h1 className="tz-page-title text-tz-fg">
               Каталог организаций
             </h1>
           </div>
@@ -147,7 +147,7 @@ export default function OrganizationsPage() {
             className="w-full rounded-xl border border-tz-border bg-tz-input px-9 py-2.5 text-sm text-tz-fg placeholder:text-tz-muted focus:border-tz-accent focus:outline-none"
           />
         </div>
-        <span className="rounded-xl bg-gradient-to-br from-[#2e5bff] to-[#7c5cff] px-4 py-2.5 text-sm font-semibold text-white">
+        <span className="rounded-xl bg-gradient-to-br from-[var(--tz-accent)] to-[var(--tz-accent-strong)] px-4 py-2.5 text-sm font-semibold text-white">
           Поиск по мере ввода
         </span>
       </div>

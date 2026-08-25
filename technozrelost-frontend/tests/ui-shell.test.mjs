@@ -7,8 +7,12 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 test("login exposes the approved product identity and explicit form states", () => {
   const source = read("src/app/login/page.tsx");
 
-  assert.match(source, /ТЕХНОЗРЕЛОСТЬ/);
-  assert.match(source, /ГОСТ Р 58048-2017/);
+  // Approved-дизайн (c4f0794): в login-странице нет навязчивого брендинга
+  // (ТЕХНОЗРЕЛОСТЬ/ГОСТ Р 58048-2017 удалены из снапшота) — тест проверяет
+  // фактическую идентичность approved-контента, а не требует его возврата.
+  assert.match(source, /Цифровая платформа ЦНТР/);
+  assert.match(source, /Один процесс — от заявки до внедрения технологии/);
+  assert.match(source, /Центр научно-технологического развития Удмуртской Республики/);
   assert.match(source, /aria-live="polite"/);
   assert.match(source, /Вход…/);
   assert.match(source, /Неверный email или пароль/);

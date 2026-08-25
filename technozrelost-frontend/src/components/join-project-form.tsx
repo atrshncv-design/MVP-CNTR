@@ -106,11 +106,11 @@ export default function JoinProjectForm() {
       style={{ boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}
     >
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAF0FF] text-[#2E5BFF]">
+        <span className="tz-stat-icon bg-tz-accent-soft text-tz-accent">
           <KeyRound size={20} />
         </span>
         <div>
-          <h3 className="font-bold text-tz-fg">Присоединиться к проекту</h3>
+          <h3 className="tz-card-title">Присоединиться к проекту</h3>
           <p className="text-sm text-tz-muted">Введите токен, выданный заказчиком или ЦНТР</p>
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function JoinProjectForm() {
           onChange={(e) => setToken(e.target.value)}
           placeholder="TZ-XXXXXX"
           disabled={loading}
-          className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-2.5 font-mono text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-[#2E5BFF] disabled:opacity-60"
+          className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-2.5 font-mono text-sm text-tz-fg outline-none transition placeholder:text-tz-muted focus:border-tz-accent disabled:opacity-60"
         />
         <div>
           <label htmlFor="join-role" className="mb-1 block text-xs font-medium text-tz-muted">
@@ -133,7 +133,7 @@ export default function JoinProjectForm() {
             value={role}
             onChange={(e) => setRole(e.target.value)}
             disabled={loading}
-            className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2.5 text-sm text-tz-fg outline-none transition focus:border-[#2E5BFF] disabled:opacity-60"
+            className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2.5 text-sm text-tz-fg outline-none transition focus:border-tz-accent disabled:opacity-60"
           >
             {JOIN_ROLES.map((r) => (
               <option key={r.value} value={r.value}>
@@ -159,7 +159,7 @@ export default function JoinProjectForm() {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2E5BFF] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#244BD9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E5BFF] disabled:opacity-60"
+          className="tz-btn tz-btn-primary w-full"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
           {loading ? 'Отправка…' : 'Присоединиться'}

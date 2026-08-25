@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth.config";
 import NotificationBell from "@/components/notification-bell";
-import ThemeToggle from "@/components/theme-toggle";
+import TolezeLogo from "@/components/brand/toleze-logo";
 
 const navigation = [
   { href: "/dashboard", label: "Рабочий стол" },
@@ -10,6 +10,7 @@ const navigation = [
   { href: "/dashboard/technologies", label: "Реестры" },
   { href: "/dashboard/nioktr", label: "НИОКТР" },
   { href: "/dashboard/organizations", label: "Организации" },
+  { href: "/dashboard/news", label: "Новости" },
   { href: "/dashboard/profile", label: "Профиль" },
   { href: "/dashboard/ai-assistant", label: "Документы" },
 ];
@@ -25,16 +26,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       >
         Перейти к основному содержимому
       </a>
-      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#0a101f]/80 backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-40 border-b border-tz-border bg-tz-surface/90 backdrop-blur-xl"
+        style={{ boxShadow: "var(--tz-shadow-card)" }}
+      >
         <div className="mx-auto flex min-h-[64px] max-w-[1440px] items-center gap-8 px-5 sm:px-8">
           <Link href="/dashboard" className="group flex shrink-0 items-center gap-2.5">
-            <span
-              className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-[#2e5bff] via-[#7c5cff] to-[#00d4c8] font-mono text-[13px] font-bold text-white shadow-[0_4px_18px_rgba(90,100,255,0.45)] transition-transform group-hover:scale-105"
-              aria-hidden="true"
-            >
-              ТЗ
-            </span>
-            <span className="font-mono text-sm font-bold tracking-[0.08em] text-white">
+            <TolezeLogo size={32} className="transition-transform group-hover:scale-105" />
+            <span className="font-mono text-sm font-bold tracking-[0.08em] text-tz-fg">
               ТЕХНОЗРЕЛОСТЬ
             </span>
           </Link>
@@ -43,19 +42,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-lg px-3 py-2 text-sm text-tz-muted transition hover:bg-tz-surface/[0.06] hover:text-white"
+                className="rounded-lg px-3 py-2 text-sm text-tz-muted transition hover:bg-tz-surface/[0.06] hover:text-tz-fg"
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-          
+
           <NotificationBell />
           <div className="ml-auto flex items-center gap-4">
-            <ThemeToggle onDark />
             {session?.user && (
               <div className="hidden text-right sm:block">
-                <div className="text-sm font-semibold text-white">
+                <div className="text-sm font-semibold text-tz-fg">
                   {session.user.name ?? session.user.email}
                 </div>
                 <div className="font-mono text-[11px] uppercase tracking-wider text-tz-muted">
@@ -71,7 +69,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             >
               <button
                 type="submit"
-                className="rounded-lg border border-white/10 px-3 py-2 text-sm text-tz-muted transition hover:border-white/25 hover:text-white"
+                className="rounded-lg border border-tz-border px-3 py-2 text-sm text-tz-muted transition hover:border-tz-fg/25 hover:text-tz-fg"
               >
                 Выйти
               </button>

@@ -31,16 +31,8 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
-      suppressHydrationWarning
       className={`${manrope.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('tz-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}var el=document.documentElement;if(t==='dark'){el.classList.add('dark');}else if(t==='udmurt'){el.setAttribute('data-theme','udmurt');}}catch(e){}})();`,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>

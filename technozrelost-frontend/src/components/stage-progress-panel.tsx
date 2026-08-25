@@ -86,7 +86,7 @@ export default function StageProgressPanel({ projectId, currentLevel, status }: 
   return (
     <section className="tz-card p-6" data-od-id="stage-progress">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="tz-eyebrow">Доработка проекта</p><h2 className="mt-1 text-xl font-bold text-tz-fg">Этап УГТ {currentLevel} → {currentLevel + 1}</h2><p className="mt-1 text-sm text-tz-muted">Документы проверяются предварительно по ГОСТам. Финальное решение принимает менеджер ЦНТР.</p>{requirements[0]?.template_version && <p className="mt-1 font-mono text-xs text-tz-secondary">Справочник требований: {requirements[0].template_version}</p>}</div>
+        <div><p className="tz-eyebrow">Доработка проекта</p><h2 className="tz-card-title mt-1">Этап УГТ {currentLevel} → {currentLevel + 1}</h2><p className="mt-1 text-sm text-tz-muted">Документы проверяются предварительно по ГОСТам. Финальное решение принимает менеджер ЦНТР.</p>{requirements[0]?.template_version && <p className="mt-1 font-mono text-xs text-tz-secondary">Справочник требований: {requirements[0].template_version}</p>}</div>
         <button className="tz-btn tz-btn-secondary" onClick={() => void load()} disabled={loading}><RefreshCw size={15} /> Обновить</button>
       </div>
       {loading ? <div className="mt-5 h-20 animate-pulse rounded-xl bg-tz-soft" /> : error ? <div className="mt-5 rounded-xl bg-tz-danger-soft p-4 text-sm text-tz-danger">{error}</div> : <>

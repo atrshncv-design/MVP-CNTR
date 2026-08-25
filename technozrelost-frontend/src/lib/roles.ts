@@ -97,6 +97,22 @@ export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
     "cntr_admin",
     "cntr_manager",
   ],
+  // Новости (тикет 08): лента — все роли; консоль и редактор — только
+  // сотрудники ЦНТР. Порядок важен: более специфичные маршруты идут раньше
+  // "/dashboard/news" (allowedRolesFor берёт первое совпадение по префиксу).
+  "/dashboard/news/admin": ["cntr_admin", "cntr_manager"],
+  "/dashboard/news/new": ["cntr_admin", "cntr_manager"],
+  "/dashboard/news": [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "regulating_organization",
+    "auditor",
+    "investor",
+    "cntr_admin",
+    "cntr_manager",
+  ],
 };
 
 export function isProtectedRoute(pathname: string): boolean {

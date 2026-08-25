@@ -44,7 +44,7 @@ export default function UgtScalePageClient() {
     <>
       <section
         className="relative overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #0F172A 0%, #1a2744 50%, #F5F7FA 100%)' }}
+        style={{ background: 'linear-gradient(180deg, var(--tz-fg) 0%, #2a1518 50%, var(--tz-soft) 100%)' }}
       >
         <div className="mx-auto max-w-[1280px] px-4 pt-[140px] pb-24 sm:px-6 lg:px-8 sm:pb-32">
           <motion.div
@@ -58,7 +58,7 @@ export default function UgtScalePageClient() {
                 className="inline-block rounded-full px-4 py-1.5 font-mono text-sm font-semibold"
                 style={{
                   background: 'rgba(46, 91, 255, 0.15)',
-                  color: '#4A82FF',
+                  color: 'var(--tz-accent-hover)',
                   border: '1px solid rgba(46, 91, 255, 0.3)',
                 }}
               >
@@ -139,7 +139,7 @@ export default function UgtScalePageClient() {
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget;
-                    el.style.borderColor = '#E8ECF0';
+                    el.style.borderColor = 'var(--tz-border)';
                     el.style.transform = 'translateY(0)';
                     el.style.boxShadow =
                       '0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.04)';
@@ -209,7 +209,7 @@ export default function UgtScalePageClient() {
             Не знаете, какой уровень соответствует вашему проекту?{' '}
             <Link
               href="/dashboard/gk_customer/projects/new"
-              className="inline-flex items-center gap-1 font-medium text-[#2E5BFF] transition-colors duration-200 hover:text-[#4A82FF] hover:underline"
+              className="inline-flex items-center gap-1 font-medium text-[var(--tz-accent)] transition-colors duration-200 hover:text-[var(--tz-accent-hover)] hover:underline"
             >
               Пройти оценку
               <ArrowRight size={16} />

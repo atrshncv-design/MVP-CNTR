@@ -119,7 +119,7 @@ export default function OrganizationDetailPage() {
         <div className="space-y-6">
           {/* Профиль */}
           <div className="overflow-hidden rounded-2xl border border-tz-border bg-tz-surface">
-            <div className="flex items-start gap-4 border-b border-tz-border bg-gradient-to-br from-[#0d1526] via-[#121b33] to-[#0a101f] p-6 sm:p-8">
+            <div className="flex items-start gap-4 border-b border-tz-border bg-gradient-to-br from-[#2a1518] via-[#3a1a1c] to-[#1a1213] p-6 sm:p-8">
               <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-tz-badge">
                 {org.org_type === "scientific_org" ? (
                   <GraduationCap className="h-7 w-7 text-tz-accent" />
