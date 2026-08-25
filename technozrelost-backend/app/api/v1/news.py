@@ -513,7 +513,10 @@ async def upload_news_media(
         )
     try:
         data = await read_upload_limited(file)
-    except (ValueError, FileSizeExceeded) as exc:
+    except FileSizeExceeded as exc:
+        # Единообразие с files.py: превышение лимита — 413 (Payload Too Large).
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, str(exc)) from exc
+    except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
     try:
         stored = store_news_media(post.id, file.filename or "media", data)

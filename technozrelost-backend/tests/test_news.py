@@ -362,6 +362,22 @@ def test_media_upload_bad_mime_rejected(client: TestClient) -> None:
     assert upload.status_code == 422, upload.text
 
 
+def test_media_upload_oversize_rejected_with_413(client: TestClient) -> None:
+    """Превышение лимита — тот же класс, что в files.py: 413, а не 422."""
+    token, _ = _register(client, "cntr_admin")
+    created = _create_news(client, token, title="Тяжёлое вложение")
+    post_id = created.json()["id"]
+
+    big = b"%PDF-1.4\n" + b"x" * (26 * 1024 * 1024)
+    upload = client.post(
+        f"/api/v1/news/{post_id}/media",
+        headers=_auth(token),
+        files={"file": ("big.pdf", io.BytesIO(big), "application/pdf")},
+        data={"kind": "attachment"},
+    )
+    assert upload.status_code == 413, upload.text
+
+
 # ── Удаление новости и /mine ────────────────────────────────────────────────
 
 

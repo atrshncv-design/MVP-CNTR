@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS ix_nioktr_cards_created_date
 CREATE INDEX IF NOT EXISTS ix_nioktr_cards_organization_id
     ON public.nioktr_cards (organization_id);
 
--- Публичная лента: WHERE status='published' ORDER BY published_at DESC, id DESC
+-- Публичная лента: WHERE status='published' ORDER BY published_at DESC NULLS LAST, id DESC
 CREATE INDEX IF NOT EXISTS ix_news_posts_status_published
     ON public.news_posts (status, published_at DESC NULLS LAST, id DESC);
 

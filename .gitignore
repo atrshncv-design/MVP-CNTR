@@ -10,6 +10,9 @@ desktop.ini
 !.env.example
 !.env.production.example
 
+# --- TLS-сертификаты (приватный ключ не коммитится; deploy.sh генерирует самоподписанный) ---
+technozrelost-backend/infra/nginx/certs/
+
 # --- Python / backend ---
 __pycache__/
 *.py[cod]
