@@ -1,4 +1,4 @@
-# CLAUDE.md  
+# AGENTS.md  
   
 ```
 # MISSION STATEMENT
@@ -26,12 +26,16 @@
 
 ```
 
-## Agent skills
+<!-- autopilot:start -->
+## Как здесь работает Autopilot
 
-### Issue tracker
+Проект: цифровая платформа «Технозрелость» (B2B/B2G для ЦНТР, ГОСТ Р 58048-2017).
+Frontend — Next.js (`technozrelost-frontend/`), Backend — FastAPI (`technozrelost-backend/`).
 
-Local markdown — issues and specs live as files in `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+Сборка ведётся навыком `/autopilot`. Требования, спецификация и таски — в `.autopilot/`.
+Прогресс — `.autopilot/dashboard.html`. Правило: требование из `manifest.md`
+может снять только пользователь.
 
-### Domain docs
-
-Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Если работа продолжается — скажи «продолжи автопилот»: состояние поднимется
+из `.autopilot/state.js`, переспрашивать ничего не нужно.
+<!-- autopilot:end -->

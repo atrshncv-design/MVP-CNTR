@@ -1,0 +1,156 @@
+# CI — quality gates платформы «Технозрелость» (security-remediation-audit, тикет 08)
+#
+# Jobs:
+#   backend    — migration-from-empty (alembic upgrade head на пустой БД),
+#                pytest, ruff, mypy, security_check (secrets + uv audit),
+#                `docker compose -f infra/docker-compose.prod.yml config`
+#   frontend   — npm test, npm run lint, npm run build
+#
+# Запускается на push и pull_request. При failure любого шага job падает
+# (non-zero exit). Блокировка merge настраивается branch protection в GitHub
+# Settings (required status checks) — сам workflow только сигнализирует
+# зелёным/красным статусом.
+#
+# Структура репозитория: каталоги technozrelost-backend/ и
+# technozrelost-frontend/ — независимые git-истории (ветки одного remote
+# atrshncv-design/MVP-CNTR), поэтому каждый job checkout'ит свою ветку:
+#   backend  -> ref release/friday-rc
+#   frontend -> ref codex/frontend-design-baseline-2026-08-11
+# При переносе workflow в ветку backend/frontend замените checkout на
+# actions/checkout текущего репозитория (path: .) — команды ниже
+# соответствуют реальным скриптам проекта и не зависят от пути.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (migrations · pytest · ruff · mypy · security · compose)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg16
+        env:
+          POSTGRES_USER: technoz
+          POSTGRES_PASSWORD: change_me
+          POSTGRES_DB: technozrelost
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U technoz -d technozrelost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: technoz
+      POSTGRES_PASSWORD: change_me
+      # CI-секреты — только тестовые плейсхолдеры (проект не хранит реальных
+      # секретов в репозитории; реальные значения — в GitHub Secrets владельца).
+      JWT_SECRET: ci-test-jwt-secret-0123456789abcdef0123456789abcdef
+      APP_ENV: test
+    defaults:
+      run:
+        working-directory: technozrelost-backend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: atrshncv-design/MVP-CNTR
+          ref: release/friday-rc
+          path: technozrelost-backend
+
+      - name: Set up Python + uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install dependencies (uv sync, lockfile)
+        run: uv sync --extra dev
+
+      - name: Create empty test database
+        run: |
+          .venv/bin/python - <<'PY'
+          import psycopg
+          conn = psycopg.connect(
+              host="127.0.0.1", port=5432, user="technoz",
+              password="change_me", dbname="postgres", autocommit=True,
+          )
+          conn.execute("CREATE DATABASE technozrelost_test")
+          conn.close()
+          PY
+
+      # Проверка «миграция из пустой БД»: все ревизии 0001–0026 накатываются
+      # с нуля. conftest.py при запуске pytest переиспользует эту БД
+      # (см. tests/conftest.py: _ensure_test_db_schema + _run_migrations).
+      - name: Migration from empty database (alembic upgrade head)
+        run: POSTGRES_DB=technozrelost_test .venv/bin/alembic upgrade head
+
+      - name: Run tests (pytest)
+        run: .venv/bin/python -m pytest -q
+
+      - name: Lint (ruff)
+        run: .venv/bin/ruff check app tests scripts
+
+      - name: Type check (mypy, strict)
+        run: .venv/bin/python -m mypy app
+
+      # Secret scan: git-tracked файлы backend + uv audit по uv.lock.
+      # --skip-live — без живого API (в CI нет dev-сервера).
+      - name: Secret & dependency scan (security_check.py)
+        run: .venv/bin/python scripts/security_check.py --skip-live --repo-root .
+
+      # docker compose config не требует запущенного daemon'а — проверяется
+      # только валидность композиции и наличие всех обязательных env
+      # (fail-fast через ${VAR:?...} в docker-compose.prod.yml).
+      - name: Validate production compose config
+        run: |
+          export POSTGRES_DB=technozrelost
+          export REPL_PASSWORD=change_me
+          export CORS_ORIGINS=http://localhost:3000
+          export LLM_API_BASE=https://opencode.ai/zen/v1
+          export LLM_MODEL=nemotron-3-ultra-free
+          export MINIO_ACCESS_KEY=technoz
+          export MINIO_SECRET_KEY=change_me
+          export PROMETHEUS_SCRAPE_TOKEN=change_me
+          export NEXTAUTH_URL=http://localhost:3000
+          export NEXTAUTH_SECRET=change_me
+          export GRAFANA_ADMIN_USER=admin
+          export GRAFANA_ADMIN_PASSWORD=change_me
+          docker compose -f infra/docker-compose.prod.yml config --quiet
+
+  frontend:
+    name: Frontend (test · lint · build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: technozrelost-frontend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: atrshncv-design/MVP-CNTR
+          ref: codex/frontend-design-baseline-2026-08-11
+          path: technozrelost-frontend
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: technozrelost-frontend/package-lock.json
+
+      - name: Install dependencies (npm ci)
+        run: npm ci
+
+      - name: Run tests (node --test)
+        run: npm test
+
+      - name: Lint (eslint)
+        run: npm run lint
+
+      - name: Build (next build)
+        run: npm run build
