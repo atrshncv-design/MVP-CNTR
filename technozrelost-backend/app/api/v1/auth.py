@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.core.deps import CNTR_STAFF_SLUGS, CurrentUser, DBSession
@@ -52,7 +53,9 @@ async def register(payload: RegisterIn, db: DBSession) -> TokenOut:
 
     user = User(
         email=payload.email,
-        password_hash=hash_password(payload.password),
+        # bcrypt синхронный и дорогой — в threadpool, иначе блокирует event loop
+        # (таск 06: всплеск логинов/регистраций сериализовался на одном ядре).
+        password_hash=await run_in_threadpool(hash_password, payload.password),
         full_name=payload.full_name,
         organization=payload.organization,
         roles=[role],
@@ -78,7 +81,9 @@ async def login(payload: LoginIn, request: Request, db: DBSession) -> TokenOut:
     if auth_throttle.is_blocked(payload.email, client_host):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток входа")
     user = await db.scalar(stmt_user_by_email(payload.email))
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if user is None or not await run_in_threadpool(
+        verify_password, payload.password, user.password_hash
+    ):
         auth_throttle.record_failure(payload.email, client_host)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный email или пароль")
     auth_throttle.record_success(payload.email, client_host)

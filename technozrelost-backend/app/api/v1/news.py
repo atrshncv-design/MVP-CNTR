@@ -205,8 +205,12 @@ async def news_feed(
     rows = (
         (
             await db.execute(
+                # nullslast повторяет форму индекса ix_news_posts_status_published
+                # (published_at DESC NULLS LAST): без него планировщик добавляет
+                # Sort поверх Index Scan. Колонка nullable (draft/scheduled),
+                # поэтому выровнен запрос, а не индекс — как в nioktr.py.
                 base.order_by(
-                    NewsPost.published_at.desc(), NewsPost.id.desc()
+                    NewsPost.published_at.desc().nullslast(), NewsPost.id.desc()
                 )
                 .offset((page - 1) * per_page)
                 .limit(per_page)

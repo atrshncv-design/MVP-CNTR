@@ -504,12 +504,25 @@ async def get_project_detail(
     at_result = await db.execute(at_stmt)
     audit_trail = at_result.scalars().all()
 
+    # Имена загрузивших одним пакетным запросом (таск 06): раньше db.get(User)
+    # на каждый документ — N+1 при длинном списке верифицирующих документов.
+    uploader_ids = {v.uploader_id for v in verification_documents if v.uploader_id}
+    uploader_names: dict[int, str] = {}
+    if uploader_ids:
+        name_rows = await db.execute(
+            select(User.id, User.full_name).where(User.id.in_(uploader_ids))
+        )
+        uploader_names = {uid: name for uid, name in name_rows.all()}
+
     return ProjectDetailOut(
         project=_project_out(project),
         questionnaire_results=[_qr_out(r) for r in questionnaire_results],
         control_points=[_cp_out(cp) for cp in control_points],
         documents=[_doc_out(d) for d in documents],
-        verification_documents=[await _vdoc_out(db, v) for v in verification_documents],
+        verification_documents=[
+            _vdoc_out(v, uploader_names.get(v.uploader_id))
+            for v in verification_documents
+        ],
         members=[_mem_out(m) for m in members],
         audit_trail=[_at_out(a) for a in audit_trail],
     )
@@ -707,13 +720,12 @@ def _doc_out(d: ProjectDocument) -> ProjectDocumentOut:
     )
 
 
-async def _vdoc_out(db: DBSession, v: VerificationDocument) -> VerificationDocOut:
-    uploader = await db.get(User, v.uploader_id)
+def _vdoc_out(v: VerificationDocument, uploader_name: str | None = None) -> VerificationDocOut:
     return VerificationDocOut(
         id=v.id,
         project_id=v.project_id,
         uploader_id=v.uploader_id,
-        uploader_name=uploader.full_name if uploader else None,
+        uploader_name=uploader_name,
         title=v.title,
         comment=v.comment,
         file_ref=v.file_ref,

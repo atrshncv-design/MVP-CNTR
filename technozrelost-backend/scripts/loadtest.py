@@ -55,24 +55,30 @@ MINIMAL_PDF = (
 )
 
 # Шаблоны эндпоинтов: кортеж (kind, method, template, вес внутри корзины).
+# Таск 06: добавлены новости/достижения (публичные чтения, таск 07) и
+# карточка проекта /projects/{pid}; {pid} требует своего проекта (как file).
+# Все пути под /api/v1 (ранее сценарий бил мимо API — 404/страницы фронта).
 READ_ACTIONS = [
-    ("read", "GET", "/projects/registry", 3),
-    ("read", "GET", "/nioktr?limit=20", 2),
-    ("read", "GET", "/executors/specialists", 1),
-    ("read", "GET", "/executors/organizations", 1),
+    ("read", "GET", "/api/v1/projects/registry", 3),
+    ("read", "GET", "/api/v1/nioktr?limit=20", 2),
+    ("read", "GET", "/api/v1/executors/specialists", 1),
+    ("read", "GET", "/api/v1/executors/organizations", 1),
+    ("read", "GET", "/api/v1/news?page=1&per_page=10", 1),
+    ("read", "GET", "/api/v1/achievements/catalog", 1),
+    ("read", "GET", "/api/v1/projects/{pid}", 1),
 ]
 WRITE_ACTIONS = [
-    ("write", "POST", "/assessments", 2),
-    ("write", "PATCH", "/profile", 2),
-    ("write", "GET", "/projects", 1),
-    ("write", "GET", "/assessments/mine", 1),
-    ("write", "GET", "/auth/me", 1),
+    ("write", "POST", "/api/v1/assessments", 2),
+    ("write", "PATCH", "/api/v1/profile", 2),
+    ("write", "GET", "/api/v1/projects", 1),
+    ("write", "GET", "/api/v1/assessments/mine", 1),
+    ("write", "GET", "/api/v1/auth/me", 1),
 ]
 FILE_ACTIONS = [
-    ("file", "POST", "/projects/{pid}/files", 1),
-    ("file", "GET", "/projects/{pid}/files", 1),
+    ("file", "POST", "/api/v1/projects/{pid}/files", 1),
+    ("file", "GET", "/api/v1/projects/{pid}/files", 1),
 ]
-MANAGER_ACTIONS = [("manager", "GET", "/manager/queue/drafts", 1)]
+MANAGER_ACTIONS = [("manager", "GET", "/api/v1/manager/queue/drafts", 1)]
 
 
 @dataclass
@@ -292,12 +298,13 @@ async def _run_user(
         path = template
         json_body = None
         files = None
-        if bucket == "file":
+        if "{pid}" in template:
             if user.project_id is None:
-                # Без своего проекта файловые операции невозможны — пропуск.
+                # Без своего проекта карточка/файлы недоступны — пропуск.
                 await asyncio.sleep(random.uniform(cfg.think_min, cfg.think_max))
                 continue
             path = template.format(pid=user.project_id)
+        if bucket == "file":
             if method == "POST":
                 files = {
                     "file": (
@@ -306,7 +313,7 @@ async def _run_user(
                         "application/pdf",
                     )
                 }
-        elif kind == "write" and template == "/assessments":
+        elif kind == "write" and template.endswith("/assessments"):
             if not user.did_assessment:
                 json_body = {
                     "name": f"Проект {user.email}",
@@ -323,14 +330,14 @@ async def _run_user(
                 }
             else:
                 # Переоценка запрещена (403) — повторная запись идёт в профиль.
-                template = "/profile"
-                path = "/profile"
+                template = "/api/v1/profile"
+                path = template
                 method = "PATCH"
                 json_body = {
                     "headline": f"Инженер {random.randint(1, 9999)}",
                     "bio": "Нагрузочный профиль (тикет 21)",
                 }
-        elif kind == "write" and template == "/profile":
+        elif kind == "write" and template.endswith("/profile"):
             json_body = {
                 "headline": f"Инженер {random.randint(1, 9999)}",
                 "bio": "Нагрузочный профиль (тикет 21)",
@@ -355,7 +362,7 @@ async def _run_user(
             )
         )
 
-        if status == 201 and template == "/assessments":
+        if status == 201 and template.endswith("/assessments"):
             user.did_assessment = True
             if isinstance(body, dict) and body.get("id"):
                 user.project_id = int(body["id"])
@@ -385,7 +392,7 @@ async def run_loadtest(cfg: argparse.Namespace) -> tuple[list[RequestResult], fl
     )
     results: list[RequestResult] = []
     start = time.monotonic()
-    async with httpx.AsyncClient(limits=limits) as client:
+    async with httpx.AsyncClient(limits=limits, verify=not cfg.insecure) as client:
         await asyncio.gather(
             *[
                 _run_user(
@@ -459,7 +466,9 @@ async def _prepare_one(
 async def prepare_users(cfg: argparse.Namespace) -> int:
     existing = {u["email"] for u in _load_users(cfg.token_file)}
     sem = asyncio.Semaphore(cfg.prepare_concurrency)
-    async with httpx.AsyncClient(limits=httpx.Limits(max_connections=64)) as client:
+    async with httpx.AsyncClient(
+        limits=httpx.Limits(max_connections=64), verify=not cfg.insecure
+    ) as client:
         tasks = [
             _prepare_one(sem, client, cfg.base_url, i)
             for i in range(1, cfg.prepare_users + 1)
@@ -473,6 +482,51 @@ async def prepare_users(cfg: argparse.Namespace) -> int:
         f"(файл {cfg.token_file})"
     )
     return len(fresh)
+
+
+async def bench_login(cfg: argparse.Namespace) -> int:
+    """Замер POST /auth/login: N параллельных логинов подготовленных пользователей.
+
+    Таск 06: bcrypt-верификация — самый дорогой шаг auth; отдельный бенчмарк,
+    потому что в основном профиле логин не участвует.
+    """
+    users = _load_users(cfg.token_file)[: cfg.users]
+    if not users:
+        sys.exit("Нет пользователей в токен-файле — сначала --prepare-users")
+    latencies: list[float] = []
+    errors = 0
+    sem = asyncio.Semaphore(50)
+
+    async def _login(client: httpx.AsyncClient, email: str) -> None:
+        nonlocal errors
+        async with sem:
+            t0 = time.monotonic()
+            try:
+                resp = await client.post(
+                    f"{cfg.base_url}/api/v1/auth/login",
+                    json={"email": email, "password": PASSWORD},
+                    timeout=30.0,
+                )
+                ok = resp.status_code == 200
+            except httpx.HTTPError:
+                ok = False
+            if not ok:
+                errors += 1
+            latencies.append(time.monotonic() - t0)
+
+    start = time.monotonic()
+    async with httpx.AsyncClient(verify=not cfg.insecure) as client:
+        await asyncio.gather(*[_login(client, u["email"]) for u in users])
+    duration = time.monotonic() - start
+    stats = _pct_stats(latencies)
+    print("=" * 62)
+    print(f"BENCH LOGIN: n={len(users)} errors={errors}")
+    print(
+        f"p50={stats['p50']}ms p95={stats['p95']}ms p99={stats['p99']}ms "
+        f"mean={stats['mean_ms']}ms throughput={len(users) / duration:.2f} req/s"
+    )
+    print("=" * 62)
+    return 0
 
 
 def seed_manager(cfg: argparse.Namespace) -> None:
@@ -537,6 +591,15 @@ def _build_parser() -> argparse.ArgumentParser:
         "--prepare-concurrency", type=int, default=20, help="Параллелизм регистрации"
     )
     p.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Не проверять TLS-сертификат (self-signed nginx локального контура)",
+    )
+    p.add_argument(
+        "--bench-login", type=int, default=0,
+        help="Замер POST /auth/login по N подготовленным пользователям и выход",
+    )
+    p.add_argument(
         "--seed-manager",
         action="store_true",
         help="Назначить первого пользователя cntr_manager и выйти",
@@ -548,6 +611,9 @@ def main() -> int:
     cfg = _build_parser().parse_args()
     cfg.profile = dict(DEFAULT_PROFILE)
 
+    if cfg.bench_login:
+        asyncio.run(bench_login(cfg))
+        return 0
     if cfg.seed_manager:
         seed_manager(cfg)
         return 0

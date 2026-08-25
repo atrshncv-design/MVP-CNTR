@@ -16,23 +16,26 @@ from app.core.config import settings
 # pooled connections would be bound to a stale loop → NullPool for tests.
 _poolclass = NullPool if settings.app_env == "test" else None
 
-engine: AsyncEngine = create_async_engine(
-    settings.primary_dsn,
-    echo=False,
-    future=True,
-    pool_pre_ping=True,
-    poolclass=_poolclass,
-)
+
+def pool_options() -> dict[str, int]:
+    """Размер пула из настроек (таск 06); NullPool эти ключи не принимает."""
+    return {"pool_size": settings.db_pool_size, "max_overflow": settings.db_max_overflow}
+
+
+def _engine_kwargs() -> dict:
+    kwargs: dict = {"echo": False, "future": True, "pool_pre_ping": True}
+    if _poolclass is not None:
+        kwargs["poolclass"] = _poolclass
+    else:
+        kwargs.update(pool_options())
+    return kwargs
+
+
+engine: AsyncEngine = create_async_engine(settings.primary_dsn, **_engine_kwargs())
 
 read_engine: AsyncEngine | None = None
 if settings.replica_dsn:
-    read_engine = create_async_engine(
-        settings.replica_dsn,
-        echo=False,
-        future=True,
-        pool_pre_ping=True,
-        poolclass=_poolclass,
-    )
+    read_engine = create_async_engine(settings.replica_dsn, **_engine_kwargs())
 
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 

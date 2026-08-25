@@ -23,6 +23,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
     select,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -190,6 +191,16 @@ class Project(Base):
     )
 
 
+# Горячие пути реестров (таск 06) — зеркала миграции 0027_performance_indexes.
+Index(
+    "ix_projects_public_registry",
+    Project.current_level.desc(),
+    Project.updated_at.desc(),
+    postgresql_where=text("is_public"),
+)
+Index("ix_projects_category", Project.category)
+
+
 class QuestionnaireResult(Base):
     __tablename__ = "questionnaire_results"
 
@@ -309,6 +320,9 @@ class ProjectMember(Base):
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+Index("ix_project_members_user_id", ProjectMember.user_id)
 
 
 class ProjectInvite(Base):
@@ -711,6 +725,14 @@ class NioktrCard(Base):
     )
 
 
+Index(
+    "ix_nioktr_cards_created_date",
+    NioktrCard.created_date.desc().nulls_last(),
+    NioktrCard.id.desc(),
+)
+Index("ix_nioktr_cards_organization_id", NioktrCard.organization_id)
+
+
 # ─── Новостной раздел (перенос со старой линии, спека §3.2) ─────────────────
 
 news_post_tags_tbl = Table(
@@ -796,6 +818,14 @@ class NewsPost(Base):
         order_by="NewsPostMedia.sort_order",
         cascade="all, delete-orphan",
     )
+
+
+Index(
+    "ix_news_posts_status_published",
+    NewsPost.status,
+    NewsPost.published_at.desc().nulls_last(),
+    NewsPost.id.desc(),
+)
 
 
 class NewsPostMedia(Base):

@@ -32,6 +32,10 @@ class Settings(BaseSettings):
 
     db_schema_public: str = "public"
     db_schema_test: str = "test"
+    # Пул соединений (таск 06): дефолт SQLAlchemy (5+10) при одном воркере
+    # ставит нагрузку 200 пользователей в очередь checkout'а соединений.
+    db_pool_size: int = 20
+    db_max_overflow: int = 30
     vector_dimension: int = 1536
 
     jwt_secret: str = DEFAULT_JWT_SECRET
