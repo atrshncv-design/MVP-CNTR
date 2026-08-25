@@ -16,7 +16,11 @@ services:
       - ./postgres/postgresql-primary.conf:/etc/postgresql/postgresql.conf:ro
       - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
       - ./postgres/init-primary.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+      - ./postgres/start-primary.sh:/usr/local/bin/start-primary.sh:ro
+      - ./postgres/ensure-replication.sh:/usr/local/bin/ensure-replication.sh:ro
+    # Точка входа идемпотентна: роль replicator и слот создаются и на пустом,
+    # и на существующем томе (аудит-тикет 05).
+    entrypoint: ["/bin/bash", "/usr/local/bin/start-primary.sh"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-technoz} -d ${POSTGRES_DB:-technozrelost}"]
       interval: 5s

@@ -1,0 +1,7 @@
+# Build context (frontend root)
+node_modules
+.next
+.git
+npm-debug.log*
+.env*
+!.env.example

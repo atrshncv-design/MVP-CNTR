@@ -4,7 +4,7 @@
 #
 # Запуск:   ./deploy.sh            (из infra/; читает .env.production)
 # Либо:     docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
-# Проверка: curl -s http://localhost/api/v1/health
+# Проверка: curl -sk https://localhost/api/v1/health
 #           curl -sk https://localhost/api/v1/ready    # readiness: primary+replica
 #
 # Свойства контура (спека §7.4):
@@ -39,7 +39,11 @@ services:
       - ./postgres/postgresql-primary.conf:/etc/postgresql/postgresql.conf:ro
       - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
       - ./postgres/init-primary.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+      - ./postgres/start-primary.sh:/usr/local/bin/start-primary.sh:ro
+      - ./postgres/ensure-replication.sh:/usr/local/bin/ensure-replication.sh:ro
+    # Точка входа идемпотентна: роль replicator и слот создаются и на пустом,
+    # и на существующем томе (аудит-тикет 05).
+    entrypoint: ["/bin/bash", "/usr/local/bin/start-primary.sh"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -194,6 +198,9 @@ services:
     environment:
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      # Server-side вызовы API из NextAuth/SSR (auth.config.ts): внутри сети
+      # compose фронтенд должен ходить по имени сервиса, а не на 127.0.0.1.
+      API_URL_INTERNAL: http://backend:8000
     depends_on:
       backend:
         condition: service_started
@@ -239,6 +246,12 @@ services:
         condition: service_started
     expose:
       - "9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9090/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   # ── Grafana: дашборды поверх Prometheus (тикет 20) ─────────────────────────
   # UI: http://<host>:3001 (логин: GRAFANA_ADMIN_USER / GRAFANA_ADMIN_PASSWORD,
@@ -260,6 +273,12 @@ services:
         condition: service_started
     ports:
       - "3001:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 volumes:
   pg-prod-primary-data:

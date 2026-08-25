@@ -41,6 +41,11 @@ MINIO_BUCKET="${MINIO_BUCKET:-technozrelost}"
 
 mkdir -p "$SNAPSHOT/minio"
 
+# Неудачный снапшот не оставляем: пустые каталоги без дампа маскируют
+# отсутствие бэкапа и копятся в ротации.
+BACKUP_OK=0
+trap '[ "$BACKUP_OK" = 1 ] || { echo "[backup] откат: удаляю неполный снапшот $SNAPSHOT"; rm -rf "$SNAPSHOT"; }' EXIT
+
 echo "[backup] снапшот: $SNAPSHOT"
 
 # ── 1. PostgreSQL Primary ─────────────────────────────────────────────────────
@@ -113,9 +118,22 @@ else
 fi
 
 # ── 3. Контрольные суммы ─────────────────────────────────────────────────────
+# Прямой конвейер find | xargs: xargs порождает процесс через execvp и не может
+# вызвать shell-функцию (под set -eu это роняло бэкап вместе со снапшотом).
+# Переносимо: GNU coreutils sha256sum либо BSD shasum (macOS). GNU xargs на
+# пустом вводе запускает команду без аргументов — хешер читает stdin и висит
+# на tty (BSD молча проходит), поэтому список проверяется на непустоту до xargs;
+# `: >` гарантирует создание SHA256SUMS даже для пустого снапшота.
 (
   cd "$SNAPSHOT" || exit 1
-  find . -type f ! -name SHA256SUMS -exec sha256sum {} + > SHA256SUMS
+  : > SHA256SUMS
+  if [ -n "$(find . -type f ! -name SHA256SUMS -print)" ]; then
+    if command -v sha256sum >/dev/null 2>&1; then
+      find . -type f ! -name SHA256SUMS -print0 | xargs -0 sha256sum >> SHA256SUMS
+    else
+      find . -type f ! -name SHA256SUMS -print0 | xargs -0 shasum -a 256 >> SHA256SUMS
+    fi
+  fi
 )
 echo "[backup] SHA256SUMS: готово"
 
@@ -126,4 +144,5 @@ ls -1dt "$BACKUP_DIR"/20*/ 2>/dev/null | tail -n +"$((KEEP + 1))" |
     rm -rf "$dir"
   done
 
+BACKUP_OK=1
 echo "[backup] готово: $SNAPSHOT"

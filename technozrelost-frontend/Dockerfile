@@ -9,6 +9,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Ограничаем heap Node: next build не должен убиваться OOM-killer'ом
+# на машинах с небольшой VM (Docker Desktop 4–8 ГБ).
+ENV NODE_OPTIONS=--max-old-space-size=2048
 # Адрес API подставляется на этапе сборки (клиентский NEXT_PUBLIC_*)
 ARG NEXT_PUBLIC_API_URL=/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL

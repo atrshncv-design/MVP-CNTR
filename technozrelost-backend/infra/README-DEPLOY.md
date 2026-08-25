@@ -30,13 +30,14 @@
 ## Шаги (15 минут)
 
 ```bash
-# 1. Скопировать репозиторий на сервер
+# 1. Скопировать репозиторий на сервер и перейти в backend
 git clone https://github.com/atrshncv-design/MVP-CNTR.git
-cd "MVP ПЛАТФОРМЫ 2/technozrelost-backend"
+cd MVP-CNTR/technozrelost-backend
 
 # 2. Подготовить окружение
-cp .env.production.example infra/.env.production
-#    — заполнить POSTGRES_PASSWORD, NEXTAUTH_URL, CORS_ORIGINS, MINIO_SECRET_KEY
+cp infra/.env.production.example infra/.env.production
+#    — заполнить POSTGRES_PASSWORD, REPL_PASSWORD, MINIO_SECRET_KEY,
+#      NEXTAUTH_URL, CORS_ORIGINS, GRAFANA_ADMIN_PASSWORD
 #    — JWT_SECRET / NEXTAUTH_SECRET сгенерируются автоматически при деплое
 
 # 3. Запустить (одна команда)
@@ -46,15 +47,18 @@ cp .env.production.example infra/.env.production
 ## Проверка
 
 ```bash
-curl -s http://localhost/api/v1/health        # {"status":"ok",...}
+curl -sk https://localhost/api/v1/health       # {"status":"ok",...} (HTTP отвечает 301 → HTTPS)
 curl -sk https://localhost/api/v1/ready       # readiness: primary+replica {"status":"ready",...}
-docker compose -f infra/docker-compose.prod.yml ps   # все сервисы healthy
+docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml ps   # все сервисы healthy
 ```
+
+Требуемые свободные порты хоста: **80, 443** (nginx), **3001** (Grafana).
+БД и MinIO наружу не публикуются — только внутри сети compose.
 
 ## Наполнение данными (разово, после первого запуска)
 
 ```bash
-docker compose -f infra/docker-compose.prod.yml exec backend sh -c \
+docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml exec backend sh -c \
   "python -m app.db.seed_gost && python -m app.db.seed_nioktr && python -m app.db.seed_templates"
 ```
 

@@ -37,8 +37,12 @@ MINIO_URL="${MINIO_URL:-http://$MINIO_ENDPOINT}"
 MINIO_BUCKET="${MINIO_BUCKET:-technozrelost}"
 
 echo "[restore] снапшот: $SNAPSHOT"
-echo "[restore] проверка контрольных сумм (sha256sum -c)..."
-( cd "$SNAPSHOT" && sha256sum -c SHA256SUMS )
+echo "[restore] проверка контрольных сумм..."
+if command -v sha256sum >/dev/null 2>&1; then
+  ( cd "$SNAPSHOT" && sha256sum -c SHA256SUMS )
+else
+  ( cd "$SNAPSHOT" && shasum -a 256 -c SHA256SUMS )
+fi
 echo "[restore] контрольные суммы OK."
 
 echo "ВНИМАНИЕ: восстановление ПЕРЕЗАПИШЕТ текущие данные PostgreSQL и MinIO."
@@ -116,11 +120,12 @@ PY
     return 1
   fi
 }
-if [ -d "$SNAPSHOT/minio" ]; then
+# Пустой каталог MinIO = пустой бакет: восстанавливать нечего, это не ошибка.
+if [ -d "$SNAPSHOT/minio" ] && [ -n "$(ls -A "$SNAPSHOT/minio" 2>/dev/null)" ]; then
   restore_minio
   echo "[restore] MinIO: готово"
 else
-  echo "[restore] каталог minio/ отсутствует — пропускаю MinIO"
+  echo "[restore] каталог minio/ пуст или отсутствует — пропускаю MinIO"
 fi
 
 echo "[restore] готово."

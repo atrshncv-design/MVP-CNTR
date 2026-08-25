@@ -16,13 +16,29 @@ fi
 # ── Секреты: генерируем, если не заданы ─────────────────────────────────────
 gen_secret() { head -c 48 /dev/urandom | base64 | tr -d '/+=' | head -c 48; }
 
-if grep -qE '^(JWT_SECRET|NEXTAUTH_SECRET)=change_me' "$ENV_FILE"; then
+if grep -qE '^(JWT_SECRET|NEXTAUTH_SECRET)=(change_me.*)?$' "$ENV_FILE"; then
   echo "ℹ️  Генерирую JWT_SECRET/NEXTAUTH_SECRET…"
   sed -i.bak \
-    -e "s/^JWT_SECRET=change_me.*/JWT_SECRET=$(gen_secret)/" \
-    -e "s/^NEXTAUTH_SECRET=change_me.*/NEXTAUTH_SECRET=$(gen_secret)/" \
+    -e "s|^JWT_SECRET=.*|JWT_SECRET=$(gen_secret)|" \
+    -e "s|^NEXTAUTH_SECRET=.*|NEXTAUTH_SECRET=$(gen_secret)|" \
     "$ENV_FILE"
   rm -f "$ENV_FILE.bak"
+fi
+
+# Неблокирующие предупреждения о заглушках, которые нельзя уносить на сервер.
+warn_placeholder() {
+  if grep -qE "^$1=(change_me.*)?$" "$ENV_FILE"; then
+    echo "⚠️  $1 оставлен заглушкой — перед деплоем на сервер заполните реальным значением."
+  fi
+}
+warn_placeholder POSTGRES_PASSWORD
+warn_placeholder REPL_PASSWORD
+warn_placeholder MINIO_SECRET_KEY
+warn_placeholder GRAFANA_ADMIN_PASSWORD
+warn_placeholder NEXTAUTH_URL
+warn_placeholder CORS_ORIGINS
+if grep -qE '^LLM_API_KEY=$' "$ENV_FILE"; then
+  echo "ℹ️  LLM_API_KEY пуст — AI-функции будут недоступны (не блокирует запуск)."
 fi
 
 # ── Сертификаты: самоподписанные, если ещё нет ───────────────────────────────
