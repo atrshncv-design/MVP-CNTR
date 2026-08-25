@@ -220,6 +220,24 @@ def read_stored_file(storage_key: str) -> bytes:
     return storage.get(storage_key)
 
 
+def store_news_media(post_id: int, original_name: str, data: bytes) -> StoredFile:
+    """Валидация и сохранение медиа новости (обложка/вложение/галерея)."""
+    if len(data) > MAX_FILE_SIZE:
+        raise ValueError(f"Файл превышает лимит {settings.max_file_size_mb} МБ")
+    mime = detect_mime(data)
+    if mime is None:
+        raise ValueError("Недопустимый формат: разрешены PDF, DOCX, XLSX, PNG, JPEG")
+    ext = extension_for(mime)
+    key = f"news/{post_id}/{uuid.uuid4().hex}.{ext}"
+    storage.put(key, data, content_type=mime)
+    return StoredFile(
+        storage_key=key,
+        sha256=_sha256(data),
+        size=len(data),
+        mime_type=mime,
+    )
+
+
 READ_CHUNK = 1024 * 1024
 
 

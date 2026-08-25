@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -7,6 +10,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.v1.achievements import (
+    project_router as project_achievements_router,
+)
+from app.api.v1.achievements import router as achievements_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1.assessments import router as assessments_router
 from app.api.v1.auth import router as auth_router
@@ -19,6 +26,7 @@ from app.api.v1.invites import router as invites_router
 from app.api.v1.manager import router as manager_router
 from app.api.v1.membership import router as membership_router
 from app.api.v1.metrics import router as metrics_router
+from app.api.v1.news import router as news_router
 from app.api.v1.nioktr import router as nioktr_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.profiles import router as profiles_router
@@ -30,10 +38,45 @@ from app.api.v1.stages import router as stages_router
 from app.api.v1.technologies import router as technologies_router
 from app.api.v1.users import router as users_router
 from app.core.config import settings
+from app.core.database import SessionLocal
 from app.core.logging_config import setup_logging
 from app.services.metrics import PrometheusMetricsMiddleware, install_db_listeners
+from app.services.news_scheduler import (
+    SCHEDULER_INTERVAL_SECONDS,
+    process_scheduled_posts,
+)
 
 setup_logging()
+
+logger = logging.getLogger(__name__)
+
+
+async def _news_scheduler_loop() -> None:
+    """Отложенная публикация новостей: раз в 60 секунд.
+
+    Статус в БД — источник истины; задача переживает рестарты приложения.
+    """
+    while True:
+        try:
+            async with SessionLocal() as session:
+                await process_scheduled_posts(session)
+        except Exception:  # noqa: BLE001 — цикл не должен умирать
+            logger.exception("news scheduler iteration failed")
+        await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    scheduler_task: asyncio.Task[None] | None = None
+    if settings.app_env != "test":
+        # В тестах фоновый цикл не запускаем: обработчик вызывается напрямую.
+        scheduler_task = asyncio.create_task(_news_scheduler_loop())
+    yield
+    if scheduler_task is not None:
+        scheduler_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await scheduler_task
+
 
 # Глобальный лимит тела запроса (R05.5). Проверка по Content-Length до
 # попадания в обработчик; для chunked-запросов без длины лимитирует
@@ -58,13 +101,6 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    # startup hooks (connexion pool warm-up и т.п.) — здесь
-    yield
-    # shutdown hooks — здесь
 
 
 def create_app() -> FastAPI:
@@ -115,6 +151,9 @@ def create_app() -> FastAPI:
     app.include_router(profiles_router, prefix="/api/v1")
     app.include_router(stages_router, prefix="/api/v1")
     app.include_router(nioktr_router, prefix="/api/v1")
+    app.include_router(news_router, prefix="/api/v1")
+    app.include_router(achievements_router, prefix="/api/v1")
+    app.include_router(project_achievements_router, prefix="/api/v1")
     return app
 
 

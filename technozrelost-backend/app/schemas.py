@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
@@ -697,3 +698,261 @@ class DocumentFileOut(BaseModel):
     version: int = 1
     uploaded_by: int | None = None
     created_at: str | None = None
+    title: str
+    doc_type: str
+    file_name: str | None = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    sha256: str | None = None
+    scan_status: str = "pending"
+    scan_result: str | None = None
+    version: int = 1
+    uploaded_by: int | None = None
+    created_at: str | None = None
+
+
+# ─── Новостной раздел (тикет 05, спека §3.3) ────────────────────────────────
+
+
+class NewsCategoryOut(BaseModel):
+    id: int
+    slug: str
+    name: str
+
+
+class NewsTagOut(BaseModel):
+    id: int
+    slug: str
+    name: str
+
+
+class NewsMediaOut(BaseModel):
+    id: int
+    storage_key: str
+    file_name: str
+    mime_type: str
+    kind: str
+    sort_order: int
+    created_at: str | None = None
+
+
+class NewsCardOut(BaseModel):
+    """Карточка в публичной ленте (спека §3.3)."""
+
+    id: int
+    title: str
+    excerpt: str | None = None
+    cover_key: str | None = None
+    category: NewsCategoryOut | None = None
+    tags: list[NewsTagOut] = []
+    published_at: str | None = None
+    created_at: str | None = None
+
+
+class NewsDetailOut(NewsCardOut):
+    """Полная карточка новости (включая media)."""
+
+    content: str
+    author_id: int
+    author_name: str | None = None
+    status: str
+    scheduled_at: str | None = None
+    source: str
+    created_automatically: bool
+    media: list[NewsMediaOut] = []
+    updated_at: str | None = None
+
+
+class NewsCreateIn(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=1)
+    category_id: int | None = None
+    status: Literal["draft", "scheduled", "published"] = "draft"
+    scheduled_at: datetime | None = None
+    tags: list[str] = []
+    # Спека §5: только manual; auto|api — зарезервированы для контент-завода.
+    source: str = "manual"
+    created_automatically: bool = False
+
+
+class NewsUpdateIn(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    content: str | None = Field(default=None, min_length=1)
+    category_id: int | None = None
+    cover_key: str | None = None
+    tags: list[str] | None = None
+
+
+class NewsScheduleIn(BaseModel):
+    scheduled_at: datetime
+
+
+class NewsFeedOut(BaseModel):
+    """Страница публичной ленты (page/per_page)."""
+
+    items: list[NewsCardOut]
+    total: int
+    page: int
+    per_page: int
+
+
+# ─── Достижения (тикет 01, спека §4.2) ───────────────────────────────────────
+
+
+class AchievementCatalogOut(BaseModel):
+    """Запись публичного каталога достижений (спека §4.2).
+
+    Секретные медали (secret=True) присутствуют в каталоге: флаг и описание
+    видны, раскрытие секрета делает витрина по состоянию пользователя
+    (тикет 03).
+    """
+
+    id: int
+    slug: str
+    title: str
+    description: str
+    group: str
+    rarity: str
+    sector_slug: str | None = None
+    threshold: int | None = None
+    ugt_level: int | None = None
+    secret: bool
+    sort_order: int
+    icon_key: str
+
+
+# ─── Витрина достижений (тикет 03, спека §4.6) ──────────────────────────────
+
+
+class AchievementOut(BaseModel):
+    """Медаль каталога, вложенная в витрину (mine / project-achievements)."""
+
+    id: int
+    slug: str
+    title: str
+    description: str
+    group: str
+    rarity: str
+    sector_slug: str | None = None
+    threshold: int | None = None
+    ugt_level: int | None = None
+    secret: bool
+    sort_order: int
+    icon_key: str
+
+
+class AchievementProgressOut(BaseModel):
+    """Прогресс до следующей ступени пороговой медали (doc-*/m-*).
+
+    ``current_count`` — последний подтверждённый порог (times выданной
+    ступени группы), ``next_threshold`` — следующий порог из каталога
+    (None, если достигнута максимальная ступень).
+    """
+
+    current_count: int
+    next_threshold: int | None = None
+
+
+class UserAchievementOut(BaseModel):
+    """Персональная медаль в витрине пользователя (спека §4.6).
+
+    ``progress`` заполняется только для пороговых ступеней групп
+    documents/member (doc-*, m-*): текущее число повторений против
+    следующего порога каталога («5/10 документов — осталось 5»).
+    """
+
+    achievement: AchievementOut
+    times: int
+    awarded_at: str  # ISO 8601 (datetime → хелпер-сериализатор)
+    project_id: int | None = None
+    project_name: str | None = None
+    progress: AchievementProgressOut | None = None
+
+
+class ProjectAchievementOut(BaseModel):
+    """Командная медаль проекта (спека §4.6, «Достижения команды»)."""
+
+    achievement: AchievementOut
+    awarded_at: str  # ISO 8601 (datetime → хелпер-сериализатор)
+
+
+
+# ─── Админ-аналитика достижений (тикет 09, спека §4.7) ──────────────────────
+
+
+class AchievementStatsTotals(BaseModel):
+    """Сводные счётчики начислений (тикет 09)."""
+
+    total_awards: int
+    awards_last_week: int
+    unique_users: int
+    unique_projects: int
+
+
+class AchievementStatsPoint(BaseModel):
+    """Точка динамики начислений: день или начало недели (UTC, ISO-дата)."""
+
+    date: str
+    count: int
+
+
+class AchievementStatsGroupItem(BaseModel):
+    """Срез начислений по ключу (group каталога или rarity)."""
+
+    key: str
+    count: int
+    percent: float
+
+
+class AchievementStatsSectorItem(BaseModel):
+    """Отраслевой срез: начисления командных медалей по category проектов."""
+
+    category: str
+    count: int
+    projects: int
+
+
+class AchievementTopItem(BaseModel):
+    """Медаль в топе начислений."""
+
+    slug: str
+    title: str
+    group: str
+    rarity: str
+    count: int
+
+
+class AchievementStalledProject(BaseModel):
+    """Проект, застрявший на уровне N дольше 90 дней."""
+
+    id: int
+    name: str
+    current_level: int
+    days: int
+
+
+class AchievementManagerReview(BaseModel):
+    """Среднее время проверки менеджерами (календарные часы).
+
+    Момент решения ≈ updated_at заявки (столбца decided_at в схеме нет,
+    onupdate срабатывает в decide_promotion). avg_hours = None, если
+    решённых заявок ещё нет.
+    """
+
+    avg_hours: float | None = None
+    decided_count: int = 0
+
+
+class AdminAchievementsStatsOut(BaseModel):
+    """Ответ GET /admin/achievements/stats (спека §4.7)."""
+
+    generated_at: str
+    totals: AchievementStatsTotals
+    by_day: list[AchievementStatsPoint]
+    by_week: list[AchievementStatsPoint]
+    by_group: list[AchievementStatsGroupItem]
+    by_rarity: list[AchievementStatsGroupItem]
+    by_sector: list[AchievementStatsSectorItem]
+    top_achievements: list[AchievementTopItem]
+    stalled_projects: list[AchievementStalledProject]
+    manager_review: AchievementManagerReview

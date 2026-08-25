@@ -13,6 +13,8 @@ URL-схемы ограничены http/https/mailto (javascript:-URL нево�
 
 from __future__ import annotations
 
+import re
+
 import nh3
 
 _ALLOWED_TAGS = frozenset(
@@ -70,3 +72,11 @@ def sanitize_html(raw: str) -> str:
         url_schemes=_ALLOWED_URL_SCHEMES,
         link_rel="noopener noreferrer",
     )
+
+
+_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def strip_tags(raw: str) -> str:
+    """Текст без разметки (заголовки, excerpt карточек в ленте)."""
+    return _TAG_RE.sub("", raw or "")

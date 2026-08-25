@@ -31,6 +31,7 @@ from app.schemas import (
     StageEvaluateOut,
     StageRequirementOut,
 )
+from app.services.achievements import award_document
 from app.services.ai_assistant import ask_llm
 from app.services.file_storage import FileStorageError, scanner, store_project_file
 
@@ -180,6 +181,12 @@ async def _trigger_application(
 ) -> dict:
     """Автотриггер: полный комплект → заявка на повышение (снимок версий)."""
     result: dict = {"doc_id": doc.id, "request_id": None, "request_status": None}
+
+    # Принятый документ → персональные медали (doc-first, ступени
+    # 5/10/25/50/100, коллекционер). Идемпотентно: повторная версия того же
+    # документа не награждает повторно; счётчики ступеней считают уникальные
+    # документы пользователя в проекте.
+    await award_document(db, project, user, doc.doc_type)
 
     stage = await _current_stage(db, project)
     if stage is not None:

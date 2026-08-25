@@ -11,6 +11,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     MetaData,
     Numeric,
@@ -19,6 +20,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
     func,
     select,
 )
@@ -706,5 +708,227 @@ class NioktrCard(Base):
     )
     imported_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+# ─── Новостной раздел (перенос со старой линии, спека §3.2) ─────────────────
+
+news_post_tags_tbl = Table(
+    "news_post_tags",
+    metadata,
+    Column(
+        "post_id", BigInteger,
+        ForeignKey("public.news_posts.id", ondelete="CASCADE"), primary_key=True,
+    ),
+    Column(
+        "tag_id", BigInteger,
+        ForeignKey("public.news_tags.id", ondelete="CASCADE"), primary_key=True,
+    ),
+)
+
+
+class NewsCategory(Base):
+    """Категория новости (справочник; seed — миграция 0024)."""
+
+    __tablename__ = "news_categories"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class NewsTag(Base):
+    """Мягкий тег новости: создаётся при первом использовании."""
+
+    __tablename__ = "news_tags"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+
+
+class NewsPost(Base):
+    """Новость (спека §3.2).
+
+    Жизненный цикл: draft → scheduled (scheduled_at) → published.
+    source: manual | auto | api (задел контент-завода, спека §5);
+    created_automatically — флаг ставит только будущий шлюз.
+    """
+
+    __tablename__ = "news_posts"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="draft", server_default="draft"
+    )
+    category_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.news_categories.id", ondelete="SET NULL")
+    )
+    author_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
+    )
+    cover_key: Mapped[str | None] = mapped_column(String(255))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="manual", server_default="manual"
+    )
+    created_automatically: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+    category: Mapped[NewsCategory | None] = relationship(lazy="selectin")
+    tags: Mapped[list[NewsTag]] = relationship(
+        secondary=news_post_tags_tbl, lazy="selectin", order_by="NewsTag.name"
+    )
+    media: Mapped[list[NewsPostMedia]] = relationship(
+        back_populates="post",
+        lazy="selectin",
+        order_by="NewsPostMedia.sort_order",
+        cascade="all, delete-orphan",
+    )
+
+
+class NewsPostMedia(Base):
+    """Медиафайл новости (обложка/вложение/галерея), спека §3.2."""
+
+    __tablename__ = "news_post_media"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    post_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.news_posts.id", ondelete="CASCADE"), nullable=False
+    )
+    storage_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(127), nullable=False)
+    kind: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="inline", server_default="inline"
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    post: Mapped[NewsPost] = relationship(back_populates="media")
+
+
+# ─── Достижения (перенос со старой линии, спека §4.2) ───────────────────────
+
+
+class Achievement(Base):
+    """Медаль каталога достижений (спека §4.2).
+
+    Каталог наполняется идемпотентным seed (миграция 0025 + опционально
+    ``app/db/seed_achievements.py``): 66 записей, slug = icon_key.
+    """
+
+    __tablename__ = "achievements"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    # `group` — зарезервированное слово PostgreSQL; SQLAlchemy экранирует сам.
+    group: Mapped[str] = mapped_column(String(30), nullable=False)
+    rarity: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="common", server_default="common"
+    )
+    sector_slug: Mapped[str | None] = mapped_column(String(40))
+    threshold: Mapped[int | None] = mapped_column(Integer)
+    ugt_level: Mapped[int | None] = mapped_column(Integer)
+    secret: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    icon_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+
+class UserAchievement(Base):
+    """Персональная медаль пользователя (спека §4.2).
+
+    Дедупликация «один раз за событие» — UNIQUE (user_id, achievement_id,
+    event_ref); логическую дедупликацию «одна медаль за раз» дополнительно
+    проверяет сервис наградчиков (PostgreSQL считает NULL event_ref
+    различными). times для ступеней хранит значение порога (doc-5 → 5).
+    """
+
+    __tablename__ = "user_achievements"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="CASCADE"), nullable=False
+    )
+    achievement_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.achievements.id", ondelete="CASCADE"), nullable=False
+    )
+    project_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=True
+    )
+    event_ref: Mapped[str | None] = mapped_column(String(120))
+    times: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    awarded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_user_achievements_user_id_hash", "user_id", postgresql_using="hash"),
+        Index(
+            "ix_user_achievements_achievement_id_hash",
+            "achievement_id",
+            postgresql_using="hash",
+        ),
+        Index("ix_user_achievements_project_id_hash", "project_id", postgresql_using="hash"),
+        UniqueConstraint(
+            "user_id",
+            "achievement_id",
+            "event_ref",
+            name="uq_user_achievements_user_achievement_event",
+        ),
+    )
+
+
+class ProjectAchievement(Base):
+    """Командная медаль проекта (спека §4.2). UNIQUE (project_id, achievement_id)."""
+
+    __tablename__ = "project_achievements"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    achievement_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.achievements.id", ondelete="CASCADE"), nullable=False
+    )
+    awarded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_project_achievements_project_id_hash", "project_id", postgresql_using="hash"),
+        Index(
+            "ix_project_achievements_achievement_id_hash",
+            "achievement_id",
+            postgresql_using="hash",
+        ),
+        UniqueConstraint(
+            "project_id",
+            "achievement_id",
+            name="uq_project_achievements_project_achievement",
+        ),
     )
 

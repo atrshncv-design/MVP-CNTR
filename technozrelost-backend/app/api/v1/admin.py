@@ -1,13 +1,17 @@
-"""Администрирование: глобальный append-only аудит (тикет 13)."""
+"""Администрирование: глобальный append-only аудит (тикет 13) и аналитика
+достижений (перенос со старой линии, спека §4.7)."""
 
 from __future__ import annotations
+
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Query
 from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DBSession, require_role
 from app.db.models import AuditTrailEntry, User
-from app.schemas import AuditTrailEntryOut
+from app.schemas import AdminAchievementsStatsOut, AuditTrailEntryOut
+from app.services.achievements import achievement_stats
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -52,3 +56,22 @@ async def global_audit(
         stmt = stmt.where(AuditTrailEntry.action == action)
     rows = await db.execute(stmt)
     return [_at_out(entry, name) for entry, name in rows]
+
+
+@router.get("/achievements/stats", response_model=AdminAchievementsStatsOut)
+async def achievements_stats(
+    db: DBSession,
+    user: CurrentUser,
+) -> AdminAchievementsStatsOut:
+    """Аналитика достижений (спека §4.7), только cntr_admin.
+
+    Срезы: динамика начислений по дням/неделям, распределения по группам и
+    редкости, отраслевые срезы, топ-10 медалей, застрявшие проекты, среднее
+    время проверки менеджеров. Пустая БД — нули и пустые списки без ошибок.
+    """
+    await AdminOnly(user)
+    stats = await achievement_stats(db)
+    return AdminAchievementsStatsOut(
+        generated_at=datetime.now(UTC).isoformat(),
+        **stats,
+    )

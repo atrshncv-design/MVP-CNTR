@@ -13,7 +13,7 @@ from __future__ import annotations
 from sqlalchemy import select, text
 
 from app.core.deps import DBSession
-from app.db.models import Notification, NotificationOutbox
+from app.db.models import Notification, NotificationOutbox, User
 
 
 async def notify_user(
@@ -92,3 +92,23 @@ async def claim_next_task(db: DBSession, manager_id: int) -> NotificationOutbox 
     return await db.scalar(
         select(NotificationOutbox).where(NotificationOutbox.id == row[0])
     )
+
+
+async def notify_news_published(db: DBSession, news_id: int, title: str) -> int:
+    """Публикация новости: уведомление «Новость: {title}» каждому активному.
+
+    Каждому активному пользователю — Notification + outbox-запись (project
+    scope, delivered) в той же транзакции (transactional outbox).
+    Возвращает число созданных уведомлений.
+    """
+    rows = await db.execute(select(User.id).where(User.is_active.is_(True)))
+    user_ids = list(rows.scalars().all())
+    for user_id in user_ids:
+        await notify_user(
+            db,
+            user_id,
+            "news_published",
+            f"Новость: {title}",
+            {"news_id": news_id, "title": title},
+        )
+    return len(user_ids)

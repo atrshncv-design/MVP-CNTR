@@ -21,6 +21,7 @@ from app.db.models import (
     Notification,
     Project,
     ProjectDocument,
+    ProjectMember,
     PromotionRequest,
     QuestionnaireResult,
     User,
@@ -32,6 +33,7 @@ from app.schemas import (
     PromotionDecisionIn,
     PromotionRequestOut,
 )
+from app.services.achievements import award_meta, award_ugt
 from app.services.notifications import notify_user
 
 router = APIRouter(prefix="/manager", tags=["manager"])
@@ -271,6 +273,25 @@ async def decide_promotion(
                 details={"from_level": req.from_level, "to_level": req.to_level},
             )
         )
+        # Подтверждение УГТ N → командные медали (ugt-N, отраслевая sector-*,
+        # quality-проверки) всем активным участникам проекта + мета-медали.
+        # Идемпотентно: повторное подтверждение уровня не дублирует записи;
+        # коммит ниже — награды атомарны с решением менеджера.
+        await award_ugt(db, project, req.to_level)
+        member_ids = (
+            (
+                await db.execute(
+                    select(ProjectMember.user_id).where(
+                        ProjectMember.project_id == project.id,
+                        ProjectMember.status == "active",
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for member_id in member_ids:
+            await award_meta(db, member_id)
     else:
         req.status = "rejected"
         req.rejection_reason = payload.reason or "Отклонено менеджером ЦНТР"
