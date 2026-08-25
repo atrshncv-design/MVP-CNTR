@@ -49,6 +49,7 @@ npm ci && npm run dev                                               # http://loc
 
 ## Release gate
 
-`docs/.scratch/friday-release-candidate/release-gate-report.md` — результаты
-black-box проверки: 191/191 pytest, frontend гейты зелёные, security ALL PASS,
-E2E УГТ 1→9, pyright 0.
+Результаты black-box проверки friday-rc (191/191 pytest, frontend гейты
+зелёные, security ALL PASS, E2E УГТ 1→9, pyright 0) — в истории git,
+путь `docs/.scratch/friday-release-candidate/release-gate-report.md`
+(выведен из дерева, восстановим: `git log --follow`).
