@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # --- ОС-мусор ---
 .DS_Store
 Thumbs.db
@@ -37,3 +38,15 @@ npm-debug.log*
 
 # --- Рабочие каталоги прогона и бэкапы ---
 .backups/
+.worktrees/
+
+# --- Корень репозитория: сырые данные и черновики ---
+.git_backup_mvp0/
+*/.git_backup_mvp0/
+ГОСТЫ/
+Данные для тестового реестра/
+.od-skills/
+friday-release-candidate/
+
+# --- Автопилот: pid/log локального сервера дашборда ---
+.autopilot/serve.*
