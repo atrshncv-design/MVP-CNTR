@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { Building2, CheckCircle2, Clock, FileX2, PlusCircle, Send, UserRound } from "lucide-react";
 
 import AchievementsShowcase from "@/components/dashboard/achievements-showcase";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 interface Profile {
   id: number;

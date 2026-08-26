@@ -2,9 +2,11 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Клиентские компоненты ходят в бэкенд напрямую по NEXT_PUBLIC_API_URL
-// (или fallback 127.0.0.1:8000 в dev) — CSP connect-src должен их пускать.
-const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+// Клиентские вызовы идут по относительному /api/v1 того же origin
+// (единый модуль src/lib/public-api.ts), поэтому CSP достаточно 'self'.
+// NEXT_PUBLIC_API_URL — опциональный оверрайд адреса API: если он задан,
+// разрешаем и его (единственный источник внешнего хоста в connect-src).
+const publicApiOverride = process.env.NEXT_PUBLIC_API_URL?.trim();
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -14,7 +16,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src 'self' ${apiOrigin}`,
+  `connect-src 'self'${publicApiOverride ? ` ${publicApiOverride}` : ""}`,
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -34,13 +36,15 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   // Публичная демо-ссылка с локальной машины: один туннель на сайт,
-  // а все запросы /api/v1/* проксируются на локальный FastAPI (127.0.0.1:8000).
-  // Это убирает зависимость браузера клиента от внешнего адреса API и CORS.
+  // а все запросы /api/v1/* проксируются на внутренний адрес FastAPI.
+  // Адрес прокси — единственное место вне src/lib/public-api.ts с явным
+  // дефолтом: это конфигурация серверного прокси, она никогда не попадает
+  // в клиентский бандл (прод берёт адрес из API_URL_INTERNAL).
   async rewrites() {
     return [
       {
         source: "/api/v1/:path*",
-        destination: "http://127.0.0.1:8000/api/v1/:path*",
+        destination: `${process.env.API_URL_INTERNAL ?? "http://127.0.0.1:8000"}/api/v1/:path*`,
       },
     ];
   },

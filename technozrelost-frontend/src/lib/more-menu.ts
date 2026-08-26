@@ -44,18 +44,19 @@ export const MORE_MENU_ITEMS: MoreMenuItem[] = [
 ];
 
 /**
- * Ролевая фильтрация пунктов «Больше функций»: пункт виден, если его маршрут
- * не ограничен картой ролей (allowedRolesFor → null) либо хотя бы одна роль
- * сессии входит в список разрешённых — тот же источник истины, что middleware,
- * поэтому меню не показывает ссылки, которые middleware перепишет на /forbidden.
- * Least-privileged по умолчанию: пустые/неизвестные роли (undefined, null, [])
- * дают только пункты без ролевых ограничений — админ-пункты появляются лишь
- * при явном наличии роли из src/lib/roles.ts.
+ * Ролевая фильтрация пунктов «Больше функций»: пункт виден, только если
+ * маршрут есть в матрице ролей и хотя бы одна роль сессии входит в список
+ * разрешённых — тот же источник истины, что middleware, поэтому меню не
+ * показывает ссылки, которые middleware перепишет на /forbidden.
+ * Fail-closed (FE-01): allowedRolesFor → null («маршрут вне матрицы»)
+ * трактуется как запрет, а не как «без ограничений»; пустые/неизвестные
+ * роли (undefined, null, []) дают только явно разрешённые им пункты —
+ * админ-пункты появляются лишь при явном наличии роли из src/lib/roles.ts.
  */
 export function getVisibleMenuItems(userRoles?: string[] | null): MoreMenuItem[] {
   const known = userRoles ?? [];
   return MORE_MENU_ITEMS.filter((item) => {
     const allowed = allowedRolesFor(item.href);
-    return allowed === null || allowed.some((role) => known.includes(role));
+    return allowed !== null && allowed.some((role) => known.includes(role));
   });
 }

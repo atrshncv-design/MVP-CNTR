@@ -15,8 +15,8 @@ import {
   Users,
 } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 import { AssessUgTCard } from "@/components/assess-ugt-card";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
 interface ProjectSummary {
   id: number;

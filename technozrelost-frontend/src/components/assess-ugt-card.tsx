@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Gauge } from "lucide-react";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 /**
  * Карточка «Оценить УГТ» — точка входа экспресс-оценки из любого ЛК (тикет 26).

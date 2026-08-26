@@ -30,14 +30,16 @@ export default auth((req) => {
       return NextResponse.redirect(url);
     }
 
+    // Fail-closed: отсутствие записи в матрице — запрет (FE-01). Раньше
+    // непокрытый маршрут трактовался как «разрешено всем» — эту дыру
+    // закрыли запретом по умолчанию.
     const allowed = allowedRolesFor(pathname);
-    if (allowed && allowed.length > 0) {
-      const userRoles = new Set(session!.user.roles);
-      const ok = allowed.some((r) => userRoles.has(r));
-      if (!ok) {
-        // Пользователь залогинен, но роль не подходит — доступ запрещён.
-        return NextResponse.rewrite(new URL("/forbidden", req.nextUrl));
-      }
+    const userRoles = new Set(session!.user.roles);
+    const ok =
+      allowed !== null && allowed.length > 0 && allowed.some((r) => userRoles.has(r));
+    if (!ok) {
+      // Нет записи или роль не подходит — доступ запрещён.
+      return NextResponse.rewrite(new URL("/forbidden", req.nextUrl));
     }
     return NextResponse.next();
   }

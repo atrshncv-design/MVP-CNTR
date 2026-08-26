@@ -80,8 +80,8 @@ test("more-functions menu is least-privileged when session roles are unknown", (
   assert.match(roles, /"\/dashboard\/news\/admin":\s*\["cntr_admin",\s*"cntr_manager"\]/);
   assert.match(
     body,
-    /allowed === null \|\| allowed\.some/,
-    "restricted-пункты требуют явного совпадения роли",
+    /allowed !== null && allowed\.some/,
+    "fail-closed: пункт без записи в матрице скрыт, restricted-пункты требуют явного совпадения роли",
   );
 });
 

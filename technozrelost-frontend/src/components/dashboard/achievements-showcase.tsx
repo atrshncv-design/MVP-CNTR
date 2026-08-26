@@ -10,8 +10,8 @@ import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Medal } from "@/components/achievements/medal";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 const GROUP_LABELS: Record<string, string> = {
   ugt: "УГТ",

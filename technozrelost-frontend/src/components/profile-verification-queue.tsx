@@ -3,8 +3,8 @@
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, Building2, Check, Inbox, Loader2, RefreshCw, UserRound, X } from "lucide-react";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 interface QueueProfile {
   id: number;

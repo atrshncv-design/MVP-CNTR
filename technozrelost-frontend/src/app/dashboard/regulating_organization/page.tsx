@@ -8,8 +8,8 @@ import { AlertCircle, FileCheck, FolderKanban, Loader2, RefreshCw } from 'lucide
 import JoinProjectForm from '@/components/join-project-form';
 import { AssessUgTCard } from '@/components/assess-ugt-card';
 import VerificationDocsPanel from '@/components/verification-docs-panel';
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 interface JoinedProject {
   id: number;

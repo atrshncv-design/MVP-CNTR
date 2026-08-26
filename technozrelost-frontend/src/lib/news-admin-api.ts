@@ -17,8 +17,8 @@ import type {
   NewsMedia,
   NewsStatus,
 } from "@/lib/news-types";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 /** Тело создания/редактирования новости (NewsCreateIn/NewsUpdateIn). */
 export interface NewsPayload {

@@ -44,8 +44,8 @@ import ProjectAchievements from '@/components/dashboard/project-achievements';
 import ProjectFilesPanel from '@/components/project-files-panel';
 import RequestCommentsPanel from '@/components/request-comments-panel';
 import ProjectRadar from '@/components/dashboard/project-radar';
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 interface ProjectData {
   project: {

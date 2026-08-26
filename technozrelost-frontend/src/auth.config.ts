@@ -1,9 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-
-// Серверный URL бэкенда. Не NEXT_PUBLIC_: читается в рантайме и не инлайнится
-// в клиентские бандлы (клиент ходит в API относительным путём через rewrites).
-const API_URL = process.env.API_URL_INTERNAL ?? "http://127.0.0.1:8000";
+import { serverApiBase } from "@/lib/public-api";
 
 interface ApiUser {
   id: number;
@@ -40,7 +37,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 
-        const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+        const res = await fetch(`${serverApiBase()}/api/v1/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
@@ -85,7 +82,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return token;
       }
       try {
-        const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+        const res = await fetch(`${serverApiBase()}/api/v1/auth/refresh`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refresh_token: token.refreshToken }),

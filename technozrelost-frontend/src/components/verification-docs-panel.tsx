@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FileCheck, FileText, Loader2, ShieldCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 type Project = { id: number; name: string; current_level: number };
 

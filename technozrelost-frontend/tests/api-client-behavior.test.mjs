@@ -5,7 +5,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ApiError, getProjects } from "../src/lib/api-client.ts";
+// serverApiBase() без конфигурации бросает ошибку (FE-02: fallback запрещён),
+// поэтому тестовое значение задаём до импорта клиента.
+process.env.API_URL_INTERNAL ??= "http://api.test:9999";
+
+const { ApiError, getProjects } = await import("../src/lib/api-client.ts");
 
 function mockFetch(impl) {
   const original = globalThis.fetch;

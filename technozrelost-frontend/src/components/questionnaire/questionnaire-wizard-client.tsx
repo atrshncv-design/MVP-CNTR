@@ -32,8 +32,8 @@ import {
   Tooltip,
 } from 'recharts';
 import { UGT_LEVELS } from '@/lib/ugt-data';
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 type Dimension = 'scientific' | 'technical' | 'organizational' | 'production';
 type AnswerStatus = 'not_started' | 'in_progress' | 'formed' | 'documented' | 'verified' | 'not_applicable';

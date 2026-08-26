@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import JoinProjectForm from '@/components/join-project-form';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 import { AssessUgTCard } from "@/components/assess-ugt-card";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
 /** Реестр технологий = опубликованные проекты УГТ 7+ (решение №14): RegistryProjectOut. */
 interface Technology {

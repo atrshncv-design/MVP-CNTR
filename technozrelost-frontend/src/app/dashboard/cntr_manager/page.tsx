@@ -5,8 +5,8 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, ArrowRight, Check, FileClock, FolderKanban, GitPullRequest, Inbox, Loader2, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
 import ProfileVerificationQueue from "@/components/profile-verification-queue";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 type Tab = "new" | "upgrades" | "all";
 type Draft = { id: number; name: string; description: string | null; preliminary_level: number | null; current_level: number; target_level: number; status: string; rejection_reason: string | null };
 type Project = { id: number; name: string; description: string | null; category: string | null; current_level: number; target_level: number; status: string; budget: number | null };

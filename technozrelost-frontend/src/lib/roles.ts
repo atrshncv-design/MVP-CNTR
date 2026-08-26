@@ -25,8 +25,27 @@ export const ROLE_DASHBOARD: Record<RoleSlug, string> = {
   cntr_manager: "/dashboard/cntr_manager",
 };
 
-// Какая роль вправе видеть какой кабинет.
+// Роли, которым открыт любой общий раздел кабинета (реестры, профиль,
+// карточки проектов): матрица fail-closed, поэтому «все роли» пишем явно —
+// отсутствие записи означает запрет (FE-01).
+const ALL_ROLES: RoleSlug[] = [
+  "gk_customer",
+  "rd_executor",
+  "scientific_org",
+  "serial_manufacturer",
+  "regulating_organization",
+  "auditor",
+  "investor",
+  "cntr_admin",
+  "cntr_manager",
+];
+
+// Какая роль вправе видеть какой кабинет. Порядок записей важен:
+// более специфичные маршруты объявляются раньше общих префиксов —
+// allowedRolesFor берёт ПЕРВОЕ совпадение (см. компиляцию ниже).
 export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
+  // Индекс /dashboard — редиректор на кабинет primary-роли: доступен всем.
+  "/dashboard": ALL_ROLES,
   // Универсальный опросник УГТ: доступен любой роли (решение №3 интервью 03.08)
   "/dashboard/gk_customer/projects/new": [
     "gk_customer",
@@ -99,20 +118,20 @@ export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
   ],
   // Новости (тикет 08): лента — все роли; консоль и редактор — только
   // сотрудники ЦНТР. Порядок важен: более специфичные маршруты идут раньше
-  // "/dashboard/news" (allowedRolesFor берёт первое совпадение по префиксу).
+  // "/dashboard/news" (allowedRolesFor берёт первое совпадение).
   "/dashboard/news/admin": ["cntr_admin", "cntr_manager"],
   "/dashboard/news/new": ["cntr_admin", "cntr_manager"],
-  "/dashboard/news": [
-    "gk_customer",
-    "rd_executor",
-    "scientific_org",
-    "serial_manufacturer",
-    "regulating_organization",
-    "auditor",
-    "investor",
-    "cntr_admin",
-    "cntr_manager",
-  ],
+  // Редактор существующей новости: [id] — динамический сегмент. Запись
+  // обязана стоять ВЫШЕ "/dashboard/news", иначе редактор унаследует доступ
+  // ленты для всех ролей (FE-01: дыра была найдена аудитом).
+  "/dashboard/news/[id]/edit": ["cntr_admin", "cntr_manager"],
+  "/dashboard/news": ALL_ROLES,
+  // Реестр НИОКР и карточка по рег. номеру — общий раздел (FE-01).
+  "/dashboard/nioktr": ALL_ROLES,
+  // Реестр организаций и карточка по ОГРН — общий раздел (FE-01).
+  "/dashboard/organizations": ALL_ROLES,
+  // Профиль пользователя — общий раздел (FE-01).
+  "/dashboard/profile": ALL_ROLES,
 };
 
 export function isProtectedRoute(pathname: string): boolean {
@@ -123,9 +142,39 @@ export function isAuthRoute(pathname: string): boolean {
   return ["/login", "/register"].includes(pathname);
 }
 
+/** Экранирование спецсимволов regex в статических частях ключа маршрута. */
+function escapeRegExp(part: string): string {
+  return part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Ключи матрицы компилируются один раз при загрузке модуля: [param] —
+// ровно один сегмент пути, поэтому middleware сверяет ИНСТАНЦИИРОВАННЫЕ
+// пути (/dashboard/news/42/edit), а не литеральные "[id]". Сопоставление
+// по границе сегмента (^…(/|$)) сохраняет прежнюю префиксную семантику.
+// Корень /dashboard — исключение: он совпадает только точно, иначе
+// префиксная запись поглотила бы ВСЕ вложенные маршруты и вернула бы
+// им полный доступ вместо запрета по умолчанию (fail-closed сломался бы).
+const EXACT_ONLY_ROUTES = new Set<string>(["/dashboard"]);
+
+const COMPILED_ROUTES = Object.entries(ROUTE_ALLOWED_ROLES).map(
+  ([key, roles]) => {
+    const source = key
+      .split(/\[[^\]]*\]/)
+      .map(escapeRegExp)
+      .join("[^/]+");
+    const tail = EXACT_ONLY_ROUTES.has(key) ? "$" : "(/|$)";
+    return { pattern: new RegExp(`^${source}${tail}`), roles };
+  },
+);
+
+/**
+ * Роли, разрешённые для маршрута, либо null — если записи нет.
+ * null означает ЗАПРЕТ (fail-closed): вызывающий (middleware, меню)
+ * обязан трактовать его как «доступ ни для кого».
+ */
 export function allowedRolesFor(pathname: string): RoleSlug[] | null {
-  for (const [prefix, roles] of Object.entries(ROUTE_ALLOWED_ROLES)) {
-    if (pathname === prefix || pathname.startsWith(prefix + "/")) return roles;
+  for (const { pattern, roles } of COMPILED_ROUTES) {
+    if (pattern.test(pathname)) return roles;
   }
   return null;
 }

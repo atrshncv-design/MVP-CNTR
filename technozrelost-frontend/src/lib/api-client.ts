@@ -1,7 +1,8 @@
-// Серверный URL бэкенда (модуль используется только серверными компонентами).
-// Не NEXT_PUBLIC_: читается в рантайме, не инлайнится в клиентские бандлы.
-const API_URL = process.env.API_URL_INTERNAL ?? "http://127.0.0.1:8000";
-
+// Серверные вызовы идут на внутренний адрес бэкенда из единого модуля
+// (FE-02): fallback на localhost в проде запрещён — модуль падает с
+// понятной ошибкой при неполной конфигурации. Относительный импорт, чтобы
+// поведенческие тесты могли импортировать клиента напрямую из node.
+import { serverApiBase } from "./public-api.ts";
 import type { NewsCategory, NewsDetail, NewsFeed, NewsFeedParams } from "@/lib/news-types";
 
 export class ApiError extends Error {
@@ -28,7 +29,7 @@ export interface ProjectSummary {
 }
 
 async function apiRequest<T>(path: string, accessToken: string): Promise<T> {
-  const response = await fetch(`${API_URL}/api/v1${path}`, {
+  const response = await fetch(`${serverApiBase()}/api/v1${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
     signal: AbortSignal.timeout(5_000),
@@ -49,7 +50,7 @@ export function getProjects(accessToken: string): Promise<ProjectSummary[]> {
 // Клиентские обёртки ходят по относительным /api/v1/* через rewrites.
 
 async function publicApiRequest<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}/api/v1${path}`, {
+  const response = await fetch(`${serverApiBase()}/api/v1${path}`, {
     cache: "no-store",
     signal: AbortSignal.timeout(8_000),
   });

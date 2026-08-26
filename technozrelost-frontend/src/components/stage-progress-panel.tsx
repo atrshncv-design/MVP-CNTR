@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, FileUp, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 type Requirement = { id: number; from_level: number; to_level: number; title: string; description: string; template_version: string; uploaded: boolean };
 type Evaluation = { request_id: number | null; success: boolean; missing: string[]; summary: string };

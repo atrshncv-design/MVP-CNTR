@@ -9,8 +9,8 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 import { Medal } from "@/components/achievements/medal";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 interface AchievementItem {
   id: number;

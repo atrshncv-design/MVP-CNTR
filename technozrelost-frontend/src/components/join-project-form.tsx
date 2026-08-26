@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { KeyRound, Loader2, LogIn, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
 /** Роли, доступные при вступлении в проект по токену */
 const JOIN_ROLES = [

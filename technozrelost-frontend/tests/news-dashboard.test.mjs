@@ -108,7 +108,9 @@ test("RBAC: лента — всем, консоль и редактор — то
 
   assert.match(roles, /"\/dashboard\/news\/admin": \["cntr_admin", "cntr_manager"\]/);
   assert.match(roles, /"\/dashboard\/news\/new": \["cntr_admin", "cntr_manager"\]/);
-  assert.match(roles, /"\/dashboard\/news": \[/); // все роли
+  // Лента — всем ролям: общий список ALL_ROLES (FE-01), он же для остальных
+  // общих разделов; редактор "/news/[id]/edit" — только сотрудникам ЦНТР.
+  assert.match(roles, /"\/dashboard\/news": ALL_ROLES/);
   // Навигация кабинета — по кнопке «Больше функций» (header-nav), не текстовым рядом:
   // «Новости» доступны всем в общем меню, админ-раздел фильтруется по ролям.
   assert.match(moreMenu, /label: "Новости", href: "\/dashboard\/news"/);
