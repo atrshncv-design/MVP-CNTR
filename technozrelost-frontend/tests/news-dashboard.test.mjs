@@ -104,9 +104,16 @@ test("authorized api client: консоль, lifecycle и media (Bearer)", () =>
 test("RBAC: лента — всем, консоль и редактор — только сотрудникам ЦНТР", () => {
   const roles = read("src/lib/roles.ts");
   const layout = read("src/app/dashboard/layout.tsx");
+  const moreMenu = read("src/lib/more-menu.ts");
 
   assert.match(roles, /"\/dashboard\/news\/admin": \["cntr_admin", "cntr_manager"\]/);
   assert.match(roles, /"\/dashboard\/news\/new": \["cntr_admin", "cntr_manager"\]/);
   assert.match(roles, /"\/dashboard\/news": \[/); // все роли
-  assert.match(layout, /href: "\/dashboard\/news", label: "Новости"/);
+  // Навигация кабинета — по кнопке «Больше функций» (header-nav), не текстовым рядом:
+  // «Новости» доступны всем в общем меню, админ-раздел фильтруется по ролям.
+  assert.match(moreMenu, /label: "Новости", href: "\/dashboard\/news"/);
+  assert.match(moreMenu, /label: "Новости: админ", href: "\/dashboard\/news\/admin"/);
+  assert.match(moreMenu, /allowedRolesFor/); // фильтрация пунктов по ролям сессии
+  assert.match(layout, /HeaderNav/);
+  assert.match(layout, /MoreFunctionsMenu|more-functions-menu/);
 });

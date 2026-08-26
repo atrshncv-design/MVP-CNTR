@@ -19,14 +19,70 @@ test("login exposes the approved product identity and explicit form states", () 
   assert.match(source, /\[1, 2, 3, 4, 5, 6, 7, 8, 9\]/);
 });
 
-test("dashboard shell uses process-first global navigation", () => {
-  const source = read("src/app/dashboard/layout.tsx");
+test("dashboard shell uses compact header with menu button instead of link row", () => {
+  const layout = read("src/app/dashboard/layout.tsx");
 
-  for (const label of ["Рабочий стол", "Проекты", "Заявки", "Реестры", "Документы"]) {
-    assert.match(source, new RegExp(label));
+  // Требование владельца: в шапке — кнопка-меню, а не длинный ряд ссылок.
+  // В layout остаются только core-пункты (источник internal-ux-redesign),
+  // остальное уезжает в выпадающее меню «Больше функций».
+  assert.match(layout, /import HeaderNav from "@\/components\/dashboard\/header-nav"/);
+  assert.match(layout, /import MobileNav from "@\/components\/dashboard\/mobile-nav"/);
+  for (const label of ["Рабочий стол", "Проекты", "Заявки"]) {
+    assert.match(layout, new RegExp(label));
   }
-  assert.match(source, /ТЕХНОЗРЕЛОСТЬ/);
-  assert.match(source, /Перейти к основному содержимому/);
+  assert.match(layout, /ТЕХНОЗРЕЛОСТЬ/);
+  assert.match(layout, /Перейти к основному содержимому/);
+});
+
+test("more-functions menu covers every dashboard route with role filtering", () => {
+  const moreMenu = read("src/lib/more-menu.ts");
+
+  // Все страницы кабинета платформы, включая новые (новости, админ-раздел
+  // новостей, профиль с «Моими достижениями», исполнители).
+  for (const href of [
+    "/dashboard/technologies",
+    "/dashboard/nioktr",
+    "/dashboard/organizations",
+    "/dashboard/news",
+    "/dashboard/news/admin",
+    "/dashboard/executors",
+    "/dashboard/ai-assistant",
+    "/dashboard/profile",
+  ]) {
+    assert.ok(
+      moreMenu.includes(`href: "${href}"`),
+      `пункт меню обязан вести на ${href}`,
+    );
+  }
+  // Фильтрация по ролям — тот же источник истины, что у middleware.
+  assert.match(moreMenu, /allowedRolesFor/);
+});
+
+test("more-functions menu is least-privileged when session roles are unknown", () => {
+  const moreMenu = read("src/lib/more-menu.ts");
+  const menuComponent = read("src/components/dashboard/more-functions-menu.tsx");
+  const roles = read("src/lib/roles.ts");
+
+  // Пустые/неизвестные роли — не повод показывать всё: getVisibleMenuItems
+  // принимает undefined/null и трактует их как «ролей нет» → unrestricted-only.
+  assert.match(moreMenu, /getVisibleMenuItems\(userRoles\?:\s*string\[\]\s*\|\s*null\)/);
+  const body = moreMenu.slice(moreMenu.indexOf("export function getVisibleMenuItems"));
+  assert.match(body, /const known = userRoles \?\? \[\];/);
+
+  // Компонент не имеет фолбэка на полный список: фильтрация вызывается
+  // всегда, импорт MORE_MENU_ITEMS в компоненте отсутствует.
+  assert.match(menuComponent, /getVisibleMenuItems\(userRoles\)/);
+  assert.doesNotMatch(menuComponent, /MORE_MENU_ITEMS/);
+  assert.doesNotMatch(menuComponent, /\?\s*getVisibleMenuItems[\s\S]{0,120}:\s*MORE_MENU_ITEMS/);
+
+  // Админ-пункт «Новости: админ» ограничен картой ролей и без явной роли
+  // cntr_admin/cntr_manager не появится даже при пустом списке ролей.
+  assert.match(roles, /"\/dashboard\/news\/admin":\s*\["cntr_admin",\s*"cntr_manager"\]/);
+  assert.match(
+    body,
+    /allowed === null \|\| allowed\.some/,
+    "restricted-пункты требуют явного совпадения роли",
+  );
 });
 
 test("customer P0 workspace is honest when no project API is connected", () => {
