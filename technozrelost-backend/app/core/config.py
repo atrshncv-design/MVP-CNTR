@@ -32,10 +32,17 @@ class Settings(BaseSettings):
 
     db_schema_public: str = "public"
     db_schema_test: str = "test"
-    # Пул соединений (таск 06): дефолт SQLAlchemy (5+10) при одном воркере
-    # ставит нагрузку 200 пользователей в очередь checkout'а соединений.
-    db_pool_size: int = 20
-    db_max_overflow: int = 30
+    # Пул соединений согласован с max_connections PostgreSQL (P-01/R14):
+    # 2 реплики приложения × пул + резерв < 100. Дешевле pgbouncer и достаточно
+    # для пилота; при росте нагрузки сначала pgbouncer, а не эти цифры.
+    db_pool_size: int = 10
+    db_max_overflow: int = 20
+    # Число реплик приложения в прод-стеке (deploy.replicas в docker-compose.prod.yml).
+    db_app_replicas: int = 2
+    # Лимит соединений PostgreSQL (max_connections в infra-конфиге Primary).
+    db_max_connections: int = 100
+    # Резерв сверх пулов: миграции alembic, планировщик новостей, ручной psql.
+    db_connections_reserve: int = 10
     vector_dimension: int = 1536
 
     jwt_secret: str = DEFAULT_JWT_SECRET

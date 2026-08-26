@@ -15,6 +15,7 @@ from sqlalchemy import select
 
 from app.api.v1.projects import get_project_or_404, require_project_access
 from app.core.deps import CNTR_STAFF_SLUGS, CurrentUser, DBSession, has_role, require_role
+from app.core.security import sign_share_attribution, verify_share_attribution
 from app.db.models import AuditTrailEntry, Project, ProjectMember, User, generate_join_token
 from app.schemas import (
     JoinDecisionIn,
@@ -24,6 +25,7 @@ from app.schemas import (
     MemberPriorityIn,
     ProjectOut,
     RegenerateTokenOut,
+    ShareSigOut,
 )
 
 router = APIRouter(prefix="/projects", tags=["membership"])
@@ -60,7 +62,11 @@ def _project_out(project: Project) -> ProjectOut:
 
 
 async def _add_audit(
-    db: DBSession, project_id: int, user_id: int, action: str, details: dict
+    db: DBSession,
+    project_id: int,
+    user_id: int,
+    action: str,
+    details: dict[str, object],
 ) -> None:
     db.add(
         AuditTrailEntry(
@@ -106,6 +112,20 @@ async def _sharer_is_priority(
     return await _is_priority_member(db, project.id, shared_by)
 
 
+@router.get("/{project_id}/share-sig", response_model=ShareSigOut)
+async def share_signature(
+    project_id: int, db: DBSession, user: CurrentUser
+) -> ShareSigOut:
+    """Выдаёт подписанную атрибуцию «поделился ссылкой» (N-01).
+
+    Только приоритетные (создатель/персонал/участник с is_priority) — ровно те,
+    кто вправе авто-одобрять вступление. Подпись живёт ограниченный срок,
+    поэтому «вечных» приглашений не остаётся.
+    """
+    project = await require_priority_access(db, project_id, user)
+    return ShareSigOut(share_sig=sign_share_attribution(project.id, user.id))
+
+
 # ─── Вступление ───────────────────────────────────────────────────────────────
 
 
@@ -129,9 +149,15 @@ async def join_project(payload: JoinIn, db: DBSession, user: CurrentUser) -> Joi
             raise HTTPException(status.HTTP_409_CONFLICT, "Заявка уже отправлена на рассмотрение")
         raise HTTPException(status.HTTP_409_CONFLICT, "Вы были исключены из проекта")
 
+    # N-01: авторство ссылки подтверждает только серверная HMAC-подпись;
+    # всё, что клиент пришлёт сверх этого (в т.ч. бывший shared_by), игнорируется.
     auto_accept = False
-    if payload.shared_by is not None:
-        auto_accept = await _sharer_is_priority(db, project, payload.shared_by)
+    attributed_to: int | None = None
+    if payload.share_sig:
+        sharer_id = verify_share_attribution(project.id, payload.share_sig)
+        if sharer_id is not None:
+            auto_accept = await _sharer_is_priority(db, project, sharer_id)
+            attributed_to = sharer_id
 
     member_status = "active" if auto_accept else "pending"
     db.add(
@@ -140,7 +166,7 @@ async def join_project(payload: JoinIn, db: DBSession, user: CurrentUser) -> Joi
             user_id=user.id,
             role_in_project=payload.role_in_project,
             status=member_status,
-            invited_by=payload.shared_by,
+            invited_by=attributed_to,
         )
     )
     await _add_audit(
@@ -148,7 +174,12 @@ async def join_project(payload: JoinIn, db: DBSession, user: CurrentUser) -> Joi
         project.id,
         user.id,
         "project.joined" if auto_accept else "project.join_requested",
-        {"token": token, "auto_accept": auto_accept, "role": payload.role_in_project},
+        {
+            "token": token,
+            "auto_accept": auto_accept,
+            "role": payload.role_in_project,
+            "attributed": attributed_to is not None,
+        },
     )
     await db.commit()
     return JoinResultOut(status=member_status, project=_project_out(project))

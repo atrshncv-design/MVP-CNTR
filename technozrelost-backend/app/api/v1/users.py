@@ -8,16 +8,17 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.auth import _user_out
 from app.core.deps import CurrentUser, DBSession, require_role
 from app.core.security import hash_password, verify_password
-from app.db.models import AuditTrailEntry, Role, User, user_roles_tbl
+from app.db.models import AuditTrailEntry, RefreshToken, Role, User, user_roles_tbl
 from app.schemas import (
     PasswordChangeIn,
     RoleOut,
@@ -67,6 +68,13 @@ async def change_password(
     if not verify_password(payload.old_password, user.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный текущий пароль")
     user.password_hash = hash_password(payload.new_password)
+    # R15: смена пароля (утеря ноутбука) обязана убить ВСЕ сессии —
+    # ревоким каждый живой refresh пользователя одним запросом.
+    await db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=datetime.now(UTC))
+    )
     await db.commit()
 
 

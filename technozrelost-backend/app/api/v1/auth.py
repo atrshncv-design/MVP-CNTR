@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
@@ -24,7 +25,7 @@ from app.services import auth_throttle
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-async def _issue_tokens(db, user: User) -> TokenOut:
+async def _issue_tokens(db: AsyncSession, user: User) -> TokenOut:
     """Выдаёт пару access+refresh и сохраняет refresh (хеш) для отзыва/ротации."""
     access = create_access_token(user.id, extra={"roles": [r.slug for r in user.roles]})
     refresh = create_refresh_token(user.id)
@@ -125,6 +126,21 @@ async def refresh(payload: RefreshTokenIn, db: DBSession) -> TokenOut:
     await db.flush()
     await db.refresh(user, attribute_names=["roles"])
     return await _issue_tokens(db, user)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(payload: RefreshTokenIn, db: DBSession) -> None:
+    """Выход: ревок текущего refresh-токена (R15).
+
+    Access доживает до истечения (≤60 минут) — принятый компромисс без
+    stateful-блоклиста access-токенов. Ответ 204 даже для неизвестного токена:
+    не раскрываем валидность чужих значений, выход идемпотентен.
+    """
+    token_hash = hash_token(payload.refresh_token)
+    row = await db.scalar(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
+    if row is not None and row.revoked_at is None:
+        row.revoked_at = datetime.now(UTC)
+        await db.commit()
 
 
 @router.get("/me", response_model=UserOut)

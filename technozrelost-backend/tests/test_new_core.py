@@ -8,7 +8,7 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.api.v1 import stages as stages_module
-from tests.support import register_test_user
+from tests.support import priority_share_sig, register_test_user
 
 
 def _register(client: TestClient, role: str = "gk_customer") -> tuple[str, int]:
@@ -203,7 +203,7 @@ def test_stage_requirements_and_auto_application(client: TestClient, monkeypatch
         json={
             "token": join_token,
             "role_in_project": "rd_executor",
-            "shared_by": owner_id,
+            "share_sig": priority_share_sig(client, owner_token, project_id),
         },
         headers=_auth(member_token),
     )
@@ -384,7 +384,7 @@ def test_verification_docs_before_and_after_join(client: TestClient) -> None:
         json={
             "token": join_token,
             "role_in_project": "regulating_organization",
-            "shared_by": owner_id,
+            "share_sig": priority_share_sig(client, owner_token, project_id),
         },
         headers=_auth(reg_token),
     )
@@ -427,7 +427,11 @@ def test_regular_participant_can_upload_verification_doc(client: TestClient) -> 
     join_token = _get_join_token(client, owner_token, project_id)
     client.post(
         "/api/v1/projects/join",
-        json={"token": join_token, "role_in_project": "rd_executor", "shared_by": owner_id},
+        json={
+            "token": join_token,
+            "role_in_project": "rd_executor",
+            "share_sig": priority_share_sig(client, owner_token, project_id),
+        },
         headers=_auth(rd_token),
     )
 

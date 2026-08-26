@@ -34,6 +34,58 @@ def _create_project(client: TestClient, token: str) -> dict:
     return response.json()
 
 
+def _share_sig(client: TestClient, token: str, project_id: int) -> tuple[str, int]:
+    """Легитимный путь атрибуции: приоритетный участник получает подпись у сервера."""
+    response = client.get(
+        f"/api/v1/projects/{project_id}/share-sig", headers=_auth(token)
+    )
+    assert response.status_code == 200, response.text
+    return response.json()["share_sig"]
+
+
+def test_forged_shared_by_does_not_auto_accept(client: TestClient) -> None:
+    """N-01: подставной в теле shared_by приоритетного участника не открывает модерацию."""
+    owner_token, owner_id = _register(client)
+    attacker_token, _ = _register(client, "rd_executor")
+    project = _create_project(client, owner_token)
+
+    join = client.post(
+        "/api/v1/projects/join",
+        json={
+            "token": project["join_token"],
+            "role_in_project": "rd_executor",
+            "shared_by": owner_id,
+        },
+        headers=_auth(attacker_token),
+    )
+    assert join.status_code == 200
+    assert join.json()["status"] != "active"
+
+    # заявка ждёт одобрения владельца
+    requests = client.get(
+        f"/api/v1/projects/{project['id']}/join-requests", headers=_auth(owner_token)
+    )
+    assert [r["status"] for r in requests.json()] == ["pending"]
+
+
+def test_forged_share_sig_is_rejected(client: TestClient) -> None:
+    """N-01: самодельная/подделанная подпись не проходит проверку сервером."""
+    owner_token, _ = _register(client)
+    attacker_token, _ = _register(client, "rd_executor")
+    project = _create_project(client, owner_token)
+    legit_sig = _share_sig(client, owner_token, project["id"])
+    user_id, _, digest = legit_sig.split(":")
+
+    tampered = f"{user_id}:9999999999:{digest}"
+    join = client.post(
+        "/api/v1/projects/join",
+        json={"token": project["join_token"], "share_sig": tampered},
+        headers=_auth(attacker_token),
+    )
+    assert join.status_code == 200
+    assert join.json()["status"] == "pending"
+
+
 def test_manual_token_entry_creates_pending_request(client: TestClient) -> None:
     owner_token, owner_id = _register(client)
     member_token, _ = _register(client, "rd_executor")
@@ -92,17 +144,18 @@ def test_owner_approves_request(client: TestClient) -> None:
 
 
 def test_priority_share_auto_joins(client: TestClient) -> None:
-    owner_token, owner_id = _register(client)
+    owner_token, _ = _register(client)
     member_token, _ = _register(client, "rd_executor")
     project = _create_project(client, owner_token)
 
-    # владелец поделился ссылкой → shared_by=owner → авто-вступление
+    # владелец получил у сервера подписанную ссылку → авто-вступление
+    sig = _share_sig(client, owner_token, project["id"])
     join = client.post(
         "/api/v1/projects/join",
         json={
             "token": project["join_token"],
             "role_in_project": "rd_executor",
-            "shared_by": owner_id,
+            "share_sig": sig,
         },
         headers=_auth(member_token),
     )
@@ -114,7 +167,7 @@ def test_priority_share_auto_joins(client: TestClient) -> None:
 
 
 def test_non_priority_share_stays_pending(client: TestClient) -> None:
-    owner_token, owner_id = _register(client)
+    owner_token, _ = _register(client)
     member_token, member_id = _register(client, "rd_executor")
     newbie_token, _ = _register(client, "scientific_org")
     project = _create_project(client, owner_token)
@@ -125,10 +178,16 @@ def test_non_priority_share_stays_pending(client: TestClient) -> None:
         json={
             "token": project["join_token"],
             "role_in_project": "rd_executor",
-            "shared_by": owner_id,
+            "share_sig": _share_sig(client, owner_token, project["id"]),
         },
         headers=_auth(member_token),
     )
+
+    # неприоритетный участник не может получить серверную подпись
+    denied_sig = client.get(
+        f"/api/v1/projects/{project['id']}/share-sig", headers=_auth(member_token)
+    )
+    assert denied_sig.status_code == 403
 
     # новый пользователь вступает по ссылке НЕприоритетного участника → заявка pending
     second_join = client.post(
@@ -215,18 +274,18 @@ def test_invalid_token_rejected(client: TestClient) -> None:
 
 
 def test_manager_grants_priority(client: TestClient) -> None:
-    owner_token, owner_id = _register(client)
+    owner_token, _ = _register(client)
     member_token, member_id = _register(client, "rd_executor")
     manager_token, _ = _register(client, "cntr_manager")
     project = _create_project(client, owner_token)
 
-    # участник вступает по ссылке владельца → активен
+    # участник вступает по приоритетной ссылке владельца → активен
     client.post(
         "/api/v1/projects/join",
         json={
             "token": project["join_token"],
             "role_in_project": "rd_executor",
-            "shared_by": owner_id,
+            "share_sig": _share_sig(client, owner_token, project["id"]),
         },
         headers=_auth(member_token),
     )
@@ -240,14 +299,14 @@ def test_manager_grants_priority(client: TestClient) -> None:
     assert grant.status_code == 200
     assert grant.json()["is_priority"] is True
 
-    # теперь участник с приоритетом может авто-принять нового вступающего
+    # теперь участник с приоритетом получает свою подпись и авто-принимает нового
     newbie_token, _ = _register(client, "scientific_org")
     auto = client.post(
         "/api/v1/projects/join",
         json={
             "token": project["join_token"],
             "role_in_project": "scientific_org",
-            "shared_by": member_id,
+            "share_sig": _share_sig(client, member_token, project["id"]),
         },
         headers=_auth(newbie_token),
     )

@@ -3,12 +3,14 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+from starlette.datastructures import Headers
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.api.v1.achievements import (
     project_router as project_achievements_router,
@@ -78,23 +80,71 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await scheduler_task
 
 
-# Глобальный лимит тела запроса (R05.5). Проверка по Content-Length до
-# попадания в обработчик; для chunked-запросов без длины лимитирует
-# потоковое чтение загрузок (read_upload_limited). Переопределяется в тестах.
+# Глобальный лимит тела запроса (R05.5/R16). С известной длиной — проверка
+# заголовка до чтения; для chunked-запросов без Content-Length — чтение потока
+# до лимита+1 и ответ 413 (иначе тело воспроизводится обработчику).
+# Глобальная переменная, а не константа класса: тесты переопределяют лимит
+# через monkeypatch на модуль. Потоковые загрузки дополнительно режет
+# read_upload_limited внутри обработчиков.
 max_request_body_bytes = settings.max_request_body_mb * 1024 * 1024
 
-
-async def limit_request_body(request: Request, call_next):
-    length = request.headers.get("content-length", "")
-    if length.isdigit() and int(length) > max_request_body_bytes:
-        return JSONResponse(
-            {"detail": "Тело запроса превышает допустимый размер"},
-            status_code=413,
-        )
-    return await call_next(request)
+_TOO_LARGE = JSONResponse(
+    {"detail": "Тело запроса превышает допустимый размер"},
+    status_code=413,
+)
 
 
-async def security_headers(request: Request, call_next):
+class LimitRequestBodyMiddleware:
+    """Чистый ASGI-middleware: контроль над receive без приватных атрибутов Request."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = Headers(scope=scope)
+        raw_length = headers.get("content-length")
+        if raw_length is not None:
+            # Длина заявлена: достаточно сверить заголовок, поток не трогаем.
+            if raw_length.isdigit() and int(raw_length) > max_request_body_bytes:
+                await _TOO_LARGE(scope, receive, send)
+                return
+            await self.app(scope, receive, send)
+            return
+
+        buffered = bytearray()
+        while True:
+            message = await receive()
+            mtype = message["type"]
+            if mtype == "http.disconnect":
+                return
+            chunk: bytes = message.get("body", b"") if mtype == "http.request" else b""
+            if chunk:
+                buffered.extend(chunk)
+                # лимит+1: ровно на границе ещё проходим, байт сверх — уже нет
+                if len(buffered) > max_request_body_bytes:
+                    await _TOO_LARGE(scope, receive, send)
+                    return
+            if mtype == "http.request" and not message.get("more_body", False):
+                break
+
+        replayed = False
+
+        async def replay() -> Message:
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return {"type": "http.request", "body": bytes(buffered), "more_body": False}
+            return {"type": "http.disconnect"}
+
+        await self.app(scope, replay, send)
+
+
+async def security_headers(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     response = await call_next(request)
     # OWASP-базовая линия (R05): минимальные заголовки защиты на всех ответах
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -117,7 +167,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.middleware("http")(limit_request_body)
+    app.add_middleware(LimitRequestBodyMiddleware)
     app.middleware("http")(security_headers)
     # Метрики: route-шаблоны для меток (Starlette кладёт endpoint в scope при
     # роутинге; маппинг endpoint -> путь даёт ограниченную кардинальность).

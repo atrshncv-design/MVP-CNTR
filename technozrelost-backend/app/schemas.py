@@ -127,7 +127,7 @@ class QuestionnaireResultOut(BaseModel):
     id: int
     project_id: int
     level_id: int
-    checked_items: list
+    checked_items: list[str]
     percentage: float
     created_at: str | None = None
     updated_at: str | None = None
@@ -168,9 +168,9 @@ class ReadinessResultOut(BaseModel):
     latest_checkpoint: int
     not_applicable_count: int
     dimension_scores: dict[str, float] = {}
-    level_scores: list[dict] = []
-    blockers: list[dict] = []
-    checkpoint_results: list[dict] = []
+    level_scores: list[dict[str, object]] = []
+    blockers: list[dict[str, object]] = []
+    checkpoint_results: list[dict[str, object]] = []
 
 
 class ControlPointOut(BaseModel):
@@ -235,10 +235,16 @@ class JoinIn(BaseModel):
         min_length=6, max_length=16, description="Join-токен проекта, напр. TZ-XXXXXX"
     )
     role_in_project: str = Field(default="participant", min_length=1, max_length=64)
-    shared_by: int | None = Field(
+    share_sig: str | None = Field(
         default=None,
-        description="ID пользователя, чьей ссылкой вступают. None = ручной ввод токена.",
+        max_length=256,
+        description="HMAC-подпись атрибуции «поделился ссылкой» из GET /projects/{id}/share-sig. "
+        "Сырой ID автора (бывший shared_by) не принимается: он перебираем.",
     )
+
+
+class ShareSigOut(BaseModel):
+    share_sig: str = Field(description="Подпись атрибуции для шаринга ссылки на вступление")
 
 
 class JoinResultOut(BaseModel):
@@ -265,7 +271,7 @@ class AuditTrailEntryOut(BaseModel):
     user_id: int | None = None
     user_name: str | None = None
     action: str
-    details: dict = {}
+    details: dict[str, object] = {}
     created_at: str | None = None
 
 
@@ -289,7 +295,7 @@ class RagDocumentOut(BaseModel):
     ugt_level: int | None = None
     raw_text: str
     source_uri: str | None = None
-    template_metadata: dict = {}
+    template_metadata: dict[str, object] = {}
     created_at: str | None = None
 
 
@@ -299,7 +305,7 @@ class RagDocumentIn(BaseModel):
     ugt_level: int | None = None
     raw_text: str
     source_uri: str | None = None
-    template_metadata: dict = {}
+    template_metadata: dict[str, object] = {}
 
 
 class RagSearchIn(BaseModel):
@@ -357,7 +363,7 @@ class TechnologyOut(BaseModel):
 
 class ChatIn(BaseModel):
     message: str
-    history: list[dict] = []
+    history: list[dict[str, str]] = []
 
 
 class ChatMessage(BaseModel):
@@ -414,10 +420,10 @@ class PromotionRequestOut(BaseModel):
     status: str
     rejection_reason: str | None = None
     attempt_no: int = 1
-    evaluation_result: dict = {}
+    evaluation_result: dict[str, object] = {}
     created_at: str | None = None
-    stage_docs: list[dict] = []
-    verification_docs: list[dict] = []
+    stage_docs: list[dict[str, object]] = []
+    verification_docs: list[dict[str, object]] = []
 
 
 class PromotionDecisionIn(BaseModel):
@@ -490,7 +496,7 @@ class NotificationOut(BaseModel):
     id: int
     type: str
     title: str
-    payload: dict = {}
+    payload: dict[str, object] = {}
     is_read: bool = False
     created_at: str | None = None
 
@@ -503,8 +509,8 @@ class NioktrCardOut(BaseModel):
     registration_number: str
     name: str
     annotation: str | None = None
-    keywords: list = []
-    nioktr_types: list = []
+    keywords: list[str] = []
+    nioktr_types: list[str] = []
     state_program: str | None = None
     federal_program: str | None = None
     created_date: str | None = None
@@ -517,7 +523,7 @@ class NioktrCardOut(BaseModel):
     executor_ogrn: str | None = None
     executor_territory: str | None = None
     customer_name: str | None = None
-    budgets: list = []
+    budgets: list[object] = []
     organization_id: int | None = None
     created_at: str | None = None
     source: str = "МИНОБРНАУКИ России"
@@ -530,7 +536,7 @@ class OrgCardOut(BaseModel):
     short_name: str | None = None
     ogrn: str | None = None
     org_type: str | None = None
-    competencies: list = []
+    competencies: list[str] = []
     projects_count: int = 0
     region: str | None = None
 
@@ -687,17 +693,6 @@ class CommentOut(BaseModel):
 class DocumentFileOut(BaseModel):
     id: int
     project_id: int
-    title: str
-    doc_type: str
-    file_name: str | None = None
-    file_size: int | None = None
-    mime_type: str | None = None
-    sha256: str | None = None
-    scan_status: str = "pending"
-    scan_result: str | None = None
-    version: int = 1
-    uploaded_by: int | None = None
-    created_at: str | None = None
     title: str
     doc_type: str
     file_name: str | None = None

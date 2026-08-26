@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -52,3 +53,45 @@ def decode_token(token: str) -> dict[str, Any]:
 def hash_token(token: str) -> str:
     """SHA-256 хеш токена для хранения в БД (отзыв без хранения JWT в открытом виде)."""
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+# ─── Атрибуция «поделился ссылкой» (N-01) ─────────────────────────────────────
+# Клиент-controlled ID перебираем (serial), поэтому авторство ссылки
+# подтверждается HMAC-подписью, которую выдаёт и проверяет только сервер.
+
+_SHARE_SIG_PURPOSE = b"share-attribution-v1"
+_SHARE_SIG_TTL_DAYS = 30
+
+
+def _share_sig_key() -> bytes:
+    # Отдельный ключ из jwt_secret через HKDF-подобный вывод: утечка подписей
+    # ссылок не должна превращаться в подделку JWT (и наоборот).
+    return hmac.new(settings.jwt_secret.encode(), _SHARE_SIG_PURPOSE, hashlib.sha256).digest()
+
+
+def sign_share_attribution(project_id: int, user_id: int) -> str:
+    """Подписывает атрибуцию ссылки: проект + автор + срок жизни.
+
+    Формат ``user_id:expires_ts:hmac_hex`` — подпись привязана к проекту,
+    поэтому подпись одного проекта нельзя переиграть в другом.
+    """
+    expires = int((datetime.now(UTC) + timedelta(days=_SHARE_SIG_TTL_DAYS)).timestamp())
+    payload = f"{project_id}:{user_id}:{expires}"
+    digest = hmac.new(_share_sig_key(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{user_id}:{expires}:{digest}"
+
+
+def verify_share_attribution(project_id: int, value: str) -> int | None:
+    """Возвращает ID автора ссылки, если подпись валидна для проекта и не истекла."""
+    try:
+        user_raw, expires_raw, digest = value.split(":")
+        user_id, expires = int(user_raw), int(expires_raw)
+        payload = f"{project_id}:{user_id}:{expires}"
+    except (ValueError, AttributeError):
+        return None
+    expected = hmac.new(_share_sig_key(), payload.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, digest):
+        return None
+    if datetime.fromtimestamp(expires, tz=UTC) < datetime.now(UTC):
+        return None
+    return user_id

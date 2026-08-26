@@ -1,8 +1,9 @@
-"""Таск 06: размер пула соединений БД как настройка.
+"""Размер пула соединений БД: из настроек и под контролем guard-формулы (P-01).
 
-Дефолт SQLAlchemy (pool_size=5, max_overflow=10) при одном uvicorn-воркере
-на контейнер ставит 200 параллельных запросов в очередь checkout'а
-(равномерные +1.5 с на всех эндпоинтах в нагрузочном прогоне).
+История: таск 06 поднял дефолты ради 200 параллельных пользователей одного
+воркера. Прогон m0-security-hardening (R14) сменил контракт: прод — две
+реплики приложения, и сумма их пулов вместе с резервом обязана умещаться
+в max_connections=100 PostgreSQL.
 """
 
 from __future__ import annotations
@@ -19,8 +20,13 @@ def test_pool_options_use_settings(monkeypatch) -> None:
     assert opts == {"pool_size": 7, "max_overflow": 13}
 
 
-def test_pool_options_defaults_allow_target_concurrency() -> None:
-    opts = pool_options()
-    # 200 одновременных пользователей профиля README-LOADTEST должны
-    # помещаться в пул без многосекундной очереди.
-    assert opts["pool_size"] + opts["max_overflow"] >= 50
+def test_pool_budget_fits_postgres_max_connections() -> None:
+    """Guard-формула (R14): пулы всех процессов + резерв строго меньше лимита БД.
+
+    Валится при любом рассинхроне цифр — изменённый дефолт пула, число реплик
+    или max_connections без согласования остальных красит тест.
+    """
+    from app.core.config import settings
+
+    used = settings.db_app_replicas * (settings.db_pool_size + settings.db_max_overflow)
+    assert used + settings.db_connections_reserve < settings.db_max_connections

@@ -48,6 +48,20 @@ def register_test_user(
     return login.json()
 
 
+def priority_share_sig(client: TestClient, token: str, project_id: int) -> str:
+    """Серверная подпись атрибуции ссылки (N-01): легитимная замена shared_by из тела.
+
+    Симулирует шаг «приоритетный участник получил ссылку у сервера» перед
+    вступлением по ней другого пользователя.
+    """
+    response = client.get(
+        f"/api/v1/projects/{project_id}/share-sig",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, response.text
+    return response.json()["share_sig"]
+
+
 def _assign_staff_role(user_id: int, role_slug: str) -> None:
     conn = psycopg.connect(
         host=os.environ.get("POSTGRES_HOST", "127.0.0.1"),

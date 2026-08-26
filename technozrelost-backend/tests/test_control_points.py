@@ -6,6 +6,8 @@ import uuid
 
 from fastapi.testclient import TestClient
 
+from tests.support import priority_share_sig
+
 
 def _register(client: TestClient, role: str = "gk_customer") -> str:
     email = f"cp-{uuid.uuid4().hex[:8]}@example.com"
@@ -81,14 +83,12 @@ def test_regular_user_cannot_decide_control_point(client: TestClient) -> None:
     # R&D вступает в проект по приоритетной ссылке владельца → активный участник
     detail = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))
     join_token = detail.json()["project"]["join_token"]
-    me = client.get("/api/v1/auth/me", headers=_auth(owner_token))
-    owner_id = me.json()["id"]
     joined = client.post(
         "/api/v1/projects/join",
         json={
             "token": join_token,
             "role_in_project": "rd_executor",
-            "shared_by": owner_id,
+            "share_sig": priority_share_sig(client, owner_token, project_id),
         },
         headers=_auth(rd_token),
     )

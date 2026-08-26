@@ -91,3 +91,63 @@ def test_refresh_rejects_garbage_and_expired(client: TestClient) -> None:
         json={"refresh_token": create_access_token(1)},
     )
     assert fake.status_code == 401
+
+
+def test_password_change_revokes_all_refresh_tokens(client: TestClient) -> None:
+    """R15: после смены пароля все прежние сессии мертвы для обновления токена."""
+    first = _register(client)
+    second = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": first["user"]["email"],
+            "password": "Probe12345",
+        },
+    ).json()
+
+    changed = client.post(
+        "/api/v1/users/me/password",
+        json={"old_password": "Probe12345", "new_password": "Fresh12345"},
+        headers=_auth(first["access_token"]),
+    )
+    assert changed.status_code == 204, changed.text
+
+    for stolen in (first["refresh_token"], second["refresh_token"]):
+        replay = client.post("/api/v1/auth/refresh", json={"refresh_token": stolen})
+        assert replay.status_code == 401
+
+    # вход по новому паролю работает
+    relogin = client.post(
+        "/api/v1/auth/login",
+        json={"email": first["user"]["email"], "password": "Fresh12345"},
+    )
+    assert relogin.status_code == 200, relogin.text
+
+
+def test_logout_revokes_current_pair(client: TestClient) -> None:
+    """R15: выход убивает refresh; access доживает до истечения (принятый компромисс)."""
+    data = _register(client)
+
+    out = client.post("/api/v1/auth/logout", json={"refresh_token": data["refresh_token"]})
+    assert out.status_code == 204, out.text
+
+    replay = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": data["refresh_token"]}
+    )
+    assert replay.status_code == 401
+
+    me = client.get("/api/v1/auth/me", headers=_auth(data["access_token"]))
+    assert me.status_code == 200
+
+
+def test_logout_is_idempotent_and_safe_on_unknown_token(client: TestClient) -> None:
+    data = _register(client)
+    first = client.post(
+        "/api/v1/auth/logout", json={"refresh_token": data["refresh_token"]}
+    )
+    again = client.post(
+        "/api/v1/auth/logout", json={"refresh_token": data["refresh_token"]}
+    )
+    unknown = client.post("/api/v1/auth/logout", json={"refresh_token": "no-such-token"})
+    assert first.status_code == 204
+    assert again.status_code == 204
+    assert unknown.status_code == 204

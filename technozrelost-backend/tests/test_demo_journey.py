@@ -7,7 +7,7 @@ import uuid
 
 from fastapi.testclient import TestClient
 
-from tests.support import register_test_user
+from tests.support import priority_share_sig, register_test_user
 
 
 def _register(client: TestClient, role: str) -> tuple[str, int, str]:
@@ -42,7 +42,7 @@ def _seed_tz_template(client: TestClient, admin_token: str) -> None:
 
 def test_full_demo_journey(client: TestClient) -> None:
     # 1. Регистрация ГК
-    gk_token, gk_id, _ = _register(client, "gk_customer")
+    gk_token, _, _ = _register(client, "gk_customer")
 
     # 2. Создание проекта через опросник
     created = client.post(
@@ -71,11 +71,15 @@ def test_full_demo_journey(client: TestClient) -> None:
     assert detail.status_code == 200
     assert len(detail.json()["questionnaire_results"]) == 2
 
-    # 4. R&D вступает по приоритетной ссылке (shared_by=gk_id) → активен
+    # 4. R&D вступает по приоритетной ссылке (подпись сервера для gk) → активен
     rd_token, rd_id, _ = _register(client, "rd_executor")
     joined = client.post(
         "/api/v1/projects/join",
-        json={"token": token, "role_in_project": "rd_executor", "shared_by": gk_id},
+        json={
+            "token": token,
+            "role_in_project": "rd_executor",
+            "share_sig": priority_share_sig(client, gk_token, project_id),
+        },
         headers=_auth(rd_token),
     )
     assert joined.status_code == 200

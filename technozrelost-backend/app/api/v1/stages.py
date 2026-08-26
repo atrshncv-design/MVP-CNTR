@@ -33,7 +33,13 @@ from app.schemas import (
 )
 from app.services.achievements import award_document
 from app.services.ai_assistant import ask_llm
-from app.services.file_storage import FileStorageError, scanner, store_project_file
+from app.services.file_storage import (
+    FileSizeExceeded,
+    FileStorageError,
+    read_upload_limited,
+    scanner,
+    store_project_file,
+)
 
 router = APIRouter(prefix="/projects", tags=["stages"])
 
@@ -43,11 +49,12 @@ MAX_LEVEL = 9
 async def _current_stage(db: DBSession, project: Project) -> StageRequirement | None:
     if project.current_level >= MAX_LEVEL:
         return None
-    return await db.scalar(
+    stage: StageRequirement | None = await db.scalar(
         select(StageRequirement).where(
             StageRequirement.from_level == project.current_level
         )
     )
+    return stage
 
 
 async def _stage_reqs_with_status(
@@ -141,11 +148,12 @@ async def _evaluate(
 
 
 async def _latest_request(db: DBSession, project_id: int) -> PromotionRequest | None:
-    return await db.scalar(
+    request_row: PromotionRequest | None = await db.scalar(
         select(PromotionRequest)
         .where(PromotionRequest.project_id == project_id)
         .order_by(PromotionRequest.attempt_no.desc())
     )
+    return request_row
 
 
 @router.get("/{project_id}/stage-requirements", response_model=list[StageRequirementOut])
@@ -178,9 +186,9 @@ async def _next_version(db: DBSession, project_id: int, title: str) -> int:
 
 async def _trigger_application(
     db: DBSession, project: Project, doc: ProjectDocument, user: CurrentUser
-) -> dict:
+) -> dict[str, object]:
     """Автотриггер: полный комплект → заявка на повышение (снимок версий)."""
-    result: dict = {"doc_id": doc.id, "request_id": None, "request_status": None}
+    result: dict[str, object] = {"doc_id": doc.id, "request_id": None, "request_status": None}
 
     # Принятый документ → персональные медали (doc-first, ступени
     # 5/10/25/50/100, коллекционер). Идемпотентно: повторная версия того же
@@ -357,7 +365,7 @@ async def upload_stage_document_file(
     file: Annotated[UploadFile, File()],
     stage_requirement_id: Annotated[int, Form()],
     title: Annotated[str | None, Form()] = None,
-) -> dict:
+) -> dict[str, object]:
     """Загрузка документа этапа файлом (PDF/DOCX/XLSX/PNG/JPEG ≤25 МБ).
 
     Только clean-файл засчитывается в комплект и инициирует автозаявку.
@@ -378,7 +386,12 @@ async def upload_stage_document_file(
             "Требование не относится к текущему этапу проекта",
         )
 
-    data = await file.read()
+    # Единый лимитированный читатель (R16): обрыв чтения сверх лимита ДО записи
+    # в хранилище; единообразие с files.py/news.py — превышение = 413.
+    try:
+        data = await read_upload_limited(file)
+    except FileSizeExceeded as exc:
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, str(exc)) from exc
     try:
         stored = store_project_file(project.id, file.filename or "document", data)
     except ValueError as exc:
@@ -426,7 +439,7 @@ async def upload_stage_document(
     payload: StageDocumentIn,
     db: DBSession,
     user: CurrentUser,
-) -> dict:
+) -> dict[str, object]:
     """Загрузка документа этапа. Полный комплект → автозаявка на повышение УГТ."""
     await require_project_access(db, project_id, user)
     project = await db.get(Project, project_id)
