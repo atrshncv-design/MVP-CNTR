@@ -59,6 +59,12 @@
   (`app/services/ai_assistant.py`) — crash-loop; `pg_dump` v15 из bookworm против
   сервера PG16 — «server version mismatch» ронял бэкап перед миграциями.
   Все три исправлены (F05-01…03), регресс: `uv run pytest -q` → **205 passed**.
+- **Сборка frontend-образа**, вне заявленной зоны (technozrelost-frontend/
+  Dockerfile): `next build` убивался OOM-killer'ом на этой машине (контекст
+  F05-env — Docker Desktop VM с малым лимитом RAM), деплой фронтенда не
+  завершался. Добавлен `ENV NODE_OPTIONS=--max-old-space-size=2048` в
+  builder-стадию — правка сборочной инфраструктуры образа, логики приложения
+  не касается; без неё критерий «деплой одной командой» невыполним.
 
 ## Реестр находок (формат: {id, область, файл:строка, severity, описание, действие})
 
@@ -75,6 +81,8 @@
 | F05-09 | backend/api | app/api/v1/projects.py:212 (ReadDBSession) | средне | при недоступности реплики чтение реестра отдаёт 500 без фолбэка на primary (readiness при этом честен) | рекомендация: fallback/cached-read для реестров — продуктовое решение |
 | F05-10 | infra/compose | docker-compose.prod.yml (prometheus/grafana) | низко | healthcheck отсутствовал у двух сервисов (нарушение «healthcheck у каждого») | исправлено: /-/healthy и /api/health |
 | F05-11 | docs | infra/README-DEPLOY.md:33–58 | средне | неверные пути (`cp .env.production.example infra/…` из корня), команды compose без --env-file, HTTP-проверка вопреки редиректу | исправлено: пути, --env-file, HTTPS-команды, порты 80/443/3001 |
+| F05-13 | frontend/build | technozrelost-frontend/Dockerfile:12 | средне | `next build` в образе падал по OOM на машинах с малой Docker VM (см. F05-env) — деплой не завершался; вне зоны таска, т.к. без него R04 невыполним | исправлено: NODE_OPTIONS=--max-old-space-size=2048 в builder-стадии |
+| F05-14 | infra/scripts | technozrelost-backend/infra/backup.sh:125 | средне | GNU xargs на пустом вводе запускает хешер без аргументов → sha256sum читает stdin и висит на tty (BSD молча проходит) — бэкап зависает | исправлено: устранён hang xargs на пустом вводе — проверка непустоты списка до xargs (переносимо), `: >` сохраняет пустой SHA256SUMS; прогон backup.sh и симуляция пустого набора чисто |
 
 Вне кода (окружение машины, к реестру прилагается):
 - **F05-env**: Docker Desktop VM был 1 ГБ RAM / 8 ГБ диск — сборка и даже РАБОТА

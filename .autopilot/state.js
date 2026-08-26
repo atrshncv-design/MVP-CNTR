@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "deploy-readiness-audit",
-  "dir": "2026-08-25-deploy-readiness-audit--wip",
+  "dir": "2026-08-25-deploy-readiness-audit",
   "title": "Ревью и подготовка платформы «Технозрелость» к деплою (B2G)",
   "mode": "semi",
   "depth": "normal",
@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-08-25T09:50:59+04:00",
-  "updatedAt": "2026-08-25T11:05:00+04:00",
+  "updatedAt": "2026-08-25T18:20:00+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,24 +47,30 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-08-25T10:27:41+04:00",
-      "note": "2 из 6 тасков готовы; волна 2 запускается"
+      "note": "7 из 7 тасков готовы",
+      "finishedAt": "2026-08-25T17:48:12+04:00"
     },
     {
       "id": "review",
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-08-25T17:48:12+04:00",
+      "finishedAt": "2026-08-25T17:48:12+04:00",
+      "note": "ревью всех тасков парой ревьюеров, ремонты 04/05/06/07 закрыты"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-08-25T17:48:12+04:00",
+      "note": "слепая приёмка пройдена, триаж закрыт, отчёт"
     }
   ],
   "requirements": {
-    "total": 12,
-    "done": 7,
-    "inTicket": 5,
-    "inSpec": 0,
+    "total": 14,
+    "done": 13,
+    "inTicket": 0,
+    "inSpec": 1,
     "placeholder": 0,
     "deferred": 0,
     "dropped": 0
@@ -142,10 +148,20 @@ window.STATE =
         ".github",
         "git-history-scan"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "finishedAt": "2026-08-25T15:20:08+04:00",
+      "tests": {
+        "passed": 23,
+        "failed": 0
+      },
+      "commit": "b219fbd",
+      "concerns": [
+        "F03-02: санитизация новостей — передана таску 04 (закрыта ремонтом)",
+        "CI: портировать repo-hygiene.yml при merge — решение владельца"
+      ]
     },
     {
       "id": "04",
@@ -161,10 +177,21 @@ window.STATE =
         "technozrelost-backend/app",
         "technozrelost-backend/tests"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "finishedAt": "2026-08-25T15:20:08+04:00",
+      "tests": {
+        "passed": 213,
+        "failed": 0
+      },
+      "commit": "7b1e3cf",
+      "concerns": [
+        "Лимитеры in-memory — при кластере нужен Redis (F04-09)",
+        "/docs открыт в проде (F04-08)",
+        "F04-12: /api/v1/news отсутствует в platform-бэкенде → D02"
+      ]
     },
     {
       "id": "05",
@@ -180,10 +207,21 @@ window.STATE =
       "zone": [
         "technozrelost-backend/infra"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "finishedAt": "2026-08-25T15:20:08+04:00",
+      "tests": {
+        "passed": 213,
+        "failed": 0
+      },
+      "commit": "9d0e609",
+      "concerns": [
+        "clamav unhealthy: CDN-блок баз сигнатур до 26.08 — перепроверить на сервере",
+        "Docker Desktop VM поднят до 6 ГБ RAM / 16 ГБ диск",
+        "Чтение реестра без фолбэка при падении реплики (F05-09)"
+      ]
     },
     {
       "id": "06",
@@ -194,29 +232,111 @@ window.STATE =
       ],
       "blockedBy": [
         "04",
-        "05"
+        "05",
+        "07"
       ],
-      "wave": 3,
+      "wave": 4,
       "zone": [
         "technozrelost-backend/app (запросы)",
         "alembic",
         "technozrelost-frontend/src"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "finishedAt": "2026-08-25T17:48:12+04:00",
+      "tests": {
+        "passed": 268,
+        "failed": 0
+      },
+      "commit": "0bf67bf",
+      "concerns": [
+        "Плато ~60 rps: 1 uvicorn-воркер на 2 vCPU; наивный --workers дублирует news-scheduler (F06-05)",
+        "Диск Docker VM на 79% после инцидента с сидом НИОКТР",
+        "Комментарии 0027 устарели после ремонта (неблок., косметика)"
+      ]
+    },
+    {
+      "id": "07",
+      "title": "Перенос новостей и достижений на платформенный бэкенд",
+      "requirements": [
+        "G01",
+        "D02",
+        "R01",
+        "R04"
+      ],
+      "blockedBy": [],
+      "wave": 3,
+      "zone": [
+        "technozrelost-backend/app",
+        "technozrelost-backend/tests",
+        "technozrelost-backend/alembic"
+      ],
+      "status": "done",
+      "startedAt": "2026-08-25T15:29:29+04:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "finishedAt": "2026-08-25T16:05:15+04:00",
+      "tests": {
+        "passed": 257,
+        "failed": 0
+      },
+      "commit": "a4f5945",
+      "concerns": [
+        "Дубликат каталога медалей seed+SQL может разъезжаться",
+        "422-vs-413 oversize между news.py и files.py",
+        "Награды опоздавшим участникам при повторном событии",
+        "Rate-limit на публичных чтениях новостей отсутствует"
+      ]
+    },
+    {
+      "id": "08",
+      "title": "Полировка приёмки: ключи TLS вне git, легаси, 413, гард каталога",
+      "requirements": [
+        "R09",
+        "R01"
+      ],
+      "blockedBy": [],
+      "wave": 4,
+      "zone": [
+        "technozrelost-backend"
+      ],
+      "status": "done",
+      "startedAt": "2026-08-25T18:20:00+04:00",
+      "finishedAt": "2026-08-25T18:20:00+04:00",
+      "tests": {
+        "passed": 271,
+        "failed": 0
+      },
+      "commit": "acbc080",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "concerns": [
+        "deploy.sh: гард сертификата смотрит только fullchain.pem — half-state молча сломает nginx",
+        "опечатка в докстринге теста каталога"
+      ]
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 211,
+    "passed": 268,
     "failed": 0
   },
   "debt": {
     "placeholders": [],
     "assumptions": [],
-    "emptyEnv": []
+    "emptyEnv": [
+      "POSTGRES_PASSWORD",
+      "REPL_PASSWORD",
+      "MINIO_SECRET_KEY",
+      "GRAFANA_ADMIN_PASSWORD",
+      "NEXTAUTH_URL",
+      "CORS_ORIGINS",
+      "LLM_API_KEY"
+    ]
   },
   "additions": [],
   "coverage": {
@@ -224,8 +344,16 @@ window.STATE =
   },
   "concerns": [],
   "reviewers": {
-    "manifestSpec": null,
-    "craft": null
+    "manifestSpec": "ses_fc791e81fffex6wg7jSX9F5HfD",
+    "craft": "ses_fc791bb36ffeP1AYG5wbrLuRIt"
   },
-  "blind": null
+  "blind": {
+    "checked": 17,
+    "matched": 14,
+    "mismatches": [
+      "Цель p95<500 мс достигается до ~60 одновременных пользователей; дефолтный профиль 200 упирается в CPU одного воркера (F06-05) — размер сервера решает",
+      "ClamAV unhealthy на этой машине (CDN-блок баз сигнатур) — проверить при первом деплое на сервере",
+      "Троттлинг логина in-memory: с двумя репликами backend лимит фактически удваивается — строгий лимит требует Redis (F04-09)"
+    ]
+  }
 }
