@@ -19,6 +19,18 @@
 #   BACKUP_STRICT_MINIO=1 — падать, если MinIO не скопирован (иначе только warning).
 #   PG_CONTAINER — имя контейнера Primary для docker-фолбэка (по умолчанию tz-prod-db-primary).
 #
+# Маркеры для алертера (контракт interfaces.md, тикет INF-01/INF-04):
+#   BACKUP_FRESHNESS_MARKER — путь файла; после ПОЛНОГО успеха сюда пишется
+#     одна строка ISO-8601 UTC с офсетом (напр. 2026-08-26T03:15:02+00:00).
+#     Отсутствие файла или возраст сверх порога алертера = авария.
+#     По умолчанию <BACKUP_DIR>/.backup-freshness.
+#   BACKUP_OFFSITE_MARKER — путь файла статуса offsite-шага: "<status> <ISO>"
+#     одной строкой, status ∈ ok | warn | fail:
+#       ok   — архив скопирован на удалённый таргет;
+#       warn — таргет не настроен (BACKUP_OFFSITE_REMOTE пуст) — жёлтый;
+#       fail — rclone недоступен или копирование упало — красный.
+#     По умолчанию <BACKUP_DIR>/.offsite-status.
+#
 # Скрипт работает и на хосте, и внутри backend-контейнера (вызов из
 # backend-entrypoint.sh перед миграциями): pg_dump напрямую, либо через
 # `docker exec` в контейнер Primary, если pg_dump в PATH нет.
@@ -28,6 +40,9 @@ BACKUP_DIR="${BACKUP_DIR:-/backups}"
 KEEP="${BACKUP_KEEP:-14}"
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 SNAPSHOT="$BACKUP_DIR/$TS"
+FRESHNESS_MARKER="${BACKUP_FRESHNESS_MARKER:-$BACKUP_DIR/.backup-freshness}"
+OFFSITE_MARKER="${BACKUP_OFFSITE_MARKER:-$BACKUP_DIR/.offsite-status}"
+OFFSITE_REMOTE="${BACKUP_OFFSITE_REMOTE:-}"
 
 DB_HOST="${POSTGRES_HOST:-127.0.0.1}"
 DB_PORT="${POSTGRES_PORT:-5432}"
@@ -137,7 +152,34 @@ fi
 )
 echo "[backup] SHA256SUMS: готово"
 
-# ── 4. Ротация: оставить KEEP последних снапшотов ────────────────────────────
+# ── 4. Offsite-копия через rclone (INF-04) ────────────────────────────────────
+# Необязательный шаг: выбор хранилища за заказчиком, поэтому пустой таргет —
+# не ошибка бэкапа (warn), а вот падение копирования при настроенном таргете —
+# fail. Локальный снапшот к этому моменту валиден и checksummed, поэтому
+# неудача offsite не роняет backup.sh целиком.
+iso_now() {
+  # %z даёт смещение без двоеточия (+0000) на GNU и BSD; каноничная форма
+  # с двоеточием удобнее алертеру и человеку.
+  date -u +%Y-%m-%dT%H:%M:%S%z | sed -e 's/\([+-][0-9][0-9]\)\([0-9][0-9]\)$/\1:\2/'
+}
+write_offsite_marker() {
+  printf '%s %s %s\n' "$1" "$(iso_now)" "$2" > "$OFFSITE_MARKER"
+}
+if [ -z "$OFFSITE_REMOTE" ]; then
+  echo "[backup] ВНИМАНИЕ: BACKUP_OFFSITE_REMOTE не задан — offsite-копия отключена (алертер: жёлтый)" >&2
+  write_offsite_marker warn "target-not-configured"
+elif ! command -v rclone >/dev/null 2>&1; then
+  echo "[backup] ОШИБКА: rclone не найден, а BACKUP_OFFSITE_REMOTE задан — offsite не выполнен" >&2
+  write_offsite_marker fail "rclone-missing"
+elif rclone copy "$SNAPSHOT" "$OFFSITE_REMOTE/$TS"; then
+  echo "[backup] offsite: снапшот скопирован на $OFFSITE_REMOTE/$TS"
+  write_offsite_marker ok "copied"
+else
+  echo "[backup] ОШИБКА: rclone copy завершился неудачей — offsite не выполнен" >&2
+  write_offsite_marker fail "copy-failed"
+fi
+
+# ── 5. Ротация: оставить KEEP последних снапшотов ────────────────────────────
 ls -1dt "$BACKUP_DIR"/20*/ 2>/dev/null | tail -n +"$((KEEP + 1))" |
   while read -r dir; do
     echo "[backup] ротация: удаляю $dir"
@@ -145,4 +187,10 @@ ls -1dt "$BACKUP_DIR"/20*/ 2>/dev/null | tail -n +"$((KEEP + 1))" |
   done
 
 BACKUP_OK=1
-echo "[backup] готово: $SNAPSHOT"
+
+# Маркер свежести — ПОСЛЕДНИЙ шаг, строго после всех стадий (дамп, MinIO,
+# суммы, offsite, ротация): его наличие означает полный успех снапшота.
+# Пишется только при BACKUP_OK=1: trap выше удалил бы снапшот при провале,
+# и «свежий» маркер без снапшота обманул бы алертер.
+printf '%s\n' "$(iso_now)" > "$FRESHNESS_MARKER"
+echo "[backup] готово: $SNAPSHOT (маркер: $FRESHNESS_MARKER)"
