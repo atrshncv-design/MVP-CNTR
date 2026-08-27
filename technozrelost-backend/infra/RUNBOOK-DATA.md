@@ -65,25 +65,22 @@
       - ./infra:/app/infra:ro      # если ещё не смонтирован целиком
 ```
 
-2. **Архивация WAL на сервисе `db`** — том под архив + три параметра:
+2. **Архивация WAL на сервисе `db`** — отдельный том и PITR-профиль:
 
 ```yaml
   db:
     volumes:
       - wal-archive-prod-data:/var/lib/postgresql/wal-archive   # ОТДЕЛЬНЫЙ том
-    command: >
-      postgres
-      -c config_file=/etc/postgresql/postgresql-primary.conf
-      -c hba_file=/etc/postgresql/pg_hba.conf
-      -c archive_mode=on
-      -c 'archive_command=test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f'
-      -c archive_timeout=60s
+      - ./postgres/postgresql-pitr.conf:/etc/postgresql/postgresql-pitr.conf:ro
 # volumes: wal-archive-prod-data:
 ```
 
-Значения совпадают с `postgres/postgresql-pitr.conf` (файл — источник истины,
-можно монтировать его и подключать через `-c config_file` агрегатором).
-Настройки проверены репетицией PITR на том же образе.
+В production compose используется `alerter/postgres-primary-entrypoint.sh`: он
+подключает `postgresql-primary.conf` и `postgresql-pitr.conf` через временный
+агрегирующий `config_file`, потому что существующий `start-primary.sh` фиксирует
+только базовый файл и игнорирует аргументы Compose. Значения остаются в
+`postgres/postgresql-pitr.conf` как источнике истины и проверены репетицией PITR
+на том же образе.
 
 ## Процедуры
 
@@ -129,6 +126,23 @@ bash scripts/rehearse_pitr.sh   # отчёт: reports/pitr-rehearsal-YYYY-MM-DD.
 Последний результат: PASS 2026-08-26 (строка «до» цели восстановлена из WAL,
 строка «после» отсутствует). Репетировать при каждом изменении конфига БД
 или образа postgres.
+
+### P5. Проверка алертера
+
+Самопроверка алертера не обращается к сети и не требует Telegram:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm \
+  --no-deps alerter python /app/infra/alerter/alerter.py --self-check
+```
+
+Проверить журнал работающего сервиса и marker-контракт:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail=100 alerter
+docker compose --env-file .env.production -f docker-compose.prod.yml exec alerter \
+  cat /backups/.backup-freshness
+```
 
 ### P4. Настройка offsite (выполняет владелец после выбора хранилища)
 1. На хосте: `rclone config create <remote> <provider> ...` (S3/любой

@@ -36,14 +36,20 @@ services:
       REPL_SLOT: ${REPL_SLOT:-tz_replica_slot}
     volumes:
       - pg-prod-primary-data:/var/lib/postgresql/data
+      - wal-archive-prod-data:/var/lib/postgresql/wal-archive
       - ./postgres/postgresql-primary.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/postgresql-pitr.conf:/etc/postgresql/postgresql-pitr.conf:ro
       - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
       - ./postgres/init-primary.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
       - ./postgres/start-primary.sh:/usr/local/bin/start-primary.sh:ro
       - ./postgres/ensure-replication.sh:/usr/local/bin/ensure-replication.sh:ro
+      - ./alerter/postgres-primary-entrypoint.sh:/usr/local/bin/postgres-primary-entrypoint.sh:ro
     # Точка входа идемпотентна: роль replicator и слот создаются и на пустом,
     # и на существующем томе (аудит-тикет 05).
-    entrypoint: ["/bin/bash", "/usr/local/bin/start-primary.sh"]
+    # start-primary.sh исторически фиксировал только базовый config_file и
+    # игнорировал Compose command. Wrapper подключает базовый и PITR-профиль,
+    # сохраняя ожидание существующего тома и идемпотентный replication-slot.
+    entrypoint: ["/bin/bash", "/usr/local/bin/postgres-primary-entrypoint.sh"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -124,6 +130,7 @@ services:
 
   # ── Backend: FastAPI, 2 реплики (stateless, масштабируется) ───────────────
   backend:
+    image: technozrelost-backend:${IMAGE_TAG:-local}
     build:
       context: ..
       dockerfile: Dockerfile
@@ -186,8 +193,84 @@ services:
       retries: 10
       start_period: 30s
 
+  # ── Ежедневный backup sidecar (INF-01/04) ───────────────────────────────────
+  backup-timer:
+    image: technozrelost-backend:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    command: ["/bin/sh", "/app/infra/cron/backup-timer.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      TZ: UTC
+      BACKUP_AT: ${BACKUP_AT:-03:15}
+      BACKUP_SCRIPT: /app/infra/backup.sh
+      BACKUP_DIR: /backups
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_FRESHNESS_MARKER: ${BACKUP_FRESHNESS_MARKER:-/backups/.backup-freshness}
+      BACKUP_OFFSITE_MARKER: ${BACKUP_OFFSITE_MARKER:-/backups/.offsite-status}
+      BACKUP_OFFSITE_REMOTE: ${BACKUP_OFFSITE_REMOTE:-}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET:-technozrelost}
+    volumes:
+      - backups-prod-data:/backups
+      - ./backup.sh:/app/infra/backup.sh:ro
+      - ./cron/backup-timer.sh:/app/infra/cron/backup-timer.sh:ro
+
+  # ── Алертер: readiness, replica/slot, backup, disk, offsite ────────────────
+  alerter:
+    image: technozrelost-backend:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    command: ["python", "/app/infra/alerter/alerter.py"]
+    depends_on:
+      db:
+        condition: service_healthy
+      db-replica:
+        condition: service_started
+      backend:
+        condition: service_started
+    environment:
+      ALERTER_READINESS_URL: ${ALERTER_READINESS_URL:-http://backend:8000/api/v1/ready}
+      ALERTER_INTERVAL_SECONDS: ${ALERTER_INTERVAL_SECONDS:-60}
+      ALERTER_PROBE_TIMEOUT_SECONDS: ${ALERTER_PROBE_TIMEOUT_SECONDS:-5}
+      ALERTER_STATE_FILE: /state/alerter-state.json
+      ALERTER_DISK_PATHS: /backups,/wal-archive
+      ALERTER_DISK_WARN_PERCENT: ${ALERTER_DISK_WARN_PERCENT:-80}
+      ALERTER_DISK_CRITICAL_PERCENT: ${ALERTER_DISK_CRITICAL_PERCENT:-90}
+      ALERTER_SLOT_LAG_WARN_BYTES: ${ALERTER_SLOT_LAG_WARN_BYTES:-12884901888}
+      ALERTER_SLOT_LAG_CRITICAL_BYTES: ${ALERTER_SLOT_LAG_CRITICAL_BYTES:-16106127360}
+      ALERTER_REPLICA_LAG_CRITICAL_BYTES: ${ALERTER_REPLICA_LAG_CRITICAL_BYTES:-5368709120}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_REPLICA_HOST: ${POSTGRES_REPLICA_HOST:-db-replica}
+      POSTGRES_REPLICA_PORT: ${POSTGRES_REPLICA_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      REPL_SLOT: ${REPL_SLOT:-tz_replica_slot}
+      BACKUP_FRESHNESS_MARKER: ${BACKUP_FRESHNESS_MARKER:-/backups/.backup-freshness}
+      BACKUP_MAX_AGE_HOURS: ${BACKUP_MAX_AGE_HOURS:-25}
+      BACKUP_OFFSITE_MARKER: ${BACKUP_OFFSITE_MARKER:-/backups/.offsite-status}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./alerter:/app/infra/alerter:ro
+      - backups-prod-data:/backups:ro
+      - wal-archive-prod-data:/wal-archive:ro
+      - alerter-state-prod-data:/state
+
   # ── Frontend: Next.js (standalone) ─────────────────────────────────────────
   frontend:
+    image: technozrelost-frontend:${IMAGE_TAG:-local}
     build:
       context: ../../technozrelost-frontend
       dockerfile: Dockerfile
@@ -254,16 +337,16 @@ services:
       start_period: 20s
 
   # ── Grafana: дашборды поверх Prometheus (тикет 20) ─────────────────────────
-  # UI: http://<host>:3001 (логин: GRAFANA_ADMIN_USER / GRAFANA_ADMIN_PASSWORD,
-  # по умолчанию admin/admin — сменить в .env.production).
+  # UI только внутри compose-сети; с хоста использовать SSH-туннель (README).
   grafana:
     image: grafana/grafana:11.2.0
     container_name: tz-prod-grafana
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
     volumes:
       - grafana-prod-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -271,8 +354,8 @@ services:
     depends_on:
       prometheus:
         condition: service_started
-    ports:
-      - "3001:3000"
+    expose:
+      - "3000"
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:3000/api/health || exit 1"]
       interval: 15s
@@ -283,9 +366,11 @@ services:
 volumes:
   pg-prod-primary-data:
   pg-prod-replica-data:
+  wal-archive-prod-data:
   minio-prod-data:
   clamav-prod-db:
   redis-prod-data:
   backups-prod-data:
   prometheus-prod-data:
   grafana-prod-data:
+  alerter-state-prod-data:
