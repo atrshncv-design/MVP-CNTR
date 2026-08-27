@@ -16,6 +16,7 @@ import re
 from pathlib import Path
 
 from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import SessionLocal
 from app.core.embeddings import embed_text
@@ -133,7 +134,7 @@ def find_doc_sources() -> list[Path]:
     return result
 
 
-async def ingest_document(db, doc_path: Path) -> int:
+async def ingest_document(db: AsyncSession, doc_path: Path) -> int:
     text_content = extract_text(doc_path)
     chunks = chunk_text(text_content)
     inserted = 0

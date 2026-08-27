@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -83,7 +83,7 @@ async def _memberships(
 
 
 @router.get("/profile", response_model=dict)
-async def my_profile(db: DBSession, user: CurrentUser) -> dict:
+async def my_profile(db: DBSession, user: CurrentUser) -> dict[str, Any]:
     """Свой профиль + список своих организаций (профиль создаётся при первом обращении)."""
     profile = await _get_own_profile(db, user)
     orgs = [
@@ -250,12 +250,12 @@ async def _apply_decision(
     obj.reviewed_at = datetime.now(UTC)
 
 
-@router.get("/manager/profiles", response_model=list[dict])
+@router.get("/manager/profiles", response_model=list[dict[str, Any]])
 async def manager_profile_queue(
     db: DBSession,
     manager: Manager,
     state: str = Query("pending", pattern="^(pending|verified|rejected|draft)$"),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     from app.db.models import Role, user_roles_tbl
 
     role_subq = (
@@ -272,7 +272,7 @@ async def manager_profile_queue(
             .order_by(UserProfile.updated_at.desc())
         )
     ).all()
-    out: dict[int, dict] = {}
+    out: dict[int, dict[str, Any]] = {}
     for profile, user, slug in rows:
         item = out.setdefault(
             profile.id,

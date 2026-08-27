@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
+from typing import Any
 
 # Счётчики запросов AI-консультанта (in-memory; сбрасываются при рестарте)
-METRICS = {
+METRICS: dict[str, Any] = {
     "requests_total": 0,
     "errors_total": 0,
     "fallbacks_total": 0,
@@ -17,7 +18,7 @@ METRICS = {
 }
 
 # Простой скользящий лимит: N запросов за окно секунд на пользователя
-RATE_LIMIT = {"limit": 30, "window_seconds": 60}
+RATE_LIMIT: dict[str, int] = {"limit": 30, "window_seconds": 60}
 _user_window: dict[int, list[float]] = defaultdict(list)
 
 
@@ -35,7 +36,7 @@ def allow_request(user_id: int) -> bool:
     return True
 
 
-def snapshot() -> dict:
+def snapshot() -> dict[str, Any]:
     """Снимок метрик для /metrics/ai (без per-user карты)."""
     data = {k: v for k, v in METRICS.items() if k != "requests_by_user"}
     data["requests_by_user"] = dict(METRICS["requests_by_user"])

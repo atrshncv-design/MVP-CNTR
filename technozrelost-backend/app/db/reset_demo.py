@@ -22,6 +22,7 @@ import argparse
 import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import delete, insert, literal, select, text
 
@@ -94,7 +95,7 @@ _CATEGORIES = [
 ]
 
 
-def demo_projects() -> list[dict]:
+def demo_projects() -> list[dict[str, Any]]:
     """Девять опубликованных проектов с УГТ 1–9 + один последовательный 1→9."""
     projects = []
     for level in range(1, 10):

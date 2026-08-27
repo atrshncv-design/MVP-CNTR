@@ -276,7 +276,7 @@ def compute_readiness(answers: list[dict[str, Any]]) -> dict[str, Any]:
         for item in applicable_results
     ])
 
-    level_scores = []
+    level_scores: list[dict[str, Any]] = []
     for level in range(1, 10):
         items = [item for item in applicable_results if item["ugt_level"] == level]
         critical = [item for item in items if item["critical"]]

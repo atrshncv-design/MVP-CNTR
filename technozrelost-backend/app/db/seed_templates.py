@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+from typing import Any
 
 from sqlalchemy import select, text
 
@@ -15,7 +16,7 @@ from app.core.database import SessionLocal
 from app.core.embeddings import embed_text
 from app.db.models import RagDocument
 
-TEMPLATES = [
+TEMPLATES: list[dict[str, Any]] = [
     {
         "title": "ТЗ — базовый шаблон",
         "doc_type": "tz",

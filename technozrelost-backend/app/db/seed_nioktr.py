@@ -18,6 +18,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import delete, select
 
@@ -36,7 +37,7 @@ def _org_type(name: str) -> str:
     return "company"
 
 
-def _iso_clean(value) -> str | None:
+def _iso_clean(value: Any) -> str | None:
     """ISO-даты из источника: обрезаем до YYYY-MM-DD, если есть время."""
     if not value:
         return None
@@ -53,6 +54,7 @@ async def seed(input_path: Path, drop_old_technologies: bool = True) -> None:
         org_by_ogrn: dict[str, Organization] = {}
         org_counts: dict[str, int] = {}
         org_keywords: dict[str, set[str]] = {}
+        org: Organization | None
         for card in cards:
             ex = card.get("executor") or {}
             ogrn = ex.get("ogrn")
@@ -70,7 +72,7 @@ async def seed(input_path: Path, drop_old_technologies: bool = True) -> None:
                 existing.competencies = sorted(org_keywords.get(ogrn, set()))[:30]
                 org_by_ogrn[ogrn] = existing
                 continue
-            first = next(
+            first: dict[str, Any] = next(
                 (c for c in cards if (c.get("executor") or {}).get("ogrn") == ogrn),
                 {},
             )

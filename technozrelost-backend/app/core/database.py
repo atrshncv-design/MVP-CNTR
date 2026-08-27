@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -22,8 +23,8 @@ def pool_options() -> dict[str, int]:
     return {"pool_size": settings.db_pool_size, "max_overflow": settings.db_max_overflow}
 
 
-def _engine_kwargs() -> dict:
-    kwargs: dict = {"echo": False, "future": True, "pool_pre_ping": True}
+def _engine_kwargs() -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"echo": False, "future": True, "pool_pre_ping": True}
     if _poolclass is not None:
         kwargs["poolclass"] = _poolclass
     else:

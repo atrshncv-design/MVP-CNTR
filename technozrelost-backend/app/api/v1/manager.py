@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -41,7 +41,9 @@ router = APIRouter(prefix="/manager", tags=["manager"])
 ManagerUser = Annotated[User, Depends(require_role("cntr_manager", "cntr_admin"))]
 
 
-async def notify_managers(db: DBSession, type_: str, title: str, payload: dict) -> None:
+async def notify_managers(
+    db: DBSession, type_: str, title: str, payload: dict[str, Any]
+) -> None:
     """In-app уведомление всем менеджерам ЦНТР (и администраторам)."""
     managers = (
         (await db.execute(select(User).where(User.roles.any(slug="cntr_manager"))))

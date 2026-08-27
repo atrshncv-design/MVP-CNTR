@@ -10,6 +10,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from sqlalchemy import select, text
 
 from app.core.deps import DBSession
@@ -21,7 +23,7 @@ async def notify_user(
     user_id: int,
     type_: str,
     title: str,
-    payload: dict | None = None,
+    payload: dict[str, Any] | None = None,
 ) -> Notification:
     """Персональное проектное событие: уведомление + outbox (project scope)."""
     notification = Notification(
@@ -45,7 +47,7 @@ async def notify_managers(
     db: DBSession,
     type_: str,
     title: str,
-    payload: dict | None = None,
+    payload: dict[str, Any] | None = None,
 ) -> NotificationOutbox:
     """Общее событие для подключённых менеджеров: только outbox (general scope).
 
@@ -89,8 +91,11 @@ async def claim_next_task(db: DBSession, manager_id: int) -> NotificationOutbox 
     ).first()
     if row is None:
         return None
-    return await db.scalar(
-        select(NotificationOutbox).where(NotificationOutbox.id == row[0])
+    return cast(
+        NotificationOutbox | None,
+        await db.scalar(
+            select(NotificationOutbox).where(NotificationOutbox.id == row[0])
+        ),
     )
 
 

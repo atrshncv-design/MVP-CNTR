@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -26,14 +28,14 @@ router = APIRouter(tags=["notifications"])
 ManagerOnly = require_role("cntr_manager", "cntr_admin")
 
 # Подписчики SSE: user_id -> asyncio.Queue
-_stream_subscribers: dict[int, set[asyncio.Queue]] = {}
+_stream_subscribers: dict[int, set[asyncio.Queue[dict[str, Any]]]] = {}
 
 
 def _is_manager(user: CurrentUser) -> bool:
     return has_role(user, "cntr_manager", "cntr_admin")
 
 
-async def _publish_stream(user_ids: list[int], event: dict) -> None:
+async def _publish_stream(user_ids: list[int], event: dict[str, Any]) -> None:
     """Рассылает событие подключённым пользователям (best-effort)."""
     for uid in user_ids:
         for queue in list(_stream_subscribers.get(uid, set())):
@@ -69,10 +71,10 @@ async def stream_notifications(
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь неактивен")
     else:
         uid = user.id
-    queue: asyncio.Queue = asyncio.Queue(maxsize=100)
+    queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=100)
     _stream_subscribers.setdefault(uid, set()).add(queue)
 
-    async def event_source():
+    async def event_source() -> AsyncIterator[str]:
         try:
             # первым кадром — текущий непрочитанный счётчик
             unread = await db.scalar(
@@ -108,7 +110,7 @@ async def emit_event(
     type: str = "general",
     title: str = "Событие",
     project_id: int | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Тестовый/внутренний эмиттер события (менеджеры и админы).
 
     Проектные события эмитятся бизнес-логикой (заявки, решения); этот

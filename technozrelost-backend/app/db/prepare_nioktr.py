@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DEFAULT_INPUT = (
@@ -22,7 +23,7 @@ OUTPUT = Path(__file__).resolve().parent.parent.parent / "data" / "nioktr_sample
 DEFAULT_LIMIT = 400
 
 
-def _compact_card(card: dict) -> dict:
+def _compact_card(card: dict[str, Any]) -> dict[str, Any]:
     """Оставляет только нужные поля карточки НИОКТР."""
     executor = card.get("executor") or {}
     customer = card.get("customer") or {}
@@ -58,9 +59,9 @@ def prepare(input_path: Path, limit: int) -> None:
     print(f"Всего карточек: {len(cards)}")
 
     seen: set[str] = set()
-    selected: list[dict] = []
+    selected: list[dict[str, Any]] = []
 
-    def _pick(card: dict) -> bool:
+    def _pick(card: dict[str, Any]) -> bool:
         reg = card.get("registration_number")
         if not reg or reg in seen:
             return False

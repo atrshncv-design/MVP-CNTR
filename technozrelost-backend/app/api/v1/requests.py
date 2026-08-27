@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import Response
 from sqlalchemy import delete, func, select
@@ -186,7 +188,7 @@ async def download_conclusion(
 @router.delete("/{project_id}/files/old-versions")
 async def cleanup_old_versions(
     project_id: int, db: DBSession, user: CurrentUser
-) -> dict:
+) -> dict[str, Any]:
     """Retention: удаляет старые версии документов (кроме последней на title),
     защищая версии, зафиксированные в неизменяемых снимках заявок."""
     project = await require_project_access(db, project_id, user)

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
@@ -51,11 +51,14 @@ def _invite_out(invite: ProjectInvite) -> InviteOut:
 async def _membership(
     db: DBSession, project_id: int, user_id: int
 ) -> ProjectMember | None:
-    return await db.scalar(
-        select(ProjectMember).where(
-            ProjectMember.project_id == project_id,
-            ProjectMember.user_id == user_id,
-        )
+    return cast(
+        ProjectMember | None,
+        await db.scalar(
+            select(ProjectMember).where(
+                ProjectMember.project_id == project_id,
+                ProjectMember.user_id == user_id,
+            )
+        ),
     )
 
 
@@ -129,7 +132,7 @@ async def list_invites(
 @router.post("/invites/accept")
 async def accept_invite(
     payload: InviteAcceptIn, db: DBSession, user: CurrentUser
-) -> dict:
+) -> dict[str, Any]:
     token = payload.token.strip().upper()
     invite = await db.scalar(select(ProjectInvite).where(ProjectInvite.token == token))
     if invite is None:
@@ -197,7 +200,7 @@ async def revoke_invite(
 @router.post("/projects/{project_id}/transfer-admin")
 async def transfer_project_admin(
     project_id: int, payload: TransferAdminIn, db: DBSession, user: CurrentUser
-) -> dict:
+) -> dict[str, Any]:
     await require_project_admin(db, project_id, user)
     target = await _membership(db, project_id, payload.user_id)
     if target is None or target.status != "active":

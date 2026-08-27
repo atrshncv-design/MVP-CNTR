@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -209,7 +210,7 @@ class QuestionnaireResult(Base):
         BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
     )
     level_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    checked_items: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    checked_items: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -242,9 +243,9 @@ class AssessmentCheckpoint(Base):
     ugt_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
-    dimensions: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    dimensions: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     critical: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    evidence: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    evidence: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
 class ProjectAssessment(Base):
@@ -267,9 +268,9 @@ class ProjectAssessment(Base):
     confidence_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     latest_checkpoint: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
     not_applicable_count: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)
-    dimension_scores: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    level_scores: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    blockers: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    dimension_scores: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    level_scores: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    blockers: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -292,7 +293,7 @@ class AssessmentAnswer(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     applicable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     comment: Mapped[str | None] = mapped_column(Text)
-    evidence: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    evidence: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     score_pct: Mapped[float | None] = mapped_column(Float)
     evidence_pct: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(
@@ -344,7 +345,7 @@ class ProjectInvite(Base):
     )
     token: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
     invite_type: Mapped[str] = mapped_column(String(16), nullable=False, default="single")
-    allowed_roles: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    allowed_roles: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     max_uses: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     used_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -413,7 +414,7 @@ class AuditTrailEntry(Base):
     )
     user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
     action: Mapped[str] = mapped_column(String(128), nullable=False)
-    details: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -430,7 +431,7 @@ class RagDocument(Base):
     raw_text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536))
     source_uri: Mapped[str | None] = mapped_column(String(1024))
-    template_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    template_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -448,7 +449,7 @@ class Organization(Base):
     ogrn: Mapped[str | None] = mapped_column(String(32))
     org_type: Mapped[str | None] = mapped_column(String(64))
     region: Mapped[str | None] = mapped_column(String(128))
-    competencies: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    competencies: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     projects_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -520,7 +521,7 @@ class PromotionRequest(Base):
     rejection_reason: Mapped[str | None] = mapped_column(Text)
     manager_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
     attempt_no: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    evaluation_result: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    evaluation_result: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -556,7 +557,7 @@ class Notification(Base):
     )
     type: Mapped[str] = mapped_column(String(64), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -576,7 +577,7 @@ class NotificationOutbox(Base):
         BigInteger, ForeignKey("public.users.id", ondelete="SET NULL")
     )
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -589,7 +590,7 @@ class Technology(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str | None] = mapped_column(String(100))
-    keywords: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)
+    keywords: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     current_level: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=1)
     target_level: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=9)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
@@ -620,7 +621,7 @@ class UserProfile(Base):
     headline: Mapped[str | None] = mapped_column(String(255))
     bio: Mapped[str | None] = mapped_column(Text)
     region: Mapped[str | None] = mapped_column(String(128))
-    skills: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    skills: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     state: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
     review_comment: Mapped[str | None] = mapped_column(Text)
     reviewed_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("public.users.id"))
@@ -694,8 +695,8 @@ class NioktrCard(Base):
     registration_number: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     annotation: Mapped[str | None] = mapped_column(Text)
-    keywords: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    nioktr_types: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    keywords: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    nioktr_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     state_program: Mapped[str | None] = mapped_column(Text)
     federal_program: Mapped[str | None] = mapped_column(Text)
     created_date: Mapped[str | None] = mapped_column(String(32))
@@ -708,7 +709,7 @@ class NioktrCard(Base):
     executor_ogrn: Mapped[str | None] = mapped_column(Text)
     executor_territory: Mapped[str | None] = mapped_column(Text)
     customer_name: Mapped[str | None] = mapped_column(Text)
-    budgets: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    budgets: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     organization_id: Mapped[int | None] = mapped_column(
         BigInteger,
         ForeignKey("public.organizations.id", ondelete="SET NULL"),
@@ -961,4 +962,3 @@ class ProjectAchievement(Base):
             name="uq_project_achievements_project_achievement",
         ),
     )
-

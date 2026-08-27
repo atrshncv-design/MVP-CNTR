@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import httpx
 
 from app.core.config import settings
@@ -55,7 +57,7 @@ async def ask_llm(system_prompt: str, user_message: str) -> str | None:
             ai_metrics.METRICS["errors_total"] += 1
             return None
         payload = response.json()
-        return payload["choices"][0]["message"]["content"]
+        return cast(str, payload["choices"][0]["message"]["content"])
     except Exception:  # noqa: BLE001 — ассистент не должен падать из-за LLM
         ai_metrics.METRICS["errors_total"] += 1
         return None

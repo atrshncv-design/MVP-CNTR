@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -40,6 +41,6 @@ async def chat(
 
 
 @router.get("/metrics/ai")
-async def ai_metrics_endpoint(user: CurrentUser) -> dict:
+async def ai_metrics_endpoint(user: CurrentUser) -> dict[str, Any]:
     """Отдельные метрики AI-консультанта (доступны авторизованным)."""
     return ai_metrics.snapshot()

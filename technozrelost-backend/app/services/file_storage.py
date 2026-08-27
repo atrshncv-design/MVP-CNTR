@@ -15,6 +15,7 @@ import io
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 from app.core.config import settings
 
@@ -110,17 +111,17 @@ class ObjectStorage:
     """Абстракция объектного хранилища: MinIO (dev/prod), диск (tests)."""
 
     def __init__(self) -> None:
-        self._client = None
+        self._client: Any = None
         self._local_root: Path | None = None
         if settings.app_env == "test":
             import tempfile
 
             self._local_root = Path(tempfile.mkdtemp(prefix="tz-storage-"))
 
-    def _minio(self):
+    def _minio(self) -> Any:
         if self._client is None:
             try:
-                from minio import Minio  # type: ignore[import-not-found]
+                from minio import Minio
 
                 self._client = Minio(
                     settings.minio_endpoint,
@@ -156,7 +157,7 @@ class ObjectStorage:
             return path.read_bytes()
         response = self._minio().get_object(settings.minio_bucket, key)
         try:
-            return response.read()
+            return cast(bytes, response.read())
         finally:
             response.close()
             response.release_conn()
@@ -241,7 +242,7 @@ def store_news_media(post_id: int, original_name: str, data: bytes) -> StoredFil
 READ_CHUNK = 1024 * 1024
 
 
-async def read_upload_limited(file, max_bytes: int = MAX_FILE_SIZE) -> bytes:
+async def read_upload_limited(file: Any, max_bytes: int = MAX_FILE_SIZE) -> bytes:
     """Читает UploadFile порциями, обрывая поток сверх лимита (DoS-защита).
 
     Тело запроса не буферизуется целиком до проверки: как только прочитано

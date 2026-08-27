@@ -17,7 +17,7 @@ async def health() -> dict[str, str]:
 @router.get("/ready", summary="Readiness probe")
 async def ready() -> dict[str, object]:
     databases = await check_databases()
-    payload = {"status": "ready", "databases": databases}
+    payload: dict[str, object] = {"status": "ready", "databases": databases}
     if "unavailable" in databases.values():
         payload["status"] = "not_ready"
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=payload)

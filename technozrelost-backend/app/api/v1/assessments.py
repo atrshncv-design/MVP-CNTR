@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import or_, select
@@ -40,7 +41,7 @@ from app.services.readiness_assessment import (
 router = APIRouter(prefix="/assessments", tags=["assessments"])
 
 
-def _readiness_from_model(assessment: ProjectAssessment | None) -> dict | None:
+def _readiness_from_model(assessment: ProjectAssessment | None) -> dict[str, Any] | None:
     if assessment is None:
         return None
     return {
@@ -61,7 +62,7 @@ def _readiness_from_model(assessment: ProjectAssessment | None) -> dict | None:
 def _draft_out(
     project: Project,
     results: list[QuestionnaireResult],
-    readiness: dict | None = None,
+    readiness: dict[str, Any] | None = None,
     assessment_version: str | None = None,
 ) -> DraftProjectOut:
     return DraftProjectOut(
@@ -138,7 +139,7 @@ async def _ensure_template(db: DBSession) -> tuple[AssessmentTemplate, list[Asse
 
 
 @router.get("/template")
-async def assessment_template() -> dict:
+async def assessment_template() -> dict[str, Any]:
     """Публичный versioned-контракт вопросов для клиента экспресс-оценки."""
     return template_payload()
 
@@ -167,7 +168,7 @@ async def create_assessment(
             "Нужно заполнить экспресс-оценку.",
         )
 
-    readiness_result: dict | None = None
+    readiness_result: dict[str, Any] | None = None
     template: AssessmentTemplate | None = None
     checkpoints: list[AssessmentCheckpoint] = []
     if payload.answers:
@@ -300,13 +301,13 @@ async def create_assessment(
                 )
             )
     else:
-        for answer in payload.questionnaire_results:
+        for questionnaire_answer in payload.questionnaire_results:
             db.add(
                 QuestionnaireResult(
                     project_id=project.id,
-                    level_id=answer.level_id,
-                    checked_items={"items": answer.checked_items},
-                    percentage=answer.percentage,
+                    level_id=questionnaire_answer.level_id,
+                    checked_items={"items": questionnaire_answer.checked_items},
+                    percentage=questionnaire_answer.percentage,
                 )
             )
 
