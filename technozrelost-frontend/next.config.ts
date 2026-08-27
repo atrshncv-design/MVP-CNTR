@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
+const internalApiUrl = process.env.API_URL_INTERNAL?.trim().replace(/\/+$/, "");
+
+if (!isDev && !internalApiUrl) {
+  throw new Error(
+    "API_URL_INTERNAL не задан: production-конфигурации нужен явный внутренний адрес бэкенда.",
+  );
+}
+
+const rewriteApiUrl = internalApiUrl || (isDev ? "http://127.0.0.1:8000" : "");
 
 // Клиентские вызовы идут по относительному /api/v1 того же origin
 // (единый модуль src/lib/public-api.ts), поэтому CSP достаточно 'self'.
@@ -37,14 +46,12 @@ const nextConfig: NextConfig = {
   },
   // Публичная демо-ссылка с локальной машины: один туннель на сайт,
   // а все запросы /api/v1/* проксируются на внутренний адрес FastAPI.
-  // Адрес прокси — единственное место вне src/lib/public-api.ts с явным
-  // дефолтом: это конфигурация серверного прокси, она никогда не попадает
-  // в клиентский бандл (прод берёт адрес из API_URL_INTERNAL).
+  // В dev допустим локальный адрес прокси; production требует API_URL_INTERNAL.
   async rewrites() {
     return [
       {
         source: "/api/v1/:path*",
-        destination: `${process.env.API_URL_INTERNAL ?? "http://127.0.0.1:8000"}/api/v1/:path*`,
+        destination: `${rewriteApiUrl}/api/v1/:path*`,
       },
     ];
   },
