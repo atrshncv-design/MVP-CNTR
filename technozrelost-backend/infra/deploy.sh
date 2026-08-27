@@ -10,7 +10,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 HEALTH_TIMEOUT_SECONDS="${DEPLOY_HEALTH_TIMEOUT_SECONDS:-300}"
 BACKEND_IMAGE="technozrelost-backend"
 FRONTEND_IMAGE="technozrelost-frontend"
-HEALTH_SERVICES=(db db-replica minio clamav redis backend frontend nginx prometheus grafana)
+HEALTH_SERVICES=(db db-replica minio clamav redis backend backup-timer alerter frontend nginx prometheus grafana)
 
 usage() {
   cat <<'EOF'
@@ -48,6 +48,15 @@ env_value() {
   printf '%s' "$value"
 }
 
+effective_env_value() {
+  local key="$1"
+  if [ "${!key+x}" = x ]; then
+    printf '%s' "${!key}"
+  else
+    env_value "$key"
+  fi
+}
+
 gen_secret() {
   openssl rand -hex 24
 }
@@ -74,7 +83,7 @@ ensure_generated_secret() {
 
 require_grafana_password() {
   local value
-  value="$(env_value GRAFANA_ADMIN_PASSWORD)"
+  value="$(effective_env_value GRAFANA_ADMIN_PASSWORD)"
   case "$value" in
     ""|admin|password|default|change_me*|changeme*)
       echo "ОШИБКА: GRAFANA_ADMIN_PASSWORD должен быть задан и не может быть значением по умолчанию."

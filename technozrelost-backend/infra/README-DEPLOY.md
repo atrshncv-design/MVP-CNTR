@@ -15,9 +15,9 @@
   `POSTGRES_REPLICA_HOST` (или полный `DATABASE_REPLICA_URL`). Read-after-write
   (создание/мутация проекта и т.п.) всегда идёт в Primary.
 - **Health/readiness**: healthcheck и health-gate применяются к сервисам
-  `db`, `db-replica`, `minio`, `clamav`, `redis`, `backend`, `frontend`, `nginx`,
-  `prometheus` и `grafana`; backend использует `/api/v1/ready` — реальные
-  соединения Primary и Replica.
+  `db`, `db-replica`, `minio`, `clamav`, `redis`, `backend`, `backup-timer`,
+  `alerter`, `frontend`, `nginx`, `prometheus` и `grafana`; backend использует
+  `/api/v1/ready` — реальные соединения Primary и Replica.
 - **Миграции без гонок**: входная точка контейнера (`infra/backend-entrypoint.sh`)
   ждёт Primary и применяет `alembic upgrade head` под pg advisory lock — при
   старте нескольких реплик миграцию выполнит ровно один контейнер.
@@ -27,14 +27,17 @@
   deploy.sh сохраняет работающие образы под тегом `previous`, ждёт healthy
   перечисленных выше сервисов и `/api/v1/ready`, а при провале перевыкатывает
   `previous` и возвращает ненулевой код.
-- **Проверка sidecar-ов**: `backup-timer` и `alerter` намеренно не входят в
-  `HEALTH_SERVICES` и не имеют container healthcheck. Их команды, env и volumes
-  проверяются через `docker compose --env-file infra/.env.production -f
-  infra/docker-compose.prod.yml config`; для алертера дополнительно
-  используется безсетевой `run --rm --no-deps alerter python
-  /app/infra/alerter/alerter.py --self-check`, а для таймера — `sh -n
-  infra/cron/backup-timer.sh` (режим `BACKUP_TIMER_RUN_ONCE=1` выполняет
-  реальный бэкап и не является частью health-gate).
+- **Проверка sidecar-ов**: `backup-timer` и `alerter` входят в
+  `HEALTH_SERVICES`; их container healthcheck подтверждает живой PID 1 и наличие
+  смонтированной команды. Дополнительно команды, env и volumes проверяются
+  через `docker compose --env-file infra/.env.production -f
+  infra/docker-compose.prod.yml config`; для алертера используется безсетевой
+  `run --rm --no-deps alerter python /app/infra/alerter/alerter.py --self-check`,
+  а для таймера — `sh -n infra/cron/backup-timer.sh` и
+  `BACKUP_TIMER_SELF_CHECK=1 sh infra/cron/backup-timer.sh`: проверяются наличие
+  скрипта и ближайший target без ожидания суток.
+  Режим `BACKUP_TIMER_RUN_ONCE=1` выполняет реальный бэкап как отдельный
+  smoke-тест.
 - **Наблюдаемость**: alerter проверяет readiness, Primary/Replica и replication
   slot, маркеры backup/offsite и заполнение томов. Без `TELEGRAM_BOT_TOKEN` и
   `TELEGRAM_CHAT_ID` он пишет предупреждение и безопасно работает без отправки.
@@ -66,7 +69,7 @@ cp infra/.env.production.example infra/.env.production
 ```bash
 curl -sk https://localhost/api/v1/health       # {"status":"ok",...} (HTTP отвечает 301 → HTTPS)
 curl -sk https://localhost/api/v1/ready       # readiness: primary+replica {"status":"ready",...}
-docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml ps   # сервисы health-gate healthy; sidecar-ы проверяются отдельно
+docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml ps   # все сервисы health-gate healthy
 ```
 
 Требуемые свободные порты хоста: **80, 443** (nginx). БД, MinIO, Prometheus и
@@ -111,6 +114,35 @@ ssh -N -L 3001:"$GRAFANA_IP":3000 ops@server
 volume `alerter-state-prod-data`; активная авария даёт одно сообщение, затем —
 одно сообщение восстановления.
 БД и MinIO наружу не публикуются — только внутри сети compose.
+
+## Offsite через rclone
+
+При пустом `BACKUP_OFFSITE_REMOTE` offsite остаётся warn/no-op, а пустой config
+volume не блокирует запуск. При заданном remote production image содержит
+multi-arch distro `rclone`; `backup-timer` читает
+`/rclone-config/rclone.conf` из read-only named volume `tz-prod-rclone-config`.
+
+1. Создать конфигурацию на защищённой машине, не в репозитории:
+   `rclone config create <remote> <provider> ...`.
+2. Создать volume и загрузить файл с правами владельца:
+
+```bash
+docker volume create tz-prod-rclone-config
+docker run --rm -i --mount type=volume,src=tz-prod-rclone-config,dst=/config \
+  alpine:3.20 sh -c 'umask 077; cat > /config/rclone.conf' \
+  < /secure/path/rclone.conf
+```
+
+`/secure/path/rclone.conf` — локальный файл оператора, он не коммитится и не
+монтируется в production-контейнер. После заполнения перезапустить sidecar:
+
+```bash
+docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml \
+  up -d --no-build backup-timer
+```
+
+При заданном remote healthcheck таймера дополнительно проверяет наличие config и
+настроенного remote; при пустом remote эта проверка пропускается.
 
 ## Наполнение данными (разово, после первого запуска)
 

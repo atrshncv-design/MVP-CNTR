@@ -17,9 +17,10 @@ ENV PYTHONUNBUFFERED=1
 # Кириллический шрифт для PDF-заключений (reportlab, тикет 09);
 # postgresql-client — pg_dump для backup.sh перед миграциями (тикет 20).
 # Клиент ставим МАЖОРНОСТИ СЕРВЕРА (PG16) из pgdg: клиент из bookworm (v15)
-# отказывается работать с сервером 16 — «server version mismatch».
+# отказывается работать с сервером 16 — «server version mismatch». rclone
+# берём из distro-пакетов: это сохраняет multi-arch сборку production image.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl gnupg fonts-dejavu-core \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg fonts-dejavu-core rclone \
     && install -d /usr/share/postgresql-common/pgdg \
     && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
          https://www.postgresql.org/media/keys/ACCC4CF8.asc \

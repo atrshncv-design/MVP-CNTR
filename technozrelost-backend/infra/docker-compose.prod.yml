@@ -198,6 +198,12 @@ services:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
     command: ["/bin/sh", "/app/infra/cron/backup-timer.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1 && test -s /proc/1/cmdline && test -f /app/infra/cron/backup-timer.sh && if [ -n \"$${BACKUP_OFFSITE_REMOTE:-}\" ]; then command -v rclone >/dev/null 2>&1 && test -s \"$${RCLONE_CONFIG}\" && rclone --config \"$${RCLONE_CONFIG}\" config show \"$${BACKUP_OFFSITE_REMOTE%%:*}\" >/dev/null 2>&1; fi"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       db:
         condition: service_healthy
@@ -212,6 +218,7 @@ services:
       BACKUP_FRESHNESS_MARKER: ${BACKUP_FRESHNESS_MARKER:-/backups/.backup-freshness}
       BACKUP_OFFSITE_MARKER: ${BACKUP_OFFSITE_MARKER:-/backups/.offsite-status}
       BACKUP_OFFSITE_REMOTE: ${BACKUP_OFFSITE_REMOTE:-}
+      RCLONE_CONFIG: /rclone-config/rclone.conf
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
@@ -223,6 +230,7 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-technozrelost}
     volumes:
       - backups-prod-data:/backups
+      - rclone-config-prod:/rclone-config:ro
       - ./backup.sh:/app/infra/backup.sh:ro
       - ./cron/backup-timer.sh:/app/infra/cron/backup-timer.sh:ro
 
@@ -231,6 +239,12 @@ services:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
     command: ["python", "/app/infra/alerter/alerter.py"]
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1 && test -s /proc/1/cmdline && test -f /app/infra/alerter/alerter.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       db:
         condition: service_healthy
@@ -371,6 +385,8 @@ volumes:
   clamav-prod-db:
   redis-prod-data:
   backups-prod-data:
+  rclone-config-prod:
+    name: tz-prod-rclone-config
   prometheus-prod-data:
   grafana-prod-data:
   alerter-state-prod-data:

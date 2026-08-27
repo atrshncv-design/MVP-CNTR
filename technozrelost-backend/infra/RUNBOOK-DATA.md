@@ -60,8 +60,10 @@
       BACKUP_FRESHNESS_MARKER: /backups/.backup-freshness
       BACKUP_OFFSITE_MARKER: /backups/.offsite-status
       BACKUP_OFFSITE_REMOTE: ${BACKUP_OFFSITE_REMOTE:-}
+      RCLONE_CONFIG: /rclone-config/rclone.conf
     volumes:
       - backups-prod-data:/backups
+      - rclone-config-prod:/rclone-config:ro
       - ./infra:/app/infra:ro      # если ещё не смонтирован целиком
 ```
 
@@ -72,7 +74,9 @@
     volumes:
       - wal-archive-prod-data:/var/lib/postgresql/wal-archive   # ОТДЕЛЬНЫЙ том
       - ./postgres/postgresql-pitr.conf:/etc/postgresql/postgresql-pitr.conf:ro
-# volumes: wal-archive-prod-data:
+# volumes:
+#   wal-archive-prod-data:
+#   rclone-config-prod:
 ```
 
 В production compose используется `alerter/postgres-primary-entrypoint.sh`: он
@@ -145,11 +149,23 @@ docker compose --env-file .env.production -f docker-compose.prod.yml exec alerte
 ```
 
 ### P4. Настройка offsite (выполняет владелец после выбора хранилища)
-1. На хосте: `rclone config create <remote> <provider> ...` (S3/любой
-   rclone-бэкенд); секреты — в env хоста, не в репозитории.
-2. Прописать `BACKUP_OFFSITE_REMOTE=<remote>:<bucket>/tz-backups` в
-   `.env.production` и перезапустить стек.
-3. После очередного бэкапа проверить: `<BACKUP_DIR>/.offsite-status`
+Если `BACKUP_OFFSITE_REMOTE` пуст, этот шаг не нужен: backup пишет `warn`, а
+deploy не требует config volume. При заданном remote:
+1. На защищённой машине создать конфигурацию: `rclone config create <remote>
+   <provider> ...` (S3/любой rclone-бэкенд); файл не хранить в репозитории.
+2. Создать named volume и загрузить config без вывода содержимого:
+
+   ```bash
+   docker volume create tz-prod-rclone-config
+   docker run --rm -i --mount type=volume,src=tz-prod-rclone-config,dst=/config \
+     alpine:3.20 sh -c 'umask 077; cat > /config/rclone.conf' \
+     < /secure/path/rclone.conf
+   ```
+
+3. Прописать `BACKUP_OFFSITE_REMOTE=<remote>:<bucket>/tz-backups` в
+   `.env.production` и перезапустить `backup-timer`; его healthcheck проверит
+   `rclone`, config и имя remote.
+4. После очередного бэкапа проверить: `<BACKUP_DIR>/.offsite-status`
    начинается с `ok`. До этого алертер горит жёлтым (warn) — это ожидаемо.
 
 ### P5. Диагностика архивации WAL

@@ -12,6 +12,7 @@
 #                   (по умолчанию 03:15; в compose задаём TZ=UTC явно);
 #   BACKUP_TIMER_RUN_ONCE=1 — выполнить backup.sh немедленно один раз и выйти
 #                   (smoke-проверка проводки таймера, не для прода).
+#   BACKUP_TIMER_SELF_CHECK=1 — проверить границу target без ожидания и бэкапа.
 set -eu
 
 BACKUP_SCRIPT="${BACKUP_SCRIPT:-/app/infra/backup.sh}"
@@ -22,7 +23,7 @@ log() { echo "[backup-timer] $(date -u +%Y-%m-%dT%H:%M:%S%z) $*"; }
 # Валидация формата времени на старте: опечатка в env не должна проявиться
 # через сутки молчаливого пропуска бэкапа.
 case "$BACKUP_AT" in
-  [0-2][0-9]:[0-5][0-9]) ;;
+  [01][0-9]:[0-5][0-9]|2[0-3]:[0-5][0-9]) ;;
   *) echo "[backup-timer] ОШИБКА: BACKUP_AT='$BACKUP_AT' — ожидается ЧЧ:ММ" >&2; exit 2 ;;
 esac
 HH=${BACKUP_AT%%:*}
@@ -39,40 +40,68 @@ epoch_today_hhmm() {
   fi
 }
 
-if [ "${BACKUP_TIMER_RUN_ONCE:-0}" = "1" ]; then
-  log "RUN_ONCE: выполняю $BACKUP_SCRIPT немедленно"
-  exec sh "$BACKUP_SCRIPT"
-fi
-
-if [ ! -f "$BACKUP_SCRIPT" ]; then
-  echo "[backup-timer] ОШИБКА: $BACKUP_SCRIPT не найден (проверь mount и BACKUP_SCRIPT)" >&2
-  exit 2
-fi
-
-log "планировщик запущен: ежедневно в $BACKUP_AT ($TZ), скрипт: $BACKUP_SCRIPT"
-
-while :; do
+next_target() {
   now=$(date +%s)
   target=$(epoch_today_hhmm)
   # Уже прошло время запуска сегодня — цель переносится на завтра.
   if [ "$target" -le "$now" ]; then
     target=$((target + 86400))
   fi
-  remaining=$((target - now))
-  log "до следующего запуска ${remaining} c"
-  # Sleep короткими чанками: SIGTERM от docker stop прерывает sleep и цикл
-  # завершается за секунды, а не через многочасовой сон.
-  while [ "$remaining" -gt 0 ]; do
-    # Тернарный оператор в $(( )) не входит в POSIX sh — не рискуем.
+  printf '%s\n' "$target"
+}
+
+require_backup_script() {
+  if [ ! -f "$BACKUP_SCRIPT" ]; then
+    echo "[backup-timer] ОШИБКА: $BACKUP_SCRIPT не найден (проверь mount и BACKUP_SCRIPT)" >&2
+    exit 2
+  fi
+}
+
+wait_until_target() {
+  target="$1"
+  while :; do
+    now=$(date +%s)
+    remaining=$((target - now))
+    if [ "$remaining" -le 0 ]; then
+      return 0
+    fi
+
+    # Короткий sleep сохраняет быструю обработку SIGTERM от docker stop.
     if [ "$remaining" -lt 60 ]; then chunk=$remaining; else chunk=60; fi
     sleep "$chunk"
-    now=$(date +%s)
-    target=$(epoch_today_hhmm)
-    if [ "$target" -le "$now" ]; then
-      target=$((target + 86400))
-    fi
-    remaining=$((target - now))
   done
+}
+
+if [ "${BACKUP_TIMER_RUN_ONCE:-0}" = "1" ]; then
+  require_backup_script
+  log "RUN_ONCE: выполняю $BACKUP_SCRIPT немедленно"
+  exec sh "$BACKUP_SCRIPT"
+fi
+
+if [ "${BACKUP_TIMER_SELF_CHECK:-0}" = "1" ]; then
+  require_backup_script
+  target=$(next_target)
+  now=$(date +%s)
+  if [ "$target" -le "$now" ]; then
+    echo "[backup-timer] ОШИБКА: self-check вычислил target не в будущем" >&2
+    exit 1
+  fi
+  printf '%s\n' "[backup-timer] self-check: script exists; next target=$target"
+  exit 0
+fi
+
+require_backup_script
+
+log "планировщик запущен: ежедневно в $BACKUP_AT ($TZ), скрипт: $BACKUP_SCRIPT"
+
+while :; do
+  now=$(date +%s)
+  target=$(next_target)
+  remaining=$((target - now))
+  log "до следующего запуска ${remaining} c"
+  # Цель зафиксирована до ожидания: на границе суток нельзя переносить её
+  # на завтра, иначе backup.sh никогда не будет вызван.
+  wait_until_target "$target"
   # Провал бэкапа не убивает планировщик: следующая попытка — завтра,
   # авария фиксируется отсутствием свежего маркера (контракт алертера).
   if sh "$BACKUP_SCRIPT"; then
