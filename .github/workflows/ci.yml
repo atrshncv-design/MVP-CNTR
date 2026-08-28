@@ -50,13 +50,15 @@ jobs:
           enable-cache: true
           cache-dependency-glob: technozrelost-backend/uv.lock
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked --extra dev
+      - name: Dependency audit
+        run: uv run --extra dev --with pip-audit==2.9.0 pip-audit -l
       - name: Ruff
-        run: uv run ruff check app tests
+        run: uv run ruff check app tests infra/alerter
       - name: Mypy
         run: uv run mypy app
       - name: Pytest
-        run: uv run pytest -q
+        run: uv run pytest -q infra/alerter/test_alerter.py tests
 
   frontend:
     name: Frontend
@@ -77,6 +79,8 @@ jobs:
           cache-dependency-path: technozrelost-frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Dependency audit
+        run: npm audit --audit-level=high
       - name: Lint
         run: npm run lint
       - name: Tests

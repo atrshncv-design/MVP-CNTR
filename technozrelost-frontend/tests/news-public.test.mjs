@@ -26,7 +26,8 @@ test("news feed client: скелетон, ошибка, «Загрузить е�
   assert.match(source, /Пока нет опубликованных новостей/);
   assert.match(source, /Загрузить ещё/);
   assert.match(source, /animate-pulse/); // скелетон
-  assert.match(source, /fetch\(`\/api\/v1\/news/); // через rewrites
+  assert.match(source, /CLIENT_API_BASE as API_URL/); // единый URL-модуль
+  assert.match(source, /fetch\(`\$\{API_URL\}\/api\/v1\/news/);
   assert.match(source, /cache: "no-store"/);
 });
 

@@ -7,8 +7,10 @@ import argparse
 import asyncio
 import json
 import logging
+import math
 import os
 import shutil
+import socket
 import time
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
@@ -65,9 +67,18 @@ class AlerterConfig:
     probe_timeout_seconds: float
     telegram_bot_token: str
     telegram_chat_id: str
+    minio_health_url: str = "http://minio:9000/minio/health/live"
+    clamav_host: str = "clamav"
+    clamav_port: int = 3310
+    wal_offsite_marker: Path = Path("/backups/.wal-offsite-status")
+    wal_offsite_max_age_seconds: float = 300.0
 
     @classmethod
     def from_env(cls) -> AlerterConfig:
+        disk_warn_percent = _env_percent("ALERTER_DISK_WARN_PERCENT", 80.0)
+        disk_critical_percent = _env_percent("ALERTER_DISK_CRITICAL_PERCENT", 90.0)
+        if disk_warn_percent > disk_critical_percent:
+            raise ValueError("ALERTER_DISK_WARN_PERCENT must not exceed critical")
         return cls(
             readiness_url=os.getenv(
                 "ALERTER_READINESS_URL", "http://backend:8000/api/v1/ready"
@@ -90,8 +101,8 @@ class AlerterConfig:
             disk_paths=_env_paths(
                 "ALERTER_DISK_PATHS", "/backups,/wal-archive"
             ),
-            disk_warn_percent=_env_float("ALERTER_DISK_WARN_PERCENT", 80.0),
-            disk_critical_percent=_env_float("ALERTER_DISK_CRITICAL_PERCENT", 90.0),
+            disk_warn_percent=disk_warn_percent,
+            disk_critical_percent=disk_critical_percent,
             slot_lag_warn_bytes=_env_int(
                 "ALERTER_SLOT_LAG_WARN_BYTES", 12 * 1024 * 1024 * 1024
             ),
@@ -108,6 +119,15 @@ class AlerterConfig:
             probe_timeout_seconds=_env_float("ALERTER_PROBE_TIMEOUT_SECONDS", 5.0),
             telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", "").strip(),
+            minio_health_url=os.getenv(
+                "ALERTER_MINIO_HEALTH_URL", "http://minio:9000/minio/health/live"
+            ),
+            clamav_host=os.getenv("ALERTER_CLAMAV_HOST", "clamav"),
+            clamav_port=_env_int("ALERTER_CLAMAV_PORT", 3310),
+            wal_offsite_marker=Path(
+                os.getenv("WAL_OFFSITE_MARKER", "/backups/.wal-offsite-status")
+            ),
+            wal_offsite_max_age_seconds=_env_float("WAL_OFFSITE_MAX_AGE_SECONDS", 300.0),
         )
 
 
@@ -122,7 +142,17 @@ def _env_float(name: str, default: float) -> float:
     value = os.getenv(name)
     if value is None or not value.strip():
         return default
-    return float(value)
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ValueError(f"{name} must be finite")
+    return parsed
+
+
+def _env_percent(name: str, default: float) -> float:
+    parsed = _env_float(name, default)
+    if not 0.0 <= parsed <= 100.0:
+        raise ValueError(f"{name} must be between 0 and 100")
+    return parsed
 
 
 def _env_paths(name: str, default: str) -> tuple[Path, ...]:
@@ -163,10 +193,13 @@ def check_backup_freshness(
     except (OSError, UnicodeError, ValueError):
         return CheckResult("backup_freshness", CRITICAL, "marker missing or invalid")
 
-    if max_age_hours < 0:
+    if not math.isfinite(max_age_hours) or max_age_hours < 0:
         return CheckResult("backup_freshness", CRITICAL, "invalid age threshold")
     current = _utc(now or datetime.now(UTC))
-    age_hours = max(0.0, (current - timestamp).total_seconds() / 3600)
+    age_seconds = (current - timestamp).total_seconds()
+    if age_seconds < 0:
+        return CheckResult("backup_freshness", CRITICAL, "timestamp in future")
+    age_hours = age_seconds / 3600
     if age_hours > max_age_hours:
         return CheckResult(
             "backup_freshness",
@@ -176,21 +209,60 @@ def check_backup_freshness(
     return CheckResult("backup_freshness", OK, f"age={age_hours:.1f}h")
 
 
-def check_offsite(marker: Path | str) -> CheckResult:
+def _check_offsite(
+    marker: Path | str,
+    *,
+    name: str = "offsite",
+    max_age_seconds: float | None = None,
+    now: datetime | None = None,
+) -> CheckResult:
     try:
         parts = _read_marker_line(Path(marker)).split(maxsplit=2)
         if len(parts) < 3 or parts[0] not in {"ok", "warn", "fail"}:
             raise ValueError("invalid offsite marker")
-        parse_iso_timestamp(parts[1])
+        timestamp = parse_iso_timestamp(parts[1])
     except (OSError, UnicodeError, ValueError):
-        return CheckResult("offsite", CRITICAL, "marker missing or invalid")
+        return CheckResult(name, CRITICAL, "marker missing or invalid")
+
+    current = _utc(now or datetime.now(UTC))
+    age_seconds = (current - timestamp).total_seconds()
+    if age_seconds < 0:
+        return CheckResult(name, CRITICAL, "timestamp in future")
 
     status = parts[0]
     if status == "fail":
-        return CheckResult("offsite", CRITICAL, "status=fail")
+        return CheckResult(name, CRITICAL, "status=fail")
     if status == "warn":
-        return CheckResult("offsite", WARNING, "status=warn")
-    return CheckResult("offsite", OK, "status=ok")
+        return CheckResult(name, WARNING, "status=warn")
+    if max_age_seconds is None:
+        return CheckResult(name, OK, "status=ok")
+    if not math.isfinite(max_age_seconds) or max_age_seconds < 0:
+        return CheckResult(name, CRITICAL, "invalid age threshold")
+    if age_seconds > max_age_seconds:
+        return CheckResult(
+            name,
+            CRITICAL,
+            f"age={age_seconds:.0f}s exceeds {max_age_seconds:.0f}s",
+        )
+    return CheckResult(name, OK, f"status=ok age={age_seconds:.0f}s")
+
+
+def check_offsite(marker: Path | str, now: datetime | None = None) -> CheckResult:
+    return _check_offsite(marker, now=now)
+
+
+def check_wal_offsite(
+    marker: Path | str,
+    max_age_seconds: float = 300.0,
+    now: datetime | None = None,
+) -> CheckResult:
+    """Проверяет, что непрерывная offsite-синхронизация WAL не устарела."""
+    return _check_offsite(
+        marker,
+        name="wal_offsite",
+        max_age_seconds=max_age_seconds,
+        now=now,
+    )
 
 
 def check_disk_usage(
@@ -200,7 +272,12 @@ def check_disk_usage(
     usage: Callable[[str], Any] = shutil.disk_usage,
 ) -> CheckResult:
     path_list = tuple(Path(path) for path in paths)
-    if not path_list or warn_percent < 0 or critical_percent < warn_percent:
+    if (
+        not path_list
+        or not math.isfinite(warn_percent)
+        or not math.isfinite(critical_percent)
+        or not 0.0 <= warn_percent <= critical_percent <= 100.0
+    ):
         return CheckResult("disk", CRITICAL, "invalid disk threshold configuration")
 
     usages: list[tuple[Path, float]] = []
@@ -208,6 +285,8 @@ def check_disk_usage(
         try:
             stat = usage(str(path))
             percent = (stat.used / stat.total * 100) if stat.total else 100.0
+            if not math.isfinite(percent):
+                return CheckResult("disk", CRITICAL, f"path={path} unavailable")
         except (OSError, ValueError, ZeroDivisionError):
             return CheckResult("disk", CRITICAL, f"path={path} unavailable")
         usages.append((path, percent))
@@ -221,13 +300,14 @@ def check_disk_usage(
     return CheckResult("disk", OK, detail)
 
 
-def check_readiness(
+def _check_http_endpoint(
+    name: str,
     url: str,
     timeout_seconds: float = 5.0,
     opener: Callable[..., Any] = urlopen,
 ) -> CheckResult:
-    request = Request(url, method="GET")
     try:
+        request = Request(url, method="GET")
         response = opener(request, timeout=timeout_seconds)
         try:
             status_value = getattr(response, "status", None)
@@ -237,15 +317,59 @@ def check_readiness(
         finally:
             close = getattr(response, "close", None)
             if close is not None:
-                close()
+                with suppress(Exception):
+                    close()
     except HTTPError as exc:
-        return CheckResult("readiness", CRITICAL, f"http_status={exc.code}")
-    except (OSError, URLError, TimeoutError, ValueError):
-        return CheckResult("readiness", CRITICAL, "endpoint unavailable")
+        return CheckResult(name, CRITICAL, f"http_status={exc.code}")
+    except (AttributeError, OSError, URLError, TimeoutError, ValueError):
+        return CheckResult(name, CRITICAL, "endpoint unavailable")
 
     if status != 200:
-        return CheckResult("readiness", CRITICAL, f"http_status={status}")
-    return CheckResult("readiness", OK, "http_status=200")
+        return CheckResult(name, CRITICAL, f"http_status={status}")
+    return CheckResult(name, OK, "http_status=200")
+
+
+def check_readiness(
+    url: str,
+    timeout_seconds: float = 5.0,
+    opener: Callable[..., Any] = urlopen,
+) -> CheckResult:
+    return _check_http_endpoint("readiness", url, timeout_seconds, opener)
+
+
+def check_minio_health(
+    url: str,
+    timeout_seconds: float = 5.0,
+    opener: Callable[..., Any] = urlopen,
+) -> CheckResult:
+    """Проверяет health endpoint MinIO без передачи ключей доступа."""
+    return _check_http_endpoint("minio_health", url, timeout_seconds, opener)
+
+
+def check_clamav_availability(
+    host: str,
+    port: int,
+    timeout_seconds: float = 5.0,
+    connector: Callable[..., Any] = socket.create_connection,
+) -> CheckResult:
+    """Проверяет clamd безопасным PING/PONG TCP-запросом."""
+    connection: Any = None
+    try:
+        connection = connector((host, port), timeout=timeout_seconds)
+        connection.sendall(b"PING\n")
+        response = connection.recv(16)
+    except (AttributeError, OSError, TimeoutError, ValueError):
+        return CheckResult("clamav_availability", CRITICAL, "endpoint unavailable")
+    finally:
+        if connection is not None:
+            close = getattr(connection, "close", None)
+            if close is not None:
+                with suppress(Exception):
+                    close()
+
+    if not isinstance(response, bytes) or response.strip() != b"PONG":
+        return CheckResult("clamav_availability", CRITICAL, "unexpected response")
+    return CheckResult("clamav_availability", OK, "response=PONG")
 
 
 async def check_replica_and_slot(config: AlerterConfig) -> list[CheckResult]:
@@ -288,8 +412,9 @@ async def check_replica_and_slot(config: AlerterConfig) -> list[CheckResult]:
         stream_row = await primary.fetchrow(
             """
             SELECT state,
-                   COALESCE(pg_wal_lsn_diff(pg_current_wal_lsn(), flush_lsn), 0)
-                   ::bigint AS lag_bytes
+                   COALESCE(pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn), 0)
+                   ::bigint AS lag_bytes,
+                   (replay_lsn IS NOT NULL) AS replay_available
             FROM pg_stat_replication
             ORDER BY backend_start DESC
             LIMIT 1
@@ -301,6 +426,8 @@ async def check_replica_and_slot(config: AlerterConfig) -> list[CheckResult]:
         if primary is not None:
             await _close_connection(primary)
 
+    in_recovery: Any = None
+    receiver_status: Any = None
     try:
         replica = await asyncpg.connect(
             host=config.replica_host,
@@ -311,16 +438,22 @@ async def check_replica_and_slot(config: AlerterConfig) -> list[CheckResult]:
             timeout=config.probe_timeout_seconds,
         )
         in_recovery = await replica.fetchval("SELECT pg_is_in_recovery()")
+        receiver_status = await replica.fetchval(
+            "SELECT status FROM pg_stat_wal_receiver LIMIT 1"
+        )
     except Exception:
         in_recovery = None
+        receiver_status = None
     finally:
         if replica is not None:
             await _close_connection(replica)
 
-    if in_recovery is True:
-        replica_result = CheckResult("replica", OK, "connected and in recovery")
+    if in_recovery is True and receiver_status == "streaming":
+        replica_result = CheckResult("replica", OK, "connected, in recovery and streaming")
     elif in_recovery is False:
         replica_result = CheckResult("replica", CRITICAL, "connected but not in recovery")
+    elif in_recovery is True:
+        replica_result = CheckResult("replica", CRITICAL, "receiver is not streaming")
     else:
         replica_result = CheckResult("replica", CRITICAL, "connection unavailable")
 
@@ -345,8 +478,13 @@ async def check_replica_and_slot(config: AlerterConfig) -> list[CheckResult]:
     else:
         stream_state = str(_row_value(stream_row, "state", "unknown"))
         lag_bytes = int(_row_value(stream_row, "lag_bytes", 0) or 0)
-        lag_detail = f"state={stream_state} lag_bytes={lag_bytes}"
-        if stream_state != "streaming" or lag_bytes >= config.replica_lag_critical_bytes:
+        replay_available = bool(_row_value(stream_row, "replay_available", True))
+        lag_detail = f"state={stream_state} replay_lag_bytes={lag_bytes}"
+        if (
+            stream_state != "streaming"
+            or not replay_available
+            or lag_bytes >= config.replica_lag_critical_bytes
+        ):
             lag_result = CheckResult("replica_lag", CRITICAL, lag_detail)
         else:
             lag_result = CheckResult("replica_lag", OK, lag_detail)
@@ -499,16 +637,38 @@ async def collect_checks(config: AlerterConfig) -> list[CheckResult]:
         config.readiness_url,
         config.probe_timeout_seconds,
     )
+    minio_task = asyncio.to_thread(
+        check_minio_health,
+        config.minio_health_url,
+        config.probe_timeout_seconds,
+    )
+    clamav_task = asyncio.to_thread(
+        check_clamav_availability,
+        config.clamav_host,
+        config.clamav_port,
+        config.probe_timeout_seconds,
+    )
     replication_task = check_replica_and_slot(config)
-    readiness, replication = await asyncio.gather(readiness_task, replication_task)
+    readiness, minio, clamav, replication = await asyncio.gather(
+        readiness_task,
+        minio_task,
+        clamav_task,
+        replication_task,
+    )
     return [
         readiness,
+        minio,
+        clamav,
         *replication,
         check_backup_freshness(
             config.freshness_marker,
             config.max_backup_age_hours,
         ),
         check_offsite(config.offsite_marker),
+        check_wal_offsite(
+            config.wal_offsite_marker,
+            config.wal_offsite_max_age_seconds,
+        ),
         check_disk_usage(
             config.disk_paths,
             config.disk_warn_percent,

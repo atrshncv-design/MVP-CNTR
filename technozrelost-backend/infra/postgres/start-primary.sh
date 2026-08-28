@@ -11,6 +11,10 @@ set -euo pipefail
 PGDATA="${PGDATA:-/var/lib/postgresql/data}"
 export POSTGRES_USER="${POSTGRES_USER:?POSTGRES_USER обязателен}"
 export POSTGRES_DB="${POSTGRES_DB:?POSTGRES_DB обязателен}"
+export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD обязателен}"
+export PGPASSWORD="$POSTGRES_PASSWORD"
+export REPLICATION_READY_FILE="${REPLICATION_READY_FILE:-/tmp/technozrelost-replication-ready}"
+rm -f "$REPLICATION_READY_FILE"
 ARGS=(postgres -c config_file=/etc/postgresql/postgresql.conf)
 
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
@@ -23,7 +27,9 @@ trap 'kill -TERM "$PG_PID" 2>/dev/null || true' TERM INT
 
 echo "[primary] существующий том: ожидаю готовности PostgreSQL..."
 i=0
-until pg_isready -q -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+until PGPASSWORD="$POSTGRES_PASSWORD" pg_isready -q -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  && PGPASSWORD="$POSTGRES_PASSWORD" psql -X -w -qAt -U "$POSTGRES_USER" \
+    -d "$POSTGRES_DB" -c 'SELECT 1' >/dev/null 2>&1; do
   i=$((i + 1))
   if ! kill -0 "$PG_PID" 2>/dev/null; then
     echo "[primary] postgres завершился во время старта" >&2

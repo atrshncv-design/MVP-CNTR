@@ -1,13 +1,213 @@
 # STATUS / CURRENT STATE
 
-## Дорожная карта до приёмки — старт (26.08.2026)
+## Дорожная карта до приёмки — M0/G1 (28.08.2026)
 
-- ✅ Проведено глубокое CTO-интервью с владельцем: госконтракт подписан, сдача — декабрь 2026, прод на сервере заказчика (доступа нет), команда = владелец + AI-агенты, цель надёжности «простой ≤1 ч / ноль потерь», алерты в Telegram, ядро демо = жизненный цикл проекта + реестр НИОКТР + AI.
-- ✅ Независимая верификация аудита 25.08 (4 параллельных аудитора): заявления честны и подтвердились, полнота ~65–70%; найдено 62 пропуска/незакрытых пункта, включая блокеры: обход модерации вступления (N-01), fail-open матрица ролей фронта (FE-01), localhost-fallback прода (FE-02), отсутствие расписания бэкапов/WAL/алертов/rollback (INF-01..07), конфликт пула БД с max_connections (P-01), утечка ПДн во внешний LLM (N-05).
-- ✅ Создан `docs/BACKLOG.md` — консолидированный реестр находок: P0 (12, до 30.09) / P1 (24, до 15.11) / P2 (26, после приёмки). Правила работы агентов внутри файла.
-- ✅ Переписан `docs/Plan.md` — дорожная карта до декабря: gates G0–G5 с датами и критериями выхода, фазы M0–M3, сценарий демонстрации (= чек-лист приёмки), Definition of Done, процесс ревью для solo+агентов, критерии успеха.
-- ⚠️ Ключевые организационные риски зафиксированы у владельца: нет ТЗ/критериев приёмки (письменная фиксация состава демо — за владельцем), нет доступа к серверу заказчика, комплаенс-рамки (152-ФЗ УЗ, КИИ, импортозамещение) не определены.
-- ⏸️ Следующий шаг: фаза M0 плана — начать с N-01 (обход модерации) и CI (P-12); запрос владельца к заказчику о доступе к серверу.
+- ✅ Проведено глубокое CTO-интервью: госконтракт подписан, сдача — декабрь 2026, прод на сервере заказчика (доступа нет), команда = владелец + AI-агенты, цель надёжности «простой ≤1 ч / ноль потерь», алерты в Telegram, ядро демо = жизненный цикл проекта + реестр НИОКТР + AI.
+- ✅ Независимая верификация аудита: заявления честны, полнота примерно 65–70%; реестр исправлен до 65 находок: P0 — 14, P1 — 24, P2 — 27.
+- ✅ Локальная реализация M0: committed baseline заканчивается на HEAD `7f6ad43`; последующие backend/infra repairs находятся dirty/uncommitted и не покрыты историческими commit hashes.
+- ✅ Независимые final local results: backend `334 passed` (single process), frontend `39 passed`, lint/build, ruff/mypy, `npm audit` и `pip-audit` зелёные; alerter `28 passed`, infra focused tests зелёные.
+- ✅ Dev PostgreSQL smoke: primary и replica healthy, slot `tz_replica_slot` active, replica `pg_is_in_recovery=true`, WAL receiver streaming, passfile `0600`.
+- ⚠️ G1 открыт: remote GitHub Actions не проверен. Production deploy, offsite/PITR, Telegram delivery и rollback live smoke не проверялись; требуются operator crypt remote/config и production-like capacity.
+- ⚠️ Открыты организационные вопросы: нет ТЗ/критериев приёмки, доступа к серверу заказчика и утверждённых рамок 152-ФЗ УЗ/КИИ/импортозамещения.
+- ⏸️ Следующий шаг: провести внешние G1-проверки на доступном production-like контуре; только после этого обновлять P0 до полного `done`.
+
+### T05 repair — 27.08.2026
+
+- ✅ Исправлен boundary-баг `backup-timer.sh`: target фиксируется до ожидания, добавлены
+  общий `next_target`, проверка существования `BACKUP_SCRIPT` и self-check без ожидания
+  суток/запуска backup; `BACKUP_AT` принимает только часы `00..23` и минуты `00..59`.
+- ✅ Offsite-проводка усилена: distro `rclone` в production image, read-only named
+  volume `tz-prod-rclone-config`, conditional healthcheck с требованием `rclone` только
+  при заданном remote.
+- ✅ Offline-проверки: shell syntax, timer boundary/RUN_ONCE, Compose config wiring,
+  Dockerfile `buildx --check`, alerter `9 passed` + self-check; live upload не выполнялся
+  без operator-provided remote/config.
+
+### T06/P-12 dependency audit repair — 27.08.2026
+
+- ✅ Frontend `js-yaml@4.3.2` и `nanoid@3.3.18` закреплены безопасными overrides и
+  воспроизводимым lockfile; добавленные WASM-записи Tailwind проверены как optional bundled.
+- ✅ В `.github/workflows/ci.yml` добавлены `uv run --extra dev --with pip-audit==2.9.0 pip-audit -l` и
+  `npm audit --audit-level=high`; существующие application gates не изменены, секреты не нужны.
+- ✅ Локально: оба npm audit и pip-audit чисты, YAML валиден, frontend test `38/38`, lint и build зелёные.
+
+### Точечный repair FE-02/R03, INF-02/04/05, P-12 — 27.08.2026
+
+- ✅ Browser API consumers переведены на `CLIENT_API_BASE` с same-origin default; production Compose передаёт одинаковый `API_URL_INTERNAL` в frontend build arg и runtime env.
+- ✅ Каждый backup-снапшот теперь содержит logical `pg_dump` и обязательный physical `pg_basebackup` через `REPL_USER`/`REPL_PASSWORD`; `backup-timer` получает те же credentials.
+- ✅ Offsite принимает только rclone `type=crypt` (и отвергает `no_data_encryption=true`); добавлены MinIO health и ClamAV PING/PONG probes с aggregate-state алертера.
+- ✅ Проверки: backend `282 passed`, frontend `39/39` + lint + production build, `mypy app`, `pip-audit`, `npm audit`, targeted ruff, shell syntax, alerter `14 passed` и infra-contract `4 passed` зелёные.
+- ⚠️ Production Docker build остановлен Docker Desktop на frontend `COPY node_modules` с `no space left on device`; images/volumes не удалялись. Общий `ruff check .` также сохраняет 5 baseline-ошибок в старых миграциях 0007/0009/0010/0013/0027.
+- ⏸️ Изменения оставлены незакоммиченными и не отправлялись; live offsite/PITR smoke требует operator-provided crypt remote/config и свободного Docker storage.
+
+### M0 repair round — 27.08.2026
+
+- ✅ Исправлена идемпотентность `archive_command`: наличие уже архивированного WAL
+  теперь считается успешным завершением, и rehearsal использует тот же контракт.
+- ✅ Production требует `REPL_PASSWORD`, MinIO backup работает fail-closed; добавлены
+  crypt/no-data-encryption guard и непрерывный `wal-offsite` sidecar с отдельным age-aware marker.
+- ✅ Алертер проверяет свежесть offsite WAL; CI запускает infra alerter tests и Ruff для
+  `infra/alerter`; добавлены contract tests для новых guards и негативных remote cases.
+- ✅ Быстрые проверки: alerter/infra `24 passed`, shell syntax, Compose config и diff checks зелёные.
+- ✅ Полный backend `286 passed`, frontend `39/39` + lint/build; Ruff/mypy, shell syntax,
+  Compose config и graph rebuild зелёные.
+- ✅ Точный CI-порядок backend (`infra/alerter/test_alerter.py` + `tests`) дал `302 passed`;
+  `pip-audit` и `npm audit --audit-level=high` уязвимостей не нашли; graphify повторно собран.
+- ⏳ Production smoke по-прежнему требует свободного Docker storage и operator-provided
+  crypt remote/config; изменения остаются незакоммиченными.
+
+### Финальное исправление инфраструктуры — 27.08.2026
+
+- ✅ Production backup перед `mirror/list` идемпотентно создаёт или проверяет
+  MinIO bucket через `mc` и Python fallback; строгий режим сохраняет fail-closed
+  при реальной ошибке.
+- ✅ Production entrypoint подготавливает WAL-каталог на новом и существующем
+  томе с владельцем `postgres`; dev primary получает `REPL_USER`/`REPL_PASSWORD`/
+  `REPL_SLOT`, а backend ждёт `minio` в состоянии `service_healthy`.
+- ✅ Общий crypt-guard и backup fallback отвергают `true`/`1`/`yes`/`on` без
+  вывода rclone-конфигурации; WAL-sidecar пишет `warn no-wal`, удаляет только
+  старые сегменты после успешной отправки, валидирует положительный
+  `WAL_ARCHIVE_KEEP_DAYS` и использует WAL volume в режиме `rw`.
+- ✅ Runtime-скрипты backup/cron/alerter встроены в production backend image;
+  operational bind mounts из checkout намеренно сохранены для совместимости со
+  старыми image при rollback. Поэтому rollback требует совместимой ревизии
+  checkout/скриптов и не является live-verified свойством. Bind mounts исходников
+  приложения отсутствуют; исторические PostgreSQL config/init/entrypoint mounts
+  остаются отдельным ограничением.
+- ✅ `_env_float` отклоняет NaN и Infinity; добавлены focused и infra-contract
+  тесты. На текущем этапе: `47 passed`, targeted Ruff и shell syntax зелёные.
+- ✅ `docs/СЕРВЕР-ТРЕБОВАНИЯ.md`, `README-DEPLOY.md`, `RUNBOOK-DATA.md` и
+  production env example описывают актуальные API/WAL/storage-probe/Telegram
+  параметры, crypt-only offsite и встроенные в image sidecar-скрипты.
+- ✅ Финальные gates: полный backend `305 passed`; точный CI-порядок
+  `infra/alerter/test_alerter.py` + `tests` — `325 passed`; frontend `39/39`,
+  lint и build зелёные; pinned `pip-audit`, `npm audit`, Compose config и
+  Dockerfile `buildx --check` уязвимостей/ошибок не нашли.
+- ⏳ Live production backup/offsite/PITR smoke не выполнялся: для него нужны
+  operator-provided crypt remote/config и отдельный production-like прогон.
+  `.graphify` artifacts обнаружены изменёнными до этой работы и не трогались;
+  коммит и push не выполнялись.
+
+### M0 hardening verification follow-up — 27.08.2026
+
+- ✅ Pre-migration backup теперь дополнительно фиксирует `BACKUP_RUN_ID` из image
+  tag в атомарном `BACKUP_PRE_MIGRATION_MARKER`; поздняя backend-реплика не создаёт
+  последовательный дубль, а новый image tag запускает новый backup.
+- ✅ WAL-offsite исключает `.tmp`, `.partial` и скрытые частичные файлы из remote
+  копирования; alerter не блокируется unhealthy `wal-offsite`, чтобы сообщать его
+  ошибку через marker/Telegram.
+- ✅ Focused `infra/alerter/test_alerter.py` + `tests/test_infra_contracts.py`:
+  `65 passed`; полный `uv run pytest -q`: `315 passed`; объединённый CI-порядок
+  `infra/alerter/test_alerter.py` + `tests`: `343 passed` (только upstream
+  deprecation warnings).
+- ✅ `uv run mypy app`, targeted Ruff включая `infra/backup-lock.py`, shell syntax,
+  обе Compose `config --quiet`, Dockerfile `buildx --check` и `git diff --check`
+  зелёные.
+- ⏳ Live production backup/offsite/PITR smoke по-прежнему требует operator-provided
+  crypt remote/config и свободного Docker storage; коммит/push не выполнялись.
+
+### PostgreSQL network/auth contract repair — 27.08.2026
+
+- ✅ Dev Compose закреплён на отдельном `172.31.0.0/24` (`tz-dev-network`), production
+  сохранён на `172.30.0.0/24`; общий `pg_hba.conf` разрешает app/replication только
+  из этих точных CIDR.
+- ✅ Локальный `trust` удалён: роль `postgres` обслуживается через `peer`, app и
+  replication используют `scram-sha-256`; primary init/existing-volume и healthchecks
+  передают пароль только через runtime environment, replica использует passfile и тот
+  же ограниченный HBA.
+- ✅ `ensure-replication.sh` и оба restore-пути используют password environment без
+  секретов в argv; добавлены contract tests для CIDR/HBA/auth wiring.
+- ✅ Targeted `tests/test_infra_contracts.py infra/alerter/test_alerter.py`: `71 passed`.
+- ✅ Финальные shell syntax, dev/prod Compose `config --quiet`, targeted Ruff и
+  `git diff --check` зелёные; backup/restore fallback не передают пароль в argv.
+- ⏳ Live recreate существующей dev-сети не выполнялся; Docker volumes/images не
+  затрагивались.
+
+### PostgreSQL primary healthcheck repair — 28.08.2026
+
+- ✅ В dev/prod primary healthcheck добавлен общий
+  `infra/postgres/check-primary-health.sh`: `REPL_SLOT` проверяется по допустимому
+  формату, SQL с `:'slot'` передаётся через stdin, а `-v slot=...` задаёт ровно
+  настроенный слот; пароль передаётся только через `PGPASSWORD` environment.
+- ✅ Replica healthcheck сохранён с `pg_is_in_recovery()` и streaming receiver;
+  добавлен regression contract, который запрещает `:'slot'` в `-c` и проверяет
+  stdin/parameterized форму с fake psql.
+- ✅ Dev/prod Compose `config --quiet`, bash/sh syntax, targeted Ruff,
+  `git diff --check`, изолированная helper-проверка и `infra/alerter/test_alerter.py`
+  (`28 passed`) зелёные.
+- ⚠️ Полная команда `uv run pytest -q tests/test_infra_contracts.py
+  infra/alerter/test_alerter.py` остановлена session fixture: уже запущенный
+  `tz-pg-primary` отклоняет Docker Desktop bridge-адрес `192.168.65.1` по
+  текущему `pg_hba.conf`; recreate намеренно не выполнялся.
+- ⏳ Runtime smoke после обновления контейнера остаётся за оркестратором;
+  volumes/images и `.graphify` не трогались, commit/push не выполнялись.
+
+### Docker Desktop dev HBA repair — 28.08.2026
+
+- ✅ HBA разделён по контурам: production Compose продолжает монтировать только
+  строгий `postgres/pg_hba.conf` для `172.30.0.0/24`; dev Compose монтирует
+  `postgres/pg_hba.dev.conf` для `172.31.0.0/24` и ограниченного Docker Desktop
+  gateway `192.168.65.0/24` (включая observed `192.168.65.1`). Во всех host
+  правилах применяется `scram-sha-256`; `trust` и any-address отсутствуют.
+- ✅ Добавлены contract-проверки отсутствия gateway в production HBA/Compose,
+  наличия SCRAM-only gateway policy в dev HBA и обоих dev mounts. Документация
+  содержит безопасный recreate только `pg-primary`/`pg-replica` без `down -v`.
+- ✅ Локально: dev/prod `docker compose config --quiet`, shell syntax, targeted
+  Ruff и `git diff --check` зелёные; `pytest --noconftest -q
+  tests/test_infra_contracts.py` — `48 passed`.
+- ⏳ Обычный pytest всё ещё блокируется запущенным контейнером со старым HBA;
+  recreate и runtime smoke намеренно не выполнялись. Volumes/images, `.graphify`,
+  commit и push не трогались.
+
+### PostgreSQL replication credential repair — 28.08.2026
+
+- ✅ Root cause: `ensure-replication.sh` передавал password в `psql` через
+  самодельное экранирование метакоманды `\set`; это не является надёжным
+  transport для полного допустимого значения password. Теперь `psql \getenv`
+  читает credential непосредственно из runtime environment, а значение не
+  попадает в argv, source SQL или логи. После `ALTER ROLE` primary проверяет
+  SCRAM-вход самой replication-ролью.
+- ✅ Primary healthcheck ждёт marker, создаваемый только после credential
+  verification и slot; entrypoint удаляет stale marker перед каждым стартом.
+  Replica атомарно создаёт passfile с mode `0600`; путь параметризован только
+  для изолированного test harness, production default сохранён.
+- ✅ Добавлены executable tests: passfile с `:`/`\\`/`"` и disposable
+  PostgreSQL (`tmpfs`, без persistent volume) подтверждает `\getenv` →
+  `ALTER ROLE` → реальный SCRAM login. Isolated infra contracts: `50 passed`,
+  обычный focused pytest с session fixture: `78 passed`; shell syntax, Compose
+  config и `git diff --check` зелёные.
+- ✅ Без recreate применён новый idempotent provisioner к текущему dev primary:
+  verification credential прошла, replica `pg_is_in_recovery()` и streaming
+  receiver подтвердились, passfile остался `0600`; оба текущих DB-контейнера
+  перешли в `healthy` без recreate.
+- ⚠️ `REPL_PASSWORD` dev-default изменён относительно исторического volume:
+  startup теперь конвергирует роль к текущему общему значению primary/replica.
+  Для важного dev-volume надо задать явную переменную перед recreate; в
+  production default по-прежнему отсутствует. Volumes/images/secrets,
+  `.graphify`, commit и push не трогались.
+
+### Final production infra findings repair — 28.08.2026
+
+- ✅ Healthcheck `backup-timer`, `wal-offsite` и `alerter` больше не использует
+  `test -s /proc/1/cmdline`: procfs pseudo-file имеет нулевой reported size.
+  Проверка использует `kill -0 1` и наличие required runtime script; regression
+  contract подтверждает отсутствие procfs-size проверки и соответствие всех трёх
+  сервисов списку `HEALTH_SERVICES` в deploy health-gate.
+- ✅ `deploy.sh` сохраняет автоматическую генерацию для пустых/`change_me*`
+  JWT/NextAuth values, теперь через 32 random bytes (256-bit hex), и fail-closed
+  отклоняет operator-supplied placeholder, значение короче 32 символов, whitespace
+  или недостаточно разнообразное значение. Preflight никогда не выводит значение;
+  shell-contract покрывает generation и `password`/`default`/short rejection.
+- ✅ WAL offsite передаёт rclone явный список только завершённых 24-hex WAL и
+  8-hex `.history` объектов. History-файлы участвуют в local retention даже без
+  remote; hidden, temp, partial и невалидные имена не копируются и не удаляются.
+- ✅ Проверки: `bash/sh -n` для изменённых scripts, production Compose config с
+  env example, `pytest --noconftest -q tests/test_infra_contracts.py` — `56 passed`,
+  `pytest -q infra/alerter/test_alerter.py` — `28 passed`, targeted Ruff и
+  `git diff --check` зелёные.
+- ⏳ External production backup/offsite/PITR smoke остаётся pending: нужен
+  operator-provided crypt remote/config и отдельный production-like прогон.
+  Docker volumes/images, `.graphify`, commit и push не трогались.
 
 ## i.moscow Product Patterns — Autopilot (05.08.2026)
 

@@ -10,7 +10,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 HEALTH_TIMEOUT_SECONDS="${DEPLOY_HEALTH_TIMEOUT_SECONDS:-300}"
 BACKEND_IMAGE="technozrelost-backend"
 FRONTEND_IMAGE="technozrelost-frontend"
-HEALTH_SERVICES=(db db-replica minio clamav redis backend backup-timer alerter frontend nginx prometheus grafana)
+HEALTH_SERVICES=(db db-replica minio clamav redis backend backup-timer wal-offsite alerter frontend nginx prometheus grafana)
 
 usage() {
   cat <<'EOF'
@@ -58,7 +58,9 @@ effective_env_value() {
 }
 
 gen_secret() {
-  openssl rand -hex 24
+  # 32 случайных байта дают 256 бит энтропии; hex безопасен для .env без
+  # дополнительного экранирования.
+  openssl rand -hex 32
 }
 
 replace_env_value() {
@@ -92,6 +94,65 @@ require_grafana_password() {
   esac
 }
 
+require_replication_password() {
+  local value
+  value="$(effective_env_value REPL_PASSWORD)"
+  case "$value" in
+    ""|replica_pass|password|default|change_me*|changeme*)
+      echo "ОШИБКА: REPL_PASSWORD должен быть задан и не может быть значением по умолчанию."
+      return 1
+      ;;
+  esac
+}
+
+is_known_default_secret() {
+  local value
+  value="$(printf '%s' "$1" | LC_ALL=C tr '[:upper:]' '[:lower:]')"
+  case "$value" in
+    ""|admin|change_me*|changeme*|change-it*|default|example|minioadmin|\
+    minioadmin123|password|postgres|replica_pass|secret|test)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+require_production_secret() {
+  local key="$1"
+  local value
+  value="$(effective_env_value "$key")"
+  if is_known_default_secret "$value"; then
+    echo "ОШИБКА: $key должен быть задан и не может быть пустым или значением по умолчанию." >&2
+    return 1
+  fi
+}
+
+require_strong_auth_secret() {
+  local key="$1"
+  local value unique_characters
+  value="$(effective_env_value "$key")"
+
+  if is_known_default_secret "$value"; then
+    echo "ОШИБКА: $key должен быть задан и не может быть пустым или значением по умолчанию." >&2
+    return 1
+  fi
+  if [ "${#value}" -lt 32 ]; then
+    echo "ОШИБКА: $key должен содержать не менее 32 символов случайного значения." >&2
+    return 1
+  fi
+  case "$value" in
+    *[[:space:]]*)
+      echo "ОШИБКА: $key не должен содержать пробельные символы." >&2
+      return 1
+      ;;
+  esac
+  unique_characters="$(printf '%s' "$value" | LC_ALL=C fold -w 1 | LC_ALL=C sort -u | wc -l | tr -d '[:space:]')"
+  if [ "$unique_characters" -lt 8 ]; then
+    echo "ОШИБКА: $key должен быть криптографически случайным значением." >&2
+    return 1
+  fi
+}
+
 warn_placeholder() {
   local key="$1"
   local value
@@ -108,11 +169,13 @@ prepare_environment() {
   # JWT/NEXTAUTH_SECRET, если заглушка есть только у второго ключа.
   ensure_generated_secret JWT_SECRET
   ensure_generated_secret NEXTAUTH_SECRET
+  require_strong_auth_secret JWT_SECRET
+  require_strong_auth_secret NEXTAUTH_SECRET
+  require_production_secret POSTGRES_PASSWORD
+  require_production_secret MINIO_SECRET_KEY
   require_grafana_password
+  require_replication_password
 
-  warn_placeholder POSTGRES_PASSWORD
-  warn_placeholder REPL_PASSWORD
-  warn_placeholder MINIO_SECRET_KEY
   warn_placeholder NEXTAUTH_URL
   warn_placeholder CORS_ORIGINS
   if [ -z "$(env_value LLM_API_KEY)" ]; then

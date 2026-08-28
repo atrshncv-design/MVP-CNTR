@@ -3,7 +3,7 @@
 > **Статус: активный план.** Каждая сессия агента-разработчика начинается отсюда.
 > Детали конкретных задач — `docs/BACKLOG.md` (ID вида N-xx, FE-xx, INF-xx, P-xx, Q-xx, PROC-xx).
 > История выполненного — `docs/Status.md`. После каждого шага обновлять оба файла.
-> Последняя ревизия: 2026-08-26.
+> Последняя ревизия: 2026-08-28.
 
 ---
 
@@ -37,9 +37,9 @@ Gate = точка, в которой работа останавливается
 - [x] План до декабря утверждён владельцем
 
 ### G1 — Безопасность закрыта → **до 30.09**
-- [ ] Все пункты уровня P0 из BACKLOG.md в статусе done
+- [ ] Все пункты уровня P0 из BACKLOG.md приняты как done после внешней верификации
 - [ ] CI (GitHub Actions) зелёный на main: pytest + ruff + mypy (backend), lint + test + build (frontend), npm audit без high/critical
-- [ ] Регрессионный тест покрытия матрицы ролей существует и ловит незакрытый маршрут (анти-повтор FE-01)
+- [x] Регрессионный тест покрытия матрицы ролей существует и ловит незакрытый маршрут (анти-повтор FE-01; локально подтверждено)
 - [ ] Прод-контур поднимается локально одной командой; бэкап создаётся по расписанию; восстановление из бэкапа отрепетировано вручную и задокументировано
 - [ ] Еженедельный техотчёт №1 отправлен владельцу (шаблон — раздел 5)
 
@@ -72,20 +72,70 @@ Gate = точка, в которой работа останавливается
 
 | # | Задача | ID бэклога | Оценка | Готово |
 |---|--------|-----------|--------|--------|
-| 0.1 | Обход модерации вступления: убрать клиентский shared_by, подписанный referral/invite + тесты | N-01 | 2–3 дн. | ☐ |
-| 0.2 | Матрица ролей fail-closed + покрытие всех маршрутов `/dashboard/*` регрессионным тестом | FE-01 | 1–2 дн. | ☐ |
-| 0.3 | Единый модуль API-URL, fail-fast без переменной, чистка 35 файлов | FE-02 | 1–2 дн. | ☐ |
-| 0.4 | Расписание бэкапов + метрика свежести + документация RPO/RTO | INF-01 | 1 дн. | ☐ |
-| 0.5 | WAL-архивирование/PITR + отрепетированное восстановление | INF-02 | 2–3 дн. | ☐ |
-| 0.6 | max_slot_wal_keep_size (защита Primary от переполнения через слот) | INF-03 | 0.5 дн. | ☐ |
-| 0.7 | Offsite-копия бэкапов (второй диск/внешнее хранилище), шифрование копий | INF-04 | 1 дн. | ☐ |
-| 0.8 | Grafana внутрь (SSH/nginx TLS), запрет дефолтного пароля, strict-режим заглушек | INF-07 | 0.5 дн. | ☐ |
-| 0.9 | Алерты в Telegram: правила Prometheus/Grafana + канал (readiness, лаг слота, диск, MinIO, ClamAV, свежесть бэкапа) | INF-05 | 1–2 дн. | ☐ |
-| 0.10 | Health-gate и rollback в deploy.sh (теги образов git SHA) | INF-06 | 1–2 дн. | ☐ |
-| 0.11 | Согласование пула БД с max_connections (+guard-тест цифр) | P-01 | 0.5 дн. | ☐ |
-| 0.12 | Лимит загрузки на /stage-document-file + chunked-bypass body-limit | N-04 | 0.5 дн. | ☐ |
-| 0.13 | Ревок refresh при смене пароля + POST /auth/logout + тесты | N-02 | 1 дн. | ☐ |
-| 0.14 | CI pipeline (GitHub Actions) + mypy strict фактически проходит | P-12 | 1–2 дн. | ☐ |
+| 0.1 | Обход модерации вступления: убрать клиентский shared_by, подписанный referral/invite + тесты | N-01 | 2–3 дн. | [local] |
+| 0.2 | Матрица ролей fail-closed + покрытие всех маршрутов `/dashboard/*` регрессионным тестом | FE-01 | 1–2 дн. | [local] |
+| 0.3 | Единый модуль API-URL, fail-fast без переменной, чистка 35 файлов | FE-02 | 1–2 дн. | [local] |
+| 0.4 | Расписание бэкапов + метрика свежести + документация RPO/RTO | INF-01 | 1 дн. | [local] |
+| 0.5 | WAL-архивирование/PITR + отрепетированное восстановление | INF-02 | 2–3 дн. | [local] |
+| 0.6 | max_slot_wal_keep_size (защита Primary от переполнения через слот) | INF-03 | 0.5 дн. | [local] |
+| 0.7 | Offsite-копия бэкапов (второй диск/внешнее хранилище), шифрование копий | INF-04 | 1 дн. | [local] |
+| 0.8 | Grafana внутрь (SSH/nginx TLS), запрет дефолтного пароля, strict-режим заглушек | INF-07 | 0.5 дн. | [local] |
+| 0.9 | Алерты в Telegram: правила Prometheus/Grafana + канал (readiness, лаг слота, диск, MinIO, ClamAV, свежесть бэкапа) | INF-05 | 1–2 дн. | [local] |
+| 0.10 | Health-gate и rollback в deploy.sh (теги образов git SHA) | INF-06 | 1–2 дн. | [local] |
+| 0.11 | Согласование пула БД с max_connections (+guard-тест цифр) | P-01 | 0.5 дн. | [local] |
+| 0.12 | Лимит загрузки на /stage-document-file + chunked-bypass body-limit | N-04 | 0.5 дн. | [local] |
+| 0.13 | Ревок refresh при смене пароля + POST /auth/logout + тесты | N-02 | 1 дн. | [local] |
+| 0.14 | CI pipeline (GitHub Actions) + mypy strict фактически проходит | P-12 | 1–2 дн. | [local] |
+
+> **Легенда M0:** `[local]` = код и локальные проверки выполнены; это не отметка G1/done.
+> Базовая реализация находится в исторических коммитах, а последующие backend/infra repairs
+> остаются dirty/uncommitted при HEAD `7f6ad43`. Внешняя/production-проверка не приписывается
+> этим хешам. Финальная приёмка M0 остаётся открытой до закрытия строк G1.
+>
+> 2026-08-28: независимые финальные local results: backend `334 passed` (single process),
+> frontend `39 passed`, lint/build, ruff/mypy и dependency audits зелёные; alerter `28 passed`,
+> infra focused tests зелёные. Dev PostgreSQL smoke завершён: primary/replica healthy, slot active,
+> replica в recovery и WAL receiver streaming, passfile `0600`. Это не production/offsite evidence.
+> Remote GitHub Actions, production deploy, live offsite/PITR, Telegram и rollback smoke не проверялись.
+>
+> 2026-08-27: кодовая часть T05 (алертер, health-gate, Grafana и repair-проводка
+> backup timer/offsite) проверена offline; G1 остаётся открытым до live production
+> smoke на доступном production-like контуре.
+> 2026-08-27: follow-up repair добавил fail-closed MinIO, обязательный
+> `REPL_PASSWORD`, атомарную WAL-архивацию, непрерывный WAL-offsite sidecar и
+> age-aware marker; локальные application/infra gates повторно зелёные.
+> 2026-08-27: финальное исправление инфраструктуры добавило preflight MinIO bucket, подготовку
+> WAL-volume для `postgres`, crypt truthy guard, WAL retention/no-wal marker,
+> image-contained sidecar scripts и contract-тесты; live production smoke
+> по-прежнему требует operator-provided crypt remote.
+> 2026-08-27: follow-up добавил image-run marker для non-blocking pre-migration backup,
+> исключение частичных WAL-файлов из offsite-копирования и запуск alerter независимо
+> от unhealthy offsite sidecar; объединённый backend CI-порядок дал `343 passed`,
+> live smoke остаётся открытым.
+> 2026-08-27: PostgreSQL network/auth follow-up развёл dev `172.31.0.0/24` и
+> production `172.30.0.0/24`, убрал local trust и добавил runtime-password
+> contract tests; финальные shell/Compose gates зелёные, password fallback не
+> передаёт секрет в argv, live recreate сети открыт.
+> 2026-08-28: исправлен primary healthcheck в dev/prod: SQL проверки слота
+> передаётся через stdin в отдельный helper, `REPL_SLOT` валидируется, пароль
+> остаётся только в runtime environment; добавлен regression contract для запрета
+> `:'slot'` в `-c`. Recreate не выполнялся, текущий полный pytest блокируется
+> старым unhealthy dev-контейнером с HBA для Docker Desktop bridge-адреса.
+> 2026-08-28: HBA-policy разделена: production монтирует только строгий
+> `pg_hba.conf` для `172.30.0.0/24`, а dev — `pg_hba.dev.conf` с
+> `172.31.0.0/24` и ограниченным Docker Desktop gateway `192.168.65.0/24`.
+> Contract/config/shell gates зелёные; runtime recreate намеренно оставлен
+> оператору без удаления volumes/images.
+> 2026-08-28: repair credential репликации заменяет хрупкое ручное
+> psql-экранирование на `\getenv`, верифицирует SCRAM-вход ролью репликации до
+> primary healthcheck и покрыт disposable PostgreSQL-тестом со спецсимволами;
+> live streaming проверен без recreate, финальный recreate остаётся оператору.
+> 2026-08-28: финальные infra findings закрыты offline: sidecar healthchecks
+> используют PID liveness без ложного `test -s /proc/1/cmdline`; deploy генерирует
+> 256-bit JWT/NextAuth tokens только для пустых/`change_me*` и отвергает слабые
+> operator-supplied значения; WAL offsite и retention включают завершённые timeline
+> history-файлы, не захватывая hidden/temp/partial. External production smoke с
+> operator-provided crypt remote остаётся обязательным и незавершённым.
 
 ## 3. M1 — Отказоустойчивость и честная масштабируемость (01.10 – 25.10)
 

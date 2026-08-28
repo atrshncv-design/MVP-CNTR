@@ -17,7 +17,7 @@
  * оверрайд для нестандартных схем развёртывания. Инлайнится при сборке.
  */
 export const CLIENT_API_BASE: string = (
-  process.env.NEXT_PUBLIC_API_URL ?? ""
+  process.env.NEXT_PUBLIC_API_URL?.trim() ?? ""
 ).replace(/\/+$/, "");
 
 /**

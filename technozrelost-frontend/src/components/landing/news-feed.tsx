@@ -5,6 +5,7 @@ import { AlertCircle, Loader2, Newspaper, RefreshCw } from "lucide-react";
 import NewsCard from "@/components/landing/news-card";
 import { NEWS_PAGE_SIZE } from "@/lib/news-types";
 import type { NewsCard as NewsCardData, NewsCategory, NewsFeed } from "@/lib/news-types";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
 /** Запрос ленты из браузера: относительный путь уходит на бэкенд через rewrites. */
 async function fetchFeedPage(
@@ -18,7 +19,7 @@ async function fetchFeedPage(
   });
   if (category !== "all") params.set("category", category);
   if (tag !== "all") params.set("tag", tag);
-  const response = await fetch(`/api/v1/news?${params}`, { cache: "no-store" });
+  const response = await fetch(`${API_URL}/api/v1/news?${params}`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Не удалось загрузить новости (${response.status}).`);
   }

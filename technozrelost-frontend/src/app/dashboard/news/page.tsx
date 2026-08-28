@@ -15,6 +15,7 @@ import DashboardNewsCard from "@/components/dashboard/news-card";
 import { NEWS_PAGE_SIZE } from "@/lib/news-types";
 import type { NewsCard, NewsDetail, NewsStatus } from "@/lib/news-types";
 import { getAdminNewsList, publishNews, unpublishNews } from "@/lib/news-admin-api";
+import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
 
 function isAdmin(roles?: string[]): boolean {
   return !!roles?.some((r) => r === "cntr_admin");
@@ -30,7 +31,7 @@ function isStaff(roles?: string[]): boolean {
 /** Публичная лента (published) через rewrites — без токена. */
 async function fetchPublicFeed(): Promise<NewsDetail[]> {
   const params = new URLSearchParams({ page: "1", per_page: "50" });
-  const response = await fetch(`/api/v1/news?${params}`, { cache: "no-store" });
+  const response = await fetch(`${API_URL}/api/v1/news?${params}`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Не удалось загрузить ленту (${response.status}).`);
   }

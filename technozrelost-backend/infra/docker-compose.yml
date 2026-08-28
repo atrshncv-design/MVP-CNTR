@@ -9,20 +9,24 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-technoz}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
       POSTGRES_DB: ${POSTGRES_DB:-technozrelost}
+      REPL_USER: ${REPL_USER:-replicator}
+      REPL_PASSWORD: ${REPL_PASSWORD:-change_me}
+      REPL_SLOT: ${REPL_SLOT:-tz_replica_slot}
     ports:
       - "5432:5432"
     volumes:
       - pg-primary-data:/var/lib/postgresql/data
       - ./postgres/postgresql-primary.conf:/etc/postgresql/postgresql.conf:ro
-      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./postgres/pg_hba.dev.conf:/etc/postgresql/pg_hba.conf:ro
       - ./postgres/init-primary.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
       - ./postgres/start-primary.sh:/usr/local/bin/start-primary.sh:ro
       - ./postgres/ensure-replication.sh:/usr/local/bin/ensure-replication.sh:ro
+      - ./postgres/check-primary-health.sh:/usr/local/bin/check-primary-health.sh:ro
     # Точка входа идемпотентна: роль replicator и слот создаются и на пустом,
     # и на существующем томе (аудит-тикет 05).
     entrypoint: ["/bin/bash", "/usr/local/bin/start-primary.sh"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-technoz} -d ${POSTGRES_DB:-technozrelost}"]
+      test: ["CMD", "/bin/bash", "/usr/local/bin/check-primary-health.sh"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -32,23 +36,32 @@ services:
     container_name: tz-pg-replica
     restart: unless-stopped
     depends_on:
-      - pg-primary
+      pg-primary:
+        condition: service_healthy
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-technoz}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
       POSTGRES_DB: ${POSTGRES_DB:-technozrelost}
       PGPRIMARY_HOST: pg-primary
-      REPL_USER: replicator
-      REPL_PASSWORD: replica_pass
-      REPL_SLOT: tz_replica_slot
+      REPL_USER: ${REPL_USER:-replicator}
+      REPL_PASSWORD: ${REPL_PASSWORD:-change_me}
+      REPL_SLOT: ${REPL_SLOT:-tz_replica_slot}
     ports:
       - "5433:5432"
     volumes:
       - pg-replica-data:/var/lib/postgresql/data
       - ./postgres/start-replica.sh:/usr/local/bin/start-replica.sh:ro
+      - ./postgres/pg_hba.dev.conf:/etc/postgresql/pg_hba.conf:ro
     entrypoint: ["/bin/bash", "/usr/local/bin/start-replica.sh"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-technoz} -d ${POSTGRES_DB:-technozrelost}"]
+      test:
+        - CMD-SHELL
+        - >-
+          PGPASSWORD="$${POSTGRES_PASSWORD}" pg_isready -q -U "$${POSTGRES_USER}" -d
+          "$${POSTGRES_DB}" &&
+          test "$(PGPASSWORD="$${POSTGRES_PASSWORD}" psql -X -w -U "$${POSTGRES_USER}" -d
+          "$${POSTGRES_DB}" -Atqc "SELECT pg_is_in_recovery() AND EXISTS
+          (SELECT 1 FROM pg_stat_wal_receiver WHERE status = 'streaming')")" = "t"
       interval: 5s
       timeout: 5s
       retries: 20
@@ -92,3 +105,10 @@ volumes:
   pg-replica-data:
   minio-data:
   clamav-db:
+
+networks:
+  default:
+    name: tz-dev-network
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24

@@ -12,9 +12,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Ограничаем heap Node: next build не должен убиваться OOM-killer'ом
 # на машинах с небольшой VM (Docker Desktop 4–8 ГБ).
 ENV NODE_OPTIONS=--max-old-space-size=2048
-# Адрес API подставляется на этапе сборки (клиентский NEXT_PUBLIC_*)
-ARG NEXT_PUBLIC_API_URL=/api
+# Пустое значение означает same-origin; полный origin задаётся только для
+# нестандартной схемы развёртывания и подставляется на этапе сборки.
+ARG NEXT_PUBLIC_API_URL=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Нужен только при вычислении production rewrite; в runner image не переносится.
+ARG API_URL_INTERNAL
+ENV API_URL_INTERNAL=$API_URL_INTERNAL
 RUN npm run build
 
 FROM node:22-alpine AS runner

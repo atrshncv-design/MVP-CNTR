@@ -56,7 +56,7 @@ test("браузерная база: по умолчанию тот же origin,
   const sameOrigin = await import("../src/lib/public-api.ts?same-origin");
   assert.equal(sameOrigin.CLIENT_API_BASE, "");
 
-  process.env.NEXT_PUBLIC_API_URL = "https://api.example.com/";
+  process.env.NEXT_PUBLIC_API_URL = "  https://api.example.com/// ";
   try {
     const overridden = await import("../src/lib/public-api.ts?override");
     assert.equal(overridden.CLIENT_API_BASE, "https://api.example.com");
@@ -79,4 +79,24 @@ test("serverApiBase(): возвращает внутренний адрес бе
   } finally {
     delete process.env.API_URL_INTERNAL;
   }
+});
+
+test("клиентские consumers не обходят базу API", () => {
+  const modulePath = join(SRC_DIR, "lib", "public-api.ts");
+  const consumerSources = collectSources(SRC_DIR).filter((path) => path !== modulePath);
+  const directFetches = consumerSources.filter((path) =>
+    /fetch\s*\(\s*[`'"]\/api\/v1/.test(readFileSync(path, "utf8")),
+  );
+  const directAssignments = consumerSources.filter((path) =>
+    /(?:const|let)\s+\w+\s*=\s*[^;\n]*[`'"]\/api\/v1/.test(
+      readFileSync(path, "utf8"),
+    ),
+  );
+
+  assert.deepEqual(directFetches, [], "fetch URL должен начинаться с CLIENT_API_BASE");
+  assert.deepEqual(
+    directAssignments,
+    [],
+    "путь API нельзя собирать из сырого /api/v1 без модуля",
+  );
 });

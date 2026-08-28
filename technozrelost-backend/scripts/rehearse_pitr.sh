@@ -69,7 +69,7 @@ main() {
     -v "$ARCHIVE":/walarchive \
     "$IMAGE" postgres \
     -c archive_mode=on \
-    -c "archive_command=test ! -f /walarchive/%f && cp %p /walarchive/%f" \
+    -c "archive_command=test -f /walarchive/%f || (cp %p /walarchive/.%f.tmp && mv /walarchive/.%f.tmp /walarchive/%f)" \
     -c archive_timeout=60s \
     -c max_slot_wal_keep_size=15GB >/dev/null
   wait_ready "$PRIMARY"

@@ -4,7 +4,7 @@
 **Blocked by:** —
 **Зона:** `technozrelost-backend/infra/` (postgres-конфиги, backup.sh/restore.sh, новые скрипты) + runbook-документация инфры
 **Волна:** 1
-**Status:** ready
+**Status:** code/local complete; external verification pending
 
 ## Что должно заработать
 
@@ -25,10 +25,9 @@
 
 ## Критерии приёмки
 
-- [ ] Ежедневный автозапуск существующего backup.sh таймером внутри прод-стека; retention настраивается env; ручной запуск не сломан
-- [ ] После каждого успешного бэкапа пишется маркер свежести (файл с меткой времени по пути из env) — контракт для алертера и метрики зафиксирован в interfaces.md
-- [ ] `archive_command` направляет WAL на отдельный том; `archive_timeout` ≤ 60 c; `max_slot_wal_keep_size` задан (10–20 ГБ)
-- [ ] Скрипт репетиции PITR: чистый контейнер PostgreSQL → base-бэкап + доигрывание WAL до момента между двумя контрольными вставками → контрольная строка находится; **прогон выполнен исполнителем, вывод сохранён в отчёт таска**
-- [ ] Offsite-шаг в backup.sh: копирование архива через rclone-таргет из env; без настройки — явное предупреждение и красный статус маркера offsite
-- [ ] Runbook инфры дополнен: RPO ≤ 5 мин / RTO ≤ 1 ч зафиксированы, процедуры backup/restore/PITR пошаговые
-- [ ] BACKLOG.md INF-01, INF-02, INF-03, INF-04 → `done` с хешем
+- [x] Код таймера, маркер свежести, WAL-архив, лимит слота и локальная PITR-репетиция реализованы и локально проверены
+- [x] Dev PostgreSQL replication smoke: primary/replica healthy, slot active, replica в recovery, WAL receiver streaming, passfile `0600`
+- [x] Runbook описывает процедуры и конфигурационные цели RPO/RTO
+- [ ] Подтверждённый production-like scheduled backup и PITR с текущими dirty repairs
+- [ ] Live offsite с operator-provided crypt remote/config; до этого RPO/RTO остаются целями конфигурации
+- [ ] Коммит и внешняя приёмка: HEAD `7f6ad43`; поздние infra repairs не покрыты историческими commit hashes

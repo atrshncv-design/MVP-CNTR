@@ -8,6 +8,8 @@
 #
 # Переменные окружения:
 #   BACKUP_SCRIPT — путь к backup.sh (по умолчанию /app/infra/backup.sh);
+#   BACKUP_LOCK_SCRIPT — общий runner advisory lock (по умолчанию
+#                        /app/infra/backup-lock.py);
 #   BACKUP_AT     — время ежедневного запуска "ЧЧ:ММ" в TZ контейнера
 #                   (по умолчанию 03:15; в compose задаём TZ=UTC явно);
 #   BACKUP_TIMER_RUN_ONCE=1 — выполнить backup.sh немедленно один раз и выйти
@@ -16,6 +18,7 @@
 set -eu
 
 BACKUP_SCRIPT="${BACKUP_SCRIPT:-/app/infra/backup.sh}"
+BACKUP_LOCK_SCRIPT="${BACKUP_LOCK_SCRIPT:-/app/infra/backup-lock.py}"
 BACKUP_AT="${BACKUP_AT:-03:15}"
 
 log() { echo "[backup-timer] $(date -u +%Y-%m-%dT%H:%M:%S%z) $*"; }
@@ -55,6 +58,14 @@ require_backup_script() {
     echo "[backup-timer] ОШИБКА: $BACKUP_SCRIPT не найден (проверь mount и BACKUP_SCRIPT)" >&2
     exit 2
   fi
+  if [ ! -f "$BACKUP_LOCK_SCRIPT" ]; then
+    echo "[backup-timer] ОШИБКА: $BACKUP_LOCK_SCRIPT не найден — backup без lock запрещён" >&2
+    exit 2
+  fi
+  if ! command -v python >/dev/null 2>&1; then
+    echo "[backup-timer] ОШИБКА: python не найден — backup без lock запрещён" >&2
+    exit 2
+  fi
 }
 
 wait_until_target() {
@@ -74,8 +85,8 @@ wait_until_target() {
 
 if [ "${BACKUP_TIMER_RUN_ONCE:-0}" = "1" ]; then
   require_backup_script
-  log "RUN_ONCE: выполняю $BACKUP_SCRIPT немедленно"
-  exec sh "$BACKUP_SCRIPT"
+  log "RUN_ONCE: выполняю backup под advisory lock"
+  exec python "$BACKUP_LOCK_SCRIPT" "$BACKUP_SCRIPT"
 fi
 
 if [ "${BACKUP_TIMER_SELF_CHECK:-0}" = "1" ]; then
@@ -104,9 +115,9 @@ while :; do
   wait_until_target "$target"
   # Провал бэкапа не убивает планировщик: следующая попытка — завтра,
   # авария фиксируется отсутствием свежего маркера (контракт алертера).
-  if sh "$BACKUP_SCRIPT"; then
+  if python "$BACKUP_LOCK_SCRIPT" "$BACKUP_SCRIPT"; then
     log "бэкап выполнен успешно"
   else
-    log "ОШИБКА: backup.sh завершился с ненулевым кодом" >&2
+    log "ОШИБКА: backup runner завершился с ненулевым кодом" >&2
   fi
 done

@@ -60,12 +60,12 @@ export default function ExecutorsPage() {
     if (!session?.user?.accessToken) return;
     const fetchData = async () => {
       try {
-        const base = tab === 'specialists'
-          ? '/api/v1/executors/specialists'
-          : '/api/v1/executors/organizations';
+        const path = tab === 'specialists'
+          ? '/executors/specialists'
+          : '/executors/organizations';
         const url = roleFilter !== 'all'
-          ? `${API_URL}${base}?role=${roleFilter}`
-          : `${API_URL}${base}`;
+          ? `${API_URL}/api/v1${path}?role=${roleFilter}`
+          : `${API_URL}/api/v1${path}`;
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${session.user.accessToken}` },
         });

@@ -61,8 +61,8 @@ export default function JoinTokenClient({
     setState({ kind: "joining" });
     try {
       const isInvite = token.toUpperCase().startsWith("INV-");
-      const endpoint = isInvite ? "/api/v1/invites/accept" : "/api/v1/projects/join";
-      const res = await fetch(`${API_URL}${endpoint}`, {
+      const endpoint = isInvite ? "/invites/accept" : "/projects/join";
+      const res = await fetch(`${API_URL}/api/v1${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

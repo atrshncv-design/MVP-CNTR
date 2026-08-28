@@ -52,23 +52,25 @@ echo "[entrypoint] Primary готов."
 
 echo "[entrypoint] применяю миграции (advisory lock)..."
 # BACKUP_BEFORE_MIGRATIONS=1 (env, default в prod-compose) — перед alembic
-# выполняется infra/backup.sh (тикет 20). Бэкап делается ПОД advisory lock:
-# при N репликах backend его выполнит только та реплика, что выиграла lock.
+# выполняется backup-lock.py. У него отдельный try-lock: проигравшая реплика
+# пропускает backup, а не ждёт lock и не создаёт последовательный дубликат.
 python - <<'PY'
 import asyncio
 import os
 import sys
+import time
 
 import asyncpg
 
 MIGRATION_LOCK = 732018  # произвольный id; общий для всех реплик backend
 
 
-async def run(cmd: list[str]) -> int:
+async def run(cmd: list[str], env: dict[str, str] | None = None) -> int:
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
+        env=env,
     )
     out, _ = await proc.communicate()
     if out:
@@ -77,6 +79,7 @@ async def run(cmd: list[str]) -> int:
 
 
 async def main() -> int:
+    startup_started_ns = time.time_ns()
     conn = await asyncpg.connect(
         host=os.environ["DB_HOST"],
         port=int(os.environ["DB_PORT"]),
@@ -94,7 +97,18 @@ async def main() -> int:
     try:
         if os.environ.get("BACKUP_BEFORE_MIGRATIONS", "0") == "1":
             print("[entrypoint] резервное копирование перед миграциями...")
-            backup_rc = await run(["/app/backup.sh"])
+            backup_env = os.environ.copy()
+            # Реплика, которая стартовала позже, видит marker image run и не
+            # повторяет уже успешный backup первой реплики.
+            backup_env["BACKUP_SKIP_IF_MARKER_AFTER_NS"] = str(startup_started_ns)
+            backup_script = os.environ.get("BACKUP_SCRIPT", "/app/backup.sh")
+            lock_script = os.environ.get(
+                "BACKUP_LOCK_SCRIPT", "/app/infra/backup-lock.py"
+            )
+            backup_rc = await run(
+                ["python", lock_script, backup_script],
+                env=backup_env,
+            )
             if backup_rc != 0:
                 print("[entrypoint] backup.sh завершился с ошибкой — миграции не применяю", file=sys.stderr)
                 return backup_rc
