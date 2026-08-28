@@ -16,10 +16,10 @@
 | R10 | P1 → N-03 SSE держит DB-сессию | done | BACKLOG N-03 | — |
 | R11 | P1 → FE-03 RefreshAccessTokenError | done | BACKLOG FE-03 | — |
 | R12 | P1 → FE-04 npm audit high | done | BACKLOG FE-04 | — |
-| R13 | P1 → P-05 индексы НИОКТР (trgm/GIN) | open | BACKLOG P-05, 25- | — |
-| R14 | P1 → P-06 count на каждую организацию | open | BACKLOG P-06 | — |
-| R15 | P1 → P-07 карточка без limit | open | BACKLOG P-07, 27- | — |
-| R16 | P1 → P-08 реестры без пагинации | open | BACKLOG P-08 | — |
+| R13 | P1 → P-05 индексы НИОКТР (trgm/GIN) | done | BACKLOG P-05, 25- | — |
+| R14 | P1 → P-06 count на каждую организацию | done | BACKLOG P-06 | — |
+| R15 | P1 → P-07 карточка без limit | done | BACKLOG P-07, 27- | — |
+| R16 | P1 → P-08 реестры без пагинации | done | BACKLOG P-08 | — |
 | R17 | P1 → INF-08 лимиты контейнеров | open | BACKLOG INF-08 | — |
 | R18 | P1 → INF-09 ротация логов | open | BACKLOG INF-09 | — |
 | R19 | P1 → INF-12 nginx hardening (resolver, rate limit, gzip, cache) | open | BACKLOG INF-12 | — |

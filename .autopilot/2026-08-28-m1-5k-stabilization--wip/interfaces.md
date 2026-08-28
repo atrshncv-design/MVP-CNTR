@@ -34,3 +34,12 @@
 - `api-client apiRequest 401 → signOut` `src/lib/api-client.ts:44` nativeFetch preservation 800ms timeout
 - `npm audit 0 high` `package.json:31` overrides, `ci.yml:83` audit step
 
+
+## Из таска 04 — Индексы и пагинации 5К 20 (P-05,P-06,P-07,P-08)
+
+- `alembic 0028` `ix_*_trgm GIN gin_trgm_ops, ix_nioktr_cards_nioktr_types GIN, ix_organizations_ogrn_hash HASH, ix_nioktr_cards_is_ai_area_btree BTREE` `app/db/models.py` + `0028_indexes_pagination.sql`
+- `GET /nioktr/organizations LATERAL card_count` `app/api/v1/nioktr.py:76`
+- `GET /nioktr/organizations/{ogrn} limit 20` `nioktr.py:124`
+- `GET /projects/registry?after_id&limit=20 keyset id<after_id` `app/api/v1/projects.py:221`
+- `GET /executors?after_id&limit=20` `app/api/v1/executors.py:124` Python slice fallback
+

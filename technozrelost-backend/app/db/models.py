@@ -456,6 +456,20 @@ class Organization(Base):
     )
 
 
+# P-05 (0028): индексы организаций — Hash для точного поиска по ОГРН, trgm GIN для ILIKE.
+Index(
+    "ix_organizations_ogrn_hash",
+    Organization.ogrn,
+    postgresql_using="hash",
+)
+Index(
+    "ix_organizations_name_trgm",
+    Organization.name,
+    postgresql_using="gin",
+    postgresql_ops={"name": "gin_trgm_ops"},
+)
+
+
 class StageRequirement(Base):
     __tablename__ = "stage_requirements"
 
@@ -732,6 +746,32 @@ Index(
     NioktrCard.id.desc(),
 )
 Index("ix_nioktr_cards_organization_id", NioktrCard.organization_id)
+
+# P-05 (0028): триграммный GIN для ILIKE '%search%' (образец 0027 — типы индексов по конвенции).
+Index(
+    "ix_nioktr_cards_name_trgm",
+    NioktrCard.name,
+    postgresql_using="gin",
+    postgresql_ops={"name": "gin_trgm_ops"},
+)
+Index(
+    "ix_nioktr_cards_customer_name_trgm",
+    NioktrCard.customer_name,
+    postgresql_using="gin",
+    postgresql_ops={"customer_name": "gin_trgm_ops"},
+)
+# GIN на JSONB nioktr_types — фильтр contains([type]) в реестре НИОКТР.
+Index(
+    "ix_nioktr_cards_nioktr_types",
+    NioktrCard.nioktr_types,
+    postgresql_using="gin",
+)
+# B-Tree для флага is_ai_area — диапазон/фильтр по умолчанию.
+Index(
+    "ix_nioktr_cards_is_ai_area_btree",
+    NioktrCard.is_ai_area,
+    postgresql_using="btree",
+)
 
 
 # ─── Новостной раздел (перенос со старой линии, спека §3.2) ─────────────────

@@ -121,13 +121,22 @@ async def list_executors(
     db: ReadDBSession,
     user: CurrentUserOptional,
     role: str | None = Query(None),
+    after_id: int | None = Query(None, description="Keyset курсор"),
+    limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[ExecutorOut]:
     """Объединённый каталог исполнителей (совместимость)."""
     executors = await _users_as_executors(db)
     executors.extend(await _organizations_as_executors(db))
     if role:
         executors = [e for e in executors if e.role_slug == role]
-    return executors
+    # P-08: keyset-пагинация (cursor) — защита от O(N) offset при 5К.
+    if after_id is not None:
+        try:
+            idx = next(i for i, e in enumerate(executors) if e.id == after_id)
+            executors = executors[idx + 1 :]
+        except StopIteration:
+            executors = [e for e in executors if e.id > after_id]
+    return executors[:limit]
 
 
 @router.get("/specialists", response_model=list[ExecutorOut])

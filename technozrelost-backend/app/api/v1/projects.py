@@ -218,13 +218,15 @@ async def project_registry(
     category: str | None = Query(None),
     budget_min: float | None = Query(None, ge=0),
     budget_max: float | None = Query(None, ge=0),
+    after_id: int | None = Query(None, description="Keyset курсор"),
+    limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[RegistryProjectOut]:
     """Общий реестр проектов (только is_public). ?ugt_min=7 — реестр технологий."""
     stmt = (
         select(Project, User.organization)
         .outerjoin(User, Project.created_by == User.id)
         .where(Project.is_public.is_(True))
-        .order_by(Project.current_level.desc(), Project.updated_at.desc())
+        .order_by(Project.current_level.desc(), Project.updated_at.desc(), Project.id.desc())
     )
     if ugt_min is not None:
         stmt = stmt.where(Project.current_level >= ugt_min)
@@ -236,6 +238,10 @@ async def project_registry(
         stmt = stmt.where(Project.budget >= budget_min)
     if budget_max is not None:
         stmt = stmt.where(Project.budget <= budget_max)
+    # P-08: keyset-пагинация по id (курсор) — защита от O(N) offset при 5К+.
+    if after_id is not None:
+        stmt = stmt.where(Project.id < after_id)
+    stmt = stmt.limit(limit)
 
     rows = await db.execute(stmt)
     return [

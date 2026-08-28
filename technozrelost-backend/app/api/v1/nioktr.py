@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, true
 
 from app.core.deps import CurrentUserOptional, ReadDBSession
 from app.db.models import NioktrCard, Organization
@@ -73,15 +73,20 @@ async def list_organizations(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[OrgCardOut]:
-    card_count = (
-        select(func.count(NioktrCard.id))
+    # P-06: LATERAL вместо коррелированного scalar_subquery O(N) —
+    # один проход по индексу ix_nioktr_cards_organization_id.
+    card_count_lateral = (
+        select(func.count(NioktrCard.id).label("cnt"))
         .where(NioktrCard.organization_id == Organization.id)
-        .scalar_subquery()
+        .correlate(Organization)
+        .lateral("card_count")
     )
     stmt = (
-        select(Organization, card_count.label("nioktr_count"))
-        .where(or_(Organization.projects_count > 0, card_count > 0))
-        .order_by(card_count.desc())
+        select(Organization, card_count_lateral.c.cnt.label("nioktr_count"))
+        .select_from(Organization)
+        .outerjoin(card_count_lateral, true())
+        .where(or_(Organization.projects_count > 0, card_count_lateral.c.cnt > 0))
+        .order_by(card_count_lateral.c.cnt.desc())
     )
     if search:
         stmt = stmt.where(Organization.name.ilike(f"%{search}%"))
@@ -111,10 +116,12 @@ async def get_organization(
     org = await db.scalar(select(Organization).where(Organization.ogrn == ogrn))
     if org is None:
         raise HTTPException(status_code=404, detail="Организация не найдена")
+    # P-07: ограниченная выборка карточек организации — не более 20 (защита от unbounded payload).
     cards_stmt = (
         select(NioktrCard)
         .where(NioktrCard.organization_id == org.id)
         .order_by(NioktrCard.created_date.desc().nullslast(), NioktrCard.id.desc())
+        .limit(20)
     )
     cards = (await db.execute(cards_stmt)).scalars().all()
     return OrganizationDetailOut(
