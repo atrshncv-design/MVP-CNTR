@@ -43,3 +43,11 @@
 - `GET /projects/registry?after_id&limit=20 keyset id<after_id` `app/api/v1/projects.py:221`
 - `GET /executors?after_id&limit=20` `app/api/v1/executors.py:124` Python slice fallback
 
+
+## Из таска 05 — Инфра лимиты/логи/nginx/DR (INF-08,09,12,13,N-18)
+
+- `compose limits backend 1cpu/2G clamav 2cpu/4G` `infra/docker-compose.prod.yml:29`
+- `logging max-size 10m max-file 3` 13 сервисов
+- `nginx resolver 127.0.0.11 limit_req zone auth/registry gzip cache _next/static` `nginx.prod.conf:41`
+- `DR-runbook docs/RUNBOOK-DR.md` `stop→restore→start` + `02:00` hotfix
+

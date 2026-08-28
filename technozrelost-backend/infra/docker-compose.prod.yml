@@ -26,6 +26,11 @@ services:
     image: pgvector/pgvector:0.8.0-pg16
     container_name: tz-prod-db-primary
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -62,6 +67,11 @@ services:
     image: pgvector/pgvector:0.8.0-pg16
     container_name: tz-prod-db-replica
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       db:
         condition: service_healthy
@@ -97,6 +107,11 @@ services:
     image: minio/minio:latest
     container_name: tz-prod-minio
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
@@ -114,6 +129,16 @@ services:
     image: mkodockx/docker-clamav:alpine
     container_name: tz-prod-clamav
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
     volumes:
       - clamav-prod-db:/var/lib/clamav
     healthcheck:
@@ -128,6 +153,11 @@ services:
     image: redis:7-alpine
     container_name: tz-prod-redis
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-prod-data:/data
@@ -146,8 +176,17 @@ services:
     # container_name не задаётся: при deploy.replicas имена должны быть уникальны
     # (technozrelost-prod-backend-1/-2); nginx обращается по сервисному имени.
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       replicas: 2
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
     environment:
       APP_ENV: production
       # Primary — запись; Replica — безопасные чтения (реестры)
@@ -233,6 +272,11 @@ services:
   backup-timer:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command: ["/bin/sh", "/usr/local/bin/tz-backup-timer.sh"]
     healthcheck:
       test: ["CMD-SHELL", "kill -0 1 && test -f /usr/local/bin/tz-backup-timer.sh && test -f /usr/local/bin/tz-backup-lock.py && if [ -n \"$${BACKUP_OFFSITE_REMOTE:-}\" ]; then sh /usr/local/bin/tz-check-rclone-crypt.sh; fi"]
@@ -284,6 +328,11 @@ services:
   wal-offsite:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command: ["/bin/sh", "/usr/local/bin/tz-wal-offsite-sync.sh"]
     healthcheck:
       test: ["CMD-SHELL", "kill -0 1 && test -f /usr/local/bin/tz-wal-offsite-sync.sh && if [ -n \"$${BACKUP_OFFSITE_REMOTE:-}\" ]; then sh /usr/local/bin/tz-check-rclone-crypt.sh; fi"]
@@ -314,6 +363,11 @@ services:
   alerter:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command: ["python", "/usr/local/bin/tz-alerter.py"]
     healthcheck:
       test: ["CMD-SHELL", "kill -0 1 && test -f /usr/local/bin/tz-alerter.py"]
@@ -378,6 +432,11 @@ services:
         API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000}
     container_name: tz-prod-frontend
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
@@ -401,6 +460,11 @@ services:
     image: nginx:1.27-alpine
     container_name: tz-prod-nginx
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "80:80"
       - "443:443"
@@ -423,6 +487,11 @@ services:
     image: prom/prometheus:v2.54.1
     container_name: tz-prod-prometheus
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-prod-data:/prometheus
@@ -444,6 +513,11 @@ services:
     image: grafana/grafana:11.2.0
     container_name: tz-prod-grafana
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}

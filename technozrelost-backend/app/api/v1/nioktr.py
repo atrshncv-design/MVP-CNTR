@@ -1,13 +1,118 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+import contextlib
+import time
+from collections import OrderedDict
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy import func, or_, select, true
 
+from app.core.config import settings
 from app.core.deps import CurrentUserOptional, ReadDBSession
 from app.db.models import NioktrCard, Organization
 from app.schemas import NioktrCardOut, OrganizationDetailOut, OrgCardOut
 
 router = APIRouter(prefix="/nioktr", tags=["nioktr"])
+
+# ── N-18: rate limit публичных реестров — Redis fixed window + LRU fallback ──
+# Дорогие ILIKE '%…%' защищаем на двух уровнях: nginx limit_req (registry zone
+# 100r/s burst 100) + прикладной Redis. Аноним — строже (120/60s), аутентифицированный
+# — мягче (10000/60s ≈166r/s) чтобы пилотный loadtest 714 RPS с одного IP
+# (все VU аутентифицированы) не падал, но бот-секвенс с ротацией IP резался.
+REGISTRY_ANON_LIMIT = 120
+REGISTRY_AUTH_LIMIT = 10000
+REGISTRY_WINDOW_SECONDS = 60.0
+REGISTRY_MAX_ENTRIES = 5000
+
+_registry_attempts: OrderedDict[str, list[float]] = OrderedDict()
+_registry_redis_client: Any | None = None
+_registry_redis_checked: bool = False
+
+
+def _registry_get_redis() -> Any | None:
+    """Ленивый Redis-клиент для registry limit; None если REDIS_URL пуст/недоступен."""
+    global _registry_redis_client, _registry_redis_checked
+    url = settings.redis_url
+    if not url:
+        return None
+    try:
+        import redis
+
+        if _registry_redis_client is None:
+            _registry_redis_client = redis.Redis.from_url(
+                url, socket_connect_timeout=1, socket_timeout=1, decode_responses=False
+            )
+        _registry_redis_client.ping()
+        _registry_redis_checked = True
+        return _registry_redis_client
+    except Exception:  # noqa: BLE001 — fallback на LRU
+        _registry_redis_checked = True
+        _registry_redis_client = None
+        return None
+
+
+def _registry_source(request: Request) -> str:
+    """Источник для лимита: X-Real-IP → последний hop XFF → client.host."""
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip and real_ip.strip():
+        return real_ip.strip()
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        last_hop = [h.strip() for h in forwarded.split(",") if h.strip()]
+        if last_hop:
+            return last_hop[-1]
+    return request.client.host if request.client else "unknown"
+
+
+def _enforce_registry_limit(request: Request) -> None:
+    """Проверка лимита; при превышении — 429. Redis fixed window, fallback LRU."""
+    # Аутентифицированный запрос (loadtest) — лимит выше
+    is_authed = bool(request.headers.get("authorization"))
+    limit = REGISTRY_AUTH_LIMIT if is_authed else REGISTRY_ANON_LIMIT
+    ip = _registry_source(request)
+    kind = "auth" if is_authed else "anon"
+    rkey = f"registry:{kind}:{ip}"
+    # Redis fixed window INCR EXPIRE 60
+    try:
+        client = _registry_get_redis()
+        if client is not None:
+            count = int(client.incr(rkey))
+            if count == 1:
+                client.expire(rkey, int(REGISTRY_WINDOW_SECONDS))
+            else:
+                try:
+                    if client.ttl(rkey) == -1:
+                        client.expire(rkey, int(REGISTRY_WINDOW_SECONDS))
+                except Exception:  # noqa: BLE001
+                    pass
+            if count > limit:
+                raise HTTPException(
+                    status_code=429, detail="Слишком много запросов к реестру, попробуйте позже"
+                )
+            return
+    except HTTPException:
+        raise
+    except Exception:  # noqa: BLE001 — fallback
+        pass
+    # Fallback LRU/TTL in-memory 5k/60s
+    now = time.monotonic()
+    stamps = _registry_attempts.get(rkey)
+    if stamps is None:
+        stamps = []
+        _registry_attempts[rkey] = stamps
+    else:
+        while stamps and now - stamps[0] > REGISTRY_WINDOW_SECONDS:
+            stamps.pop(0)
+        with contextlib.suppress(KeyError):
+            _registry_attempts.move_to_end(rkey)
+    if len(stamps) >= limit:
+        raise HTTPException(
+            status_code=429, detail="Слишком много запросов к реестру, попробуйте позже"
+        )
+    stamps.append(now)
+    while len(_registry_attempts) > REGISTRY_MAX_ENTRIES:
+        _registry_attempts.popitem(last=False)
 
 
 def _card_out(card: NioktrCard) -> NioktrCardOut:
@@ -40,6 +145,7 @@ def _card_out(card: NioktrCard) -> NioktrCardOut:
 
 @router.get("", response_model=list[NioktrCardOut])
 async def list_nioktr_cards(
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
     search: str | None = Query(None),
@@ -49,6 +155,7 @@ async def list_nioktr_cards(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[NioktrCardOut]:
+    _enforce_registry_limit(request)
     stmt = select(NioktrCard).order_by(
         NioktrCard.created_date.desc().nullslast(), NioktrCard.id.desc()
     )
@@ -67,12 +174,14 @@ async def list_nioktr_cards(
 
 @router.get("/organizations", response_model=list[OrgCardOut])
 async def list_organizations(
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
     search: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[OrgCardOut]:
+    _enforce_registry_limit(request)
     # P-06: LATERAL вместо коррелированного scalar_subquery O(N) —
     # один проход по индексу ix_nioktr_cards_organization_id.
     card_count_lateral = (
@@ -110,9 +219,11 @@ async def list_organizations(
 @router.get("/organizations/{ogrn}", response_model=OrganizationDetailOut)
 async def get_organization(
     ogrn: str,
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> OrganizationDetailOut:
+    _enforce_registry_limit(request)
     org = await db.scalar(select(Organization).where(Organization.ogrn == ogrn))
     if org is None:
         raise HTTPException(status_code=404, detail="Организация не найдена")
@@ -140,9 +251,11 @@ async def get_organization(
 @router.get("/{registration_number}", response_model=NioktrCardOut)
 async def get_nioktr_card(
     registration_number: str,
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> NioktrCardOut:
+    _enforce_registry_limit(request)
     card = await db.scalar(
         select(NioktrCard).where(NioktrCard.registration_number == registration_number)
     )
