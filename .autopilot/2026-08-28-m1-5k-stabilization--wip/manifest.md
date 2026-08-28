@@ -7,13 +7,13 @@
 | R01 | «Сначала сделай новые спеки и тикеты» — M1 спеки+тикеты для 5К | open | — | — |
 | R02 | «проверить, нет ли дублирования или сломанной логики между старыми и новыми тикетами — это критически важно» | open | — | — |
 | R03 | «M1 должен закрыть все 24 P1 BACKLOG.md» → N-05 LLM-гейтвей | done | тикет 01 DONE, 7 тестов, ask_llm флаг | 01 |
-| R04 | P1 → N-07 throttle без очистки | open | BACKLOG N-07 | — |
-| R05 | P1 → N-08 register без троттлинга | open | BACKLOG N-08 | — |
-| R06 | P1 → Q-01 sync bcrypt в users.py | open | BACKLOG Q-01 | — |
-| R07 | P1 → P-02 sync MinIO в news.py | open | BACKLOG P-02 | — |
-| R08 | P1 → P-03 шедулер ×2 реплики | open | BACKLOG P-03, 13- | — |
-| R09 | P1 → P-04 throttle in-memory 2 реплики | open | BACKLOG P-04 | — |
-| R10 | P1 → N-03 SSE держит DB-сессию | open | BACKLOG N-03 | — |
+| R04 | P1 → N-07 throttle без очистки | done | BACKLOG N-07 | — |
+| R05 | P1 → N-08 register без троттлинга | done | BACKLOG N-08 | — |
+| R06 | P1 → Q-01 sync bcrypt в users.py | done | BACKLOG Q-01 | — |
+| R07 | P1 → P-02 sync MinIO в news.py | done | BACKLOG P-02 | — |
+| R08 | P1 → P-03 шедулер ×2 реплики | done | BACKLOG P-03, 13- | — |
+| R09 | P1 → P-04 throttle in-memory 2 реплики | done | BACKLOG P-04 | — |
+| R10 | P1 → N-03 SSE держит DB-сессию | done | BACKLOG N-03 | — |
 | R11 | P1 → FE-03 RefreshAccessTokenError | open | BACKLOG FE-03 | — |
 | R12 | P1 → FE-04 npm audit high | open | BACKLOG FE-04 | — |
 | R13 | P1 → P-05 индексы НИОКТР (trgm/GIN) | open | BACKLOG P-05, 25- | — |

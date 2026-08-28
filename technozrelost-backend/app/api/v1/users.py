@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -65,9 +66,10 @@ async def update_profile(
 async def change_password(
     payload: PasswordChangeIn, db: DBSession, user: CurrentUser
 ) -> None:
-    if not verify_password(payload.old_password, user.password_hash):
+    # Q-01 bcrypt в threadpool — не блокирует event loop при смене пароля
+    if not await asyncio.to_thread(verify_password, payload.old_password, user.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный текущий пароль")
-    user.password_hash = hash_password(payload.new_password)
+    user.password_hash = await asyncio.to_thread(hash_password, payload.new_password)
     # R15: смена пароля (утеря ноутбука) обязана убить ВСЕ сессии —
     # ревоким каждый живой refresh пользователя одним запросом.
     await db.execute(

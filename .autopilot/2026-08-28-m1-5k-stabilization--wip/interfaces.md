@@ -17,3 +17,13 @@
 - `async def ask_llm(system_prompt: str, user_message: str) -> str | None` `app/services/ai_assistant.py:36` — return None если not gateway_enabled, до httpx
 - Тест: `tests/test_llm_gateway.py` 7 passed (341 total)
 
+
+## Из таска 02 — Throttle/bcrypt/SSE/Scheduler (N-07,N-08,Q-01,P-02,P-03,P-04,N-03)
+
+- `auth_throttle.is_blocked/ record_failure Redis INCR EXPIRE 60 fallback LRU 5k/60s` `app/services/auth_throttle.py:41` `compose:112`
+- `POST /auth/register 429 10/60s` `app/api/v1/auth.py:65`
+- `users.change_password asyncio.to_thread` `app/api/v1/users.py:70`
+- `file_storage.aput/astore_* to_thread` `app/services/file_storage.py:205`
+- `main._news_scheduler_loop pg_try_advisory_lock(42)` `app/main.py:186`
+- `realtime SSE snapshot+Redis pubsub` `app/api/v1/realtime.py:43` `_fallback_queues`
+

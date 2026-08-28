@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     db_connections_reserve: int = 10
     vector_dimension: int = 1536
 
+    redis_url: str | None = None
+
     jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 60

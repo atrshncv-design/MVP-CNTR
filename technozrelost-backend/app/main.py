@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from sqlalchemy import text
 from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -57,11 +58,22 @@ async def _news_scheduler_loop() -> None:
     """Отложенная публикация новостей: раз в 60 секунд.
 
     Статус в БД — источник истины; задача переживает рестарты приложения.
+    P-03 advisory lock pg_try_advisory_lock(42): при replicas=2 только один
+    инстанс обрабатывает отложенные новости за итерацию.
     """
     while True:
         try:
             async with SessionLocal() as session:
-                await process_scheduled_posts(session)
+                # advisory lock 42 — singleton планировщика на уровне БД
+                got_lock = await session.scalar(text("SELECT pg_try_advisory_lock(42)"))
+                if not got_lock:
+                    logger.debug("news scheduler skipped: lock held")
+                    await session.rollback()
+                else:
+                    try:
+                        await process_scheduled_posts(session)
+                    finally:
+                        await session.execute(text("SELECT pg_advisory_unlock(42)"))
         except Exception:  # noqa: BLE001 — цикл не должен умирать
             logger.exception("news scheduler iteration failed")
         await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS)

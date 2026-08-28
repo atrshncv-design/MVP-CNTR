@@ -170,6 +170,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET:-technozrelost}
+      REDIS_URL: redis://redis:6379/0
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
       CLAMAV_ENABLED: "true"
@@ -198,6 +199,8 @@ services:
       minio:
         condition: service_healthy
       clamav:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       # Бэкапы перед миграциями (тикет 20): backup.sh пишет сюда

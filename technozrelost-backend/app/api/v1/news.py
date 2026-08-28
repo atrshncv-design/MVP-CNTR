@@ -21,6 +21,7 @@ MIME, лимит 25 МБ).
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 from datetime import UTC, datetime
 from typing import Annotated
@@ -519,7 +520,8 @@ async def upload_news_media(
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
     try:
-        stored = store_news_media(post.id, file.filename or "media", data)
+        # P-02 MinIO put в threadpool — не блокирует event loop (news.py:487)
+        stored = await asyncio.to_thread(store_news_media, post.id, file.filename or "media", data)
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
     except FileStorageError as exc:

@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import hashlib
 import io
@@ -149,6 +150,10 @@ class ObjectStorage:
             content_type=content_type,
         )
 
+    async def aput(self, key: str, data: bytes, content_type: str) -> None:
+        """Неблокирующий put: MinIO/диск в threadpool (P-02)."""
+        await asyncio.to_thread(self.put, key, data, content_type)
+
     def get(self, key: str) -> bytes:
         if self._local_root is not None:
             path = self._local_root / key
@@ -217,6 +222,26 @@ def store_project_file(
     )
 
 
+async def astore_project_file(
+    project_id: int, original_name: str, data: bytes
+) -> StoredFile:
+    """Асинхронный вариант: MinIO put в threadpool (P-02)."""
+    if len(data) > MAX_FILE_SIZE:
+        raise ValueError(f"Файл превышает лимит {settings.max_file_size_mb} МБ")
+    mime = detect_mime(data)
+    if mime is None:
+        raise ValueError("Недопустимый формат: разрешены PDF, DOCX, XLSX, PNG, JPEG")
+    ext = extension_for(mime)
+    key = f"projects/{project_id}/{uuid.uuid4().hex}.{ext}"
+    await asyncio.to_thread(storage.put, key, data, mime)
+    return StoredFile(
+        storage_key=key,
+        sha256=_sha256(data),
+        size=len(data),
+        mime_type=mime,
+    )
+
+
 def read_stored_file(storage_key: str) -> bytes:
     return storage.get(storage_key)
 
@@ -237,6 +262,31 @@ def store_news_media(post_id: int, original_name: str, data: bytes) -> StoredFil
         size=len(data),
         mime_type=mime,
     )
+
+
+async def astore_news_media(post_id: int, original_name: str, data: bytes) -> StoredFile:
+    """Асинхронный вариант: MinIO put в threadpool (P-02)."""
+    if len(data) > MAX_FILE_SIZE:
+        raise ValueError(f"Файл превышает лимит {settings.max_file_size_mb} МБ")
+    mime = detect_mime(data)
+    if mime is None:
+        raise ValueError("Недопустимый формат: разрешены PDF, DOCX, XLSX, PNG, JPEG")
+    ext = extension_for(mime)
+    key = f"news/{post_id}/{uuid.uuid4().hex}.{ext}"
+    await asyncio.to_thread(storage.put, key, data, mime)
+    return StoredFile(
+        storage_key=key,
+        sha256=_sha256(data),
+        size=len(data),
+        mime_type=mime,
+    )
+
+
+async def ascan_file(data: bytes) -> tuple[str, str]:
+    """ClamAV scan в threadpool, если включён (P-02)."""
+    # scanner.scan уже асинхронна (asyncio.open_connection), но тяжёлый
+    # сетевой обмен выносим в threadpool для единообразия P-02
+    return await scanner.scan(data)
 
 
 READ_CHUNK = 1024 * 1024

@@ -41,7 +41,13 @@ async def _issue_tokens(db: AsyncSession, user: User) -> TokenOut:
 
 
 @router.post("/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
-async def register(payload: RegisterIn, db: DBSession) -> TokenOut:
+async def register(payload: RegisterIn, request: Request, db: DBSession) -> TokenOut:
+    # N-08 троттлинг register как login (10/60s) — per email+IP, как login
+    client_host = auth_throttle.source_from_request(request)
+    if auth_throttle.is_blocked(payload.email, client_host):
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток регистрации"
+        )
     if payload.role_slug in CNTR_STAFF_SLUGS:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
@@ -66,10 +72,12 @@ async def register(payload: RegisterIn, db: DBSession) -> TokenOut:
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()
+        auth_throttle.record_failure(payload.email, client_host)
         raise HTTPException(
             status.HTTP_409_CONFLICT, "Пользователь с таким email уже существует"
         ) from exc
     await db.refresh(user, attribute_names=["roles"])
+    auth_throttle.record_success(payload.email, client_host)
 
     return await _issue_tokens(db, user)
 
