@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     llm_api_base: str = "https://api.openai.com/v1"
     llm_api_key: str | None = None
     llm_model: str = "gpt-4o-mini"
+    # LLM-гейтвей (N-05): по умолчанию выключен — ПДн не покидает контур.
+    # Включается только явной установкой LLM_GATEWAY_ENABLED=true в окружении.
+    # Allowlist полей для LLM: title+annotation/sector/ugt/region/competencies
+    # (без PII), контур tuno/kaba — санитизация nh3 на оба входа в тикете 02.
+    llm_gateway_enabled: bool = False
 
     # Файловое хранилище (тикет 06): MinIO + ClamAV
     minio_endpoint: str = "127.0.0.1:9000"

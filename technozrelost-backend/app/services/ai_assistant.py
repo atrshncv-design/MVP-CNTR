@@ -30,6 +30,11 @@ def _llm_config() -> tuple[str | None, str, str]:
 
 async def ask_llm(system_prompt: str, user_message: str) -> str | None:
     """Вызов chat/completions OpenAI-совместимого API. None при отсутствии ключа/ошибке."""
+    # N-05: контур — данные не покидают платформу пока гейтвей выключен.
+    # Даже при наличии LLM_API_KEY внешний вызов запрещён, если
+    # LLM_GATEWAY_ENABLED != true (по умолчанию False).
+    if not settings.llm_gateway_enabled:
+        return None
     from app.services import ai_metrics
 
     api_key, base, model = _llm_config()
