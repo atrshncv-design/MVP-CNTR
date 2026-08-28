@@ -10,13 +10,19 @@ import {
 
 export default auth((req) => {
   const pathname = req.nextUrl.pathname;
-  const session = req.auth;
+  const session = req.auth as unknown as { user?: { roles: string[] }; error?: string } | null;
   const isLoggedIn = !!session?.user;
+
+  // FE-03: RefreshAccessTokenError → /login (бэкенд отказал в refresh, сессия невалидна).
+  if ((session as { error?: string } | null)?.error === "RefreshAccessTokenError") {
+    if (pathname === "/login") return NextResponse.next();
+    return NextResponse.redirect(new URL("/login", req.nextUrl));
+  }
 
   // 1. Auth-маршруты: залогиненного пользователя отправляем в его кабинет.
   if (isAuthRoute(pathname)) {
     if (isLoggedIn) {
-      const primary = (session!.user.roles[0] as RoleSlug) ?? "gk_customer";
+      const primary = (session!.user!.roles[0] as RoleSlug) ?? "gk_customer";
       return NextResponse.redirect(new URL(ROLE_DASHBOARD[primary], req.nextUrl));
     }
     return NextResponse.next();
@@ -34,7 +40,7 @@ export default auth((req) => {
     // непокрытый маршрут трактовался как «разрешено всем» — эту дыру
     // закрыли запретом по умолчанию.
     const allowed = allowedRolesFor(pathname);
-    const userRoles = new Set(session!.user.roles);
+    const userRoles = new Set(session!.user!.roles);
     const ok =
       allowed !== null && allowed.length > 0 && allowed.some((r) => userRoles.has(r));
     if (!ok) {

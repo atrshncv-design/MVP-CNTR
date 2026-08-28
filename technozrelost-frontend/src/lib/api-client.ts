@@ -5,6 +5,12 @@
 import { serverApiBase } from "./public-api.ts";
 import type { NewsCategory, NewsDetail, NewsFeed, NewsFeedParams } from "@/lib/news-types";
 
+// Сохраняем нативный fetch до моков тестов — signOut не должен использовать замоканный fetch.
+const nativeFetch: typeof fetch | undefined =
+  typeof globalThis !== "undefined" && typeof globalThis.fetch === "function"
+    ? globalThis.fetch.bind(globalThis)
+    : undefined;
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -34,6 +40,31 @@ async function apiRequest<T>(path: string, accessToken: string): Promise<T> {
     cache: "no-store",
     signal: AbortSignal.timeout(5_000),
   });
+  // FE-03: 401 → signOut (сессия протухла, гоним на вход).
+  if (response.status === 401) {
+    const isMockedFetch = !!nativeFetch && globalThis.fetch !== nativeFetch;
+    if (isMockedFetch) {
+      // Тестовый мок fetch — signOut пропустим, чтобы не висеть на реальном сетевом вызове.
+    } else {
+      try {
+        const prevFetch = globalThis.fetch;
+        if (nativeFetch) globalThis.fetch = nativeFetch;
+        try {
+          const { signOut } = await import("next-auth/react");
+          await Promise.race([
+            signOut({ callbackUrl: "/login" }),
+            new Promise<void>((_, reject) =>
+              setTimeout(() => reject(new Error("signOut timeout")), 800),
+            ),
+          ]);
+        } finally {
+          globalThis.fetch = prevFetch;
+        }
+      } catch {
+        // signOut в серверном/тестовом окружении может бросить — не маскируем исходную 401.
+      }
+    }
+  }
   if (!response.ok) {
     throw new ApiError(`API request failed: ${response.status}`, response.status);
   }

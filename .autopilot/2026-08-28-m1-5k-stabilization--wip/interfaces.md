@@ -27,3 +27,10 @@
 - `main._news_scheduler_loop pg_try_advisory_lock(42)` `app/main.py:186`
 - `realtime SSE snapshot+Redis pubsub` `app/api/v1/realtime.py:43` `_fallback_queues`
 
+
+## Из таска 03 — Frontend auth + audit (FE-03,FE-04)
+
+- `middleware auth` `src/middleware.ts:13` RefreshAccessTokenError → 302 /login
+- `api-client apiRequest 401 → signOut` `src/lib/api-client.ts:44` nativeFetch preservation 800ms timeout
+- `npm audit 0 high` `package.json:31` overrides, `ci.yml:83` audit step
+

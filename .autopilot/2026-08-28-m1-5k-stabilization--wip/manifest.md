@@ -14,8 +14,8 @@
 | R08 | P1 → P-03 шедулер ×2 реплики | done | BACKLOG P-03, 13- | — |
 | R09 | P1 → P-04 throttle in-memory 2 реплики | done | BACKLOG P-04 | — |
 | R10 | P1 → N-03 SSE держит DB-сессию | done | BACKLOG N-03 | — |
-| R11 | P1 → FE-03 RefreshAccessTokenError | open | BACKLOG FE-03 | — |
-| R12 | P1 → FE-04 npm audit high | open | BACKLOG FE-04 | — |
+| R11 | P1 → FE-03 RefreshAccessTokenError | done | BACKLOG FE-03 | — |
+| R12 | P1 → FE-04 npm audit high | done | BACKLOG FE-04 | — |
 | R13 | P1 → P-05 индексы НИОКТР (trgm/GIN) | open | BACKLOG P-05, 25- | — |
 | R14 | P1 → P-06 count на каждую организацию | open | BACKLOG P-06 | — |
 | R15 | P1 → P-07 карточка без limit | open | BACKLOG P-07, 27- | — |
