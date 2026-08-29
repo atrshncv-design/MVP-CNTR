@@ -1,0 +1,1 @@
+Admin KPI need more than 4: projects by UGT, registries by sector, budget, matching + users active, stalled 90d, manager_review avg_hours, WeekBars, top-10 medals, queue_pending, health, load p95, LLM forecast. See cntr_admin/page.tsx 792.
