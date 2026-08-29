@@ -68,8 +68,12 @@ async def ask_llm(system_prompt: str, user_message: str) -> str | None:
         return None
 
 
-async def build_rag_context(db: DBSession, query: str, top_k: int = 3) -> str:
-    results = await search_documents(db, RagSearchIn(query=query, top_k=top_k))
+async def build_rag_context(
+    db: DBSession, query: str, top_k: int = 3, contour: str | None = None
+) -> str:
+    results = await search_documents(
+        db, RagSearchIn(query=query, top_k=top_k, contour=contour)  # type: ignore[arg-type]
+    )
     if not results:
         return ""
     parts = []
@@ -78,10 +82,21 @@ async def build_rag_context(db: DBSession, query: str, top_k: int = 3) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-async def process_chat(db: DBSession, payload: ChatIn, user: CurrentUser) -> ChatOut:
+async def process_chat(
+    db: DBSession, payload: ChatIn, user: CurrentUser, contour: str | None = None
+) -> ChatOut:
+    """Чат с RAG-контекстом, фильтруемым по контуру tuno/kaba.
+
+    Contour пробрасывается в RagSearchIn.contour → SQL WHERE contour = ...
+    (частичный ivfflat, миграция 0029). None — поиск по всем контурам для
+    обратной совместимости универсального POST /chat.
+    """
+
     query = payload.message
 
-    results = await search_documents(db, RagSearchIn(query=query, top_k=3))
+    results = await search_documents(
+        db, RagSearchIn(query=query, top_k=3, contour=contour)  # type: ignore[arg-type]
+    )
     rag_context = "\n\n---\n\n".join(
         f"[{r.document.doc_type}] {r.document.title}\n{r.document.raw_text[:500]}"
         for r in results

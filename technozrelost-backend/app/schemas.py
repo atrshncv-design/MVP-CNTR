@@ -296,6 +296,7 @@ class RagDocumentOut(BaseModel):
     raw_text: str
     source_uri: str | None = None
     template_metadata: dict[str, object] = {}
+    contour: str = "tuno"
     created_at: str | None = None
 
 
@@ -306,12 +307,14 @@ class RagDocumentIn(BaseModel):
     raw_text: str
     source_uri: str | None = None
     template_metadata: dict[str, object] = {}
+    contour: Literal["tuno", "kaba"] = "tuno"
 
 
 class RagSearchIn(BaseModel):
     query: str
     doc_type: str | None = None
     ugt_level: int | None = None
+    contour: Literal["tuno", "kaba"] | None = None
     top_k: int = 5
 
 
@@ -374,6 +377,41 @@ class ChatMessage(BaseModel):
 class ChatOut(BaseModel):
     reply: ChatMessage
     sources: list[RagDocumentOut] = []
+
+
+# ─── Мэтчинг LLM через центр (тикет 06, интервью 14/V2, 25-) ───────────────
+
+
+class MatchIn(BaseModel):
+    """5 полей мэтчинга без PII (25-): title+annotation/sector/ugt/region/competencies."""
+
+    title: str = Field(min_length=1, max_length=500)
+    annotation: str | None = Field(default=None, max_length=2000)
+    sector: str | None = Field(default=None, max_length=100)
+    ugt_level: int | None = Field(default=None, ge=1, le=9)
+    region: str | None = Field(default=None, max_length=128)
+    competencies: list[str] = Field(default_factory=list, max_length=20)
+
+
+class MatchCandidate(BaseModel):
+    """Кандидат мэтчинга: организация/исполнитель из открытых реестров с объяснением."""
+
+    id: int
+    name: str
+    org_type: str | None = None
+    region: str | None = None
+    competencies: list[str] = []
+    reason: str = Field(description="Почему полезно — аргументация LLM или скриптового fallback")
+    score: float | None = None
+
+
+class MatchOut(BaseModel):
+    """Ответ POST /match: топ-5 через центр с очередью llm-eval."""
+
+    query: MatchIn
+    results: list[MatchCandidate]
+    method: str = Field(description="script | llm")
+    queue: str = Field(default="llm-eval", description="Очередь реранка (Redis llm-eval)")
 
 
 # ─── Новое ядро (тикеты 20-25) ───────────────────────────────────────────────

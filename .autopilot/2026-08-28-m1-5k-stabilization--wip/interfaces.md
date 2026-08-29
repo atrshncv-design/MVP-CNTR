@@ -51,3 +51,12 @@
 - `nginx resolver 127.0.0.11 limit_req zone auth/registry gzip cache _next/static` `nginx.prod.conf:41`
 - `DR-runbook docs/RUNBOOK-DR.md` `stop→restore→start` + `02:00` hotfix
 
+
+## Из таска 06 — RAG контур + мэтчинг + админка + доки (R22,R23,R24)
+
+- `RagDocument.contour CHECK(tuno,kaba) DEFAULT tuno` `app/db/models.py` `alembic 0029` `ivfflat WHERE contour`
+- `POST /chat/tuno|kaba` `app/api/v1/chat.py` `POST /rag/templates contour` `app/services/rag.py:26`
+- `POST /match 5 полей title+annotation/sector/ugt/region/competencies top5 script fallback queue llm-eval` `app/services/matching.py`
+- `cntr_admin KPI 12` `src/app/dashboard/cntr_admin/page.tsx` `cntr_manager без Бюджет` `src/app/dashboard/cntr_manager/page.tsx:72`
+- `SOPS secrets.enc.env .sops.yaml` `docs/adr 0010-0013`
+

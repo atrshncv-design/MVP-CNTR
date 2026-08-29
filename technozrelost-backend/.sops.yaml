@@ -1,0 +1,12 @@
+# .sops.yaml — правила SOPS+age для B2G 152-ФЗ (ADR 0013, интервью 23-)
+# Ключ age храните в 1Password / pass, не в репозитории.
+# Генерация ключа: age-keygen -o age.key && pass insert sops/age-key < age.key
+# Публичный получатель: age1... (вставьте ниже)
+creation_rules:
+  - path_regex: secrets\.enc\.env$
+    age: >-
+      age1ql3z7hjknz8xys6q3y9example0placeholder0recipient0key0for0local0dev0only0replace0me
+    encrypted_suffix: _enc
+  - path_regex: \.env\.production\.enc$
+    age: >-
+      age1ql3z7hjknz8xys6q3y9example0placeholder0recipient0key0for0local0dev0only0replace0me

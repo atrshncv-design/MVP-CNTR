@@ -30,6 +30,7 @@ async def upload_template(
         raw_text=doc.raw_text,
         source_uri=doc.source_uri,
         template_metadata=doc.template_metadata,
+        contour=doc.contour,
     )
 
 
@@ -47,8 +48,9 @@ async def get_templates(
     db: DBSession,
     user: CurrentUser,
     doc_type: str | None = Query(None),
+    contour: str | None = Query(None),
 ) -> list[RagDocumentOut]:
-    docs = await list_templates(db, doc_type)
+    docs = await list_templates(db, doc_type, contour)
     return [
         RagDocumentOut(
             id=d.id,
@@ -58,6 +60,7 @@ async def get_templates(
             raw_text=d.raw_text,
             source_uri=d.source_uri,
             template_metadata=d.template_metadata,
+            contour=getattr(d, "contour", "tuno") or "tuno",
         )
         for d in docs
     ]

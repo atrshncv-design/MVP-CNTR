@@ -7,6 +7,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     Float,
@@ -421,6 +422,13 @@ class AuditTrailEntry(Base):
 
 
 class RagDocument(Base):
+    """RAG-документ с контуром tuno/kaba (тикет 06, интервью 04).
+
+    Контур изолирует публичные реестры (tuno) и методологию ГОСТ (kaba):
+    - два частичных ivfflat-индекса WHERE contour = ...;
+    - DEFAULT 'tuno' для обратной совместимости (backfill старых строк).
+    """
+
     __tablename__ = "rag_documents"
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
@@ -432,11 +440,21 @@ class RagDocument(Base):
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536))
     source_uri: Mapped[str | None] = mapped_column(String(1024))
     template_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    # Контур RAG: tuno — реестры/организации, kaba — ГОСТ/методология (интервью 04).
+    contour: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="tuno", server_default="tuno"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "contour IN ('tuno', 'kaba')", name="rag_documents_contour_check"
+        ),
     )
 
 

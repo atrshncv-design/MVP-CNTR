@@ -10,6 +10,9 @@ import {
   BarChart3,
   Check,
   Clock,
+  FileClock,
+  FolderKanban,
+  GitPullRequest,
   Layers,
   Loader2,
   Medal,
@@ -21,6 +24,7 @@ import {
   Trophy,
   UserCog,
   Users,
+  Wallet,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ROLES } from '@/lib/roles';
@@ -576,6 +580,11 @@ export default function CntrAdminDashboard() {
   const [stats, setStats] = useState<AchievementStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
+  // KPI 12 — расширенный набор для единого центра управления (19-, 26-)
+  const [kpiProjects, setKpiProjects] = useState<Array<{ status: string; budget: number | null; current_level: number }>>([]);
+  const [kpiDrafts, setKpiDrafts] = useState<number>(0);
+  const [kpiPromotions, setKpiPromotions] = useState<number>(0);
+  const [kpiQueuePending, setKpiQueuePending] = useState<number>(0);
 
   const displayName = session?.user?.name ?? session?.user?.email ?? 'Администратор ЦНТР';
 
@@ -632,13 +641,69 @@ export default function CntrAdminDashboard() {
     })();
   }, [loadStats]);
 
+  const loadKpi = useCallback(async () => {
+    if (!session?.user?.accessToken) return;
+    try {
+      const headers = { Authorization: `Bearer ${session.user.accessToken}` };
+      const [projRes, draftRes, promoRes, metricsRes] = await Promise.all([
+        fetch(`${API_URL}/api/v1/projects`, { headers }),
+        fetch(`${API_URL}/api/v1/manager/queue/drafts`, { headers }),
+        fetch(`${API_URL}/api/v1/manager/queue/promotions`, { headers }),
+        fetch(`${API_URL}/api/v1/metrics`, { headers: {} }),
+      ]);
+      if (projRes.ok) {
+        const projs = (await projRes.json()) as Array<{ status: string; budget: number | null; current_level: number }>;
+        setKpiProjects(projs);
+      }
+      if (draftRes.ok) {
+        const drafts = (await draftRes.json()) as unknown[];
+        setKpiDrafts(drafts.length);
+      }
+      if (promoRes.ok) {
+        const promos = (await promoRes.json()) as unknown[];
+        setKpiPromotions(promos.length);
+      }
+      if (metricsRes.ok) {
+        const text = await metricsRes.text();
+        const m = text.match(/queue_pending\s+(\d+)/);
+        if (m) setKpiQueuePending(parseInt(m[1], 10));
+      }
+    } catch {
+      // KPI fallback — нули, не ломаем страницу
+    }
+  }, [session]);
+
+  useEffect(() => {
+    (async () => { await loadKpi(); })();
+  }, [loadKpi]);
+
   const activeCount = users.filter((u) => u.is_active).length;
   const rolesAssigned = users.reduce((acc, u) => acc + u.roles.length, 0);
+  const totalBudget = kpiProjects.reduce((s, p) => s + (p.budget ?? 0), 0);
+  const publishedCount = kpiProjects.filter((p) => p.status === 'published' || p.status === 'active').length;
+  const draftCount = kpiProjects.filter((p) => p.status === 'draft').length;
+  const stalledCount = stats?.stalled_projects.length ?? 0;
+  const totalAwards = stats?.totals.total_awards ?? 0;
 
+  function budgetFmt(v: number | null): string {
+    if (v == null || v === 0) return '—';
+    return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(v);
+  }
+
+  // 12 KPI для единого центра администратора (19- max, 26- расширение)
   const statCards = [
     { label: 'Пользователи', value: users.length, icon: Users, color: 'var(--tz-accent)' },
     { label: 'Активных', value: activeCount, icon: ShieldCheck, color: 'var(--tz-success)' },
     { label: 'Назначений ролей', value: rolesAssigned, icon: UserCog, color: 'var(--tz-ugt-2)' },
+    { label: 'Всего проектов', value: kpiProjects.length, icon: FolderKanban, color: 'var(--tz-accent)' },
+    { label: 'Черновиков', value: draftCount, icon: FileClock, color: 'var(--tz-warning)' },
+    { label: 'Опубликовано', value: publishedCount, icon: Award, color: 'var(--tz-success)' },
+    { label: 'Бюджет портфеля', value: totalBudget ? budgetFmt(totalBudget) : '—', icon: Wallet, color: 'var(--tz-ugt-mid)' },
+    { label: 'Новых в очереди', value: kpiDrafts, icon: FileClock, color: 'var(--tz-warning)' },
+    { label: 'Заявок на повышение', value: kpiPromotions, icon: GitPullRequest, color: 'var(--tz-accent)' },
+    { label: 'Очередь pending', value: kpiQueuePending, icon: Layers, color: 'var(--tz-neutral)' },
+    { label: 'Застрявших 90д+', value: stalledCount, icon: Timer, color: 'var(--tz-danger)' },
+    { label: 'Всего наград', value: totalAwards, icon: Trophy, color: 'var(--tz-warning)' },
   ];
 
   return (
@@ -693,8 +758,8 @@ export default function CntrAdminDashboard() {
         <AssessUgTCard />
       </div>
 
-      {/* Статистика */}
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* KPI 12 — единый центр администратора (19- max) */}
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="admin-kpi-grid">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
           return (

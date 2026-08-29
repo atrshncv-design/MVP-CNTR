@@ -18,6 +18,22 @@ AI_RATE_LIMIT_MESSAGE = (
 )
 
 
+async def _handle_chat(
+    payload: ChatIn, db: DBSession, user: CurrentUser, contour: str | None = None
+) -> ChatOut:
+    """Общий обработчик с контур-фильтром tuno/kaba (rag.py:26)."""
+
+    if not ai_metrics.allow_request(user.id):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, AI_RATE_LIMIT_MESSAGE)
+
+    ai_metrics.METRICS["requests_total"] += 1
+    ai_metrics.METRICS["requests_by_user"][user.id] += 1
+    started = time.monotonic()
+    result = await process_chat(db, payload, user, contour=contour)
+    ai_metrics.METRICS["latency_seconds_total"] += time.monotonic() - started
+    return result
+
+
 @router.post("", response_model=ChatOut)
 async def chat(
     payload: ChatIn,
@@ -29,15 +45,30 @@ async def chat(
     AI — справочный слой: не меняет проект, УГТ или требования; ошибка
     провайдера или таймаут не влияют на основную платформу (fallback).
     """
-    if not ai_metrics.allow_request(user.id):
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, AI_RATE_LIMIT_MESSAGE)
 
-    ai_metrics.METRICS["requests_total"] += 1
-    ai_metrics.METRICS["requests_by_user"][user.id] += 1
-    started = time.monotonic()
-    result = await process_chat(db, payload, user)
-    ai_metrics.METRICS["latency_seconds_total"] += time.monotonic() - started
-    return result
+    return await _handle_chat(payload, db, user, contour=None)
+
+
+@router.post("/tuno", response_model=ChatOut)
+async def chat_tuno(
+    payload: ChatIn,
+    db: DBSession,
+    user: CurrentUser,
+) -> ChatOut:
+    """Контур Туно: реестры/организации (tuno) — изолирован WHERE contour='tuno'."""
+
+    return await _handle_chat(payload, db, user, contour="tuno")
+
+
+@router.post("/kaba", response_model=ChatOut)
+async def chat_kaba(
+    payload: ChatIn,
+    db: DBSession,
+    user: CurrentUser,
+) -> ChatOut:
+    """Контур Каба: ГОСТ/методология (kaba) — изолирован WHERE contour='kaba'."""
+
+    return await _handle_chat(payload, db, user, contour="kaba")
 
 
 @router.get("/metrics/ai")
