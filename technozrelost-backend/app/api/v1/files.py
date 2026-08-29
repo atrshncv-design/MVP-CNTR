@@ -8,6 +8,7 @@ MinIO-объекты с внутренними именами; ClamAV-каран
 from __future__ import annotations
 
 from typing import Annotated
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from fastapi.responses import Response
@@ -147,10 +148,19 @@ async def download_project_file(
         data = read_stored_file(doc.storage_key)
     except FileStorageError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    # N-14: RFC 5987 filename* для кириллицы — filename остаётся ASCII-фолбэком,
+    # filename* передаёт исходное имя в UTF-8 с процент-кодированием.
+    raw_name = doc.file_name or "file"
+    # ASCII-фолбэк: не-ASCII → заменяем, кавычки экранируем
+    fallback = raw_name.encode("ascii", "replace").decode("ascii").replace('"', "_")
+    if not fallback.strip():
+        fallback = "file"
+    encoded = quote(raw_name, safe="")
+    disposition = f'attachment; filename="{fallback}"; filename*=UTF-8\'\'{encoded}'
     return Response(
         content=data,
         media_type=doc.mime_type or "application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{doc.file_name or "file"}"'},
+        headers={"Content-Disposition": disposition},
     )
 
 

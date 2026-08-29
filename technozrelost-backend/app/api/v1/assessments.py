@@ -295,6 +295,7 @@ async def create_assessment(
             db.add(
                 QuestionnaireResult(
                     project_id=project.id,
+                    user_id=user.id,
                     level_id=level["ugt_level"],
                     checked_items={"items": checked, "source": "readiness_v1"},
                     percentage=level["percentage"],
@@ -305,6 +306,7 @@ async def create_assessment(
             db.add(
                 QuestionnaireResult(
                     project_id=project.id,
+                    user_id=user.id,
                     level_id=questionnaire_answer.level_id,
                     checked_items={"items": questionnaire_answer.checked_items},
                     percentage=questionnaire_answer.percentage,

@@ -53,6 +53,8 @@ class Settings(BaseSettings):
     refresh_token_ttl_days: int = 14
     cors_origins: str = "http://localhost:3000"
 
+    # N-17: мёртвая конфигурация gigachat_credentials (legacy GigaChat) —
+    # оставлена для совместимости, не используется; будет удалена после M2.
     gigachat_credentials: str | None = None
 
     # LLM (OpenAI-совместимый API; ключ кладёт пользователь в .env)

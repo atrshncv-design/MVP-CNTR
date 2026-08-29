@@ -68,8 +68,14 @@ def chunk_text(text: str) -> list[str]:
 
 
 def extract_pdf_text(pdf_path: Path) -> str:
-    """Извлечение текстового слоя PDF (pymupdf)."""
-    import fitz  # PyMuPDF
+    """Извлечение текстового слоя PDF (pymupdf).
+
+    N-17: pymupdf==1.28.0 — AGPL-3.0 (B2G-риск). Используется только в
+    офлайн-сидинге ГОСТов; замена оценивается на pypdf (BSD) / pdfminer.six
+    с сохранением API extract_pdf_text. См. pyproject.toml и
+    docs/ИМПОРТОЗАМЕЩЕНИЕ.md.
+    """
+    import fitz  # PyMuPDF — AGPL, см. N-17
 
     doc = fitz.open(str(pdf_path))
     try:

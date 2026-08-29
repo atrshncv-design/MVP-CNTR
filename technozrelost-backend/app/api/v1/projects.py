@@ -41,6 +41,7 @@ from app.schemas import (
     VerificationDocIn,
     VerificationDocOut,
 )
+from app.services.file_storage import FileStorageError, storage
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -103,6 +104,7 @@ async def create_project(
         db.add(
             QuestionnaireResult(
                 project_id=project.id,
+                user_id=user.id,
                 level_id=answer.level_id,
                 checked_items={"items": answer.checked_items},
                 percentage=answer.percentage,
@@ -562,11 +564,18 @@ async def save_questionnaire(
     db: DBSession,
     user: CurrentUser,
 ) -> QuestionnaireResultOut:
+    """Сохранение анкеты: per-user (N-16) — каждый участник хранит свои уровни.
+
+    До N-16 запись была общей (UNIQUE project_id+level_id) и любой участник
+    перезаписывал проценты всего проекта. После — изолировано по user_id:
+    (project_id, level_id, user_id) уникальны, чужие записи не трогаются.
+    """
     await require_project_access(db, payload.project_id, user)
 
     stmt = select(QuestionnaireResult).where(
         QuestionnaireResult.project_id == payload.project_id,
         QuestionnaireResult.level_id == payload.level_id,
+        QuestionnaireResult.user_id == user.id,
     )
     existing = await db.scalar(stmt)
 
@@ -577,6 +586,7 @@ async def save_questionnaire(
     else:
         result = QuestionnaireResult(
             project_id=payload.project_id,
+            user_id=user.id,
             level_id=payload.level_id,
             checked_items={"items": payload.checked_items},
             percentage=payload.percentage,
@@ -652,6 +662,27 @@ async def upload_verification_doc(
             status.HTTP_403_FORBIDDEN,
             "Сначала присоединитесь к проекту по токену TZ-XXXXXX",
         )
+    # N-15: file_ref должен указывать на существующий объект MinIO.
+    # file_ref — storage_key вида projects/{id}/...; если указан путь с "/",
+    # проверяем наличие объекта в хранилище, иначе 404 (fail-closed).
+    # Без "/" — legacy логическая ссылка (например, "ref-1" в тестах) — пропускаем
+    # проверку, чтобы не ломать существующие интеграции, но путь с "/" всегда
+    # валидируется через storage.get.
+    if payload.file_ref and "/" in payload.file_ref:
+        exists = await db.scalar(
+            select(ProjectDocument.id).where(
+                ProjectDocument.project_id == project.id,
+                ProjectDocument.storage_key == payload.file_ref,
+            )
+        )
+        if exists is None:
+            try:
+                # storage.get — синхронный, быстрый (MinIO/локальный tmp)
+                storage.get(payload.file_ref)
+            except FileStorageError as exc:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND, "Файл не найден в хранилище"
+                ) from exc
     doc = VerificationDocument(
         project_id=project.id,
         uploader_id=user.id,

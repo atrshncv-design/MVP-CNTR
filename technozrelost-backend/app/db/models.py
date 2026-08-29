@@ -204,11 +204,22 @@ Index("ix_projects_category", Project.category)
 
 
 class QuestionnaireResult(Base):
+    """Анкета УГТ: per-user (N-16) — каждый участник хранит свои проценты.
+
+    До N-16 существовал UNIQUE (project_id, level_id) — общий на проект; любой
+    участник перезаписывал общие записи. После N-16 запись привязана к пользователю:
+    UNIQUE (project_id, level_id, user_id), user_id nullable для обратной
+    совместимости (старые строки → created_by проекта).
+    """
+
     __tablename__ = "questionnaire_results"
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
     project_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="SET NULL"), nullable=True
     )
     level_id: Mapped[int] = mapped_column(Integer, nullable=False)
     checked_items: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)

@@ -4,37 +4,46 @@ version = "0.1.0"
 description = "Backend (FastAPI) for the Technozrelost platform — B2B/B2G infrastructure for GOST R 58048-2017."
 readme = "README.md"
 requires-python = ">=3.11"
+# N-17: все зависимости зафиксированы (==) для воспроизводимости деплоя;
+# широкие >= пины заменены на точные версии из uv.lock (проверено 2026-08-29).
+# pymupdf==1.28.0 — AGPL-3.0 (лицензионный риск B2G): используется только для
+# извлечения текстового слоя ГОСТов в seed_gost.py; замена оценивается на
+# pypdf (BSD) / pdfminer.six — см. docs/ИМПОРТОЗАМЕЩЕНИЕ.md и комментарий в
+# app/db/seed_gost.py. passlib==1.7.4 (не поддерживается с 2020) остаётся
+# из-за совместимости с bcrypt==4.0.1; миграция на passlib→bcrypt напрямую
+# или argon2 — после M2 (PROC-02). python-jose — стандарт де-факто PyJWT,
+# замена отложена (совместимость с существующими токенами).
 dependencies = [
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.32",
-    "pydantic>=2.9",
-    "pydantic-settings>=2.6",
-    "sqlalchemy>=2.0.36",
-    "asyncpg>=0.30",
-    "alembic>=1.14",
-    "pgvector>=0.3.6",
-    "psycopg[binary]>=3.2",
-    "python-dotenv>=1.0",
-    "greenlet>=3.5.3",
-    "passlib[bcrypt]>=1.7.4",
-    "python-jose[cryptography]>=3.5.0",
-    "python-multipart>=0.0.32",
-    "email-validator>=2.3.0",
+    "fastapi==0.139.2",
+    "uvicorn[standard]==0.51.0",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.2",
+    "sqlalchemy==2.0.51",
+    "asyncpg==0.31.0",
+    "alembic==1.18.5",
+    "pgvector==0.5.0",
+    "psycopg[binary]==3.3.4",
+    "python-dotenv==1.2.2",
+    "greenlet==3.5.3",
+    "passlib[bcrypt]==1.7.4",
+    "python-jose[cryptography]==3.5.0",
+    "python-multipart==0.0.32",
+    "email-validator==2.3.0",
     "bcrypt==4.0.1",
-    "pymupdf>=1.28.0",
-    "minio>=7.2.20",
-    "reportlab>=5.0.0",
-    "cryptography>=50.0.0",
-    "httpx>=0.27",
-    "nh3>=0.2",
+    "pymupdf==1.28.0",
+    "minio==7.2.20",
+    "reportlab==5.0.0",
+    "cryptography==50.0.0",
+    "httpx==0.28.1",
+    "nh3==0.3.7",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3",
-    "pytest-asyncio>=0.24",
-    "ruff>=0.8",
-    "mypy>=1.13",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "ruff==0.15.22",
+    "mypy==2.3.0",
 ]
 
 [tool.uv]
