@@ -10,7 +10,7 @@ import {
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
 // FE-05: per-request nonce — Next.js извлекает nonce из CSP 'nonce-{value}' и автоматически проставляет в скрипты;
-// x-nonce прокидывается в Server Components через request headers (см. docs/content-security-policy.md).
+// CSP header — единственный носитель nonce (SPEC-06 L-01: мёртвый заголовок удалён).
 // connect-src оверрайд берём из единого модуля public-api, чтобы не дублировать чтение env в src/ (FE-02 contract).
 
 function buildCsp(nonce: string): string {
@@ -48,21 +48,15 @@ export default auth((req) => {
   const session = req.auth as unknown as { user?: { roles: string[] }; error?: string } | null;
   const isLoggedIn = !!session?.user;
 
-  // Заголовки, которые Next использует для автоматического проставления nonce в скрипты/стили
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", csp);
-
   function withCsp(response: NextResponse): NextResponse {
     response.headers.set("Content-Security-Policy", csp);
-    response.headers.set("x-nonce", nonce);
     return response;
   }
 
   // FE-03: RefreshAccessTokenError → /login (бэкенд отказал в refresh, сессия невалидна).
   if ((session as { error?: string } | null)?.error === "RefreshAccessTokenError") {
     if (pathname === "/login") {
-      const res = NextResponse.next({ request: { headers: requestHeaders } });
+      const res = NextResponse.next();
       return withCsp(res);
     }
     const res = NextResponse.redirect(new URL("/login", req.nextUrl));
@@ -76,7 +70,7 @@ export default auth((req) => {
       const res = NextResponse.redirect(new URL(ROLE_DASHBOARD[primary], req.nextUrl));
       return withCsp(res);
     }
-    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    const res = NextResponse.next();
     return withCsp(res);
   }
 
@@ -101,11 +95,11 @@ export default auth((req) => {
       const res = NextResponse.rewrite(new URL("/forbidden", req.nextUrl), { status: 403 });
       return withCsp(res);
     }
-    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    const res = NextResponse.next();
     return withCsp(res);
   }
 
-  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  const res = NextResponse.next();
   return withCsp(res);
 });
 

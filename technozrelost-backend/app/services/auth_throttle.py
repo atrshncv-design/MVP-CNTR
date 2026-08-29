@@ -6,15 +6,19 @@
 
 P-04 Redis fixed window: 10/60s через INCR EXPIRE 60 на общем Redis
 (две реплики не удваивают лимит). Fallback — LRU/TTL in-memory 5k/60s
-при недоступности Redis (как ai_metrics, но с LRU).
+при недоступности Redis (как ai_metrics, но с LRU). Redis must for prod,
+LRU only fallback — см. SPEC-07 / ADR-0015 (I-02): при 5001 IP ротации
+LRU evict обходит лимит, Redis mitigates.
 
 N-07 LRU/TTL: OrderedDict max 5k, TTL 60s, move_to_end на доступ.
 """
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import hashlib
+import logging
 import time
 from collections import OrderedDict
 from typing import Any
@@ -22,6 +26,8 @@ from typing import Any
 from fastapi import Request
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 LIMIT = 10
 WINDOW_SECONDS = 60.0
@@ -90,14 +96,15 @@ def source_from_request(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def is_blocked(email: str, client_host: str) -> bool:
+async def is_blocked(email: str, client_host: str) -> bool:
     key = _key(email, client_host)
     # Redis fixed window (P-04): если Redis доступен — он источник истины
+    # async via to_thread — Redis sync I/O не блокирует event loop (H-02a, SPEC-02)
     try:
-        client = _get_redis()
+        client = await asyncio.to_thread(_get_redis)
         if client is not None:
             rkey = f"throttle:{key}"
-            val = client.get(rkey)
+            val = await asyncio.to_thread(client.get, rkey)
             if val is not None:
                 try:
                     count = int(val)
@@ -124,21 +131,22 @@ def is_blocked(email: str, client_host: str) -> bool:
     return len(stamps) >= LIMIT
 
 
-def record_failure(email: str, client_host: str) -> None:
+async def record_failure(email: str, client_host: str) -> None:
     key = _key(email, client_host)
-    # Redis fixed window INCR EXPIRE 60 (P-04)
+    # Redis fixed window INCR EXPIRE 60 (P-04) — async via to_thread (H-02a)
     try:
-        client = _get_redis()
+        client = await asyncio.to_thread(_get_redis)
         if client is not None:
             rkey = f"throttle:{key}"
-            count = int(client.incr(rkey))
+            count = int(await asyncio.to_thread(client.incr, rkey))
             if count == 1:
-                client.expire(rkey, int(WINDOW_SECONDS))
+                await asyncio.to_thread(client.expire, rkey, int(WINDOW_SECONDS))
             else:
                 # если ключ остался без TTL (кринж-конфиг Redis) — ставим
                 try:
-                    if client.ttl(rkey) == -1:
-                        client.expire(rkey, int(WINDOW_SECONDS))
+                    ttl = await asyncio.to_thread(client.ttl, rkey)
+                    if ttl == -1:
+                        await asyncio.to_thread(client.expire, rkey, int(WINDOW_SECONDS))
                 except Exception:  # noqa: BLE001
                     pass
             return
@@ -158,14 +166,22 @@ def record_failure(email: str, client_host: str) -> None:
     stamps.append(now)
     while len(_attempts) > MAX_ENTRIES:
         _attempts.popitem(last=False)
+    # I-02 / SPEC-07 FR-04: early warning при заполнении LRU
+    # Redis must for prod, LRU only fallback
+    if len(_attempts) > 4000:
+        logger.warning(
+            "throttle LRU near capacity: %s entries (threshold 4000/5000) "
+            "— Redis must for prod, LRU only fallback per ADR-0015",
+            len(_attempts),
+        )
 
 
-def record_success(email: str, client_host: str) -> None:
+async def record_success(email: str, client_host: str) -> None:
     key = _key(email, client_host)
     try:
-        client = _get_redis()
+        client = await asyncio.to_thread(_get_redis)
         if client is not None:
-            client.delete(f"throttle:{key}")
+            await asyncio.to_thread(client.delete, f"throttle:{key}")
     except Exception:  # noqa: BLE001
         pass
     _attempts.pop(key, None)

@@ -108,7 +108,7 @@ services:
 
   # ── MinIO (файлы проектов; тикет 06) ──────────────────────────────────────
   minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     container_name: tz-prod-minio
     restart: unless-stopped
     logging:
@@ -130,9 +130,11 @@ services:
     networks:
       - tz-app-db
 
-  # ── ClamAV (антивирусная проверка файлов; тикет 06) ───────────────────────
+  # ── ClamAV (антивирусная проверка файлов; M-04/TICKET-01) ────────────────────
+  # M4 TICKET-01 (SPEC-01): mkodockx 1.4.3-r0 absent (85 тегов, max 1.1.2) → официал clamav/clamav:1.4.3
+  # digest sha256:75fb5fd95fcbe1d7e6d240c369c1572b686ee2c95949d1042b5148de8eddebb4 (oci index, amd64 only, Hub 2026-08-29)
   clamav:
-    image: mkodockx/docker-clamav:1.4.3-r0-alpine
+    image: clamav/clamav:1.4.3@sha256:75fb5fd95fcbe1d7e6d240c369c1572b686ee2c95949d1042b5148de8eddebb4
     container_name: tz-prod-clamav
     restart: unless-stopped
     logging:

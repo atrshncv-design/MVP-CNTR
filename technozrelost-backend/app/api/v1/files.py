@@ -7,6 +7,8 @@ MinIO-объекты с внутренними именами; ClamAV-каран
 
 from __future__ import annotations
 
+import asyncio
+import re
 from typing import Annotated
 from urllib.parse import quote
 
@@ -145,14 +147,18 @@ async def download_project_file(
         )
         raise HTTPException(status.HTTP_409_CONFLICT, detail)
     try:
-        data = read_stored_file(doc.storage_key)
+        # M-06 (TICKET-10, SPEC-01 FR-04): sync MinIO get_object через to_thread
+        data = await asyncio.to_thread(read_stored_file, doc.storage_key)
     except FileStorageError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     # N-14: RFC 5987 filename* для кириллицы — filename остаётся ASCII-фолбэком,
     # filename* передаёт исходное имя в UTF-8 с процент-кодированием.
     raw_name = doc.file_name or "file"
-    # ASCII-фолбэк: не-ASCII → заменяем, кавычки экранируем
-    fallback = raw_name.encode("ascii", "replace").decode("ascii").replace('"', "_")
+    # ASCII-фолбэк: не-ASCII → заменяем, CRLF/quote экранируем
+    # H-02b + M4 TICKET-10 — один re.sub вместо двух replace
+    fallback = re.sub(
+        r'[\r\n\"]', "_", raw_name.encode("ascii", "replace").decode("ascii")
+    )
     if not fallback.strip():
         fallback = "file"
     encoded = quote(raw_name, safe="")
@@ -173,7 +179,8 @@ async def rescan_project_file(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Файл не найден")
     await require_project_access(db, doc.project_id, user)
     try:
-        data = read_stored_file(doc.storage_key)
+        # M-06 (TICKET-10, SPEC-01 FR-04): sync MinIO get_object через to_thread
+        data = await asyncio.to_thread(read_stored_file, doc.storage_key)
     except FileStorageError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     doc.scan_status, doc.scan_result = await scanner.scan(data)

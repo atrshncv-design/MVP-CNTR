@@ -75,17 +75,23 @@ async def achievements_catalog(
         .scalars()
         .all()
     )
-    # ETag по содержимому каталога (id:slug:updated_at) — детерминирован, кэш 5 минут
+    # ETag по содержимому каталога (id:slug:sort_order:updated_at) — детерминирован, кэш 5 минут
+    # sort_order включён для инвалидации при переупорядочивании без изменения updated_at (M-03).
     etag_payload = "|".join(
-        f"{a.id}:{a.slug}:{a.updated_at.isoformat() if a.updated_at else ''}" for a in rows
+        f"{a.id}:{a.slug}:{a.sort_order}:{a.updated_at.isoformat() if a.updated_at else ''}"
+        for a in rows
     )
     etag = f'W/"{hashlib.md5(etag_payload.encode()).hexdigest()}"'
+    cache_control = (
+        "private, max-age=300" if request.headers.get("authorization") else "public, max-age=300"
+    )
     response.headers["ETag"] = etag
-    response.headers["Cache-Control"] = "public, max-age=300"
+    response.headers["Cache-Control"] = cache_control
+    response.headers["Vary"] = "Accept-Encoding"
     if request.headers.get("if-none-match") == etag:
         return Response(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            headers={"ETag": etag, "Cache-Control": "public, max-age=300"},
+            headers={"ETag": etag, "Cache-Control": cache_control, "Vary": "Accept-Encoding"},
         )
     return [
         AchievementCatalogOut(

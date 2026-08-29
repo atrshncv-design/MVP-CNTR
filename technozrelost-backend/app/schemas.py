@@ -129,6 +129,9 @@ class QuestionnaireResultOut(BaseModel):
     level_id: int
     checked_items: list[str]
     percentage: float
+    # M4 TICKET-08 (SPEC-05 M-03): staff avg vs all — для avg `user_id=None` + `members_count`
+    user_id: int | None = None
+    members_count: int | None = None
     created_at: str | None = None
     updated_at: str | None = None
 

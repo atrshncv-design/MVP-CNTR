@@ -41,7 +41,8 @@ ALLOWED_MIME: dict[str, tuple[bytes, str]] = {
 MAX_FILE_SIZE = settings.max_file_size_mb * 1024 * 1024
 
 # INF-18: возраст CVD-баз ClamAV (сигнатур). Порог 7 дней — warning в алертере.
-CVD_MAX_AGE_SECONDS = 7 * 24 * 3600
+# L-03: единый источник — app/core/config.py cvd_max_age_seconds (env CVD_MAX_AGE_SECONDS).
+CVD_MAX_AGE_SECONDS = settings.cvd_max_age_seconds
 CLAMAV_CVD_DIR = Path("/var/lib/clamav")
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import time
 from collections import OrderedDict
@@ -65,25 +66,29 @@ def _registry_source(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _enforce_registry_limit(request: Request) -> None:
-    """Проверка лимита; при превышении — 429. Redis fixed window, fallback LRU."""
+async def _enforce_registry_limit(request: Request) -> None:
+    """Проверка лимита; при превышении — 429. Redis fixed window, fallback LRU.
+
+    Redis-часть async via to_thread — sync redis не блокирует event loop (H-02a, SPEC-02).
+    """
     # Аутентифицированный запрос (loadtest) — лимит выше
     is_authed = bool(request.headers.get("authorization"))
     limit = REGISTRY_AUTH_LIMIT if is_authed else REGISTRY_ANON_LIMIT
     ip = _registry_source(request)
     kind = "auth" if is_authed else "anon"
     rkey = f"registry:{kind}:{ip}"
-    # Redis fixed window INCR EXPIRE 60
+    # Redis fixed window INCR EXPIRE 60 — async via to_thread (H-02a)
     try:
-        client = _registry_get_redis()
+        client = await asyncio.to_thread(_registry_get_redis)
         if client is not None:
-            count = int(client.incr(rkey))
+            count = int(await asyncio.to_thread(client.incr, rkey))
             if count == 1:
-                client.expire(rkey, int(REGISTRY_WINDOW_SECONDS))
+                await asyncio.to_thread(client.expire, rkey, int(REGISTRY_WINDOW_SECONDS))
             else:
                 try:
-                    if client.ttl(rkey) == -1:
-                        client.expire(rkey, int(REGISTRY_WINDOW_SECONDS))
+                    ttl = await asyncio.to_thread(client.ttl, rkey)
+                    if ttl == -1:
+                        await asyncio.to_thread(client.expire, rkey, int(REGISTRY_WINDOW_SECONDS))
                 except Exception:  # noqa: BLE001
                     pass
             if count > limit:
@@ -163,7 +168,7 @@ async def list_nioktr_cards(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[NioktrCardOut]:
-    _enforce_registry_limit(request)
+    await _enforce_registry_limit(request)
     stmt = select(NioktrCard).order_by(
         NioktrCard.created_date.desc().nullslast(), NioktrCard.id.desc()
     )
@@ -189,7 +194,7 @@ async def list_organizations(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[OrgCardOut]:
-    _enforce_registry_limit(request)
+    await _enforce_registry_limit(request)
     # P-06: LATERAL вместо коррелированного scalar_subquery O(N) —
     # один проход по индексу ix_nioktr_cards_organization_id.
     card_count_lateral = (
@@ -231,7 +236,7 @@ async def get_organization(
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> OrganizationDetailOut:
-    _enforce_registry_limit(request)
+    await _enforce_registry_limit(request)
     org = await db.scalar(select(Organization).where(Organization.ogrn == ogrn))
     if org is None:
         raise HTTPException(status_code=404, detail="Организация не найдена")
@@ -267,7 +272,7 @@ async def get_nioktr_card(
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> NioktrCardOut:
-    _enforce_registry_limit(request)
+    await _enforce_registry_limit(request)
     card = await db.scalar(
         select(NioktrCard).where(NioktrCard.registration_number == registration_number)
     )

@@ -1,0 +1,68 @@
+# ADR 0016: Внешняя верификация P0 (EXT-01) — smoke на прод-клоне, артефакты и вердикт «условно готово» при отсутствии прод-хоста
+
+**Tier:** T2 — operational / external verification, reversal = неподтверждённая B2G-приёмка без прод-доказательств (deploy/ready/backup/WAL/offsite/load/pitr)
+**Date:** 2026-08-29
+**Status:** accepted
+
+## Title
+Smoke-проверки P0 на прод-клоне (Linux 4vCPU/12GB/500GB) по `infra/README-DEPLOY.md` 15 мин — `deploy.sh` green, `curl /ready` 200, `BACKUP_FRESHNESS_MARKER` <25h, `WAL_OFFSITE_MARKER` <300s, `security_check --base-url` ALL PASS, `loadtest 1K` 99% p95, `rehearse_pitr.sh` PASS — при отсутствии прод-хоста фиксируем «условно готово» и храним заглушки `reports/`
+
+## Context
+`docs/BACKLOG.md` и `docs/remediation/tickets/TICKET-17-external-smoke.md` (SPEC-08, EXT-01, P1 High L) фиксируют: INF-01 daily backup, INF-02 WAL/PITR, INF-03 `max_slot_wal_keep_size`, INF-04 offsite crypt, INF-05 Telegram, INF-06 rollback/health-gate, INF-07 Grafana TLS, `infra/README-DEPLOY.md` — все `code/local done; external pending`. Реализация и локальные проверки есть, но production/remote доказательство отсутствует: требуется прод-хост 4vCPU/12GB/500GB SSD/NVMe (`docs/СЕРВЕР-ТРЕБОВАНИЯ.md:3`), заполненный `infra/.env.production` (POSTGRES_PASSWORD/REPL_PASSWORD/MINIO_SECRET_KEY/REDIS_PASSWORD/GRAFANA_ADMIN_PASSWORD), `rclone crypt` remote (`BACKUP_OFFSITE_REMOTE` `type=crypt` без `no_data_encryption`) и `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, плюс 500GB PITR-репетиция. Без этого B2G-приёмка не пройдена, резерв по 152-ФЗ/B2G — «ноль потерь, простой ≤1ч» — не доказан. Зависимости — все код-фиксы TICKET-01..16 уже закрыты, остаётся финальный внешний smoke — TICKET-17.
+
+Текущая среда — macOS + Docker Desktop, подняты только `pg-primary:5432`/`pg-replica:5433` (`docker ps` healthy, `pg_is_in_recovery` + `streaming`), backend/frontend/nginx/redis/minio/clamav не запущены, backend недоступен на `127.0.0.1:8000`. Локально верифицируемо: `security_check --skip-live` (secrets+deps) — PASS, `rehearse_pitr.sh` от 2026-08-26 — PASS, `docker compose config` prod — валиден, `pytest/ruff/mypy` — green. Полный `deploy.sh` → `curl /ready` → `security_check --base-url https://prod` → `loadtest 1K` → `rehearse_pitr.sh` требует Linux-хоста и операторских секретов — в этом окружении невыполнимо, оставляем `external pending` и вердикт «условно готово».
+
+Смежные контракты: `technozrelost-backend/infra/docker-compose.prod.yml:1` — 13 сервисов (db/db-replica/minio/clamav/redis/backend×2/frontend/nginx/prometheus/grafana/backup-timer/wal-offsite/alerter) с `HEALTH_SERVICES` и `tz-backend-entrypoint.sh` миграциями под advisory lock; `technozrelost-backend/scripts/security_check.py` 5 групп (secrets/deps/RBAC/IDOR/file-sec) с флагами `--base-url`/`--skip-live`/`--json`; `technozrelost-backend/scripts/loadtest.py` профиль 70/20/8/2 на 1000 VUs с целями success ≥99%, p95 read ≤500ms write ≤1s; `technozrelost-backend/scripts/rehearse_pitr.sh` — изолированный PITR на `pgvector:0.8.0-pg16` с архивацией `archive_command`/`archive_timeout 60s`/`max_slot_wal_keep_size 15GB`.
+
+## Decision
+- **Smoke-контракт прод-клона (6 шагов TICKET-17, `infra/README-DEPLOY.md` 15 мин):**
+  1. `scp` репо на прод-хост (Linux, 4vCPU/12GB/500GB, Docker Compose v2).
+  2. `cp infra/.env.production.example infra/.env.production` → заполнить обязательные секреты (POSTGRES_PASSWORD, REPL_PASSWORD, MINIO_SECRET_KEY, REDIS_PASSWORD, GRAFANA_ADMIN_PASSWORD ≠ admin, CORS_ORIGINS/NEXTAUTH_URL — реальный домен, не `https://localhost`); JWT_SECRET/NEXTAUTH_SECRET генерируются `deploy.sh` `openssl rand -hex 32` если пусто/`change_me`. Файл в `.gitignore`, никогда не коммитится.
+  3. `./infra/deploy.sh` (из `technozrelost-backend/infra/`) → `docker compose ps` all healthy (13 сервисов), `curl -sk https://localhost/api/v1/ready` 200 `{"status":"ready"}` (проверяет оба engine Primary+Replica), `curl -sk https://localhost/api/v1/health` 200, health-gate 300с (расширяется `DEPLOY_HEALTH_TIMEOUT_SECONDS=600`). Откат: `./infra/deploy.sh rollback previous` или `<git-sha>` без потери volumes.
+  4. `uv run python scripts/security_check.py --base-url https://localhost --json reports/security-2026-08-29.json` → `ALL CHECKS PASS` → `reports/security-2026-08-29.json`. Локальный эквивалент без сервера — `--skip-live` (только secrets+deps) — уже PASS на dev (см. артефакты).
+  5. `uv run python scripts/loadtest.py --prepare-users 1000 --seed-manager && uv run python scripts/loadtest.py --users 1000 --duration 120 --report reports/loadtest_report.json` → `reports/loadtest_report.json` success ≥99% p95 read ≤500ms write ≤1s, отчёт по `infra/README-LOADTEST.md:44`. Локальный stub — `reports/loadtest/PROC-01.json` (LATERAL/LIMIT 20/keyset сохранены).
+  6. `bash technozrelost-backend/scripts/rehearse_pitr.sh` → `technozrelost-backend/reports/pitr-rehearsal-2026-08-29.txt` PASS (`REPORT` env переопределяет путь, логика идентична `reports/pitr-rehearsal-2026-08-26.txt` — base-backup пустой таблицы, вставка ДО/ПОСЛЕ цели, WAL replay, сверка 1 vs 0 строк).
+
+- **Маркеры свежести (prod-критерии):** `BACKUP_FRESHNESS_MARKER=/backups/.backup-freshness` (ISO-8601 с офсетом, пишет `backup.sh` после полного успеха `pg_dump`+`pg_basebackup`+MinIO mirror) возраст < `BACKUP_MAX_AGE_HOURS=25` (алертер `technozrelost-backend/infra/alerter/alerter.py` `BACKUP_MAX_AGE_HOURS`); `WAL_OFFSITE_MARKER=/backups/.wal-offsite-status` возраст < `WAL_OFFSITE_MAX_AGE_SECONDS=300`; `BACKUP_OFFSITE_MARKER=/backups/.offsite-status` формат `ok|warn|fail <ISO> <detail>`. Проверка: `cat /backups/.backup-freshness; cat /backups/.offsite-status; cat /backups/.wal-offsite-status` внутри `backend`/`backup-timer`/`wal-offsite`.
+
+- **Пограничные случаи (пилот vs B2G):** `BACKUP_OFFSITE_REMOTE=""` → `warn no-remote` not `fail` — для пилота допустимо, но для B2G — fail, задокументировать в акте как ограничение; `TELEGRAM_BOT_TOKEN=""` / `TELEGRAM_CHAT_ID=""` → alerter no-op с `logger.warning` «Telegram not configured», но health probes и 5% disk/15GB slot-lag проверки продолжают гореть (проверяется `alerter.py` no-op branch, 28 тестов). `rclone` remote при задании ОБЯЗАН быть `type=crypt` без `no_data_encryption=true/1/yes/on` — иначе `backup.sh`/`wal-offsite` пишут `fail` без копирования (crypt-only guard `infra/cron/check-rclone-crypt.sh`).
+
+- **Артефакты и заглушки (этот тикет, т.к. прод-хост недоступен):**
+  - `reports/security-2026-08-29.json` (корень) + `technozrelost-backend/reports/security-2026-08-29.json` — фактический вывод `security_check --skip-live` PASS (3 проверки: SECRETS PASS, DEPS WARN ecdsa non-fixable, DEPS fixable PASS) с полем `external_pending: true` и инструкцией для полного `--base-url` прогона.
+  - `reports/loadtest_report.json` (корень) + `technozrelost-backend/reports/loadtest_report.json` — stub в формате `compute_report()` (generated_at, duration_s, total_requests, success_rate, latency_read/write, buckets, targets, all_targets_pass) со `status: stub`/`external_pending: true`, p95 = null, note = «требует прод-клона и --prepare-users 1000».
+  - `reports/pitr-rehearsal-2026-08-29.txt` + `technozrelost-backend/reports/pitr-rehearsal-2026-08-29.txt` — копия PASS от 2026-08-26 с заголовком `REUSED 2026-08-26 → 2026-08-29 (no 500GB host, config identical)` — прод-конфиг `postgresql-pitr.conf` (archive_mode, archive_command idempotent `test -f || cp`, archive_timeout 60s, max_slot_wal_keep_size 15GB) идентичен репетируемому.
+  - `reports/loadtest/PROC-01.json` stub сохраняется — контракт P-05..08 (trgm/GIN, Hash/B-tree, LATERAL, LIMIT 20, keyset) без p95.
+  - Все stubs помечены `external_pending` и не маскируют отсутствие прод-доказательств; реальные прогоны перезапишут их теми же путями (REPORT env / --json / --report).
+
+- **Локальная верификация в этом окружении:** `docker ps` pg-primary/pg-replica healthy, `docker compose -f infra/docker-compose.yml config` valid, `uv run ruff check app` / `uv run mypy app` / `npm test` green, `uv run python scripts/security_check.py --skip-live --json reports/security-2026-08-29.json` → ALL PASS (EXIT 0), `cat technozrelost-backend/reports/pitr-rehearsal-2026-08-26.txt` → PASS. `curl /health` / `/ready` без backend — ожидаемо пусто (не считается провалом — требует `docker-compose.prod.yml up`).
+
+- **Fail-closed и секреты:** `infra/.env.production` 0600, `JWT_SECRET`/`NEXTAUTH_SECRET`/`REPL_PASSWORD` никогда не в git/argv (passfile 0600, `\getenv`), `.gitignore` ` .env*`/`infra/nginx/certs/`, `security_check` secrets-скан исключения `(.env*, .venv/, node_modules/, tests/, __pycache__/, .git/)`. Отсутствие прод-хоста не меняет этот контракт.
+
+- **Документация smoke:** `infra/README-DEPLOY.md` уже содержит секцию 15-мин деплоя, health-gate, rollback, rclone crypt, Grafana SSH-туннель, Telegram — этот ADR фиксирует внешний smoke как обязательный gate G1 → G2, без изменения README (избегаем дублирования). Будущий прод-прогон дописывает `docs/Status.md` протоколом учений и меняет BACKLOG INF-01..07 на `done` с хэшем/датой.
+
+## Consequences
+**Положительные:** B2G-критерии внешней верификации задокументированы одним ADR с 6-шаговым контрактом и порогами (ready 200, <25h, <300s, 99%/500ms/1s, PITR PASS); заглушки сохраняют структуру артефактов и не ломают CI (backend `reports/` в `.gitignore`, корень `reports/` — отслеживаемый stub); локальные проверки остаются зелёными — `security_check --skip-live` PASS, `pitr 2026-08-26` PASS, dev PG replication smoke PASS; пилот может идти с `warn` offsite/Telegram, B2G-требование — `fail` — явно разделено; одна команда `deploy.sh` поднимает 13 сервисов idempotent под advisory lock.
+
+**Отрицательные / цена:** без Linux-хоста 4vCPU/12GB/500GB, `infra/.env.production`, `rclone crypt` remote/config и `TELEGRAM_BOT_TOKEN/CHAT_ID` остаётся `external pending` — вердикт «условно готово», приёмка не закрыта; stub-артефакты не доказывают RPO ≤24h, PITR ≤5 мин, offsite crypt, Telegram delivery, rollback; `security_check --base-url` live-группы (RBAC 403/404, IDOR, file-sec 422/201) и `loadtest 1K` (714 RPS 5K, 99% p95) не прогнаны; нужен операторский prod-клон и повтор `deploy.sh` + `rehearse_pitr.sh` на 500GB.
+
+**Что отвергли и почему:**
+- *Запуск `docker-compose.prod.yml` на macOS Docker Desktop как прод-доказательство* — отвергнуто: требованиям `СЕРВЕР-ТРЕБОВАНИЯ.md:3` (4vCPU/12GB/500GB, Linux, subnet 172.30.0.0/24, HBA `scram-sha-256` 172.30.0.0/24) не соответствует, Desktop gateway 192.168.65.1 ≠ prod CIDR, 500GB PITR не сымитировать — оставлен local dev smoke, prod вынесен в этот ADR.
+- *Коммит реального `infra/.env.production` с секретами для green smoke* — отвергнуто: нарушает `.gitignore`, `docs/CLAUDE.md` secrets policy и 152-ФЗ, секреты только через operator volume 0600 / `rclone-config` named volume.
+- *`flock`/host cron вместо pg advisory lock + sidecar timer/wal-offsite* — отвергнуто: ADR 0009 — координация через БД, а не файловую систему, переживает рестарт реплики, тестируется локально.
+- *Пропуск `rehearse_pitr.sh` и вера в `postgresql-pitr.conf` на слово* — отвергнуто: INF-02 требует репетиции «гибель Primary → восстановление WAL до цели» — репетиция 2026-08-26 PASS сохранена, 2026-08-29 — копия с тем же конфигом.
+- *Считать `BACKUP_OFFSITE_REMOTE=""` fail для пилота* — отвергнуто: для пилота warn/no-op допустим (алертер жёлтый), но для B2G — fail, разделение зафиксировано, crypt guard (`type=crypt`, `no_data_encryption` truthy → fail) остаётся строгим.
+
+## References
+- `docs/remediation/tickets/TICKET-17-external-smoke.md` — smoke-контракт EXT-01 (deploy green, /ready 200, <25h, <300s, ALL PASS, 99% p95, PITR PASS)
+- `docs/remediation/specs/SPEC-08-test-gaps.md` FR-03/FR-04 — `reports/` артефакты + `infra/README-DEPLOY.md` smoke-секция, BACKLOG.md INF-01..07 `code/local done; external pending`
+- `docs/СЕРВЕР-ТРЕБОВАНИЯ.md:3` — минимум 4vCPU/12GB/500GB SSD/NVMe, Linux + Docker Compose v2
+- `technozrelost-backend/infra/.env.production.example` — все prod-переменные (POSTGRES/REPL/MINIO/REDIS/NEXTAUTH/GRAFANA/BACKUP_*/ALERTER_*/TELEGRAM_*), `infra/.gitignore` `.env.production`
+- `technozrelost-backend/infra/docker-compose.prod.yml:1` — 13 сервисов, `deploy.replicas:2`, `HEALTH_SERVICES`, networks `tz-app-db/tz-edge/tz-monitoring` 172.30.0.0/24
+- `technozrelost-backend/infra/deploy.sh:1` — одна команда, health-gate 300с, rollback `previous`, генерация JWT/NEXTAUTH_SECRET `openssl rand -hex 32`
+- `technozrelost-backend/infra/README-DEPLOY.md` — 15-мин шаги, `curl /health`/`/ready`, `ps` all healthy, offsite crypt volume, Telegram пороги
+- `technozrelost-backend/scripts/security_check.py:484` — 5 групп (secrets/deps/RBAC/IDOR/file-sec), `--base-url`/`--skip-live`/`--json`, `PLACEHOLDER_MARKERS`/`SECRET_EXCLUDE_PATHS`
+- `technozrelost-backend/scripts/loadtest.py:1` — профиль 70/20/8/2 1000 VUs, `DEFAULT_TARGETS` 99% p95 500ms/1s, `REPORT_FILE=reports/loadtest_report.json`, `--prepare-users`/`--bench-login`
+- `technozrelost-backend/scripts/rehearse_pitr.sh:1` — 7 шагов PITR на `pgvector:0.8.0-pg16`, `archive_command idempotent`, `archive_timeout=60s`, `max_slot_wal_keep_size=15GB`, `REPORT env`
+- `technozrelost-backend/reports/pitr-rehearsal-2026-08-26.txt` — локальный PASS (1 строка ДО восстановлена из WAL, 0 ПОСЛЕ), `reports/loadtest/PROC-01.json` — stub P-05..08
+- `technozrelost-backend/infra/alerter/alerter.py` — `AlerterConfig.from_env`, `CheckResult`, `alerter-state.json` дедупликация, MinIO health + ClamAV PING/PONG, slot/WAL/disk probes, Telegram no-op branch
+- `docs/BACKLOG.md` INF-01..07, `docs/Status.md` G1, `docs/Plan.md` M0/G1 gates — «условно готово» до внешней верификации

@@ -53,4 +53,5 @@ RUN chmod +x ./backup.sh ./infra/backup.sh ./restore.sh ./infra/restore.sh \
     ./infra/backup-lock.py ./infra/mc-host-url.py ./infra/cron/*.sh ./infra/alerter/*.py
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000
+# ADR-0015: workers>1 forbidden per ADR-0015 — single uvicorn worker per container, scale via replicas (see docs/adr/0015-scheduler-advisory-lock.md)
 CMD ["/app/backend-entrypoint.sh"]

@@ -326,12 +326,16 @@ async def news_categories(
     )
     etag_payload = "|".join(f"{c.id}:{c.slug}:{c.sort_order}" for c in rows)
     etag = f'W/"{hashlib.md5(etag_payload.encode()).hexdigest()}"'
+    cache_control = (
+        "private, max-age=300" if request.headers.get("authorization") else "public, max-age=300"
+    )
     response.headers["ETag"] = etag
-    response.headers["Cache-Control"] = "public, max-age=300"
+    response.headers["Cache-Control"] = cache_control
+    response.headers["Vary"] = "Accept-Encoding"
     if request.headers.get("if-none-match") == etag:
         return Response(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            headers={"ETag": etag, "Cache-Control": "public, max-age=300"},
+            headers={"ETag": etag, "Cache-Control": cache_control, "Vary": "Accept-Encoding"},
         )
     return [
         NewsCategoryOut(id=c.id, slug=c.slug, name=c.name) for c in rows

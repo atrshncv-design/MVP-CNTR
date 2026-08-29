@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import re
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -184,10 +185,11 @@ class RequestIDMiddleware:
             return
         headers = Headers(scope=scope)
         req_id = headers.get("x-request-id")
-        if not req_id or not req_id.strip():  # noqa: SIM108
+        if req_id is not None:
+            req_id = req_id.strip()
+        # H-02b / SPEC-01 FR-03: echo только при строгом fullmatch, иначе генерируем 32 hex
+        if not req_id or not re.fullmatch(r"[A-Za-z0-9._-]{8,64}", req_id):
             req_id = uuid.uuid4().hex
-        else:
-            req_id = req_id.strip()[:64]
         token = request_id_ctx.set(req_id)
 
         async def send_with_id(message: Message) -> None:

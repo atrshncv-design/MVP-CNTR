@@ -24,6 +24,10 @@ from urllib.request import Request, urlopen
 
 LOGGER = logging.getLogger("technozrelost.alerter")
 
+# L-03: единый источник CVD-возраста — app/core/config.py cvd_max_age_seconds
+# (604800, env CVD_MAX_AGE_SECONDS). Alerter вне app — синхронизация через env.
+CVD_MAX_AGE_SECONDS: float = 7 * 24 * 3600
+
 OK = "ok"
 WARNING = "warning"
 CRITICAL = "critical"
@@ -72,6 +76,8 @@ class AlerterConfig:
     clamav_port: int = 3310
     wal_offsite_marker: Path = Path("/backups/.wal-offsite-status")
     wal_offsite_max_age_seconds: float = 300.0
+    # L-03: синхронизировано с app/core/config.py cvd_max_age_seconds (env CVD_MAX_AGE_SECONDS)
+    cvd_max_age_seconds: float = CVD_MAX_AGE_SECONDS
 
     @classmethod
     def from_env(cls) -> AlerterConfig:
@@ -128,6 +134,7 @@ class AlerterConfig:
                 os.getenv("WAL_OFFSITE_MARKER", "/backups/.wal-offsite-status")
             ),
             wal_offsite_max_age_seconds=_env_float("WAL_OFFSITE_MAX_AGE_SECONDS", 300.0),
+            cvd_max_age_seconds=_env_float("CVD_MAX_AGE_SECONDS", CVD_MAX_AGE_SECONDS),
         )
 
 
@@ -375,7 +382,7 @@ def check_clamav_availability(
 def check_clamav_cvd_age(
     host: str,
     port: int,
-    max_age_seconds: float = 7 * 24 * 3600,
+    max_age_seconds: float = CVD_MAX_AGE_SECONDS,
     timeout_seconds: float = 5.0,
     connector: Callable[..., Any] = socket.create_connection,
     now: datetime | None = None,
@@ -715,7 +722,7 @@ async def collect_checks(config: AlerterConfig) -> list[CheckResult]:
         check_clamav_cvd_age,
         config.clamav_host,
         config.clamav_port,
-        7 * 24 * 3600,
+        config.cvd_max_age_seconds,
         config.probe_timeout_seconds,
     )
     replication_task = check_replica_and_slot(config)

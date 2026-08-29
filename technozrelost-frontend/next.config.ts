@@ -28,7 +28,7 @@ function buildCsp(nonce?: string): string {
   return [
     "default-src 'self'",
     scriptSrc, // FE-06 CSP form-action 'self' + upgrade-insecure-requests (зона next.config:28)
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'", // ADR-0014: Tailwind requires unsafe-inline for styles, see docs/adr/0014-csp-style-unsafe-inline.md
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
     `connect-src 'self'${publicApiOverride ? ` ${publicApiOverride}` : ""}`,

@@ -210,8 +210,9 @@ class QuestionnaireResult(Base):
 
     До N-16 существовал UNIQUE (project_id, level_id) — общий на проект; любой
     участник перезаписывал общие записи. После N-16 запись привязана к пользователю:
-    UNIQUE (project_id, level_id, user_id), user_id nullable для обратной
-    совместимости (старые строки → created_by проекта).
+    UNIQUE (project_id, level_id, user_id). 0030 ввела user_id nullable для
+    обратной совместимости (бэкфил → projects.created_by); 0032 делает его
+    NOT NULL и закрывает read leak (TICKET-07, M-02).
     """
 
     __tablename__ = "questionnaire_results"
@@ -220,8 +221,8 @@ class QuestionnaireResult(Base):
     project_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("public.projects.id", ondelete="CASCADE"), nullable=False
     )
-    user_id: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("public.users.id", ondelete="SET NULL"), nullable=True
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("public.users.id", ondelete="SET NULL"), nullable=False
     )
     level_id: Mapped[int] = mapped_column(Integer, nullable=False)
     checked_items: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)

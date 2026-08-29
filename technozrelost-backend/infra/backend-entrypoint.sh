@@ -4,6 +4,7 @@
 #      (несколько реплик backend не дерутся за alembic), 3) запускает uvicorn.
 # App-слой stateless: один uvicorn-воркер на контейнер, масштабирование —
 # репликами сервиса backend (deploy.replicas в docker-compose.prod.yml).
+# ADR-0015: workers>1 forbidden — scheduler advisory lock 42 дублируется внутри хоста; см. docs/adr/0015-scheduler-advisory-lock.md
 set -eu
 
 export DB_HOST="${POSTGRES_HOST:-db}"
@@ -125,4 +126,5 @@ sys.exit(asyncio.run(main()))
 PY
 echo "[entrypoint] миграции применены."
 
+# ADR-0015: workers>1 forbidden per ADR-0015 — single worker, scale via replicas (see docs/adr/0015-scheduler-advisory-lock.md)
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000

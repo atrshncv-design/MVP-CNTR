@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # --- ОС-мусор ---
 .DS_Store
 Thumbs.db
@@ -53,3 +52,14 @@ friday-release-candidate/
 
 # --- Автопилот: pid/log локального сервера дашборда ---
 .autopilot/serve.*
+
+# --- Graphify (volatile, не коммитим: branch.json/worktree.json/needs_update/cache) ---
+.graphify/branch.json
+.graphify/worktree.json
+.graphify/needs_update
+.graphify/cache/
+
+# --- Reports (M4 TICKET-13 / SPEC-01 L-04): loadtest json игнор, pitr txt — артефакт ---
+reports/*.json
+!reports/pitr-rehearsal-*.txt
+!reports/loadtest/PROC-01.json

@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # (без PII), контур tuno/kaba — санитизация nh3 на оба входа в тикете 02.
     llm_gateway_enabled: bool = False
 
+    # H-01 (TICKET-01): легаси-allowlist file_ref без проверки MinIO (тестовые "ref-1"/"ref-2").
+    legacy_file_ref_allowlist: set[str] = {"ref-1", "ref-2"}
+
     # Файловое хранилище (тикет 06): MinIO + ClamAV
     minio_endpoint: str = "127.0.0.1:9000"
     minio_access_key: str = "technoz"
@@ -76,6 +79,9 @@ class Settings(BaseSettings):
     clamav_host: str = "127.0.0.1"
     clamav_port: int = 3310
     clamav_enabled: bool = True
+    # L-03 / INF-18: максимальный возраст CVD-баз ClamAV (секунды, 7 дней).
+    # Единый источник для file_storage.py и infra/alerter (env CVD_MAX_AGE_SECONDS).
+    cvd_max_age_seconds: int = 7 * 24 * 3600
     max_file_size_mb: int = 25
     # Глобальный лимит тела запроса (R05.5): чуть выше max_file_size_mb,
     # чтобы легитимные multipart-загрузки проходили, а мусор — отклонялся.

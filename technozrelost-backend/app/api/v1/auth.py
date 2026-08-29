@@ -44,7 +44,7 @@ async def _issue_tokens(db: AsyncSession, user: User) -> TokenOut:
 async def register(payload: RegisterIn, request: Request, db: DBSession) -> TokenOut:
     # N-08 троттлинг register как login (10/60s) — per email+IP, как login
     client_host = auth_throttle.source_from_request(request)
-    if auth_throttle.is_blocked(payload.email, client_host):
+    if await auth_throttle.is_blocked(payload.email, client_host):
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток регистрации"
         )
@@ -72,12 +72,12 @@ async def register(payload: RegisterIn, request: Request, db: DBSession) -> Toke
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()
-        auth_throttle.record_failure(payload.email, client_host)
+        await auth_throttle.record_failure(payload.email, client_host)
         raise HTTPException(
             status.HTTP_409_CONFLICT, "Пользователь с таким email уже существует"
         ) from exc
     await db.refresh(user, attribute_names=["roles"])
-    auth_throttle.record_success(payload.email, client_host)
+    await auth_throttle.record_success(payload.email, client_host)
 
     return await _issue_tokens(db, user)
 
@@ -89,15 +89,15 @@ async def login(payload: LoginIn, request: Request, db: DBSession) -> TokenOut:
     # X-Forwarded-For ($proxy_add_x_forwarded_for дописывает реальный IP
     # последним, первые хопы клиент подделывает), иначе client.host
     client_host = auth_throttle.source_from_request(request)
-    if auth_throttle.is_blocked(payload.email, client_host):
+    if await auth_throttle.is_blocked(payload.email, client_host):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток входа")
     user = await db.scalar(stmt_user_by_email(payload.email))
     if user is None or not await run_in_threadpool(
         verify_password, payload.password, user.password_hash
     ):
-        auth_throttle.record_failure(payload.email, client_host)
+        await auth_throttle.record_failure(payload.email, client_host)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный email или пароль")
-    auth_throttle.record_success(payload.email, client_host)
+    await auth_throttle.record_success(payload.email, client_host)
     if not user.is_active:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Аккаунт деактивирован")
     await db.refresh(user, attribute_names=["roles"])

@@ -1521,3 +1521,36 @@ def test_rollback_operational_paths_are_explicit_and_not_app_mounts():
     assert "/usr/local/bin/tz-alerter.py" in compose
     assert "../app:/" not in compose
     assert "./app:/" not in compose
+
+
+# M4 TICKET-12 (SPEC-06 I-01): guard workers>1 — только один воркер на контейнер
+def test_no_workers_in_entrypoint():
+    entrypoint = read_text(INFRA_ROOT / "backend-entrypoint.sh")
+    dockerfile = read_text(BACKEND_ROOT / "Dockerfile")
+
+    assert "--workers" not in entrypoint
+    assert "--workers" not in dockerfile
+    # коммент ADR-0015 остаётся
+    assert "workers>1 forbidden" in dockerfile.lower() or "ADR-0015" in dockerfile
+
+
+# M4 TICKET-01 (SPEC-01 H-01): digest pinning — оба образа с @sha256
+def test_digest_pinned():
+    compose = read_text(INFRA_ROOT / "docker-compose.prod.yml")
+
+    assert compose.count("@sha256:") >= 2
+    assert "clamav/clamav:1.4.3@sha256:75fb5fd95fcbe1d7e6d240c369c1572b686ee2c95949d1042b5148de8eddebb4" in compose
+    assert "minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e" in compose
+    # placeholder mkodockx не должен остаться
+    assert "mkodockx/docker-clamav:1.4.3-r0-alpine@sha256:b443" not in compose
+
+
+# M4 TICKET-06 (SPEC-04 M-02): CVD единый источник
+def test_cvd_const_single_source():
+    env_example = read_text(INFRA_ROOT / ".env.production.example")
+    config = read_text(BACKEND_ROOT / "app" / "core" / "config.py")
+    alerter = read_text(BACKEND_ROOT / "infra" / "alerter" / "alerter.py")
+
+    assert "CVD_MAX_AGE_SECONDS=604800" in env_example
+    assert "cvd_max_age_seconds" in config
+    assert "CVD_MAX_AGE_SECONDS" in alerter

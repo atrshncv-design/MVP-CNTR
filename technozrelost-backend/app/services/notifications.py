@@ -10,12 +10,15 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, cast
 
 from sqlalchemy import select, text
 
 from app.core.deps import DBSession
 from app.db.models import Notification, NotificationOutbox, User
+
+logger = logging.getLogger(__name__)
 
 
 async def notify_user(
@@ -116,6 +119,13 @@ async def notify_news_published(db: DBSession, news_id: int, title: str) -> int:
     batch_size = 500
     total = 0
     for offset in range(0, len(user_ids), batch_size):
+        # SPEC-07 P-15 observability: лог per batch для trace при росте базы
+        logger.info(
+            "notify_news_published batch %s: %s users (offset %s)",
+            offset // batch_size,
+            len(user_ids[offset : offset + batch_size]),
+            offset,
+        )
         batch = user_ids[offset : offset + batch_size]
         notifications = [
             Notification(

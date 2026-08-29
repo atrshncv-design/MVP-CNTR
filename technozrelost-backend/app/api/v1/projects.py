@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
@@ -46,6 +47,10 @@ from app.services.file_storage import FileStorageError, storage
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 QUESTIONNAIRE_PASS_THRESHOLD = 70.0
+
+# H-01 (TICKET-01, SPEC-01 FR-01): легаси file_ref без слэша без MinIO-проверки.
+# Остальной непустой file_ref проверяется: ProjectDocument.storage_key или storage.get → 404.
+LEGACY_FILE_REF_ALLOWLIST: frozenset[str] = frozenset({"ref-1", "ref-2"})
 
 CONTROL_POINTS_TEMPLATE = [
     (
@@ -500,13 +505,58 @@ async def get_project_detail(
     project_id: int,
     db: DBSession,
     user: CurrentUser,
+    all: bool = Query(  # noqa: A002
+        False, description="M4 TICKET-08: staff ?all=1 → все строки, иначе avg"
+    ),
 ) -> ProjectDetailOut:
     project = await require_project_access(db, project_id, user)
 
-    # Fetch all related data
-    qr_stmt = select(QuestionnaireResult).where(QuestionnaireResult.project_id == project_id)
-    qr_result = await db.execute(qr_stmt)
-    questionnaire_results = qr_result.scalars().all()
+    # Fetch all related data — M-02 + M4 TICKET-08: изоляция + staff avg.
+    # member → свои строки, staff без all → avg per level, staff ?all=1 → все.
+    if not is_cntr_staff(user):
+        qr_stmt_mem = select(QuestionnaireResult).where(
+            QuestionnaireResult.project_id == project_id,
+            QuestionnaireResult.user_id == user.id,
+        ).order_by(QuestionnaireResult.level_id)
+        qr_result_mem = await db.execute(qr_stmt_mem)
+        questionnaire_results = list(qr_result_mem.scalars().all())
+    elif all:
+        qr_stmt_all = (
+            select(QuestionnaireResult)
+            .where(QuestionnaireResult.project_id == project_id)
+            .order_by(QuestionnaireResult.level_id, QuestionnaireResult.user_id)
+        )
+        qr_result_all = await db.execute(qr_stmt_all)
+        questionnaire_results = list(qr_result_all.scalars().all())
+    else:
+        # avg per level для staff без all — масштабируемость при 10k участниках
+        agg_stmt = (
+            select(
+                QuestionnaireResult.level_id,
+                func.avg(QuestionnaireResult.percentage).label("avg_pct"),
+                func.count().label("cnt"),
+            )
+            .where(QuestionnaireResult.project_id == project_id)
+            .group_by(QuestionnaireResult.level_id)
+            .order_by(QuestionnaireResult.level_id)
+        )
+        agg_rows = await db.execute(agg_stmt)
+        tmp_results: list[QuestionnaireResult] = []
+        for level_id, avg_pct, cnt in agg_rows.all():
+            # строим pseudo QuestionnaireResult для _qr_out (avg как percentage)
+            pseudo = QuestionnaireResult(
+                id=0,
+                project_id=project_id,
+                user_id=0,
+                level_id=level_id,
+                checked_items={},
+                percentage=float(avg_pct) if avg_pct is not None else 0.0,
+            )
+            # хак: прикрепим members_count + сбросим user_id в None для avg
+            pseudo.__dict__["members_count"] = int(cnt)
+            pseudo.__dict__["user_id"] = None
+            tmp_results.append(pseudo)
+        questionnaire_results = tmp_results
 
     cp_stmt = select(ControlPoint).where(ControlPoint.project_id == project_id)
     cp_result = await db.execute(cp_stmt)
@@ -662,13 +712,12 @@ async def upload_verification_doc(
             status.HTTP_403_FORBIDDEN,
             "Сначала присоединитесь к проекту по токену TZ-XXXXXX",
         )
-    # N-15: file_ref должен указывать на существующий объект MinIO.
-    # file_ref — storage_key вида projects/{id}/...; если указан путь с "/",
-    # проверяем наличие объекта в хранилище, иначе 404 (fail-closed).
-    # Без "/" — legacy логическая ссылка (например, "ref-1" в тестах) — пропускаем
-    # проверку, чтобы не ломать существующие интеграции, но путь с "/" всегда
-    # валидируется через storage.get.
-    if payload.file_ref and "/" in payload.file_ref:
+    # H-01 (TICKET-01, SPEC-01 FR-01): любой непустой file_ref валидируется.
+    # Легаси-allowlist {"ref-1","ref-2"} — исключение (фикстуры без MinIO-объекта).
+    # Иначе: ProjectDocument.storage_key того же проекта — ок, иначе storage.get → 404.
+    # file_ref="" / None — optional, без проверки.
+    # M-06 (TICKET-10, SPEC-01 FR-04): sync MinIO get_object через to_thread, не блокирует loop.
+    if payload.file_ref and payload.file_ref not in LEGACY_FILE_REF_ALLOWLIST:
         exists = await db.scalar(
             select(ProjectDocument.id).where(
                 ProjectDocument.project_id == project.id,
@@ -677,8 +726,7 @@ async def upload_verification_doc(
         )
         if exists is None:
             try:
-                # storage.get — синхронный, быстрый (MinIO/локальный tmp)
-                storage.get(payload.file_ref)
+                await asyncio.to_thread(storage.get, payload.file_ref)
             except FileStorageError as exc:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND, "Файл не найден в хранилище"
@@ -740,12 +788,19 @@ def _project_out(
 
 
 def _qr_out(r: QuestionnaireResult) -> QuestionnaireResultOut:
+    # M4 TICKET-08: поддержка avg (pseudo id 0) + user_id + members_count
+    members_count = getattr(r, "members_count", None)
+    # если members_count via __dict__ pseudo — достаём
+    if members_count is None and "members_count" in getattr(r, "__dict__", {}):
+        members_count = r.__dict__["members_count"]
     return QuestionnaireResultOut(
         id=r.id,
         project_id=r.project_id,
         level_id=r.level_id,
         checked_items=r.checked_items.get("items", []) if isinstance(r.checked_items, dict) else [],
         percentage=r.percentage,
+        user_id=getattr(r, "user_id", None),
+        members_count=members_count,
     )
 
 
