@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
@@ -9,6 +9,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -28,7 +29,8 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, validates
 
 metadata = MetaData(schema="public")
 
@@ -61,7 +63,7 @@ user_roles_tbl = Table(
 )
 
 
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase):
     metadata = metadata
 
 
@@ -742,10 +744,25 @@ class NioktrCard(Base):
     nioktr_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     state_program: Mapped[str | None] = mapped_column(Text)
     federal_program: Mapped[str | None] = mapped_column(Text)
-    created_date: Mapped[str | None] = mapped_column(String(32))
+    created_date: Mapped[date | None] = mapped_column(Date)
     start_date: Mapped[str | None] = mapped_column(String(32))
     end_date: Mapped[str | None] = mapped_column(String(32))
     is_ai_area: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    @validates("created_date")
+    def _coerce_created_date(self, _key: str, value: Any) -> date | None:
+        """P-14: принимает ISO-строку для обратной совместимости тестов/seed."""
+        if value is None or isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            s = value.strip()[:10]
+            if not s:
+                return None
+            try:
+                return date.fromisoformat(s)
+            except ValueError:
+                return None
+        return value  # type: ignore[no-any-return]
     is_ai_usage: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     executor_name: Mapped[str | None] = mapped_column(Text)
     executor_short_name: Mapped[str | None] = mapped_column(Text)
@@ -878,13 +895,13 @@ class NewsPost(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
     )
 
-    category: Mapped[NewsCategory | None] = relationship(lazy="selectin")
+    category: Mapped[NewsCategory | None] = relationship(lazy="select")
     tags: Mapped[list[NewsTag]] = relationship(
-        secondary=news_post_tags_tbl, lazy="selectin", order_by="NewsTag.name"
+        secondary=news_post_tags_tbl, lazy="select", order_by="NewsTag.name"
     )
     media: Mapped[list[NewsPostMedia]] = relationship(
         back_populates="post",
-        lazy="selectin",
+        lazy="select",
         order_by="NewsPostMedia.sort_order",
         cascade="all, delete-orphan",
     )

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 from datetime import UTC, datetime
 from typing import Annotated
 
@@ -33,10 +34,13 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
+    Request,
+    Response,
     UploadFile,
     status,
 )
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app.core.deps import (
     CurrentUser,
@@ -194,7 +198,10 @@ async def news_feed(
     category: str | None = Query(None, description="slug категории"),
     tag: str | None = Query(None, description="slug тега"),
 ) -> NewsFeedOut:
-    """Публичная лента: только published, published_at DESC."""
+    """Публичная лента: только published, published_at DESC.
+
+    P-16: точечный selectin — только нужные связи (category+tags), не media.
+    """
     base = select(NewsPost).where(NewsPost.status == "published")
     if category:
         base = base.join(
@@ -210,7 +217,10 @@ async def news_feed(
                 # (published_at DESC NULLS LAST): без него планировщик добавляет
                 # Sort поверх Index Scan. Колонка nullable (draft/scheduled),
                 # поэтому выровнен запрос, а не индекс — как в nioktr.py.
-                base.order_by(
+                base.options(
+                    selectinload(NewsPost.category), selectinload(NewsPost.tags)
+                )
+                .order_by(
                     NewsPost.published_at.desc().nullslast(), NewsPost.id.desc()
                 )
                 .offset((page - 1) * per_page)
@@ -230,12 +240,20 @@ async def news_feed(
 
 @router.get("/mine", response_model=list[NewsDetailOut])
 async def my_news(db: DBSession, user: CurrentUser) -> list[NewsDetailOut]:
-    """Свои новости (все статусы) для консоли автора."""
+    """Свои новости (все статусы) для консоли автора.
+
+    P-16: точечный selectin для связей, нужных _detail_out.
+    """
     rows = (
         (
             await db.execute(
                 select(NewsPost)
                 .where(NewsPost.author_id == user.id)
+                .options(
+                    selectinload(NewsPost.category),
+                    selectinload(NewsPost.tags),
+                    selectinload(NewsPost.media),
+                )
                 .order_by(NewsPost.created_at.desc())
             )
         )
@@ -270,7 +288,11 @@ async def admin_news_list(
     rows = (
         (
             await db.execute(
-                base.order_by(NewsPost.created_at.desc(), NewsPost.id.desc())
+                base.options(
+                    selectinload(NewsPost.category),
+                    selectinload(NewsPost.tags),
+                    selectinload(NewsPost.media),
+                ).order_by(NewsPost.created_at.desc(), NewsPost.id.desc())
             )
         )
         .scalars()
@@ -290,13 +312,27 @@ async def admin_news_list(
 
 
 @router.get("/categories", response_model=list[NewsCategoryOut])
-async def news_categories(db: ReadDBSession) -> list[NewsCategoryOut]:
-    """Список категорий для фильтров и редактора (публичный)."""
+async def news_categories(
+    request: Request, response: Response, db: ReadDBSession
+) -> list[NewsCategoryOut] | Response:
+    """Список категорий для фильтров и редактора (публичный).
+
+    P-09: ETag + Cache-Control — справочник редко меняется, кэш 5 минут.
+    """
     rows = (
         (await db.execute(select(NewsCategory).order_by(NewsCategory.sort_order)))
         .scalars()
         .all()
     )
+    etag_payload = "|".join(f"{c.id}:{c.slug}:{c.sort_order}" for c in rows)
+    etag = f'W/"{hashlib.md5(etag_payload.encode()).hexdigest()}"'
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "public, max-age=300"
+    if request.headers.get("if-none-match") == etag:
+        return Response(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            headers={"ETag": etag, "Cache-Control": "public, max-age=300"},
+        )
     return [
         NewsCategoryOut(id=c.id, slug=c.slug, name=c.name) for c in rows
     ]
@@ -308,8 +344,20 @@ async def news_detail(
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> NewsDetailOut:
-    """Полная карточка: анониму/не-автору — только published, иначе 404."""
-    post = await db.get(NewsPost, news_id)
+    """Полная карточка: анониму/не-автору — только published, иначе 404.
+
+    P-16: точечный selectin — грузим связи явно при запросе карточки.
+    """
+    result = await db.execute(
+        select(NewsPost)
+        .where(NewsPost.id == news_id)
+        .options(
+            selectinload(NewsPost.category),
+            selectinload(NewsPost.tags),
+            selectinload(NewsPost.media),
+        )
+    )
+    post = result.scalars().first()
     if post is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Новость не найдена")
     can_view_any = user is not None and (
@@ -378,6 +426,10 @@ async def create_news(
     db.add(post)
     await db.commit()
     await db.refresh(post)
+    # P-16: после refresh связи не загружены (lazy select) — грузим явно для _detail_out
+    await post.awaitable_attrs.tags
+    await post.awaitable_attrs.category
+    await post.awaitable_attrs.media
     return _detail_out(post, user.full_name)
 
 
@@ -408,6 +460,9 @@ async def update_news(
         post.tags = await _ensure_tags(db, fields["tags"] or [])
     await db.commit()
     await db.refresh(post)
+    await post.awaitable_attrs.tags
+    await post.awaitable_attrs.category
+    await post.awaitable_attrs.media
     return _detail_out(post, await _author_name(db, post.author_id))
 
 
@@ -430,6 +485,9 @@ async def publish_news(
         raise HTTPException(status.HTTP_409_CONFLICT, "Некорректный статус")
     await db.commit()
     await db.refresh(post)
+    await post.awaitable_attrs.tags
+    await post.awaitable_attrs.category
+    await post.awaitable_attrs.media
     return _detail_out(post, await _author_name(db, post.author_id))
 
 
@@ -457,6 +515,9 @@ async def schedule_news(
     post.scheduled_at = payload.scheduled_at
     await db.commit()
     await db.refresh(post)
+    await post.awaitable_attrs.tags
+    await post.awaitable_attrs.category
+    await post.awaitable_attrs.media
     return _detail_out(post, await _author_name(db, post.author_id))
 
 
@@ -472,6 +533,9 @@ async def unpublish_news(
     post.published_at = None  # следующая публикация ставит новый published_at
     await db.commit()
     await db.refresh(post)
+    await post.awaitable_attrs.tags
+    await post.awaitable_attrs.category
+    await post.awaitable_attrs.media
     return _detail_out(post, await _author_name(db, post.author_id))
 
 
@@ -481,13 +545,20 @@ async def delete_news(
     db: DBSession,
     user: CurrentUser,
 ) -> None:
-    """Удалить (автор свою, cntr_admin любую); чистит media-файлы."""
+    """Удалить (автор свою, cntr_admin любую); чистит media-файлы.
+
+    P-13: удаление файлов из MinIO — строго после commit БД.
+    Иначе падение commit оставляет строки-сироты без файлов.
+    """
     post = await _get_manageable_post(db, news_id, user)
-    for media in post.media:
-        with contextlib.suppress(FileStorageError):
-            storage.remove(media.storage_key)
+    # P-13/P-16: media грузим явно (awaitable) до удаления, удаление файлов — после commit
+    await post.awaitable_attrs.media
+    media_keys = [m.storage_key for m in post.media]
     await db.delete(post)
     await db.commit()
+    for key in media_keys:
+        with contextlib.suppress(FileStorageError):
+            storage.remove(key)
 
 
 # ── Media (multipart; сигнатурный MIME, лимит 25 МБ) ────────────────────────

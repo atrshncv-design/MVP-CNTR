@@ -10,9 +10,10 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import select
 
 from app.api.v1.projects import can_access_project, get_project_or_404
@@ -57,8 +58,14 @@ def _iso(dt: datetime | None) -> str | None:
 
 
 @router.get("/catalog", response_model=list[AchievementCatalogOut])
-async def achievements_catalog(db: ReadDBSession) -> list[AchievementCatalogOut]:
-    """Публичный каталог достижений (спека §4.2), сортировка sort_order."""
+async def achievements_catalog(
+    request: Request, response: Response, db: ReadDBSession
+) -> list[AchievementCatalogOut] | Response:
+    """Публичный каталог достижений (спека §4.2), сортировка sort_order.
+
+    P-09: ETag + Cache-Control для справочника 66 медалей.
+    Клиент шлёт If-None-Match → 304 без тела, иначе 200 с ETag.
+    """
     rows = (
         (
             await db.execute(
@@ -68,6 +75,18 @@ async def achievements_catalog(db: ReadDBSession) -> list[AchievementCatalogOut]
         .scalars()
         .all()
     )
+    # ETag по содержимому каталога (id:slug:updated_at) — детерминирован, кэш 5 минут
+    etag_payload = "|".join(
+        f"{a.id}:{a.slug}:{a.updated_at.isoformat() if a.updated_at else ''}" for a in rows
+    )
+    etag = f'W/"{hashlib.md5(etag_payload.encode()).hexdigest()}"'
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "public, max-age=300"
+    if request.headers.get("if-none-match") == etag:
+        return Response(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            headers={"ETag": etag, "Cache-Control": "public, max-age=300"},
+        )
     return [
         AchievementCatalogOut(
             id=a.id,

@@ -13,9 +13,13 @@ from __future__ import annotations
 import json
 import logging
 import re
+from contextvars import ContextVar
 from datetime import UTC, datetime
 
 from app.core.config import settings
+
+# P-10: корреляционный идентификатор запроса для сквозной трассировки
+request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 # Ключи, значения которых маскируются в тексте лога (регистронезависимо).
 # group(1) — ключ, group(2) — разделитель, group(3) — значение.
@@ -64,6 +68,12 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
             "message": redact(record.getMessage()),
         }
+        # P-10: прокидываем X-Request-ID в каждую строку лога, если установлен
+        req_id = request_id_ctx.get()
+        if req_id:
+            payload["request_id"] = req_id
+        elif hasattr(record, "request_id"):
+            payload["request_id"] = record.request_id  # noqa: B009
         if record.exc_info:
             payload["exc"] = redact(self.formatException(record.exc_info))
         for key, value in record.__dict__.items():

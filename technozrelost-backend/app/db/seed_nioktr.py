@@ -45,6 +45,19 @@ def _iso_clean(value: Any) -> str | None:
     return s[:10] if len(s) >= 10 else s
 
 
+def _date_clean(value: Any) -> Any:
+    """P-14: created_date теперь DATE — конвертирует ISO-строку в date или None."""
+    s = _iso_clean(value)
+    if s is None:
+        return None
+    try:
+        from datetime import date
+
+        return date.fromisoformat(s)
+    except ValueError:
+        return None
+
+
 async def seed(input_path: Path, drop_old_technologies: bool = True) -> None:
     data = json.loads(input_path.read_text(encoding="utf-8"))
     cards = data.get("cards", [])
@@ -131,7 +144,7 @@ async def seed(input_path: Path, drop_old_technologies: bool = True) -> None:
                 nioktr_types=card.get("nioktr_types") or [],
                 state_program=card.get("state_program"),
                 federal_program=card.get("federal_program"),
-                created_date=_iso_clean(card.get("created_date")),
+                created_date=_date_clean(card.get("created_date")),
                 start_date=_iso_clean(card.get("start_date")),
                 end_date=_iso_clean(card.get("end_date")),
                 is_ai_area=bool(card.get("is_ai_area")),

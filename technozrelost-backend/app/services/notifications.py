@@ -104,16 +104,41 @@ async def notify_news_published(db: DBSession, news_id: int, title: str) -> int:
 
     Каждому активному пользователю — Notification + outbox-запись (project
     scope, delivered) в той же транзакции (transactional outbox).
+    P-15: батчами по 500 — одна транзакция, но flush батчами, чтобы тик
+    не держал N записей в памяти и не блокировал пул при росте базы.
     Возвращает число созданных уведомлений.
     """
     rows = await db.execute(select(User.id).where(User.is_active.is_(True)))
     user_ids = list(rows.scalars().all())
-    for user_id in user_ids:
-        await notify_user(
-            db,
-            user_id,
-            "news_published",
-            f"Новость: {title}",
-            {"news_id": news_id, "title": title},
-        )
-    return len(user_ids)
+    if not user_ids:
+        return 0
+    # P-15: батч 500 — баланс памяти/латентности для пилотной базы
+    batch_size = 500
+    total = 0
+    for offset in range(0, len(user_ids), batch_size):
+        batch = user_ids[offset : offset + batch_size]
+        notifications = [
+            Notification(
+                user_id=uid,
+                type="news_published",
+                title=f"Новость: {title}",
+                payload={"news_id": news_id, "title": title},
+            )
+            for uid in batch
+        ]
+        db.add_all(notifications)
+        await db.flush()
+        outboxes = [
+            NotificationOutbox(
+                notification_id=notification.id,
+                target_scope="project",
+                manager_id=notification.user_id,
+                status="delivered",
+                payload={"news_id": news_id, "title": title},
+            )
+            for notification in notifications
+        ]
+        db.add_all(outboxes)
+        await db.flush()
+        total += len(batch)
+    return total

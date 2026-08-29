@@ -116,6 +116,14 @@ def _enforce_registry_limit(request: Request) -> None:
 
 
 def _card_out(card: NioktrCard) -> NioktrCardOut:
+    # P-14: created_date теперь DATE — сериализуем в ISO-строку для контракта фронта
+    created_date_val: str | None
+    if card.created_date is None:
+        created_date_val = None
+    elif hasattr(card.created_date, "isoformat"):
+        created_date_val = card.created_date.isoformat()
+    else:
+        created_date_val = str(card.created_date)
     return NioktrCardOut(
         id=card.id,
         registration_number=card.registration_number,
@@ -125,7 +133,7 @@ def _card_out(card: NioktrCard) -> NioktrCardOut:
         nioktr_types=card.nioktr_types or [],
         state_program=card.state_program,
         federal_program=card.federal_program,
-        created_date=card.created_date,
+        created_date=created_date_val,
         start_date=card.start_date,
         end_date=card.end_date,
         is_ai_area=card.is_ai_area,

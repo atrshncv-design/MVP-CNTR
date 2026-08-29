@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
@@ -43,7 +44,7 @@ from app.api.v1.technologies import router as technologies_router
 from app.api.v1.users import router as users_router
 from app.core.config import settings
 from app.core.database import SessionLocal
-from app.core.logging_config import setup_logging
+from app.core.logging_config import request_id_ctx, setup_logging
 from app.services.metrics import PrometheusMetricsMiddleware, install_db_listeners
 from app.services.news_scheduler import (
     SCHEDULER_INTERVAL_SECONDS,
@@ -166,6 +167,62 @@ async def security_headers(
     return response
 
 
+class RequestIDMiddleware:
+    """P-10: корреляционный идентификатор запроса (сквозная трассировка).
+
+    Читает X-Request-ID из входящих заголовков, иначе генерирует UUID4 hex.
+    Кладёт в ContextVar (логи) и отдаёт в ответном заголовке X-Request-ID.
+    Чистый ASGI — не буферизует стримы и не зависит от BaseHTTPMiddleware.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = Headers(scope=scope)
+        req_id = headers.get("x-request-id")
+        if not req_id or not req_id.strip():  # noqa: SIM108
+            req_id = uuid.uuid4().hex
+        else:
+            req_id = req_id.strip()[:64]
+        token = request_id_ctx.set(req_id)
+
+        async def send_with_id(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                # Starlette ожидает headers как list[tuple[bytes,bytes]]
+                hdrs = list(message.get("headers") or [])
+                hdrs.append((b"x-request-id", req_id.encode("latin-1")))
+                message["headers"] = hdrs
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_with_id)
+        finally:
+            request_id_ctx.reset(token)
+
+
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """P-11: глобальный handler — 500 с request_id, лог с тем же ID.
+
+    Регистрируется на Exception (fallback); HTTPException обрабатывается
+    отдельным handler'ом FastAPI и сюда не попадает.
+    """
+    req_id = request_id_ctx.get()
+    if not req_id:
+        req_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+    logger.exception(
+        "unhandled exception request_id=%s path=%s", req_id, request.url.path, exc_info=exc
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Внутренняя ошибка сервера", "request_id": req_id},
+        headers={"X-Request-ID": req_id},
+    )
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Technozrelost Backend",
@@ -191,6 +248,10 @@ def create_app() -> FastAPI:
         if endpoint is not None and path is not None:
             route_templates[id(endpoint)] = path
     app.add_middleware(PrometheusMetricsMiddleware, route_templates=route_templates)
+    # P-10: X-Request-ID — outermost, чтобы покрыть метрики и exception_handler
+    app.add_middleware(RequestIDMiddleware)
+    # P-11: глобальный handler — 500 с request_id (проверяется в create_app)
+    app.add_exception_handler(Exception, unhandled_exception_handler)
     install_db_listeners()
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
