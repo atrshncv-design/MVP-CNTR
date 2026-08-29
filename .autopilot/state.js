@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-08-29T16:03:00+04:00",
-  "updatedAt": "2026-08-29T17:00:00+04:00",
-  "finishedAt": null,
+  "updatedAt": "2026-08-29T21:30:00+04:00",
+  "finishedAt": "2026-08-29T21:30:00+04:00",
   "stages": [
     {
       "id": "preflight",
@@ -46,27 +46,27 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "pending",
-      "startedAt": null,
-      "finishedAt": null
+      "status": "done",
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00"
     },
     {
       "id": "review",
-      "status": "pending",
-      "startedAt": null,
-      "finishedAt": null
+      "status": "done",
+      "startedAt": "2026-08-29T21:30:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00"
     },
     {
       "id": "final",
-      "status": "pending",
-      "startedAt": null,
-      "finishedAt": null
+      "status": "done",
+      "startedAt": "2026-08-29T21:30:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00"
     }
   ],
   "requirements": {
     "total": 20,
-    "done": 0,
-    "inTicket": 20,
+    "done": 20,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -79,15 +79,15 @@ window.STATE =
       "requirements": [
         "R02"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 1,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "02",
@@ -95,19 +95,19 @@ window.STATE =
       "requirements": [
         "R08"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 3,
       "blockedBy": [
         "01",
         "03"
       ],
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "03",
@@ -115,15 +115,15 @@ window.STATE =
       "requirements": [
         "R03"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 1,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "04",
@@ -131,18 +131,18 @@ window.STATE =
       "requirements": [
         "R11"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
       "blockedBy": [
         "03"
       ],
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "05",
@@ -150,15 +150,15 @@ window.STATE =
       "requirements": [
         "R04"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 1,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "06",
@@ -166,15 +166,15 @@ window.STATE =
       "requirements": [
         "R05"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 1,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "07",
@@ -182,15 +182,15 @@ window.STATE =
       "requirements": [
         "R15"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 3,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "08",
@@ -198,18 +198,18 @@ window.STATE =
       "requirements": [
         "R06"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
       "blockedBy": [
         "03"
       ],
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "09",
@@ -217,15 +217,15 @@ window.STATE =
       "requirements": [
         "R14"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "10",
@@ -233,15 +233,15 @@ window.STATE =
       "requirements": [
         "R10"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "11",
@@ -249,15 +249,15 @@ window.STATE =
       "requirements": [
         "R09"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "12",
@@ -265,15 +265,15 @@ window.STATE =
       "requirements": [
         "R13"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 3,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "13",
@@ -281,15 +281,15 @@ window.STATE =
       "requirements": [
         "R12"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     },
     {
       "id": "14",
@@ -297,7 +297,7 @@ window.STATE =
       "requirements": [
         "R07"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 4,
       "blockedBy": [
         "01",
@@ -307,18 +307,18 @@ window.STATE =
         "06",
         "08"
       ],
-      "startedAt": null,
-      "finishedAt": null,
+      "startedAt": "2026-08-29T17:00:00+04:00",
+      "finishedAt": "2026-08-29T21:30:00+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 362,
         "failed": 0
       },
-      "commit": null
+      "commit": "65ea96c"
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 0,
+    "passed": 362,
     "failed": 0
   },
   "debt": {
@@ -341,7 +341,7 @@ window.STATE =
     "craft": null
   },
   "blind": {
-    "status": "pending",
-    "summary": "M4 plan 14 находок 6 спек 14 тикетов — план готов, build pending"
+    "status": "pass",
+    "summary": "M4 14/14 done, H-01/H-02/M-01..M-05/L-01..L-04/I-01..I-03 closed, 362 backend 39 frontend green, ruff/mypy pass, external smoke — pending прод-хост (stubs)"
   }
 }
