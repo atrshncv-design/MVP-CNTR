@@ -61,6 +61,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    networks:
+      - tz-app-db
 
   # ── PostgreSQL Replica (чтение: реестры, каталоги) ────────────────────────
   db-replica:
@@ -101,10 +103,12 @@ services:
       timeout: 5s
       retries: 20
       start_period: 30s
+    networks:
+      - tz-app-db
 
   # ── MinIO (файлы проектов; тикет 06) ──────────────────────────────────────
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: tz-prod-minio
     restart: unless-stopped
     logging:
@@ -123,10 +127,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+    networks:
+      - tz-app-db
 
   # ── ClamAV (антивирусная проверка файлов; тикет 06) ───────────────────────
   clamav:
-    image: mkodockx/docker-clamav:alpine
+    image: mkodockx/docker-clamav:1.4.3-r0-alpine
     container_name: tz-prod-clamav
     restart: unless-stopped
     logging:
@@ -147,6 +153,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - tz-app-db
 
   # ── Redis (зарезервирован: кэш/очереди/rate limiting; спека §7.4) ─────────
   redis:
@@ -158,14 +166,18 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD обязателен}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD обязателен}
     volumes:
       - redis-prod-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - tz-app-db
 
   # ── Backend: FastAPI, 2 реплики (stateless, масштабируется) ───────────────
   backend:
@@ -209,7 +221,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET:-technozrelost}
-      REDIS_URL: redis://redis:6379/0
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD обязателен}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
       CLAMAV_ENABLED: "true"
@@ -267,6 +280,9 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    networks:
+      - tz-app-db
+      - tz-monitoring
 
   # ── Ежедневный backup sidecar (INF-01/04) ───────────────────────────────────
   backup-timer:
@@ -323,6 +339,8 @@ services:
       - ./mc-host-url.py:/usr/local/bin/tz-mc-host-url.py:ro
       - ./cron/backup-timer.sh:/usr/local/bin/tz-backup-timer.sh:ro
       - ./cron/check-rclone-crypt.sh:/usr/local/bin/tz-check-rclone-crypt.sh:ro
+    networks:
+      - tz-app-db
 
   # ── Непрерывная offsite-синхронизация WAL (INF-02/04) ───────────────────────
   wal-offsite:
@@ -358,6 +376,8 @@ services:
       - rclone-config-prod:/rclone-config:ro
       - ./cron/wal-offsite-sync.sh:/usr/local/bin/tz-wal-offsite-sync.sh:ro
       - ./cron/check-rclone-crypt.sh:/usr/local/bin/tz-check-rclone-crypt.sh:ro
+    networks:
+      - tz-app-db
 
   # ── Алертер: readiness, replica/slot, backup, disk, offsite ────────────────
   alerter:
@@ -420,6 +440,9 @@ services:
       - wal-archive-prod-data:/wal-archive:ro
       - alerter-state-prod-data:/state
       - ./alerter/alerter.py:/usr/local/bin/tz-alerter.py:ro
+    networks:
+      - tz-app-db
+      - tz-monitoring
 
   # ── Frontend: Next.js (standalone) ─────────────────────────────────────────
   frontend:
@@ -454,6 +477,9 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    networks:
+      - tz-edge
+      - tz-app-db
 
   # ── Nginx: балансировщик перед backend (реплики) и frontend ───────────────
   nginx:
@@ -481,6 +507,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - tz-edge
+      - tz-app-db
 
   # ── Prometheus: сбор метрик /api/v1/metrics (тикет 20) ────────────────────
   prometheus:
@@ -506,6 +535,9 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+    networks:
+      - tz-app-db
+      - tz-monitoring
 
   # ── Grafana: дашборды поверх Prometheus (тикет 20) ─────────────────────────
   # UI только внутри compose-сети; с хоста использовать SSH-туннель (README).
@@ -538,6 +570,8 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    networks:
+      - tz-monitoring
 
 volumes:
   pg-prod-primary-data:
@@ -554,8 +588,19 @@ volumes:
   alerter-state-prod-data:
 
 networks:
-  default:
-    name: tz-prod-network
+  # INF-15: раздельные сети — edge (публичный вход), app-db (приложение+БД/хранилища), monitoring (наблюдаемость).
+  tz-app-db:
+    name: tz-app-db
     ipam:
       config:
         - subnet: 172.30.0.0/24
+  tz-edge:
+    name: tz-edge
+    ipam:
+      config:
+        - subnet: 172.30.10.0/24
+  tz-monitoring:
+    name: tz-monitoring
+    ipam:
+      config:
+        - subnet: 172.30.20.0/24

@@ -63,3 +63,9 @@ async def get_read_db() -> AsyncGenerator[AsyncSession, None]:
     factory = read_session_factory or SessionLocal
     async with factory() as session:
         yield session
+
+
+# INF-10: метрика лага реплики (pg_stat_replication) — читается в /api/v1/metrics.
+# Запрос: SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) FROM pg_stat_replication
+# и pg_replication_slots.retained_bytes — отдаются как technozrelost_replica_lag_bytes
+# и technozrelost_replication_slot_retained_bytes (см. app/services/metrics.py).

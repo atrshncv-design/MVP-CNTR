@@ -158,8 +158,8 @@ warn_placeholder() {
   local value
   value="$(env_value "$key")"
   case "$value" in
-    ""|change_me*)
-      echo "ВНИМАНИЕ: $key оставлен заглушкой — перед production-деплоем заполните реальным значением."
+    ""|change_me*|*"localhost"*|*"127.0.0.1"*|*"0.0.0.0"*)
+      echo "ВНИМАНИЕ: $key оставлен заглушкой ($value) — перед production-деплоем заполните реальным доменом."
       ;;
   esac
 }
@@ -169,10 +169,12 @@ prepare_environment() {
   # JWT/NEXTAUTH_SECRET, если заглушка есть только у второго ключа.
   ensure_generated_secret JWT_SECRET
   ensure_generated_secret NEXTAUTH_SECRET
+  ensure_generated_secret REDIS_PASSWORD
   require_strong_auth_secret JWT_SECRET
   require_strong_auth_secret NEXTAUTH_SECRET
   require_production_secret POSTGRES_PASSWORD
   require_production_secret MINIO_SECRET_KEY
+  require_production_secret REDIS_PASSWORD
   require_grafana_password
   require_replication_password
 

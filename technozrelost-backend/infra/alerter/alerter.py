@@ -372,6 +372,69 @@ def check_clamav_availability(
     return CheckResult("clamav_availability", OK, "response=PONG")
 
 
+def check_clamav_cvd_age(
+    host: str,
+    port: int,
+    max_age_seconds: float = 7 * 24 * 3600,
+    timeout_seconds: float = 5.0,
+    connector: Callable[..., Any] = socket.create_connection,
+    now: datetime | None = None,
+) -> CheckResult:
+    """INF-18: проверяет свежесть CVD-баз ClamAV через VERSION.
+
+    VERSION возвращает строку вида ``ClamAV 1.4.1/27200/Sun Sep 15 02:00:02 2024``.
+    Если возраст превышает max_age_seconds — critical. Фолбэк на файловый
+    mtime невозможен из контейнера alerter без общего тома, поэтому сетевая
+    проверка — единственная. При недоступности clamd — critical (fail-closed).
+    """
+    import re
+
+    connection: Any = None
+    try:
+        connection = connector((host, port), timeout=timeout_seconds)
+        connection.sendall(b"VERSION\n")
+        # VERSION ответ может быть длиннее PONG, читаем до 4К
+        connection.settimeout(timeout_seconds)  # type: ignore[attr-defined]
+        data = connection.recv(4096)
+    except (AttributeError, OSError, TimeoutError, ValueError):
+        return CheckResult("clamav_cvd_age", CRITICAL, "endpoint unavailable")
+    finally:
+        if connection is not None:
+            close = getattr(connection, "close", None)
+            if close is not None:
+                with suppress(Exception):
+                    close()
+    try:
+        text = data.decode(errors="replace").strip()  # type: ignore[union-attr]
+        # Ищем дату после второго '/'
+        m = re.search(r"/\s*([A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}.*?20\d{2})", text)
+        if not m:
+            return CheckResult("clamav_cvd_age", CRITICAL, "version parse failed")
+        date_str = m.group(1).strip()
+        parsed: datetime | None = None
+        for fmt in ("%a %b %d %H:%M:%S %Y", "%a %b %d %H:%M:%S %Z %Y"):
+            try:
+                parsed = datetime.strptime(date_str, fmt).replace(tzinfo=UTC)
+                break
+            except ValueError:
+                continue
+        if parsed is None:
+            return CheckResult("clamav_cvd_age", CRITICAL, "version parse failed")
+        current = _utc(now or datetime.now(UTC))
+        age_seconds = (current - parsed).total_seconds()
+        if age_seconds < 0:
+            return CheckResult("clamav_cvd_age", CRITICAL, "timestamp in future")
+        if age_seconds > max_age_seconds:
+            return CheckResult(
+                "clamav_cvd_age",
+                CRITICAL,
+                f"age={age_seconds:.0f}s exceeds {max_age_seconds:.0f}s",
+            )
+        return CheckResult("clamav_cvd_age", OK, f"age={age_seconds:.0f}s")
+    except Exception:  # noqa: BLE001
+        return CheckResult("clamav_cvd_age", CRITICAL, "version parse failed")
+
+
 async def check_replica_and_slot(config: AlerterConfig) -> list[CheckResult]:
     """Проверяет отдельным соединением реплику и слот на Primary."""
     try:
@@ -648,17 +711,26 @@ async def collect_checks(config: AlerterConfig) -> list[CheckResult]:
         config.clamav_port,
         config.probe_timeout_seconds,
     )
+    cvd_task = asyncio.to_thread(
+        check_clamav_cvd_age,
+        config.clamav_host,
+        config.clamav_port,
+        7 * 24 * 3600,
+        config.probe_timeout_seconds,
+    )
     replication_task = check_replica_and_slot(config)
-    readiness, minio, clamav, replication = await asyncio.gather(
+    readiness, minio, clamav, cvd_age, replication = await asyncio.gather(
         readiness_task,
         minio_task,
         clamav_task,
+        cvd_task,
         replication_task,
     )
     return [
         readiness,
         minio,
         clamav,
+        cvd_age,
         *replication,
         check_backup_freshness(
             config.freshness_marker,

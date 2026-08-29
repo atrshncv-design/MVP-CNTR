@@ -68,8 +68,21 @@ def _fmt(value: float) -> str:
     return f"{value:.6f}"
 
 
-def render(queue_pending: int = 0, storage_up: int = 0, storage_objects: int = 0) -> str:
-    """Prometheus text exposition (version 0.0.4)."""
+def render(
+    queue_pending: int = 0,
+    storage_up: int = 0,
+    storage_objects: int = 0,
+    replica_lag_bytes: int = 0,
+    slot_retained_bytes: int = 0,
+    clamav_cvd_age_seconds: float | None = None,
+    storage_versioning: int = 0,
+) -> str:
+    """Prometheus text exposition (version 0.0.4).
+
+    INF-10: replica_lag/slot_retained из pg_stat_replication/pg_replication_slots.
+    INF-18: clamav_cvd_age_seconds — возраст CVD-баз ClamAV (секунды, -1 если неизвестно).
+    INF-19: storage_versioning — версионирование бакета MinIO (1/0).
+    """
     with _lock:
         http_total = sorted(_http_total.items())
         duration_snapshots = {
@@ -134,6 +147,25 @@ def render(queue_pending: int = 0, storage_up: int = 0, storage_objects: int = 0
     lines.append("# HELP technozrelost_storage_objects Количество объектов в бакете MinIO.")
     lines.append("# TYPE technozrelost_storage_objects gauge")
     lines.append(f"technozrelost_storage_objects {storage_objects}")
+
+    # INF-10: лаг реплики (pg_stat_replication)
+    lines.append("# HELP technozrelost_replica_lag_bytes Лаг реплики, байт.")
+    lines.append("# TYPE technozrelost_replica_lag_bytes gauge")
+    lines.append(f"technozrelost_replica_lag_bytes {replica_lag_bytes}")
+    lines.append("# HELP technozrelost_replication_slot_retained_bytes Удержанный WAL, байт.")
+    lines.append("# TYPE technozrelost_replication_slot_retained_bytes gauge")
+    lines.append(f"technozrelost_replication_slot_retained_bytes {slot_retained_bytes}")
+
+    # INF-18: возраст CVD-баз ClamAV
+    lines.append("# HELP technozrelost_clamav_cvd_age_seconds Возраст CVD, сек (-1=неизвестно).")
+    lines.append("# TYPE technozrelost_clamav_cvd_age_seconds gauge")
+    cvd_value = -1 if clamav_cvd_age_seconds is None else f"{clamav_cvd_age_seconds:.0f}"
+    lines.append(f"technozrelost_clamav_cvd_age_seconds {cvd_value}")
+
+    # INF-19: версионирование MinIO
+    lines.append("# HELP technozrelost_storage_versioning Версионирование MinIO (1/0).")
+    lines.append("# TYPE technozrelost_storage_versioning gauge")
+    lines.append(f"technozrelost_storage_versioning {storage_versioning}")
 
     return "\n".join(lines) + "\n"
 

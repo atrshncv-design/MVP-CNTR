@@ -13,8 +13,12 @@ import asyncio
 import contextlib
 import hashlib
 import io
+import re
+import socket
+import time
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -35,6 +39,45 @@ ALLOWED_MIME: dict[str, tuple[bytes, str]] = {
 }
 
 MAX_FILE_SIZE = settings.max_file_size_mb * 1024 * 1024
+
+# INF-18: возраст CVD-баз ClamAV (сигнатур). Порог 7 дней — warning в алертере.
+CVD_MAX_AGE_SECONDS = 7 * 24 * 3600
+CLAMAV_CVD_DIR = Path("/var/lib/clamav")
+
+
+def _cvd_files_age_seconds() -> float | None:
+    """Возраст самой свежей CVD-базы на диске (только если том смонтирован).
+
+    В контейнере backend том clamav обычно не монтируется — тогда None, и
+    возраст берётся через clamd VERSION (сеть). Файловый путь остаётся для
+    локальной диагностики и тестов.
+    """
+    try:
+        if not CLAMAV_CVD_DIR.is_dir():
+            return None
+        cvd_files = list(CLAMAV_CVD_DIR.glob("*.cvd")) + list(CLAMAV_CVD_DIR.glob("*.cld"))
+        if not cvd_files:
+            return None
+        latest_mtime = max(p.stat().st_mtime for p in cvd_files)
+        return time.time() - latest_mtime
+    except Exception:  # noqa: BLE001 -- метрики не должны падать
+        return None
+
+
+def _ensure_bucket_versioning(client: Any) -> None:
+    """INF-19: включает версионирование бакета MinIO (best-effort)."""
+    try:
+        from minio.versioningconfig import VersioningConfig
+
+        try:
+            cfg = client.get_bucket_versioning(settings.minio_bucket)
+            if getattr(cfg, "status", None) == "Enabled":
+                return
+        except Exception:  # noqa: BLE001 -- отсутствие версионирования не ошибка
+            pass
+        client.set_bucket_versioning(settings.minio_bucket, VersioningConfig(status="Enabled"))
+    except Exception:  # noqa: BLE001 -- метрики/инициализация не должны падать
+        pass
 
 
 class FileStorageError(Exception):
@@ -159,6 +202,9 @@ class ObjectStorage:
                 )
                 if not self._client.bucket_exists(settings.minio_bucket):
                     self._client.make_bucket(settings.minio_bucket)
+                    _ensure_bucket_versioning(self._client)
+                else:
+                    _ensure_bucket_versioning(self._client)
             except Exception as exc:  # noqa: BLE001
                 raise FileStorageError(f"MinIO недоступен: {exc}") from exc
         return self._client
@@ -223,6 +269,50 @@ class ObjectStorage:
             return sum(1 for _ in client.list_objects(settings.minio_bucket, recursive=True))
         except Exception:  # noqa: BLE001 -- метрики не должны падать
             return 0
+
+    def bucket_versioning_enabled(self) -> bool:
+        """INF-19: включено ли версионирование бакета (для метрики)."""
+        if self._local_root is not None:
+            return True  # локальный диск — версионирование не требуется в тестах
+        try:
+            client = self._minio()
+            cfg = client.get_bucket_versioning(settings.minio_bucket)
+            return getattr(cfg, "status", None) == "Enabled"
+        except Exception:  # noqa: BLE001
+            return False
+
+
+def clamav_cvd_age_seconds_sync() -> float | None:
+    """INF-18: возраст CVD синхронно (для threadpool)."""
+    age = _cvd_files_age_seconds()
+    if age is not None:
+        return age
+    # Fallback: синхронный TCP VERSION (блокирующий, для threadpool)
+    try:
+        with socket.create_connection(
+            (settings.clamav_host, settings.clamav_port), timeout=2
+        ) as conn:
+            conn.sendall(b"VERSION\n")
+            conn.settimeout(2)
+            data = conn.recv(4096)
+        text = data.decode(errors="replace").strip()
+        m = re.search(r"/\s*([A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}.*?20\d{2})", text)
+        if m:
+            date_str = m.group(1).strip()
+            for fmt in ("%a %b %d %H:%M:%S %Y", "%a %b %d %H:%M:%S %Z %Y"):
+                try:
+                    dt = datetime.strptime(date_str, fmt).replace(tzinfo=UTC)
+                    return (datetime.now(UTC) - dt).total_seconds()
+                except Exception:
+                    continue
+        return None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+async def clamav_cvd_age_seconds() -> float | None:
+    """INF-18: асинхронный возраст CVD (сеть + файл в threadpool)."""
+    return await asyncio.to_thread(clamav_cvd_age_seconds_sync)
 
 
 storage = ObjectStorage()
