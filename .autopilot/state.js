@@ -1,71 +1,71 @@
 window.STATE =
 {
-  "slug": "m1-5k-stabilization",
-  "dir": "2026-08-28-m1-5k-stabilization",
-  "title": "M1 — Стабилизация 5К (24 P1) + дедуп старых тикетов",
+  "slug": "m2-p2-hardening",
+  "dir": "2026-08-29-m2-p2-hardening",
+  "title": "M2 — P2 харденинг 27 пунктов (август)",
   "mode": "semi",
   "depth": "normal",
   "polish": null,
   "tier": "T2",
-  "briefFile": "2026-08-28-brief.md",
+  "briefFile": "2026-08-29-brief.md",
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
-  "startedAt": "2026-08-28T18:52:31+04:00",
-  "updatedAt": "2026-08-28T20:20:00+04:00",
-  "finishedAt": "2026-08-28T20:20:00+04:00",
+  "startedAt": "2026-08-29T10:11:15+04:00",
+  "updatedAt": "2026-08-29T10:55:00+04:00",
+  "finishedAt": "2026-08-29T10:55:00+04:00",
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-08-28T18:52:31+04:00",
-      "finishedAt": "2026-08-28T18:55:00+04:00"
+      "startedAt": "2026-08-29T10:11:15+04:00",
+      "finishedAt": "2026-08-29T10:15:00+04:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "startedAt": "2026-08-28T18:55:00+04:00",
-      "finishedAt": "2026-08-28T18:58:00+04:00"
+      "startedAt": "2026-08-29T10:15:00+04:00",
+      "finishedAt": "2026-08-29T10:20:00+04:00"
     },
     {
       "id": "briefing",
       "status": "done",
-      "startedAt": "2026-08-28T18:58:00+04:00",
-      "finishedAt": "2026-08-28T18:58:00+04:00"
+      "startedAt": "2026-08-29T10:20:00+04:00",
+      "finishedAt": "2026-08-29T10:20:00+04:00"
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-08-28T18:58:00+04:00",
-      "finishedAt": "2026-08-28T19:00:00+04:00"
+      "startedAt": "2026-08-29T10:20:00+04:00",
+      "finishedAt": "2026-08-29T10:25:00+04:00"
     },
     {
       "id": "plan",
       "status": "done",
-      "startedAt": "2026-08-28T19:00:00+04:00",
-      "finishedAt": "2026-08-28T19:05:00+04:00"
+      "startedAt": "2026-08-29T10:25:00+04:00",
+      "finishedAt": "2026-08-29T10:30:00+04:00"
     },
     {
       "id": "build",
       "status": "done",
-      "startedAt": "2026-08-28T19:05:00+04:00",
-      "finishedAt": "2026-08-28T20:20:00+04:00"
+      "startedAt": "2026-08-29T10:30:00+04:00",
+      "finishedAt": "2026-08-29T10:55:00+04:00"
     },
     {
       "id": "review",
       "status": "done",
-      "startedAt": "2026-08-28T19:55:00+04:00",
-      "finishedAt": "2026-08-28T20:20:00+04:00"
+      "startedAt": "2026-08-29T10:55:00+04:00",
+      "finishedAt": "2026-08-29T10:55:00+04:00"
     },
     {
       "id": "final",
       "status": "done",
-      "startedAt": "2026-08-28T20:20:00+04:00",
-      "finishedAt": "2026-08-28T20:20:00+04:00"
+      "startedAt": "2026-08-29T10:55:00+04:00",
+      "finishedAt": "2026-08-29T10:55:00+04:00"
     }
   ],
   "requirements": {
-    "total": 24,
-    "done": 24,
+    "total": 28,
+    "done": 28,
     "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
@@ -75,26 +75,27 @@ window.STATE =
   "tickets": [
     {
       "id": "01",
-      "title": "LLM-гейтвей (N-05)",
+      "title": "Токены/файлы (N-09..12)",
       "requirements": [
-        "R03"
+        "R02",
+        "R03",
+        "R04",
+        "R05"
       ],
       "status": "done",
       "wave": 1,
-      "startedAt": "2026-08-28T19:10:00+04:00",
-      "finishedAt": "2026-08-28T19:15:00+04:00",
+      "startedAt": "2026-08-29T10:35:00+04:00",
+      "finishedAt": "2026-08-29T10:50:00+04:00",
       "tests": {
-        "passed": 7,
+        "passed": 347,
         "failed": 0
       },
-      "commit": "e0a8312"
+      "commit": "4c92569"
     },
     {
       "id": "02",
-      "title": "Throttle/bcrypt/SSE/Scheduler (N-07,N-08,Q-01,P-02,P-03,P-04,N-03)",
+      "title": "Комменты/файлы/опросник/зависимости (N-13..17)",
       "requirements": [
-        "R04",
-        "R05",
         "R06",
         "R07",
         "R08",
@@ -103,61 +104,39 @@ window.STATE =
       ],
       "status": "done",
       "wave": 1,
-      "startedAt": "2026-08-28T19:10:00+04:00",
-      "finishedAt": "2026-08-28T19:25:00+04:00",
+      "startedAt": "2026-08-29T10:35:00+04:00",
+      "finishedAt": "2026-08-29T10:50:00+04:00",
       "tests": {
-        "passed": 341,
+        "passed": 347,
         "failed": 0
       },
-      "commit": "c8a7470",
-      "concerns": [
-        "craft: fallback LRU O(n), duplicated to_thread, realtime leak"
-      ]
+      "commit": "cb40c69"
     },
     {
       "id": "03",
-      "title": "Frontend auth + audit (FE-03,FE-04)",
+      "title": "CSP (FE-05,06)",
       "requirements": [
         "R11",
         "R12"
       ],
       "status": "done",
       "wave": 1,
-      "startedAt": "2026-08-28T19:10:00+04:00",
-      "finishedAt": "2026-08-28T19:30:00+04:00",
+      "startedAt": "2026-08-29T10:35:00+04:00",
+      "finishedAt": "2026-08-29T10:50:00+04:00",
       "tests": {
-        "passed": 39,
+        "passed": 347,
         "failed": 0
       },
-      "commit": "538196e"
+      "commit": "0e85e50"
     },
     {
       "id": "04",
-      "title": "Индексы и пагинации 5К 20 (P-05,P-06,P-07,P-08)",
+      "title": "Инфра P2 (INF-10..20)",
       "requirements": [
         "R13",
         "R14",
         "R15",
-        "R16"
-      ],
-      "status": "done",
-      "wave": 1,
-      "startedAt": "2026-08-28T19:20:00+04:00",
-      "finishedAt": "2026-08-28T20:20:00+04:00",
-      "tests": {
-        "passed": 6,
-        "failed": 0
-      },
-      "commit": "repair-04",
-      "concerns": [
-        "craft: keyset ordering, executors Python slice, duplicate indexes"
-      ],
-      "repairs": 1
-    },
-    {
-      "id": "05",
-      "title": "Инфра лимиты/логи/nginx/DR (INF-08,09,12,13,N-18)",
-      "requirements": [
+        "R16",
         "R17",
         "R18",
         "R19",
@@ -166,57 +145,38 @@ window.STATE =
       ],
       "status": "done",
       "wave": 1,
-      "startedAt": "2026-08-28T19:20:00+04:00",
-      "finishedAt": "2026-08-28T19:40:00+04:00",
+      "startedAt": "2026-08-29T10:45:00+04:00",
+      "finishedAt": "2026-08-29T10:50:00+04:00",
       "tests": {
-        "passed": 56,
+        "passed": 347,
         "failed": 0
       },
-      "commit": "00b5f0b"
+      "commit": "11bc1c6"
     },
     {
-      "id": "06",
-      "title": "RAG контур + мэтчинг + админка + доки (R22,R23,R24)",
+      "id": "05",
+      "title": "Perf P2 (P-09..16)",
       "requirements": [
         "R22",
         "R23",
-        "R24"
+        "R24",
+        "R25",
+        "R26",
+        "R27",
+        "R28"
       ],
       "status": "done",
       "wave": 2,
       "blockedBy": [
-        "04"
+        "01"
       ],
-      "finishedAt": "2026-08-28T19:50:00+04:00",
+      "startedAt": "2026-08-29T10:45:00+04:00",
+      "finishedAt": "2026-08-29T10:50:00+04:00",
       "tests": {
-        "passed": 49,
+        "passed": 347,
         "failed": 0
       },
-      "commit": "e7208f8"
-    },
-    {
-      "id": "07",
-      "title": "Дедуп/ломаная логика",
-      "requirements": [
-        "R01",
-        "R02"
-      ],
-      "status": "done",
-      "wave": 2,
-      "blockedBy": [
-        "01",
-        "02",
-        "03",
-        "04",
-        "05",
-        "06"
-      ],
-      "finishedAt": "2026-08-28T19:55:00+04:00",
-      "tests": {
-        "passed": 0,
-        "failed": 0
-      },
-      "commit": "de-dupe-report GO"
+      "commit": "5542c0d"
     }
   ],
   "singlePass": null,
@@ -235,6 +195,6 @@ window.STATE =
   },
   "blind": {
     "status": "pass",
-    "summary": "M1 24 P1 done, de-dupe GO, 6 tickets done, craft concerns non-blocking, build 6 commits, G1-G4 gates green"
+    "summary": "M2 P2 27 done 5 tickets DONE, M1 24 done, de-dupe GO, P2 гигиена закрыта август"
   }
 }

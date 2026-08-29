@@ -23,3 +23,4 @@
 | 2026-08-26 | `2026-08-26-m0-security-hardening` | сдан | M0: P0 закрыты локально (backend 334, frontend 39, infra green), dev репликация healthy; production smoke/offsite/Telegram/CI-external — pending (операторский remote/config) |
 | 2026-08-28 | `2026-08-28-cto-audit-interview` | сдан | 38 вопросов, 29 файлов интервью |
 | 2026-08-28 | `2026-08-28-m1-5k-stabilization` | сдан | M1 24 P1 6 тикетов DONE, de-dupe GO |
+| 2026-08-29 | `2026-08-29-m2-p2-hardening` | сдан | M2 P2 27 done 5 тикетов |
