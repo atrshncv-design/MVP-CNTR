@@ -10,26 +10,39 @@ if (!isDev && !internalApiUrl) {
 }
 
 const rewriteApiUrl = internalApiUrl || (isDev ? "http://127.0.0.1:8000" : "");
-
+// FE-05 nonce: script-src 'self' 'nonce-{NONCE}' — middleware injects nonce per-request
 // Клиентские вызовы идут по относительному /api/v1 того же origin
 // (единый модуль src/lib/public-api.ts), поэтому CSP достаточно 'self'.
 // NEXT_PUBLIC_API_URL — опциональный оверрайд адреса API: если он задан,
 // разрешаем и его (единственный источник внешнего хоста в connect-src).
 const publicApiOverride = process.env.NEXT_PUBLIC_API_URL?.trim();
 
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  // 'unsafe-inline' нужен bootstrap-скриптам Next.js App Router;
-  // 'unsafe-eval' — только dev (react-refresh).
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  `connect-src 'self'${publicApiOverride ? ` ${publicApiOverride}` : ""}`,
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "base-uri 'self'",
-].join("; ");
+// FE-05: nonce-based CSP — script-src с nonce и strict-dynamic (FE-06: form-action 'self' + upgrade-insecure-requests)
+// 'unsafe-inline' удалён из политики — заменён nonce
+function buildCsp(nonce?: string): string {
+  // В dev 'unsafe-eval' нужен react-refresh, в prod — нет. 'strict-dynamic' позволяет
+  // скриптам с валидным nonce подгружать дочерние чанки без перечисления хостов.
+  const scriptSrc = nonce
+    ? `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""} 'strict-dynamic'`
+    : `script-src 'self'${isDev ? " 'unsafe-eval'" : ""} 'strict-dynamic'`;
+  return [
+    "default-src 'self'",
+    scriptSrc, // FE-06 CSP form-action 'self' + upgrade-insecure-requests (зона next.config:28)
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    `connect-src 'self'${publicApiOverride ? ` ${publicApiOverride}` : ""}`,
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+// Базовый CSP без nonce — для headers() fallback (статические ассеты и ранний ответ до middleware);
+// per-request nonce для HTML-документов инжектит middleware (FE-05) и переопределяет этот заголовок.
+const contentSecurityPolicy = buildCsp();
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -58,3 +71,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+export { buildCsp };
