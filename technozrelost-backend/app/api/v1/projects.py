@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, and_, func, or_, select
 
 from app.core.deps import (
     CurrentUser,
@@ -238,9 +238,27 @@ async def project_registry(
         stmt = stmt.where(Project.budget >= budget_min)
     if budget_max is not None:
         stmt = stmt.where(Project.budget <= budget_max)
-    # P-08: keyset-пагинация по id (курсор) — защита от O(N) offset при 5К+.
+    # P-08 композитная keyset: (level, updated_at, id) как ORDER BY.
+    # Fallback id<after_id если курсор не найден.
     if after_id is not None:
-        stmt = stmt.where(Project.id < after_id)
+        cursor = await db.get(Project, after_id)
+        if cursor is not None:
+            stmt = stmt.where(
+                or_(
+                    Project.current_level < cursor.current_level,
+                    and_(
+                        Project.current_level == cursor.current_level,
+                        Project.updated_at < cursor.updated_at,
+                    ),
+                    and_(
+                        Project.current_level == cursor.current_level,
+                        Project.updated_at == cursor.updated_at,
+                        Project.id < cursor.id,
+                    ),
+                )
+            )
+        else:
+            stmt = stmt.where(Project.id < after_id)
     stmt = stmt.limit(limit)
 
     rows = await db.execute(stmt)

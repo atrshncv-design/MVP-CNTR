@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-08-28T18:52:31+04:00",
-  "updatedAt": "2026-08-28T20:00:00+04:00",
-  "finishedAt": "2026-08-28T20:00:00+04:00",
+  "updatedAt": "2026-08-28T20:20:00+04:00",
+  "finishedAt": "2026-08-28T20:20:00+04:00",
   "stages": [
     {
       "id": "preflight",
@@ -48,19 +48,19 @@ window.STATE =
       "id": "build",
       "status": "done",
       "startedAt": "2026-08-28T19:05:00+04:00",
-      "finishedAt": "2026-08-28T19:55:00+04:00"
+      "finishedAt": "2026-08-28T20:20:00+04:00"
     },
     {
       "id": "review",
       "status": "done",
       "startedAt": "2026-08-28T19:55:00+04:00",
-      "finishedAt": "2026-08-28T20:00:00+04:00"
+      "finishedAt": "2026-08-28T20:20:00+04:00"
     },
     {
       "id": "final",
       "status": "done",
-      "startedAt": "2026-08-28T20:00:00+04:00",
-      "finishedAt": "2026-08-28T20:00:00+04:00"
+      "startedAt": "2026-08-28T20:20:00+04:00",
+      "finishedAt": "2026-08-28T20:20:00+04:00"
     }
   ],
   "requirements": {
@@ -143,15 +143,16 @@ window.STATE =
       "status": "done",
       "wave": 1,
       "startedAt": "2026-08-28T19:20:00+04:00",
-      "finishedAt": "2026-08-28T19:35:00+04:00",
+      "finishedAt": "2026-08-28T20:20:00+04:00",
       "tests": {
-        "passed": 341,
+        "passed": 6,
         "failed": 0
       },
-      "commit": "30e7a5f",
+      "commit": "repair-04",
       "concerns": [
         "craft: keyset ordering, executors Python slice, duplicate indexes"
-      ]
+      ],
+      "repairs": 1
     },
     {
       "id": "05",

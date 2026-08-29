@@ -235,6 +235,10 @@ async def get_organization(
         .limit(20)
     )
     cards = (await db.execute(cards_stmt)).scalars().all()
+    # P-07 fix: COUNT, не len(cards) (truncate при LIMIT 20).
+    total = await db.scalar(
+        select(func.count(NioktrCard.id)).where(NioktrCard.organization_id == org.id)
+    )
     return OrganizationDetailOut(
         id=org.id,
         name=org.name,
@@ -242,7 +246,7 @@ async def get_organization(
         ogrn=org.ogrn,
         org_type=org.org_type,
         competencies=list(org.competencies or []),
-        projects_count=len(cards),
+        projects_count=int(total or 0),
         region=org.region,
         nioktr_cards=[_card_out(card) for card in cards],
     )

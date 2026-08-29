@@ -1,0 +1,22 @@
+{
+  "proc": "PROC-01",
+  "date": "2026-08-29",
+  "status": "stub",
+  "description": "Заглушка артефакта нагрузочного прогона PROC-01: LATERAL/LIMIT 20/keyset сохранены (P-05..08), p95 stub",
+  "indexes": [
+    "ix_nioktr_cards_name_trgm",
+    "ix_nioktr_cards_customer_name_trgm",
+    "ix_organizations_name_trgm",
+    "ix_nioktr_cards_nioktr_types",
+    "ix_organizations_ogrn_hash",
+    "ix_nioktr_cards_is_ai_area_btree"
+  ],
+  "endpoints": [
+    "GET /api/v1/executors?after_id&limit=20 DB keyset WHERE full_name > cursor ORDER BY full_name LIMIT 20",
+    "GET /api/v1/projects/registry?after_id&limit=20 composite keyset (current_level, updated_at, id)",
+    "GET /api/v1/nioktr/organizations LATERAL",
+    "GET /api/v1/nioktr/organizations/{ogrn} LIMIT 20 + COUNT"
+  ],
+  "p95_ms": null,
+  "note": "Реальный прогон 714 RPS 5K будет выполнен после мержа repair 04; stub сохраняет контракт PROC-01"
+}
