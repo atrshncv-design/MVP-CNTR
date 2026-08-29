@@ -27,7 +27,6 @@ async def _handle_chat(
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, AI_RATE_LIMIT_MESSAGE)
 
     ai_metrics.METRICS["requests_total"] += 1
-    ai_metrics.METRICS["requests_by_user"][user.id] += 1
     started = time.monotonic()
     result = await process_chat(db, payload, user, contour=contour)
     ai_metrics.METRICS["latency_seconds_total"] += time.monotonic() - started

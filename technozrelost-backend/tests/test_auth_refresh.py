@@ -57,19 +57,19 @@ def test_refresh_rotates_token_and_old_is_revoked(client: TestClient) -> None:
     me2 = client.get("/api/v1/auth/me", headers=_auth(new["access_token"]))
     assert me2.status_code == 200
 
-    # Повторное использование старого refresh — отозван (401)
+    # Повторное использование старого refresh — отозван (401), N-09: ревок всей семьи
     replay = client.post(
         "/api/v1/auth/refresh",
         json={"refresh_token": old_refresh},
     )
     assert replay.status_code == 401
 
-    # Ещё одна ротация нового refresh — работает (цепочка не сломана)
+    # N-09: после reuse семья скомпрометирована — новый токен тоже отозван
     again = client.post(
         "/api/v1/auth/refresh",
         json={"refresh_token": new["refresh_token"]},
     )
-    assert again.status_code == 200
+    assert again.status_code == 401
 
 
 def test_refresh_token_cannot_be_used_as_access(client: TestClient) -> None:

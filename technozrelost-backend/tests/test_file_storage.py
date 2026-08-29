@@ -17,8 +17,45 @@ from tests.support import register_test_user
 
 PDF_BYTES = b"%PDF-1.4\n% sample pdf\n%%EOF\n"
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
-DOCX_BYTES = b"PK\x03\x04" + b"\x00" * 64
 EXE_BYTES = b"MZ\x90\x00" + b"\x00" * 64
+
+
+def _make_docx_bytes() -> bytes:
+    """Минимальный валидный OOXML docx: ZIP с [Content_Types].xml + word/document.xml (N-11)."""
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            "</Types>",
+        )
+        zf.writestr(
+            "word/document.xml",
+            '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Hello</w:t></w:r></w:p></w:body></w:document>',
+        )
+        zf.writestr("_rels/.rels", '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>')
+    return buf.getvalue()
+
+
+def _make_fake_zip_without_content_types() -> bytes:
+    """ZIP без [Content_Types].xml — должен быть отклонён как невалидный OOXML (N-11)."""
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("word/document.xml", "<fake/>")
+    return buf.getvalue()
+
+
+DOCX_BYTES = _make_docx_bytes()
+FAKE_ZIP_BYTES = _make_fake_zip_without_content_types()
 
 
 def _email(prefix: str) -> str:
@@ -185,3 +222,11 @@ def test_no_public_minio_url_in_metadata(client: TestClient) -> None:
     card = client.get(f"/api/v1/projects/{project_id}", headers=_auth(token))
     assert card.status_code == 200
     assert "minio" not in card.text
+
+
+def test_upload_rejects_zip_without_content_types(client: TestClient) -> None:
+    """N-11: ZIP без [Content_Types].xml отклоняется как невалидный OOXML."""
+    token, _ = _register(client)
+    project_id = _create_project(client, token)
+    response = _upload(client, token, project_id, FAKE_ZIP_BYTES, "fake.docx")
+    assert response.status_code == 422

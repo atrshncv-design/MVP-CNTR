@@ -798,7 +798,7 @@ class NewsDetailOut(NewsCardOut):
 
 class NewsCreateIn(BaseModel):
     title: str = Field(min_length=1, max_length=200)
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=20000)
     category_id: int | None = None
     status: Literal["draft", "scheduled", "published"] = "draft"
     scheduled_at: datetime | None = None
@@ -810,7 +810,7 @@ class NewsCreateIn(BaseModel):
 
 class NewsUpdateIn(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
-    content: str | None = Field(default=None, min_length=1)
+    content: str | None = Field(default=None, min_length=1, max_length=20000)
     category_id: int | None = None
     cover_key: str | None = None
     tags: list[str] | None = None

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
@@ -85,7 +85,9 @@ async def register(payload: RegisterIn, request: Request, db: DBSession) -> Toke
 @router.post("/login", response_model=TokenOut)
 async def login(payload: LoginIn, request: Request, db: DBSession) -> TokenOut:
     # Брутфорс: после серии неудачных попыток с одного источника — 429 (R05.5);
-    # источник — первый IP из X-Forwarded-For (доверенный прокси), иначе client.host
+    # источник — X-Real-IP (ставит наш nginx из $remote_addr) или last hop
+    # X-Forwarded-For ($proxy_add_x_forwarded_for дописывает реальный IP
+    # последним, первые хопы клиент подделывает), иначе client.host
     client_host = auth_throttle.source_from_request(request)
     if auth_throttle.is_blocked(payload.email, client_host):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток входа")
@@ -106,7 +108,8 @@ async def login(payload: LoginIn, request: Request, db: DBSession) -> TokenOut:
 async def refresh(payload: RefreshTokenIn, db: DBSession) -> TokenOut:
     """Ротация refresh-токена: старый отзывается, выдаётся новая пара.
 
-    Повторное использование уже отозванного токена отклоняется (401).
+    Повторное использование уже отозванного токена — компрометация семьи:
+    отзываем все refresh-токены пользователя (N-09) и отклоняем запрос (401).
     """
     try:
         claims = decode_token(payload.refresh_token)
@@ -120,7 +123,16 @@ async def refresh(payload: RefreshTokenIn, db: DBSession) -> TokenOut:
     row = await db.scalar(
         select(RefreshToken).where(RefreshToken.token_hash == token_hash)
     )
-    if row is None or row.revoked_at is not None:
+    if row is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh-токен отозван или не найден")
+    if row.revoked_at is not None:
+        # N-09: reuse отозванного токена → ревок всей семьи (все активные токены пользователя)
+        await db.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == row.user_id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=datetime.now(UTC))
+        )
+        await db.commit()
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh-токен отозван или не найден")
     if row.expires_at < datetime.now(UTC):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh-токен истёк")

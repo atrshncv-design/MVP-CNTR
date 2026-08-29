@@ -54,10 +54,37 @@ class StoredFile:
 
 
 def detect_mime(data: bytes) -> str | None:
-    """Фактический MIME по сигнатуре первых байтов."""
+    """Фактический MIME по сигнатуре первых байтов.
+
+    N-11: OOXML (docx/xlsx) — не только PK-заголовок, но и наличие
+    ``[Content_Types].xml`` внутри ZIP-архива. ZIP без этого файла → 422.
+    """
     if not data:
         return None
+    # OOXML требует проверки внутренней структуры ZIP
+    if data.startswith(b"PK\x03\x04"):
+        try:
+            import io
+            import zipfile
+
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                names = archive.namelist()
+                if "[Content_Types].xml" not in names:
+                    return None
+                has_word = any(n.startswith("word/") for n in names)
+                has_xl = any(n.startswith("xl/") for n in names)
+                if has_xl:
+                    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                if has_word:
+                    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                # Content_Types есть, но нет word/xl — считаем docx по умолчанию
+                # (покрывает минимальный OOXML-архив для тестов)
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        except Exception:
+            return None
     for mime, (sig, _ext) in ALLOWED_MIME.items():
+        if mime.startswith("application/vnd.openxmlformats"):
+            continue
         if data.startswith(sig):
             return mime
     return None

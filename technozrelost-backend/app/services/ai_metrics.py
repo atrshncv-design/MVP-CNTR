@@ -13,7 +13,6 @@ METRICS: dict[str, Any] = {
     "fallbacks_total": 0,
     "timeouts_total": 0,
     "rate_limited_total": 0,
-    "requests_by_user": defaultdict(int),
     "latency_seconds_total": 0.0,
 }
 
@@ -37,7 +36,6 @@ def allow_request(user_id: int) -> bool:
 
 
 def snapshot() -> dict[str, Any]:
-    """Снимок метрик для /metrics/ai (без per-user карты)."""
-    data = {k: v for k, v in METRICS.items() if k != "requests_by_user"}
-    data["requests_by_user"] = dict(METRICS["requests_by_user"])
-    return data
+    """Снимок метрик для /metrics/ai — агрегаты без per-user карты (N-10)."""
+    # N-10: не отдаём requests_by_user (карта активности других пользователей)
+    return dict(METRICS)
