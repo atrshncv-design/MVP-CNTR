@@ -21,3 +21,5 @@
 |---|---|---|---|
 | 2026-08-25 | `2026-08-25-deploy-readiness-audit` | исторический | Исторический отчёт аудита: упомянутые в нём 271 тест и проверки относятся к тому снимку и не подтверждают текущий M0/G1 или production readiness |
 | 2026-08-26 | `2026-08-26-m0-security-hardening` | сдан | M0: P0 закрыты локально (backend 334, frontend 39, infra green), dev репликация healthy; production smoke/offsite/Telegram/CI-external — pending (операторский remote/config) |
+| 2026-08-28 | `2026-08-28-cto-audit-interview` | сдан | 38 вопросов, 29 файлов интервью |
+| 2026-08-28 | `2026-08-28-m1-5k-stabilization` | сдан | M1 24 P1 6 тикетов DONE, de-dupe GO |

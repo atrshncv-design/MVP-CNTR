@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "m1-5k-stabilization",
-  "dir": "2026-08-28-m1-5k-stabilization--wip",
+  "dir": "2026-08-28-m1-5k-stabilization",
   "title": "M1 — Стабилизация 5К (24 P1) + дедуп старых тикетов",
   "mode": "semi",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-08-28T18:52:31+04:00",
-  "updatedAt": "2026-08-28T19:10:00+04:00",
-  "finishedAt": null,
+  "updatedAt": "2026-08-28T20:00:00+04:00",
+  "finishedAt": "2026-08-28T20:00:00+04:00",
   "stages": [
     {
       "id": "preflight",
@@ -46,21 +46,26 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
-      "startedAt": "2026-08-28T19:05:00+04:00"
+      "status": "done",
+      "startedAt": "2026-08-28T19:05:00+04:00",
+      "finishedAt": "2026-08-28T19:55:00+04:00"
     },
     {
       "id": "review",
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-08-28T19:55:00+04:00",
+      "finishedAt": "2026-08-28T20:00:00+04:00"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-08-28T20:00:00+04:00",
+      "finishedAt": "2026-08-28T20:00:00+04:00"
     }
   ],
   "requirements": {
     "total": 24,
-    "done": 0,
+    "done": 24,
     "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
@@ -74,9 +79,15 @@ window.STATE =
       "requirements": [
         "R03"
       ],
-      "status": "in-progress",
+      "status": "done",
       "wave": 1,
-      "startedAt": "2026-08-28T19:10:00+04:00"
+      "startedAt": "2026-08-28T19:10:00+04:00",
+      "finishedAt": "2026-08-28T19:15:00+04:00",
+      "tests": {
+        "passed": 7,
+        "failed": 0
+      },
+      "commit": "e0a8312"
     },
     {
       "id": "02",
@@ -90,9 +101,18 @@ window.STATE =
         "R09",
         "R10"
       ],
-      "status": "in-progress",
+      "status": "done",
       "wave": 1,
-      "startedAt": "2026-08-28T19:10:00+04:00"
+      "startedAt": "2026-08-28T19:10:00+04:00",
+      "finishedAt": "2026-08-28T19:25:00+04:00",
+      "tests": {
+        "passed": 341,
+        "failed": 0
+      },
+      "commit": "c8a7470",
+      "concerns": [
+        "craft: fallback LRU O(n), duplicated to_thread, realtime leak"
+      ]
     },
     {
       "id": "03",
@@ -101,9 +121,15 @@ window.STATE =
         "R11",
         "R12"
       ],
-      "status": "in-progress",
+      "status": "done",
       "wave": 1,
-      "startedAt": "2026-08-28T19:10:00+04:00"
+      "startedAt": "2026-08-28T19:10:00+04:00",
+      "finishedAt": "2026-08-28T19:30:00+04:00",
+      "tests": {
+        "passed": 39,
+        "failed": 0
+      },
+      "commit": "538196e"
     },
     {
       "id": "04",
@@ -114,8 +140,18 @@ window.STATE =
         "R15",
         "R16"
       ],
-      "status": "pending",
-      "wave": 1
+      "status": "done",
+      "wave": 1,
+      "startedAt": "2026-08-28T19:20:00+04:00",
+      "finishedAt": "2026-08-28T19:35:00+04:00",
+      "tests": {
+        "passed": 341,
+        "failed": 0
+      },
+      "commit": "30e7a5f",
+      "concerns": [
+        "craft: keyset ordering, executors Python slice, duplicate indexes"
+      ]
     },
     {
       "id": "05",
@@ -127,8 +163,15 @@ window.STATE =
         "R20",
         "R21"
       ],
-      "status": "pending",
-      "wave": 1
+      "status": "done",
+      "wave": 1,
+      "startedAt": "2026-08-28T19:20:00+04:00",
+      "finishedAt": "2026-08-28T19:40:00+04:00",
+      "tests": {
+        "passed": 56,
+        "failed": 0
+      },
+      "commit": "00b5f0b"
     },
     {
       "id": "06",
@@ -138,11 +181,17 @@ window.STATE =
         "R23",
         "R24"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
       "blockedBy": [
         "04"
-      ]
+      ],
+      "finishedAt": "2026-08-28T19:50:00+04:00",
+      "tests": {
+        "passed": 49,
+        "failed": 0
+      },
+      "commit": "e7208f8"
     },
     {
       "id": "07",
@@ -151,7 +200,7 @@ window.STATE =
         "R01",
         "R02"
       ],
-      "status": "pending",
+      "status": "done",
       "wave": 2,
       "blockedBy": [
         "01",
@@ -160,7 +209,13 @@ window.STATE =
         "04",
         "05",
         "06"
-      ]
+      ],
+      "finishedAt": "2026-08-28T19:55:00+04:00",
+      "tests": {
+        "passed": 0,
+        "failed": 0
+      },
+      "commit": "de-dupe-report GO"
     }
   ],
   "singlePass": null,
@@ -177,5 +232,8 @@ window.STATE =
     "manifestSpec": null,
     "craft": null
   },
-  "blind": null
+  "blind": {
+    "status": "pass",
+    "summary": "M1 24 P1 done, de-dupe GO, 6 tickets done, craft concerns non-blocking, build 6 commits, G1-G4 gates green"
+  }
 }
