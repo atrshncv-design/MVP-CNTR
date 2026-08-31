@@ -1,5 +1,27 @@
 # Карта версий репозитория
 
+*Составлено: 2026-08-31, прогон repo-structure-optimization (тикет 03). Актуализировано: 19 remote-веток, HEAD +30 vs main, архивные теги.*
+
+**Актуально на 2026-08-31:**
+
+| Ветка | HEAD | Отношение к origin/main | Статус |
+|---|---|---|---|
+| `origin/main` | `a7dfbf3` | — | Эталон, битый `.gitignore` (`<<<<<<< HEAD` с `babc9b9`) — fix в `autopilot/m0` `da684d4` |
+| `autopilot/m0-security-hardening` (текущая) | `47cd50c` | **+30 вперёд** (M0…M4 + T01 hygiene) | **Текущая** — ведётся оптимизация структуры |
+| `autopilot/deploy-readiness-code` | `6475946` | +8/-2 vs main | Держать до merge |
+| `release/friday-rc` | `c89ebb7` | предок deploy-readiness | Архив |
+| `codex/*` (9) + `feat/*` (2) + `new-front` | см. §2 | частично влиты | Кандидаты `archive/*` теги (локально созданы 2026-08-31) |
+
+**Крупные файлы — кандидаты LFS (не удалять без отдельного решения, ломает клоны):**
+| Файл | Размер | Использование | Решение |
+|---|---|---|---|
+| `technozrelost-backend/data/nioktr_all.json` | 64M | `app/db/seed_nioktr.py:28`, `reset_demo.py:46`, 16K карточек | Оставить в Git до LFS-решения (`git lfs track`) |
+| `.graphify/graph.json` | 3.9M | knowledge graph, 451 файл | Оставить (portable artifact) или игнорить — по решению владельца |
+| `docs/Справочник…docx` | 2.8M | контекст проекта | LFS кандидат |
+| `technozrelost-frontend/public/videos/hero-bg.mp4` | 2.5M | `src/app/(landing)/page.tsx:55` | Оставить (лендинг) или CDN/LFS |
+
+**Локальные архивные теги (2026-08-31, не пушены):** `archive/main-pre-hygiene-20260831`, `archive/autopilot-deploy-readiness-code-20260831`, `archive/release-friday-rc-20260831` (`git tag | grep archive/`)
+
 *Составлено: 2026-08-25, прогон deploy-readiness-audit (тикет 02). Все счётчики проверены командами `git rev-list` / `git merge-base --is-ancestor` на момент составления.*
 
 **Remote:** `origin` = https://github.com/atrshncv-design/MVP-CNTR.git
