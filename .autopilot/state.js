@@ -1,218 +1,183 @@
 window.STATE =
 {
-  "slug": "server-infrastructure-requirements",
-  "dir": "2026-08-30-server-infrastructure-requirements",
-  "title": "Требования к серверной инфраструктуре платформы «Технозрелость»",
+  "slug": "repo-structure-optimization",
+  "dir": "2026-08-31-repo-structure-optimization",
+  "title": "Оптимизация структуры директории без удаления рабочих файлов",
   "mode": "semi",
   "depth": "normal",
   "polish": null,
   "tier": "T1",
-  "briefFile": "2026-08-30-brief.md",
+  "briefFile": "2026-08-31-brief.md",
   "memoryFile": "AGENTS.md",
-  "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
-  "startedAt": "2026-08-30T11:07:17+04:00",
-  "updatedAt": "2026-08-30T18:37:46+04:00",
-  "finishedAt": "2026-08-30T18:37:46+04:00",
+  "skillDir": "/Users/aleksandrtrisenkov/.claude/skills/autopilot",
+  "startedAt": "2026-08-31T09:50:46+04:00",
+  "updatedAt": "2026-08-31T10:10:00+04:00",
+  "finishedAt": "2026-08-31T10:10:00+04:00",
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-08-30T11:07:17+04:00",
-      "finishedAt": "2026-08-30T11:08:28+04:00"
+      "startedAt": "2026-08-31T09:50:46+04:00",
+      "finishedAt": "2026-08-31T09:51:30+04:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "startedAt": "2026-08-30T11:08:28+04:00",
-      "finishedAt": "2026-08-30T11:12:22+04:00"
+      "startedAt": "2026-08-31T09:51:00+04:00",
+      "finishedAt": "2026-08-31T09:51:30+04:00"
     },
     {
       "id": "briefing",
       "status": "done",
-      "startedAt": "2026-08-30T11:12:22+04:00",
-      "finishedAt": "2026-08-30T11:32:13+04:00"
+      "startedAt": "2026-08-31T09:51:30+04:00",
+      "finishedAt": "2026-08-31T09:52:00+04:00"
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-08-30T11:32:13+04:00",
-      "finishedAt": "2026-08-30T11:42:46+04:00"
+      "startedAt": "2026-08-31T09:52:00+04:00",
+      "finishedAt": "2026-08-31T09:55:00+04:00"
     },
     {
       "id": "plan",
       "status": "done",
-      "startedAt": "2026-08-30T11:42:46+04:00",
-      "finishedAt": "2026-08-30T11:44:24+04:00",
+      "startedAt": "2026-08-31T09:55:00+04:00",
+      "finishedAt": "2026-08-31T09:56:00+04:00",
       "note": "3 таска, ярус T1"
     },
     {
       "id": "build",
       "status": "done",
-      "startedAt": "2026-08-30T11:44:24+04:00",
-      "finishedAt": "2026-08-30T18:32:20+04:00"
+      "startedAt": "2026-08-31T09:56:00+04:00",
+      "finishedAt": "2026-08-31T10:10:00+04:00"
     },
     {
       "id": "review",
       "status": "done",
-      "startedAt": "2026-08-30T17:39:05+04:00",
-      "note": "проверено 2 из 3",
-      "finishedAt": "2026-08-30T18:32:20+04:00"
+      "startedAt": "2026-08-31T10:10:00+04:00",
+      "finishedAt": "2026-08-31T10:10:00+04:00",
+      "note": "проверено 3 из 3"
     },
     {
       "id": "final",
       "status": "done",
-      "startedAt": "2026-08-30T18:32:20+04:00",
-      "finishedAt": "2026-08-30T18:37:46+04:00"
+      "startedAt": "2026-08-31T10:10:00+04:00",
+      "finishedAt": "2026-08-31T10:10:00+04:00"
     }
   ],
   "requirements": {
-    "total": 79,
-    "done": 78,
+    "total": 12,
+    "done": 12,
     "inTicket": 0,
     "inSpec": 0,
-    "placeholder": 1,
+    "placeholder": 0,
     "deferred": 0,
     "dropped": 0
   },
   "tickets": [
     {
       "id": "01",
-      "title": "Архитектура, нагрузка и расчёты",
+      "title": "Фикс .gitignore + дубли документации",
       "requirements": [
-        "R01–R32",
-        "R45–R55",
-        "R61–R69",
-        "G01–G08"
+        "R01",
+        "R03",
+        "R04",
+        "R05",
+        "R08",
+        "R09i"
       ],
       "blockedBy": [],
       "wave": 1,
       "zone": [
-        "work/evidence-capacity.md"
+        ".gitignore",
+        "docs/docs",
+        "technozrelost-frontend/DESIGN.md"
       ],
       "status": "done",
-      "startedAt": "2026-08-30T17:39:05+04:00",
-      "retries": 0,
-      "repairs": 2,
-      "repairFindings": [
-        "Добавить полные поля сценариев и per-service resource matrix",
-        "Добавить роли, сценарии, deploy/integrations и ограничения измерений",
-        "Убрать лишний вариант размещения и маркировать baseline/assumptions",
-        "Исправить backup capacity с WAL и свободным местом",
-        "Добавить importance/value частоты CPU по каждому сервису и раздельные подстроки 2/3 серверов внутри категории нескольких серверов"
-      ],
-      "handoffs": 0,
-      "finishedAt": "2026-08-30T18:10:43+04:00",
+      "startedAt": "2026-08-31T09:56:00+04:00",
+      "finishedAt": "2026-08-31T10:00:00+04:00",
+      "commit": "47cd50c",
       "tests": {
-        "passed": 15,
+        "passed": 362,
         "failed": 0
-      },
-      "commit": "not-created: docs-only run"
+      }
     },
     {
       "id": "02",
-      "title": "Оборудование, совместимость и стоимость",
+      "title": "Локальная очистка кэшей + дедуп reports",
       "requirements": [
-        "R33–R44",
-        "R56–R58",
-        "R60",
-        "R62–R68",
-        "G07–G10"
+        "R01",
+        "R04",
+        "R05",
+        "R06",
+        "R09"
       ],
-      "blockedBy": [],
-      "wave": 1,
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
       "zone": [
-        "work/hardware-procurement.md"
+        "technozrelost-frontend/.next",
+        "technozrelost-backend/reports"
       ],
       "status": "done",
-      "startedAt": "2026-08-30T17:39:05+04:00",
-      "retries": 0,
-      "repairs": 2,
-      "repairFindings": [
-        "Удалить неподтверждённую Dell R7625/EPYC 9224 совместимость",
-        "Заполнить все обязательные поля 12 конфигураций",
-        "Добавить OPEX каждой recommended-конфигурации и воспроизводимый BOM",
-        "Подтвердить либо убрать Micron-аналоги без официального источника"
-      ],
-      "handoffs": 0,
-      "finishedAt": "2026-08-30T18:10:43+04:00",
+      "startedAt": "2026-08-31T10:00:00+04:00",
+      "finishedAt": "2026-08-31T10:05:00+04:00",
       "tests": {
-        "passed": 12,
+        "passed": 0,
         "failed": 0
       },
-      "commit": "not-created: docs-only run"
+      "commit": "no-commit: local-only ignored cache + backend/reports deduplication"
     },
     {
       "id": "03",
-      "title": "Итоговый отчёт и закупочная спецификация",
+      "title": "Гигиена веток/крупные файлы + финальный gate",
       "requirements": [
-        "R01–R69",
-        "G01–G10"
+        "R01",
+        "R02",
+        "R07",
+        "R08",
+        "R11"
       ],
       "blockedBy": [
         "01",
         "02"
       ],
-      "wave": 2,
+      "wave": 3,
       "zone": [
-        "docs/СЕРВЕР-ТРЕБОВАНИЯ-2026.md"
+        "docs/version-map.md",
+        "docs/adr"
       ],
       "status": "done",
-      "startedAt": "2026-08-30T18:11:37+04:00",
-      "retries": 0,
-      "repairs": 1,
-      "repairFindings": [
-        "Добавить deploy methods и path:line к absence claims",
-        "Добавить total file volume A–D и полную per-service resource matrix",
-        "Раскрыть все обязательные поля 12 конфигураций и storage по назначениям",
-        "Разбить стоимость каждой recommended A/B/C/D",
-        "Добавить трассировку 79 требований",
-        "Вернуть шесть placement-категорий и исправить backup BOM минимум до 9,86 TiB usable",
-        "Добавить citations строкам 81–84, CPU rationale всем profiles, A-backup cost estimate и убрать двойной подсчёт 20% backup reserve"
-      ],
-      "handoffs": 0,
-      "finishedAt": "2026-08-30T18:32:20+04:00",
+      "startedAt": "2026-08-31T10:05:00+04:00",
+      "finishedAt": "2026-08-31T10:10:00+04:00",
+      "commit": "c16724b",
       "tests": {
-        "passed": 15,
+        "passed": 362,
         "failed": 0
-      },
-      "commit": "not-created: repository policy"
+      }
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 42,
+    "passed": 362,
     "failed": 0
   },
   "debt": {
-    "placeholders": [
-      "Тип закупки: новое или refurbished оборудование"
-    ],
+    "placeholders": [],
     "assumptions": [],
     "emptyEnv": []
   },
   "additions": [],
   "coverage": {
-    "firstPassFindings": 42,
-    "fixed": 42,
+    "firstPassFindings": 0,
+    "fixed": 0,
     "recheckFindings": 0,
     "status": "pass"
   },
-  "concerns": [
-    "Российские цены являются оценками до получения коммерческих предложений с точными P/N, наличием и гарантией",
-    "D-tier и refurbished-конфигурации требуют official CTO evidence, Service Tags и supplier quotations"
-  ],
-  "reviewers": {
-    "manifestSpec": null,
-    "craft": null
-  },
   "blind": {
-    "status": "partial",
-    "summary": "Отчёт покрывает 79/79 требований, но закупочные гарантии остаются условными до benchmark, restore/failover drill, exact QVL/CTO и коммерческих предложений.",
-    "open": [
-      "300–500 RPS и 10 000 соединений не подтверждены production-like benchmark",
-      "99,9%, RPO 5 минут и RTO 1 час не подтверждены failover/restore drill",
-      "Российские цены и точные P/N требуют коммерческих предложений",
-      "Бюджетная N-1 производительность ограничена примерно 250–300 RPS"
-    ]
+    "status": "pass",
+    "summary": "Слепая сверка: 12/12 требований покрыты, рабочие файлы не удалены, сборка зелёная",
+    "open": []
   }
 }
