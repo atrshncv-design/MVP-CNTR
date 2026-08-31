@@ -1,0 +1,1806 @@
+{
+  ".autopilot/2026-08-25-deploy-readiness-audit/state.js": {
+    "mtime": 1787716138000,
+    "hash": "f32ecd66181e167e9a0732fcd6f42f0c"
+  },
+  ".autopilot/state.js": {
+    "mtime": 1787932692365.9573,
+    "hash": "a73a216331c3c170b53a7ad310159652"
+  },
+  ".autopilot/sync.py": {
+    "mtime": 1787896997509.8284,
+    "hash": "22d114328873f502abd4daa20344d913"
+  },
+  "technozrelost-backend/alembic/env.py": {
+    "mtime": 1787717644450.7847,
+    "hash": "fda89bfd894825f3211723e7a3c5d9d3"
+  },
+  "technozrelost-backend/alembic/versions/0001_init_schemas.py": {
+    "mtime": 1787717644450.954,
+    "hash": "3be9ecc11c86598ff01a3b03a2483fab"
+  },
+  "technozrelost-backend/alembic/versions/0002_rag_documents.py": {
+    "mtime": 1787717644451.0137,
+    "hash": "91e89274c51e73fc55b41f551f2db6dd"
+  },
+  "technozrelost-backend/alembic/versions/0003_rbac.py": {
+    "mtime": 1787717644451.0688,
+    "hash": "6b34a0c269dda8006ab71adeaa49cb5c"
+  },
+  "technozrelost-backend/alembic/versions/0004_projects_and_questionnaire.py": {
+    "mtime": 1787717644451.1284,
+    "hash": "c7762f87bce00f1c8234d2a3874305b8"
+  },
+  "technozrelost-backend/alembic/versions/0005_rag_metadata.py": {
+    "mtime": 1787717644451.1868,
+    "hash": "c18207051813feec1b3e46603f2f2dce"
+  },
+  "technozrelost-backend/alembic/versions/0007_organizations_technologies.py": {
+    "mtime": 1787717644451.3145,
+    "hash": "ab098b4b398726c477f64a7a4a2281fc"
+  },
+  "technozrelost-backend/alembic/versions/0008_audit_project_nullable.py": {
+    "mtime": 1787717644451.367,
+    "hash": "a38f5bf7d0560658b9dd349629d5893f"
+  },
+  "technozrelost-backend/alembic/versions/0009_control_point_decision_width.py": {
+    "mtime": 1787717644451.42,
+    "hash": "dd3b21c3de18f40f851a98d5c6f4c9fa"
+  },
+  "technozrelost-backend/alembic/versions/0010_new_core.py": {
+    "mtime": 1787717644451.4844,
+    "hash": "cbaf5049918870cbd97de6aac6ecc4e2"
+  },
+  "technozrelost-backend/alembic/versions/0011_readiness_assessment.py": {
+    "mtime": 1787717644451.5593,
+    "hash": "3e14f3aa76f3fcac133a44fff8519dd2"
+  },
+  "technozrelost-backend/alembic/versions/0012_fix_gost_mojibake.py": {
+    "mtime": 1787717644451.624,
+    "hash": "8aadcc56321c0a8a8577eb4b23591a74"
+  },
+  "technozrelost-backend/alembic/versions/0013_dedup_promotion_requests.py": {
+    "mtime": 1787717644451.682,
+    "hash": "9f482b7be092336f00aedccbeb1051c9"
+  },
+  "technozrelost-backend/alembic/versions/0014_nioktr_cards.py": {
+    "mtime": 1787717644451.7327,
+    "hash": "69a9e168bf7a7bbc0c65c66d28b96bab"
+  },
+  "technozrelost-backend/alembic/versions/0016_profiles_organizations.py": {
+    "mtime": 1787717644451.8499,
+    "hash": "31323aef55bf02b190f20486fad0c07d"
+  },
+  "technozrelost-backend/alembic/versions/0017_project_invites_admin.py": {
+    "mtime": 1787717644451.904,
+    "hash": "77daa150577f14d7c6090d06b80c35af"
+  },
+  "technozrelost-backend/alembic/versions/0018_file_storage.py": {
+    "mtime": 1787717644451.9636,
+    "hash": "b90bd6be4fa4859bfcbade2536ccbf50"
+  },
+  "technozrelost-backend/alembic/versions/0019_requirement_sets.py": {
+    "mtime": 1787717644452.0168,
+    "hash": "fa73d0357491b98356c0034a03fa4258"
+  },
+  "technozrelost-backend/alembic/versions/0020_request_comments.py": {
+    "mtime": 1787717644452.0764,
+    "hash": "98593ad7d58cc601bab55a0b9fc4e9ea"
+  },
+  "technozrelost-backend/alembic/versions/0021_publication_consent.py": {
+    "mtime": 1787717644452.1304,
+    "hash": "8a753e30d3e7c5a0bc7790630c2a2915"
+  },
+  "technozrelost-backend/alembic/versions/0022_nioktr_source.py": {
+    "mtime": 1787717644452.1885,
+    "hash": "b3e120707c0afc1bac81d01fd1107ff2"
+  },
+  "technozrelost-backend/alembic/versions/0023_notification_outbox.py": {
+    "mtime": 1787717644452.2495,
+    "hash": "99581ed85f68c4fa777a08aaeb273271"
+  },
+  "technozrelost-backend/alembic/versions/0024_news.py": {
+    "mtime": 1787717644452.304,
+    "hash": "00c827e2d7a0c5116096d1d32ca64667"
+  },
+  "technozrelost-backend/alembic/versions/0025_achievements.py": {
+    "mtime": 1787717644452.361,
+    "hash": "ca99b1093e37aa6974c2d6cab2c8d766"
+  },
+  "technozrelost-backend/alembic/versions/0026_achievement_awards.py": {
+    "mtime": 1787717644452.4143,
+    "hash": "05f044c6c0de3b8418f96cfe059c0b45"
+  },
+  "technozrelost-backend/alembic/versions/0027_performance_indexes.py": {
+    "mtime": 1787717644452.4749,
+    "hash": "66b277726ee3bb25d0328f6d4d89f3ec"
+  },
+  "technozrelost-backend/app/__init__.py": {
+    "mtime": 1787717644452.563,
+    "hash": "713a1c13b3f284b985e8cd2e781ce758"
+  },
+  "technozrelost-backend/app/api/__init__.py": {
+    "mtime": 1787717644452.621,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "technozrelost-backend/app/api/v1/__init__.py": {
+    "mtime": 1787717644452.6907,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "technozrelost-backend/app/api/v1/achievements.py": {
+    "mtime": 1787717644452.8157,
+    "hash": "42bd8b66db3d5a766341289070ede1f7"
+  },
+  "technozrelost-backend/app/api/v1/admin.py": {
+    "mtime": 1787717644452.872,
+    "hash": "65dd26d4a8e84a1507eaf548b5ddf89a"
+  },
+  "technozrelost-backend/app/api/v1/assessments.py": {
+    "mtime": 1787756950800.2166,
+    "hash": "6cefad1c79061eee9257781aafca1271"
+  },
+  "technozrelost-backend/app/api/v1/auth.py": {
+    "mtime": 1787933212468.8555,
+    "hash": "9c9945d0b98870ae609598d6ea20d8c5"
+  },
+  "technozrelost-backend/app/api/v1/chat.py": {
+    "mtime": 1787756950801.5432,
+    "hash": "d78363eb0c74d64c47cf8917f2ad6a1f"
+  },
+  "technozrelost-backend/app/api/v1/executors.py": {
+    "mtime": 1787717644453.2454,
+    "hash": "203707396055249e6ec0b296f31f4004"
+  },
+  "technozrelost-backend/app/api/v1/files.py": {
+    "mtime": 1787717644453.3525,
+    "hash": "28790adcbf130a2dac4a7214452e6c43"
+  },
+  "technozrelost-backend/app/api/v1/generation.py": {
+    "mtime": 1787717644453.404,
+    "hash": "8a581943c5f7b13639d3ed8865c40ecd"
+  },
+  "technozrelost-backend/app/api/v1/health.py": {
+    "mtime": 1787756950798.234,
+    "hash": "f548daa356ad2499525c4322b0514e46"
+  },
+  "technozrelost-backend/app/api/v1/invites.py": {
+    "mtime": 1787756985092.3467,
+    "hash": "038b099cec6a50a19f93ddcfd2990f45"
+  },
+  "technozrelost-backend/app/api/v1/manager.py": {
+    "mtime": 1787756985093.1123,
+    "hash": "f0cf82868ec94aaf3c52851827a09ddb"
+  },
+  "technozrelost-backend/app/api/v1/membership.py": {
+    "mtime": 1787746977880.3196,
+    "hash": "8746b1f8fafde116d50cc0787d45582f"
+  },
+  "technozrelost-backend/app/api/v1/metrics.py": {
+    "mtime": 1787717644453.761,
+    "hash": "393f357d4415654d18869ea72c00113f"
+  },
+  "technozrelost-backend/app/api/v1/news.py": {
+    "mtime": 1787933061994.0989,
+    "hash": "4fba95d36f8fd75c23b4b0f1f86bb778"
+  },
+  "technozrelost-backend/app/api/v1/nioktr.py": {
+    "mtime": 1787717644453.9739,
+    "hash": "84ab753e9f1e03ad3c6ac9b7c01ac7ed"
+  },
+  "technozrelost-backend/app/api/v1/notifications.py": {
+    "mtime": 1787717644454.0276,
+    "hash": "24611dc72fec508c612d4e1fcd1fc04a"
+  },
+  "technozrelost-backend/app/api/v1/profiles.py": {
+    "mtime": 1787756985093.8433,
+    "hash": "f8dbd6ac01964913a534b5e8dcb7ee88"
+  },
+  "technozrelost-backend/app/api/v1/projects.py": {
+    "mtime": 1787717644454.189,
+    "hash": "0bc9dbcdf108b6b5e6bc812dfb68c7dc"
+  },
+  "technozrelost-backend/app/api/v1/rag.py": {
+    "mtime": 1787717644454.2666,
+    "hash": "aecd050e670c7d5054364432edb907cc"
+  },
+  "technozrelost-backend/app/api/v1/realtime.py": {
+    "mtime": 1787933749216.208,
+    "hash": "fb5720d5bab960006f91ecdba4bb9e32"
+  },
+  "technozrelost-backend/app/api/v1/requests.py": {
+    "mtime": 1787756950799.4834,
+    "hash": "9cadf512d5f3638c8d67b4cc1d9e2365"
+  },
+  "technozrelost-backend/app/api/v1/stages.py": {
+    "mtime": 1787746977880.8584,
+    "hash": "37f2533cfbf395ddbbdb88d7826d8aa5"
+  },
+  "technozrelost-backend/app/api/v1/technologies.py": {
+    "mtime": 1787717644454.583,
+    "hash": "d87016257961eb65762a8217b1315451"
+  },
+  "technozrelost-backend/app/api/v1/users.py": {
+    "mtime": 1787933727652.8867,
+    "hash": "e07b44de63dba971d8484c85f7a0b551"
+  },
+  "technozrelost-backend/app/core/__init__.py": {
+    "mtime": 1787717644454.7637,
+    "hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "technozrelost-backend/app/core/config.py": {
+    "mtime": 1787932991018.9146,
+    "hash": "e26b358693b768229a4ec36fd8980636"
+  },
+  "technozrelost-backend/app/core/database.py": {
+    "mtime": 1787756985090.3376,
+    "hash": "d1458b6a9336bdb5087842de3fd173d2"
+  },
+  "technozrelost-backend/app/core/deps.py": {
+    "mtime": 1787717644455.0022,
+    "hash": "c64f9c471c48371f47008691155283eb"
+  },
+  "technozrelost-backend/app/core/embeddings.py": {
+    "mtime": 1787717644455.0535,
+    "hash": "67ac49f454b1a20aae886bf3f11fdf19"
+  },
+  "technozrelost-backend/app/core/logging_config.py": {
+    "mtime": 1787717644455.163,
+    "hash": "1a9176370bf30300b6db040fa7bd1e67"
+  },
+  "technozrelost-backend/app/core/security.py": {
+    "mtime": 1787746786837.3633,
+    "hash": "782dd171e470e01663957fca5a617c2a"
+  },
+  "technozrelost-backend/app/db/__init__.py": {
+    "mtime": 1787717644455.3206,
+    "hash": "1a026ef7591c27b1ac91d761a90a5d31"
+  },
+  "technozrelost-backend/app/db/models.py": {
+    "mtime": 1787758156250.2031,
+    "hash": "7ee6b3c92d9f09f3b805426538ab0b26"
+  },
+  "technozrelost-backend/app/db/prepare_nioktr.py": {
+    "mtime": 1787756950796.269,
+    "hash": "b268e6593a3f571e2f77d4bb23bc9f90"
+  },
+  "technozrelost-backend/app/db/reset_demo.py": {
+    "mtime": 1787756950797.8604,
+    "hash": "53eb3a853f8bddfc98b3caff83c497d1"
+  },
+  "technozrelost-backend/app/db/seed_achievements.py": {
+    "mtime": 1787717644455.672,
+    "hash": "f5f034e27b3ed58d9b9d1b44fc15e777"
+  },
+  "technozrelost-backend/app/db/seed_admin.py": {
+    "mtime": 1787717644455.7317,
+    "hash": "dd292ccfeb14c789401aeb80c5d7f0b4"
+  },
+  "technozrelost-backend/app/db/seed_gost.py": {
+    "mtime": 1787756950797.3684,
+    "hash": "01529bf43c5c86c6628677ed40f57554"
+  },
+  "technozrelost-backend/app/db/seed_nioktr.py": {
+    "mtime": 1787757008515.3826,
+    "hash": "7bf969290d24b5030a132e53c30f91e6"
+  },
+  "technozrelost-backend/app/db/seed_templates.py": {
+    "mtime": 1787756950796.5862,
+    "hash": "e1895806b24741332d47679f5fa94121"
+  },
+  "technozrelost-backend/app/main.py": {
+    "mtime": 1787933129057.3113,
+    "hash": "0eb7c81e3256af9dc0dbef42e8ff5f65"
+  },
+  "technozrelost-backend/app/schemas.py": {
+    "mtime": 1787747296399.121,
+    "hash": "4d695f0bbf13cfae654599188552b7fd"
+  },
+  "technozrelost-backend/app/services/achievements.py": {
+    "mtime": 1787717644456.4106,
+    "hash": "3fa5fa282f1b25b707d94a59d26694b8"
+  },
+  "technozrelost-backend/app/services/ai_assistant.py": {
+    "mtime": 1787929205196.4902,
+    "hash": "176a8b32f0f104a0b901f1b888226440"
+  },
+  "technozrelost-backend/app/services/ai_metrics.py": {
+    "mtime": 1787756950794.5425,
+    "hash": "c54a0390a00b24c572ac1a66271e5150"
+  },
+  "technozrelost-backend/app/services/auth_throttle.py": {
+    "mtime": 1787933154382.25,
+    "hash": "61b85232160338ea71dd5ee8577f9fc2"
+  },
+  "technozrelost-backend/app/services/conclusion_pdf.py": {
+    "mtime": 1787717644456.7046,
+    "hash": "98a473a079ec7f6bbaa36431497c184d"
+  },
+  "technozrelost-backend/app/services/document_generator.py": {
+    "mtime": 1787717644456.817,
+    "hash": "a6120c612734ebe636cceb397c1da55f"
+  },
+  "technozrelost-backend/app/services/file_storage.py": {
+    "mtime": 1787933053574.8955,
+    "hash": "0e9fa67eef6771b9128e809afc246700"
+  },
+  "technozrelost-backend/app/services/html_sanitizer.py": {
+    "mtime": 1787717644456.9749,
+    "hash": "54333c4bb3c29cb37bc2d53cc9c20b56"
+  },
+  "technozrelost-backend/app/services/metrics.py": {
+    "mtime": 1787717644457.1025,
+    "hash": "6cb4260a83f04bf768cf406d32d53bc8"
+  },
+  "technozrelost-backend/app/services/news_scheduler.py": {
+    "mtime": 1787717644457.1614,
+    "hash": "1ebeddb3b308975d52dc7c302426e82d"
+  },
+  "technozrelost-backend/app/services/notifications.py": {
+    "mtime": 1787756950798.5256,
+    "hash": "48bab87c9405a95cfacb352b8b7038f2"
+  },
+  "technozrelost-backend/app/services/rag.py": {
+    "mtime": 1787717644457.331,
+    "hash": "0d1c73f4f70f5604265c776b63baf21a"
+  },
+  "technozrelost-backend/app/services/readiness_assessment.py": {
+    "mtime": 1787756950795.4639,
+    "hash": "d7d5d53d3de14efcd65faa9ab34532c5"
+  },
+  "technozrelost-backend/db/migrations/sql/0001_init_schemas.sql": {
+    "mtime": 1787717644565.583,
+    "hash": "ed116f6ee5def05495fa6f72f3e72ffb"
+  },
+  "technozrelost-backend/db/migrations/sql/0002_rag_documents.sql": {
+    "mtime": 1787717644565.6406,
+    "hash": "cb525df7ad2ea963dfc3e45f0d72b9cb"
+  },
+  "technozrelost-backend/db/migrations/sql/0003_rbac.sql": {
+    "mtime": 1787717644565.7354,
+    "hash": "4affc31531c15369e89bc9e006530d6a"
+  },
+  "technozrelost-backend/db/migrations/sql/0004_projects_and_questionnaire.sql": {
+    "mtime": 1787717644565.7927,
+    "hash": "544771d69e80721e2a63d755af0856dd"
+  },
+  "technozrelost-backend/db/migrations/sql/0005_rag_metadata.sql": {
+    "mtime": 1787717644565.8525,
+    "hash": "588098b74931ad6a8e1ed91327ddf9ec"
+  },
+  "technozrelost-backend/db/migrations/sql/0007_organizations_technologies.sql": {
+    "mtime": 1787717644565.9675,
+    "hash": "dc5bf0343561defeed3ef2d1a7068c5c"
+  },
+  "technozrelost-backend/db/migrations/sql/0008_audit_project_nullable.sql": {
+    "mtime": 1787717644566.023,
+    "hash": "4194221315448e3fcfeb35206f11b3e3"
+  },
+  "technozrelost-backend/db/migrations/sql/0009_control_point_decision_width.sql": {
+    "mtime": 1787717644566.0784,
+    "hash": "af7779e425393d47b9d3bc11f2219739"
+  },
+  "technozrelost-backend/db/migrations/sql/0010_new_core.sql": {
+    "mtime": 1787717644566.196,
+    "hash": "e76a3886d3203d0330bd58ad6eb3b4f8"
+  },
+  "technozrelost-backend/db/migrations/sql/0011_readiness_assessment.sql": {
+    "mtime": 1787717644566.2515,
+    "hash": "3ba98529b2f7628346eb25a47e8ca9f8"
+  },
+  "technozrelost-backend/db/migrations/sql/0012_fix_gost_mojibake.sql": {
+    "mtime": 1787717644566.3088,
+    "hash": "ffef7161d46916daa0d73b44c8ab28a2"
+  },
+  "technozrelost-backend/db/migrations/sql/0013_dedup_promotion_requests.sql": {
+    "mtime": 1787717644566.367,
+    "hash": "aaee3f15df456aa02c0b06060a18abf2"
+  },
+  "technozrelost-backend/db/migrations/sql/0014_nioktr_cards.sql": {
+    "mtime": 1787717644566.4226,
+    "hash": "6edd5e9bcd39744f837f73ffab9a6989"
+  },
+  "technozrelost-backend/db/migrations/sql/0016_profiles_organizations.sql": {
+    "mtime": 1787717644566.537,
+    "hash": "aed8a59ca81a3e3ad03a9d3332a6feed"
+  },
+  "technozrelost-backend/db/migrations/sql/0017_project_invites_admin.sql": {
+    "mtime": 1787717644566.5957,
+    "hash": "3663c3ce1eb507cc56893d349a8d51bc"
+  },
+  "technozrelost-backend/db/migrations/sql/0018_file_storage.sql": {
+    "mtime": 1787717644566.648,
+    "hash": "14902bdbea00da1bbc544676979f3e56"
+  },
+  "technozrelost-backend/db/migrations/sql/0019_requirement_sets.sql": {
+    "mtime": 1787717644566.702,
+    "hash": "d59d9f8bce59172d79107a57be478d19"
+  },
+  "technozrelost-backend/db/migrations/sql/0020_request_comments.sql": {
+    "mtime": 1787717644566.7542,
+    "hash": "7dacef99812598b042d80e85d8aca02f"
+  },
+  "technozrelost-backend/db/migrations/sql/0021_publication_consent.sql": {
+    "mtime": 1787717644566.817,
+    "hash": "9af94b8cceec7b5796343942d9182d79"
+  },
+  "technozrelost-backend/db/migrations/sql/0022_nioktr_source.sql": {
+    "mtime": 1787717644566.8713,
+    "hash": "5abd63cb3d9b94ac002f8ada0cebdd1b"
+  },
+  "technozrelost-backend/db/migrations/sql/0023_notification_outbox.sql": {
+    "mtime": 1787717644566.9265,
+    "hash": "033edc9303adea7c4d902f96639feba4"
+  },
+  "technozrelost-backend/db/migrations/sql/0024_news.sql": {
+    "mtime": 1787717644566.9841,
+    "hash": "4ea3a85a54a083278c035bcb1df4c435"
+  },
+  "technozrelost-backend/db/migrations/sql/0025_achievements.sql": {
+    "mtime": 1787717644567.0613,
+    "hash": "21ec717db67efd152f70725a30424a1f"
+  },
+  "technozrelost-backend/db/migrations/sql/0026_achievement_awards.sql": {
+    "mtime": 1787717644567.4023,
+    "hash": "196badfb0b96535748e8d8a884df5868"
+  },
+  "technozrelost-backend/db/migrations/sql/0027_performance_indexes.sql": {
+    "mtime": 1787717644567.4614,
+    "hash": "be6e1bc658fe17fde0562fe7f3f4e5c9"
+  },
+  "technozrelost-backend/infra/alerter/alerter.py": {
+    "mtime": 1787841884770.8032,
+    "hash": "a66804620bec7ad06345ce927e1e6a0f"
+  },
+  "technozrelost-backend/infra/alerter/test_alerter.py": {
+    "mtime": 1787842260264.0999,
+    "hash": "4db7b3e8260eec10745871c9faff95f4"
+  },
+  "technozrelost-backend/infra/backup-lock.py": {
+    "mtime": 1787843222140.8267,
+    "hash": "cfef7c3e26a3ea1ef180e1afbbe06af7"
+  },
+  "technozrelost-backend/infra/mc-host-url.py": {
+    "mtime": 1787841759001.309,
+    "hash": "24a66876b9e099bab3e47a846a881193"
+  },
+  "technozrelost-backend/scripts/__init__.py": {
+    "mtime": 1787717644569.7402,
+    "hash": "958cccd2e62eca3da0e9319b32d06051"
+  },
+  "technozrelost-backend/scripts/loadtest.py": {
+    "mtime": 1787717644569.8416,
+    "hash": "23a534c7426b23f264a09e6584e8f156"
+  },
+  "technozrelost-backend/scripts/security_check.py": {
+    "mtime": 1787717644569.953,
+    "hash": "5bdcb9cb6893cfb97780e204306f4f43"
+  },
+  "technozrelost-backend/tests/__init__.py": {
+    "mtime": 1787717644570.071,
+    "hash": "3783fe2f5891ee5bc0dd9b63168504f2"
+  },
+  "technozrelost-backend/tests/conftest.py": {
+    "mtime": 1787717644570.1382,
+    "hash": "1929d8a171ddea8552baf8c4f0e8e5cf"
+  },
+  "technozrelost-backend/tests/support.py": {
+    "mtime": 1787746786838.0505,
+    "hash": "7856aa1942e39b0d86f02b4bc80e9766"
+  },
+  "technozrelost-backend/tests/test_achievement_catalog_sync.py": {
+    "mtime": 1787717644570.2927,
+    "hash": "ff900be9f4603e9c0b8173e2c29914c8"
+  },
+  "technozrelost-backend/tests/test_achievements.py": {
+    "mtime": 1787717644570.3804,
+    "hash": "77a48efd4b86156414d4e03f3626472d"
+  },
+  "technozrelost-backend/tests/test_achievements_stats.py": {
+    "mtime": 1787717644570.4866,
+    "hash": "8de98fa085a26b3885c21af287d26e5a"
+  },
+  "technozrelost-backend/tests/test_ai_assistant.py": {
+    "mtime": 1787717644570.6108,
+    "hash": "5ba2425ec742234a4772600ca548693f"
+  },
+  "technozrelost-backend/tests/test_archive_audit_export.py": {
+    "mtime": 1787717644570.7415,
+    "hash": "85aa325f78297abf9f9482ffc6720d53"
+  },
+  "technozrelost-backend/tests/test_auth_refresh.py": {
+    "mtime": 1787746786838.2744,
+    "hash": "3488db17ec22831dc48d1fa4252380e6"
+  },
+  "technozrelost-backend/tests/test_auth_smoke.py": {
+    "mtime": 1787717644570.88,
+    "hash": "cff1e1931e58154fc63755b074bfab02"
+  },
+  "technozrelost-backend/tests/test_auth_throttle.py": {
+    "mtime": 1787717644570.9468,
+    "hash": "abc810ebb711f29b20c362ac5e52eb2d"
+  },
+  "technozrelost-backend/tests/test_body_limit.py": {
+    "mtime": 1787746786838.4138,
+    "hash": "1861c8a7c17c5ca6335aa584b9ebd473"
+  },
+  "technozrelost-backend/tests/test_chat.py": {
+    "mtime": 1787717644571.1401,
+    "hash": "dfcddff8b550e901ee71c451a308cb41"
+  },
+  "technozrelost-backend/tests/test_comments_pdf_retention.py": {
+    "mtime": 1787717644571.2388,
+    "hash": "37fa6fd91b7baba90d262370622203c1"
+  },
+  "technozrelost-backend/tests/test_config.py": {
+    "mtime": 1787717644571.2952,
+    "hash": "9f890f6dc6b6ba5dd1212bdebbd8e552"
+  },
+  "technozrelost-backend/tests/test_control_points.py": {
+    "mtime": 1787746786838.6772,
+    "hash": "225871236df59ad8cd08a939419b7625"
+  },
+  "technozrelost-backend/tests/test_db_pool.py": {
+    "mtime": 1787746786838.877,
+    "hash": "a3cb976b70b337696e4011ce41b2f624"
+  },
+  "technozrelost-backend/tests/test_demo_journey.py": {
+    "mtime": 1787746786839.1074,
+    "hash": "846961c56b422cb478930151582ebecc"
+  },
+  "technozrelost-backend/tests/test_demo_reset.py": {
+    "mtime": 1787717644571.722,
+    "hash": "dd391130589778823d2d4247da2763ee"
+  },
+  "technozrelost-backend/tests/test_document_generation.py": {
+    "mtime": 1787717644571.8413,
+    "hash": "10b64f9afdab6ff1877b52a00adb7726"
+  },
+  "technozrelost-backend/tests/test_file_storage.py": {
+    "mtime": 1787717644571.9585,
+    "hash": "8ef00946041dd0e4bb56f190412ce0e8"
+  },
+  "technozrelost-backend/tests/test_full_ugt_journey.py": {
+    "mtime": 1787717644572.0798,
+    "hash": "538da284d0030521c313e04d19b222bb"
+  },
+  "technozrelost-backend/tests/test_harness.py": {
+    "mtime": 1787717644572.1982,
+    "hash": "4c27bb1f195b024db586c2e8052dafb6"
+  },
+  "technozrelost-backend/tests/test_health.py": {
+    "mtime": 1787717644572.2544,
+    "hash": "38ee225940d7a40cb9fe447bc44ca982"
+  },
+  "technozrelost-backend/tests/test_html_sanitizer.py": {
+    "mtime": 1787717644572.3142,
+    "hash": "6cd46a550c120baa1bd398978fc21cde"
+  },
+  "technozrelost-backend/tests/test_infra_contracts.py": {
+    "mtime": 1787893275577.5166,
+    "hash": "721ec85e4cab0ca6d53421c8419d429f"
+  },
+  "technozrelost-backend/tests/test_invites.py": {
+    "mtime": 1787717644572.4036,
+    "hash": "5e4ee89f26a75c2860665affd125661f"
+  },
+  "technozrelost-backend/tests/test_join_mechanic.py": {
+    "mtime": 1787746786839.4326,
+    "hash": "7a43975d380977e8b7f7d367198d2e94"
+  },
+  "technozrelost-backend/tests/test_llm_gateway.py": {
+    "mtime": 1787929228471.62,
+    "hash": "03d3d6938b03d7a94e20bb987ecc38f5"
+  },
+  "technozrelost-backend/tests/test_manager_verification.py": {
+    "mtime": 1787717644572.642,
+    "hash": "e3cadd2eb4ef51f12fb1002f0d3ddc9e"
+  },
+  "technozrelost-backend/tests/test_new_core.py": {
+    "mtime": 1787746786839.7617,
+    "hash": "fd15057a9487b09c93d22df68e3cdb60"
+  },
+  "technozrelost-backend/tests/test_news.py": {
+    "mtime": 1787717644572.7776,
+    "hash": "f06f8d79bc05bd2920a70507c17642d2"
+  },
+  "technozrelost-backend/tests/test_news_contract.py": {
+    "mtime": 1787717644572.8794,
+    "hash": "2f4f004696b0e3fd64f251df2fa482cb"
+  },
+  "technozrelost-backend/tests/test_news_schedule.py": {
+    "mtime": 1787717644572.9648,
+    "hash": "4f754bf3ab49d39e36c2ce81c215fe61"
+  },
+  "technozrelost-backend/tests/test_nioktr.py": {
+    "mtime": 1787717644573.062,
+    "hash": "38069c84acbf57c6708d23c3ebdc7e71"
+  },
+  "technozrelost-backend/tests/test_observability.py": {
+    "mtime": 1787717644573.125,
+    "hash": "ce1f1a295c3b8e5c4344264b0f256b9d"
+  },
+  "technozrelost-backend/tests/test_official_ugt.py": {
+    "mtime": 1787717644573.246,
+    "hash": "b722dc7ee94c434c65b7810fea23ba90"
+  },
+  "technozrelost-backend/tests/test_performance_indexes.py": {
+    "mtime": 1787717644573.3037,
+    "hash": "3e24da8a4e786ed9aa5dd7495c5430ad"
+  },
+  "technozrelost-backend/tests/test_prod_guard.py": {
+    "mtime": 1787717644573.3582,
+    "hash": "519d9d8f306d6ff1e92d4742cb52a7d5"
+  },
+  "technozrelost-backend/tests/test_profile_admin.py": {
+    "mtime": 1787717644573.4722,
+    "hash": "f5a806e87e6be9b84514e994f6228862"
+  },
+  "technozrelost-backend/tests/test_profiles.py": {
+    "mtime": 1787717644573.561,
+    "hash": "0418b65183283ae66ed95f74a513d2b0"
+  },
+  "technozrelost-backend/tests/test_project_card_perf.py": {
+    "mtime": 1787717644573.683,
+    "hash": "e69bef4ca0a18502af0b0088e5ad0d7c"
+  },
+  "technozrelost-backend/tests/test_project_create.py": {
+    "mtime": 1787717644573.7974,
+    "hash": "a8f801584ea10e297938f8b63f074c74"
+  },
+  "technozrelost-backend/tests/test_project_scope.py": {
+    "mtime": 1787717644573.855,
+    "hash": "79b6d0be537490974ee6291608845cfc"
+  },
+  "technozrelost-backend/tests/test_publication_privacy.py": {
+    "mtime": 1787717644573.9768,
+    "hash": "c2281359b47673064eb0dabc3f576aeb"
+  },
+  "technozrelost-backend/tests/test_rbac_projects.py": {
+    "mtime": 1787717644574.0974,
+    "hash": "6bd2c916da1521092e67e767a5dfcd3a"
+  },
+  "technozrelost-backend/tests/test_readiness_assessment.py": {
+    "mtime": 1787717644574.2183,
+    "hash": "0d226320e12a111f058c9e48f949f0fe"
+  },
+  "technozrelost-backend/tests/test_realtime_notifications.py": {
+    "mtime": 1787717644574.317,
+    "hash": "a98419714b2aa2caecb2524492b3f380"
+  },
+  "technozrelost-backend/tests/test_registries.py": {
+    "mtime": 1787717644574.4453,
+    "hash": "fe829e15768045a2910e935beaa16509"
+  },
+  "technozrelost-backend/tests/test_requirement_sets.py": {
+    "mtime": 1787717644574.5422,
+    "hash": "3401309e3860adb1d9e71c23f8ac8ee7"
+  },
+  "technozrelost-backend/tests/test_scan_failclosed.py": {
+    "mtime": 1787717644574.6074,
+    "hash": "d5cde1249759e5b76366a938b4130fc3"
+  },
+  "technozrelost-backend/tests/test_security_headers.py": {
+    "mtime": 1787717644574.6707,
+    "hash": "435a988a743930161d9f724f0797b3af"
+  },
+  "technozrelost-backend/tests/test_seed_admin.py": {
+    "mtime": 1787717644574.7324,
+    "hash": "1c2e5b9e1dd14b62f00cdc680989b9c8"
+  },
+  "technozrelost-backend/tests/test_seed_gost.py": {
+    "mtime": 1787717644574.799,
+    "hash": "d1f58e9acce480d97377902104a6be4e"
+  },
+  "technozrelost-backend/tests/test_upload_hardening.py": {
+    "mtime": 1787717644574.8674,
+    "hash": "a804450bb6cce722ec58071c2e9878e8"
+  },
+  "technozrelost-frontend/eslint.config.mjs": {
+    "mtime": 1787717644577.9878,
+    "hash": "66fef39214291d318ab14a4e8ad24d8e"
+  },
+  "technozrelost-frontend/next.config.ts": {
+    "mtime": 1787811329640.461,
+    "hash": "3bd3488229968377b170264523aeeae1"
+  },
+  "technozrelost-frontend/postcss.config.mjs": {
+    "mtime": 1787717644578.8376,
+    "hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "technozrelost-frontend/src/app/(landing)/about/page.tsx": {
+    "mtime": 1787717644581.973,
+    "hash": "799f696b318b7451f3757260bdc57e3f"
+  },
+  "technozrelost-frontend/src/app/(landing)/customers/page.tsx": {
+    "mtime": 1787717644582.1223,
+    "hash": "9d9a3414074841599b7264081c86e2fb"
+  },
+  "technozrelost-frontend/src/app/(landing)/layout.tsx": {
+    "mtime": 1787717644582.1829,
+    "hash": "efe17174e8f9390e77e00faaf6727a01"
+  },
+  "technozrelost-frontend/src/app/(landing)/levels/[id]/page.tsx": {
+    "mtime": 1787717644582.3647,
+    "hash": "5fe8e0e70db40c7c8c5e426b6cba744a"
+  },
+  "technozrelost-frontend/src/app/(landing)/levels/page.tsx": {
+    "mtime": 1787717644582.4866,
+    "hash": "1d6e6bcb3fdbea8da5d425e6556e7116"
+  },
+  "technozrelost-frontend/src/app/(landing)/methodology/page.tsx": {
+    "mtime": 1787717644582.576,
+    "hash": "b53b15e18f41ef61305818152f9d61f1"
+  },
+  "technozrelost-frontend/src/app/(landing)/news/[id]/page.tsx": {
+    "mtime": 1787717644582.7031,
+    "hash": "5921fbf09df55d3fbc5dca3717342b1d"
+  },
+  "technozrelost-frontend/src/app/(landing)/news/page.tsx": {
+    "mtime": 1787717644582.7637,
+    "hash": "b8ed388098622580228af3f680f1d4e7"
+  },
+  "technozrelost-frontend/src/app/(landing)/page.tsx": {
+    "mtime": 1787717644582.883,
+    "hash": "c83481259b22a82950e00a899e8056c2"
+  },
+  "technozrelost-frontend/src/app/(landing)/performers/page.tsx": {
+    "mtime": 1787717644583.0464,
+    "hash": "b4cf954b1bb31763878526b805b6b143"
+  },
+  "technozrelost-frontend/src/app/(landing)/projects/page.tsx": {
+    "mtime": 1787717644583.1375,
+    "hash": "ec65550373c9ade69f67dd9b128c79c8"
+  },
+  "technozrelost-frontend/src/app/(landing)/roadmap/page.tsx": {
+    "mtime": 1787717644583.2292,
+    "hash": "49f1159fc53304af4b4fcb13bfa400db"
+  },
+  "technozrelost-frontend/src/app/api/auth/[...nextauth]/route.ts": {
+    "mtime": 1787717644583.3884,
+    "hash": "952f03ecb31d5210c188f3b93055fe7b"
+  },
+  "technozrelost-frontend/src/app/dashboard/ai-assistant/page.tsx": {
+    "mtime": 1787746786840.121,
+    "hash": "a63bb816052728c7e3324e885d0aa2ed"
+  },
+  "technozrelost-frontend/src/app/dashboard/auditor/page.tsx": {
+    "mtime": 1787746786840.4385,
+    "hash": "dd345df180be1bc5b31516d0a49645fc"
+  },
+  "technozrelost-frontend/src/app/dashboard/cntr_admin/page.tsx": {
+    "mtime": 1787746786840.7375,
+    "hash": "60c7cdef2c5b4a935ce0d86d153175b5"
+  },
+  "technozrelost-frontend/src/app/dashboard/cntr_manager/page.tsx": {
+    "mtime": 1787746786840.953,
+    "hash": "f3e2582404cffc89e91035666906cf5c"
+  },
+  "technozrelost-frontend/src/app/dashboard/executors/page.tsx": {
+    "mtime": 1787816732616.8054,
+    "hash": "dc519f3cffcdb0a4d801222584267bde"
+  },
+  "technozrelost-frontend/src/app/dashboard/gk_customer/page.tsx": {
+    "mtime": 1787746786841.431,
+    "hash": "bbb6050dd43c11fa490b4183085e1fe1"
+  },
+  "technozrelost-frontend/src/app/dashboard/gk_customer/projects/new/page.tsx": {
+    "mtime": 1787717644584.4165,
+    "hash": "6f6b61dea2fe2d0fcb87d1189fc4a15f"
+  },
+  "technozrelost-frontend/src/app/dashboard/gk_customer/projects/page.tsx": {
+    "mtime": 1787717644584.469,
+    "hash": "df740a555f45eff3325bfb146c5cf174"
+  },
+  "technozrelost-frontend/src/app/dashboard/investor/page.tsx": {
+    "mtime": 1787746786841.6255,
+    "hash": "409cf4811a4f0b98f58828a698ffb937"
+  },
+  "technozrelost-frontend/src/app/dashboard/layout.tsx": {
+    "mtime": 1787722426561.5208,
+    "hash": "44ec6bd1206a04b4586078578aba8847"
+  },
+  "technozrelost-frontend/src/app/dashboard/news/[id]/edit/page.tsx": {
+    "mtime": 1787717644584.8623,
+    "hash": "8f653ca936e0827abdec51d1c60a329e"
+  },
+  "technozrelost-frontend/src/app/dashboard/news/admin/page.tsx": {
+    "mtime": 1787717644584.9802,
+    "hash": "e2648e245f185af861207dcc06814d9d"
+  },
+  "technozrelost-frontend/src/app/dashboard/news/new/page.tsx": {
+    "mtime": 1787717644585.0835,
+    "hash": "7c9c74b64ec633409145e5e5766b8522"
+  },
+  "technozrelost-frontend/src/app/dashboard/news/page.tsx": {
+    "mtime": 1787816732614.9087,
+    "hash": "84fb6a84ffd2e938d51df3ca785ed510"
+  },
+  "technozrelost-frontend/src/app/dashboard/nioktr/[registration_number]/page.tsx": {
+    "mtime": 1787746786841.904,
+    "hash": "65627056edff0f01775b6aa2f0cba678"
+  },
+  "technozrelost-frontend/src/app/dashboard/nioktr/page.tsx": {
+    "mtime": 1787746786842.0935,
+    "hash": "7c6f77bed33788f681b08026e1ea8485"
+  },
+  "technozrelost-frontend/src/app/dashboard/organizations/[ogrn]/page.tsx": {
+    "mtime": 1787746786842.387,
+    "hash": "39e0ecac451a6ae6e2f55d87a3173177"
+  },
+  "technozrelost-frontend/src/app/dashboard/organizations/page.tsx": {
+    "mtime": 1787746786842.5562,
+    "hash": "cb123e30b0f381eab47ae5dde23723f2"
+  },
+  "technozrelost-frontend/src/app/dashboard/page.tsx": {
+    "mtime": 1787717644585.7798,
+    "hash": "f1a172f07ea093379530325ae3c5aefc"
+  },
+  "technozrelost-frontend/src/app/dashboard/profile/page.tsx": {
+    "mtime": 1787746786842.744,
+    "hash": "32effa754098912a4f0f75d9bf77a446"
+  },
+  "technozrelost-frontend/src/app/dashboard/project/[id]/page.tsx": {
+    "mtime": 1787746786843.0552,
+    "hash": "9745c131b7ac15738acc8fc878f0af20"
+  },
+  "technozrelost-frontend/src/app/dashboard/projects/page.tsx": {
+    "mtime": 1787717644586.2734,
+    "hash": "f9f77be44aac8b36401e71a7a3e3c9fb"
+  },
+  "technozrelost-frontend/src/app/dashboard/rd_executor/page.tsx": {
+    "mtime": 1787746786843.2502,
+    "hash": "7ea6b3eca915b9017a330e5f01d72804"
+  },
+  "technozrelost-frontend/src/app/dashboard/regulating_organization/page.tsx": {
+    "mtime": 1787746786843.4236,
+    "hash": "a1f8cc4eca080ef1996996b52af62587"
+  },
+  "technozrelost-frontend/src/app/dashboard/scientific_org/page.tsx": {
+    "mtime": 1787746786843.5947,
+    "hash": "579c0fb61db93e26bf55453dfc2a28e8"
+  },
+  "technozrelost-frontend/src/app/dashboard/serial_manufacturer/page.tsx": {
+    "mtime": 1787746786843.7744,
+    "hash": "6ef03e38145c1b292198c19fb0e5e1ab"
+  },
+  "technozrelost-frontend/src/app/dashboard/technologies/page.tsx": {
+    "mtime": 1787746786843.9485,
+    "hash": "df598ffc0f35c373c0a08f8a281f39fc"
+  },
+  "technozrelost-frontend/src/app/forbidden/page.tsx": {
+    "mtime": 1787717644587.0986,
+    "hash": "352d7b39edb8d904965cd7f906ba5f55"
+  },
+  "technozrelost-frontend/src/app/join/[token]/page.tsx": {
+    "mtime": 1787717644587.4705,
+    "hash": "d13982b5969753eeb68aff9a9f5d686b"
+  },
+  "technozrelost-frontend/src/app/layout.tsx": {
+    "mtime": 1787717644587.5332,
+    "hash": "2e6360cd959d2c14a08a66deae85d42e"
+  },
+  "technozrelost-frontend/src/app/login/page.tsx": {
+    "mtime": 1787717644587.7048,
+    "hash": "969440d124bf4374cf74dc8c70791a47"
+  },
+  "technozrelost-frontend/src/app/register/page.tsx": {
+    "mtime": 1787746786844.3516,
+    "hash": "1d63cc005aacebb38523cf8bf7b49224"
+  },
+  "technozrelost-frontend/src/auth.config.ts": {
+    "mtime": 1787746786844.5317,
+    "hash": "c004a7c2ffc8b901589137b6cf953252"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/doc-10.tsx": {
+    "mtime": 1787717644588.1494,
+    "hash": "90894c23b933b2a78fe1516bf103f943"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/doc-100.tsx": {
+    "mtime": 1787717644588.2034,
+    "hash": "cbb6da09d4764a55f71a024b5d301b36"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/doc-25.tsx": {
+    "mtime": 1787717644588.254,
+    "hash": "58584497f761888bac4fdfc6ebf54365"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/doc-5.tsx": {
+    "mtime": 1787717644588.31,
+    "hash": "f3f7c57f5b315684ce37bcf97311dfa6"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/doc-50.tsx": {
+    "mtime": 1787717644588.365,
+    "hash": "d48c5d801fae1b0f845154f7c253b20a"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/doc-first.tsx": {
+    "mtime": 1787717644588.4263,
+    "hash": "d36f36018067839b469df6dac4a282e1"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/index.ts": {
+    "mtime": 1787717644588.5107,
+    "hash": "c0d16f4972380772ed38412d52ac6f4b"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/m-15-medals.tsx": {
+    "mtime": 1787717644588.575,
+    "hash": "f53651a4a891b4b37b079e28e3413415"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/m-3-projects.tsx": {
+    "mtime": 1787717644588.6392,
+    "hash": "3980e0720ff88489f2a8e21a18521751"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/m-30-medals.tsx": {
+    "mtime": 1787717644588.6938,
+    "hash": "8a363a23afdd1505dbf717030f3f2b28"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/m-5-medals.tsx": {
+    "mtime": 1787717644588.746,
+    "hash": "970ae425bdc57f092eef92678bc86b9c"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/m-5-projects.tsx": {
+    "mtime": 1787717644588.8118,
+    "hash": "cd6c5ecc86fb60b32c134d1cadeb8c18"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/m-first-medal.tsx": {
+    "mtime": 1787717644588.88,
+    "hash": "6ca6d30008403aebf53df7df8dd3ced2"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/m-longhaul.tsx": {
+    "mtime": 1787717644588.9512,
+    "hash": "fe78dfd4b8da77eff9c2a4f5a6c366bd"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/org-10-docs.tsx": {
+    "mtime": 1787717644589.0156,
+    "hash": "1d81008a243028a67757c0d2cd76583b"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/org-3-sectors.tsx": {
+    "mtime": 1787717644589.0735,
+    "hash": "4085451d77ec7982392e202d765c9514"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/org-5-projects.tsx": {
+    "mtime": 1787717644589.1323,
+    "hash": "c7643b4b407529492af193102e71500f"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/org-first.tsx": {
+    "mtime": 1787717644589.1917,
+    "hash": "4ee5634a953e35dc4324c87350c751fb"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/org-ugt6.tsx": {
+    "mtime": 1787717644589.2566,
+    "hash": "cd263f690db4c96a31db36d183820684"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-3-sectors.tsx": {
+    "mtime": 1787717644589.3176,
+    "hash": "8337c0ae727d4e9af706735f2925e6e1"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-collector.tsx": {
+    "mtime": 1787717644589.3748,
+    "hash": "14c34c92ea08196fb725d31d804e786e"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-first-request.tsx": {
+    "mtime": 1787717644589.4365,
+    "hash": "0167811790ed37c3a7e976702e01fdef"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-first.tsx": {
+    "mtime": 1787717644589.4934,
+    "hash": "c9585003f1bc06205b83b3748b9bb022"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-ugt3.tsx": {
+    "mtime": 1787717644589.5503,
+    "hash": "d1c6b175f833e429f7570a77697e0b42"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-ugt4.tsx": {
+    "mtime": 1787717644589.6084,
+    "hash": "ece49a594dab81f59e4e27c5cc47f7ea"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-ugt6.tsx": {
+    "mtime": 1787717644589.6711,
+    "hash": "774cd82dac614cfa8674e7a735c0ca73"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-ugt7.tsx": {
+    "mtime": 1787717644589.7324,
+    "hash": "9e92a151e1d97fe7821753252eb3f766"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-ugt8.tsx": {
+    "mtime": 1787717644589.7915,
+    "hash": "440d56d188a32e277fc51870313ebaa9"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/proj-ugt9.tsx": {
+    "mtime": 1787717644589.8438,
+    "hash": "f17aff1f18f22e5206b9d4ac685b4a4f"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-clean.tsx": {
+    "mtime": 1787717644589.901,
+    "hash": "aeb901caaed615eededa088d7ec4ca28"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-comeback.tsx": {
+    "mtime": 1787717644589.9607,
+    "hash": "262c31d3198626827aefb1e73c06a4de"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-fast-start.tsx": {
+    "mtime": 1787717644590.0266,
+    "hash": "a2b997f44cb75ae137bcb0e826cb49db"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-first-try.tsx": {
+    "mtime": 1787717644590.0862,
+    "hash": "e9cbafd9b72212a27d64718acfdb0962"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-leap.tsx": {
+    "mtime": 1787717644590.1445,
+    "hash": "9eb1345274e191695789d558d834702f"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-marathon.tsx": {
+    "mtime": 1787717644590.2058,
+    "hash": "fdcc661aea8bb57c2d0e37dcb4a41da1"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-perfect-set.tsx": {
+    "mtime": 1787717644590.2659,
+    "hash": "bc032c4acb4841aa684a6b7bf3fae051"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/q-sprint.tsx": {
+    "mtime": 1787717644590.3254,
+    "hash": "b3ac0e0db80c6ff322cfbcaa02efa07b"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/role-expert-1.tsx": {
+    "mtime": 1787717644590.3884,
+    "hash": "0b45803fe9c872b93104863a6cc79b0a"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/role-expert-25.tsx": {
+    "mtime": 1787717644590.4502,
+    "hash": "bda698a806f891a199e67ce2e256839e"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/role-fast-check.tsx": {
+    "mtime": 1787717644590.5044,
+    "hash": "f908d41fe128a8c8e242b85a45cbeb45"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/role-mentor.tsx": {
+    "mtime": 1787717644590.5583,
+    "hash": "f25186b956a0d48f0b2c559c44d17a46"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/role-verify-1.tsx": {
+    "mtime": 1787717644590.6099,
+    "hash": "c2a020b8ee48d5035fbc38cfe91b4f55"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/role-verify-10.tsx": {
+    "mtime": 1787717644590.6636,
+    "hash": "3790b4c6892990a15594b419219647ec"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/role-verify-50.tsx": {
+    "mtime": 1787717644590.7178,
+    "hash": "88ee0ba36294fe8fe035b9ce23a20541"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/s-comet.tsx": {
+    "mtime": 1787717644590.7678,
+    "hash": "39692ae07b1ea49abf744f549c7842f7"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/s-epic-collection.tsx": {
+    "mtime": 1787717644590.8252,
+    "hash": "fc7e5b9f41322c419cabdf0b7d806d79"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/s-ghost.tsx": {
+    "mtime": 1787717644590.875,
+    "hash": "88daeec396e81bf5ddd7064582168d57"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/s-legend.tsx": {
+    "mtime": 1787717644590.9326,
+    "hash": "25343ca3753655434a7b1e9f4bae2fb0"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/s-phoenix.tsx": {
+    "mtime": 1787717644590.9937,
+    "hash": "22e3bfa267978fc8c6743a1fce02b137"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/s-pioneer.tsx": {
+    "mtime": 1787717644591.0488,
+    "hash": "36d20437e0642e8394870d79c0d99cd5"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-agri.tsx": {
+    "mtime": 1787717644591.1077,
+    "hash": "1cdf2282060b1626efc16b7d8753496b"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-energy.tsx": {
+    "mtime": 1787717644591.1687,
+    "hash": "477ba1c809a30300583b1bf26023d179"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-it.tsx": {
+    "mtime": 1787717644591.2217,
+    "hash": "0fd3ec9dc651f9eff97d2cfe957798ea"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-machinery.tsx": {
+    "mtime": 1787717644591.275,
+    "hash": "fb3bf0ae0d8d66622a0af5f374dc794a"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-medicine.tsx": {
+    "mtime": 1787717644591.3313,
+    "hash": "c8d88270a06507a79d7e754657f2f056"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-oil.tsx": {
+    "mtime": 1787717644591.379,
+    "hash": "24746626e5f75a2842c574213e8d2205"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-polyglot.tsx": {
+    "mtime": 1787717644591.427,
+    "hash": "b7c9f0d66f58b0e9ac8ee2618b5f2196"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/sector-transport.tsx": {
+    "mtime": 1787717644591.4773,
+    "hash": "6ed3256b7ff783f09ad1346927dbac7f"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-1.tsx": {
+    "mtime": 1787717644591.5261,
+    "hash": "5f038ccdfd58775052247582a3b1b33a"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-2.tsx": {
+    "mtime": 1787717644591.5725,
+    "hash": "ba545e6146e27c8a6def402eb0275d8c"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-3.tsx": {
+    "mtime": 1787717644591.6196,
+    "hash": "191b5df6aba641dc39a3938c0c0ee7d7"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-4.tsx": {
+    "mtime": 1787717644591.6694,
+    "hash": "3ce9ebd88c761960f6ae811f82a1275c"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-5.tsx": {
+    "mtime": 1787717644591.7166,
+    "hash": "a68d26b134b2205288044fcbd8a8c71f"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-6.tsx": {
+    "mtime": 1787717644591.773,
+    "hash": "e060bd3c0baf4452d8fbc78c2a3fc45b"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-7.tsx": {
+    "mtime": 1787717644591.8252,
+    "hash": "4f21a60999e6869f02be8312a0fbc306"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-8.tsx": {
+    "mtime": 1787717644591.8772,
+    "hash": "d7f7b988da64c718e0f9e50445f859aa"
+  },
+  "technozrelost-frontend/src/components/achievements/icons/ugt-9.tsx": {
+    "mtime": 1787717644591.933,
+    "hash": "03521ff97e839e175188df07ac357017"
+  },
+  "technozrelost-frontend/src/components/achievements/medal.tsx": {
+    "mtime": 1787717644592.049,
+    "hash": "0a86dfb4561258455219124b2ff6d42b"
+  },
+  "technozrelost-frontend/src/components/assess-ugt-card.tsx": {
+    "mtime": 1787746786844.6846,
+    "hash": "e6d9339771d478202112cd40750d5933"
+  },
+  "technozrelost-frontend/src/components/brand/toleze-logo.tsx": {
+    "mtime": 1787717644592.2656,
+    "hash": "b74228170bc0825963d725bd19855850"
+  },
+  "technozrelost-frontend/src/components/dashboard/achievements-showcase.tsx": {
+    "mtime": 1787746786844.8655,
+    "hash": "44175e948bc5d959a46c431691266812"
+  },
+  "technozrelost-frontend/src/components/dashboard/header-nav.tsx": {
+    "mtime": 1787722426561.7595,
+    "hash": "73f7602098c70524d2e35bd2224c1519"
+  },
+  "technozrelost-frontend/src/components/dashboard/mobile-nav.tsx": {
+    "mtime": 1787722426561.9536,
+    "hash": "f02d01705dfaa8bb21104e5bc9689972"
+  },
+  "technozrelost-frontend/src/components/dashboard/more-functions-menu.tsx": {
+    "mtime": 1787722426562.1575,
+    "hash": "1c84f53757ed020663b566229a476d94"
+  },
+  "technozrelost-frontend/src/components/dashboard/news-card.tsx": {
+    "mtime": 1787717644592.5095,
+    "hash": "0aeb2c6332276e7a3367645f11ac1662"
+  },
+  "technozrelost-frontend/src/components/dashboard/news-editor.tsx": {
+    "mtime": 1787717644592.5916,
+    "hash": "00087606fb7b957c64835fa0fad34923"
+  },
+  "technozrelost-frontend/src/components/dashboard/project-achievements.tsx": {
+    "mtime": 1787746786845.0159,
+    "hash": "c0655d03e0925f690fc184697d7205a5"
+  },
+  "technozrelost-frontend/src/components/dashboard/project-radar.tsx": {
+    "mtime": 1787717644592.7544,
+    "hash": "7796f84aaa1bf877b2e5d7348180e8d4"
+  },
+  "technozrelost-frontend/src/components/join-project-form.tsx": {
+    "mtime": 1787746786845.2163,
+    "hash": "63e664b74edc82dcf5a98bd8314676e7"
+  },
+  "technozrelost-frontend/src/components/landing/landing-footer.tsx": {
+    "mtime": 1787717644592.9792,
+    "hash": "8fe717ba6ffcf0c3e4b659965472a0b0"
+  },
+  "technozrelost-frontend/src/components/landing/landing-nav.tsx": {
+    "mtime": 1787717644593.1096,
+    "hash": "668355649ed9e1fdfcbcee9843a9dcf0"
+  },
+  "technozrelost-frontend/src/components/landing/level-detail.tsx": {
+    "mtime": 1787717644593.1924,
+    "hash": "afd761189364756fde4a8a6d47789ba4"
+  },
+  "technozrelost-frontend/src/components/landing/living-radar.tsx": {
+    "mtime": 1787717644593.2954,
+    "hash": "a24f9e3f55017eacbb720c589b67964c"
+  },
+  "technozrelost-frontend/src/components/landing/methodology-content.tsx": {
+    "mtime": 1787717644593.378,
+    "hash": "75a51b125d274ac0de7ca766d89de0a8"
+  },
+  "technozrelost-frontend/src/components/landing/news-card.tsx": {
+    "mtime": 1787717644593.4626,
+    "hash": "8f801563303dee41d07aec7cd0d733ae"
+  },
+  "technozrelost-frontend/src/components/landing/news-detail.tsx": {
+    "mtime": 1787717644593.5796,
+    "hash": "fbfeb3807bcf4a17d59eb2d4cd10ffa8"
+  },
+  "technozrelost-frontend/src/components/landing/news-feed.tsx": {
+    "mtime": 1787816732615.8816,
+    "hash": "ccb596edd825a940290e21a34c0b0564"
+  },
+  "technozrelost-frontend/src/components/landing/projects-showcase.tsx": {
+    "mtime": 1787717644593.7527,
+    "hash": "8f1ce569ad90e17be5c8b3c3694dc295"
+  },
+  "technozrelost-frontend/src/components/landing/radar-legend.tsx": {
+    "mtime": 1787717644593.8176,
+    "hash": "4c0c7be1a92a40d3b91cf5723b707a26"
+  },
+  "technozrelost-frontend/src/components/landing/reveal.tsx": {
+    "mtime": 1787717644593.874,
+    "hash": "ede53dbdceebde6ad3a47397c2be439e"
+  },
+  "technozrelost-frontend/src/components/landing/roadmap-content.tsx": {
+    "mtime": 1787717644593.9707,
+    "hash": "effca7a1ae1161ccb093260a67e7d7d9"
+  },
+  "technozrelost-frontend/src/components/landing/ugt-card.tsx": {
+    "mtime": 1787717644594.0974,
+    "hash": "2a73e4f3bd997a4c7efaa5fc6ac0cb8a"
+  },
+  "technozrelost-frontend/src/components/landing/ugt-interactive-scale.tsx": {
+    "mtime": 1787717644594.2197,
+    "hash": "2251330f65d11ff9fa0517e538dfc8df"
+  },
+  "technozrelost-frontend/src/components/notification-bell.tsx": {
+    "mtime": 1787746786845.411,
+    "hash": "a5fed0067a6cd43cf5304e79c47d6655"
+  },
+  "technozrelost-frontend/src/components/profile-verification-queue.tsx": {
+    "mtime": 1787746786845.5972,
+    "hash": "45fa0c9639d4ca3aa134fee2bd8f0a02"
+  },
+  "technozrelost-frontend/src/components/project-files-panel.tsx": {
+    "mtime": 1787746786845.7986,
+    "hash": "63a518b662e539170814d386b065c8b9"
+  },
+  "technozrelost-frontend/src/components/project-team-panel.tsx": {
+    "mtime": 1787746786845.989,
+    "hash": "b9478c78293ac84e72dededc2fb26a59"
+  },
+  "technozrelost-frontend/src/components/providers.tsx": {
+    "mtime": 1787717644594.7397,
+    "hash": "7b833570925935e525701cfbeb3cf104"
+  },
+  "technozrelost-frontend/src/components/questionnaire/index.ts": {
+    "mtime": 1787717644594.832,
+    "hash": "d21400a3b8b2c3334ea9896cacd51e06"
+  },
+  "technozrelost-frontend/src/components/questionnaire/questionnaire-wizard-client.tsx": {
+    "mtime": 1787746786846.279,
+    "hash": "21c325cb631af46aac9e9dda2ac4c37a"
+  },
+  "technozrelost-frontend/src/components/request-comments-panel.tsx": {
+    "mtime": 1787746786846.4878,
+    "hash": "c29d4bb067c75764651784c4eb574176"
+  },
+  "technozrelost-frontend/src/components/stage-progress-panel.tsx": {
+    "mtime": 1787746786846.721,
+    "hash": "b28753369b51dbce506f08ad41ad2d02"
+  },
+  "technozrelost-frontend/src/components/udmurt-star.tsx": {
+    "mtime": 1787717644595.1843,
+    "hash": "68015fa91418ad35c0da8ef9ecf0d3a3"
+  },
+  "technozrelost-frontend/src/components/ugt-scale/index.ts": {
+    "mtime": 1787717644595.2695,
+    "hash": "671a2adc7ce6fa7ff2da5f53364618d9"
+  },
+  "technozrelost-frontend/src/components/ugt-scale/ugt-scale-page-client.tsx": {
+    "mtime": 1787717644595.4006,
+    "hash": "d1d70f897a8103cd76ef58ab8ea3c751"
+  },
+  "technozrelost-frontend/src/components/verification-docs-panel.tsx": {
+    "mtime": 1787746786846.9204,
+    "hash": "3891cd6dbf9f61523f27cd6ed2055617"
+  },
+  "technozrelost-frontend/src/lib/api-client.ts": {
+    "mtime": 1787746786847.085,
+    "hash": "312daf00b8b121d501c43fddf0ffa6bd"
+  },
+  "technozrelost-frontend/src/lib/format-date.ts": {
+    "mtime": 1787717644595.6885,
+    "hash": "c8c7c142e9e7152a3fa40f5fcdb0a2c4"
+  },
+  "technozrelost-frontend/src/lib/more-menu.ts": {
+    "mtime": 1787746786847.2603,
+    "hash": "ce59c100801d61c37f25cfc4ecdebc80"
+  },
+  "technozrelost-frontend/src/lib/news-admin-api.ts": {
+    "mtime": 1787746786847.466,
+    "hash": "7cd0b96a45850577d733e54acd694e5b"
+  },
+  "technozrelost-frontend/src/lib/news-types.ts": {
+    "mtime": 1787717644595.874,
+    "hash": "d2912a22146262fbf27dcde21fb30eb9"
+  },
+  "technozrelost-frontend/src/lib/public-api.ts": {
+    "mtime": 1787817439922.1682,
+    "hash": "382dde06a62ae63d970670d08ca62ef7"
+  },
+  "technozrelost-frontend/src/lib/roles.ts": {
+    "mtime": 1787746786847.698,
+    "hash": "0da646b1581bbf1a9364b6d99f9f0078"
+  },
+  "technozrelost-frontend/src/lib/showcase.ts": {
+    "mtime": 1787717644596.1094,
+    "hash": "094e885df25854d82d771eb87b85b18b"
+  },
+  "technozrelost-frontend/src/lib/ugt-data.ts": {
+    "mtime": 1787717644596.2107,
+    "hash": "b152bee4eca5eafa10fe5b7480e11321"
+  },
+  "technozrelost-frontend/src/middleware.ts": {
+    "mtime": 1787746786847.9045,
+    "hash": "2d39c395908992fa11065be5488e9e5d"
+  },
+  "technozrelost-frontend/tests/api-client-behavior.test.mjs": {
+    "mtime": 1787746786848.293,
+    "hash": "34a5ab3c56d9dab063d29519ce093d78"
+  },
+  "technozrelost-frontend/tests/api-client.test.mjs": {
+    "mtime": 1787717644596.422,
+    "hash": "39ca65fbbaa3b0be1b95c481d18080ec"
+  },
+  "technozrelost-frontend/tests/api-url-module.test.mjs": {
+    "mtime": 1787818863697.457,
+    "hash": "a75cf545fe8f787f2997dd37a25b0078"
+  },
+  "technozrelost-frontend/tests/news-dashboard.test.mjs": {
+    "mtime": 1787746786848.495,
+    "hash": "b94432aa50a655970e4c446cacc5c10f"
+  },
+  "technozrelost-frontend/tests/news-public.test.mjs": {
+    "mtime": 1787816732620.8308,
+    "hash": "35af4f4f9065f2e3d2087a30f7f4c7ac"
+  },
+  "technozrelost-frontend/tests/next-config.test.mjs": {
+    "mtime": 1787811230121.3826,
+    "hash": "accbbb3fed643d02781fc437b03322fe"
+  },
+  "technozrelost-frontend/tests/routes-matrix.test.mjs": {
+    "mtime": 1787744613824.6692,
+    "hash": "21671500ed5eec7e2bf00e2a1f10e47f"
+  },
+  "technozrelost-frontend/tests/security-headers.test.mjs": {
+    "mtime": 1787717644596.6392,
+    "hash": "f7aafb935c13356c25e70d82b67c8e85"
+  },
+  "technozrelost-frontend/tests/ui-shell.test.mjs": {
+    "mtime": 1787746786848.6772,
+    "hash": "751c4786316c313db3cda561c17e2ef1"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/2026-08-25-brief.md": {
+    "mtime": 1787657328000,
+    "hash": "ef91d2bf681e3462c1124a496f553032"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/interfaces.md": {
+    "mtime": 1787665692000,
+    "hash": "41b78af128167d917e133a48bae20447"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/manifest.md": {
+    "mtime": 1787716090000,
+    "hash": "9f19d89658bd1c5b503616d75784bfaf"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/spec.md": {
+    "mtime": 1787637723000,
+    "hash": "61a82125e0e6fdba66c56bbbe32f49ec"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/01-green-base.md": {
+    "mtime": 1787638077000,
+    "hash": "d24985e16543ba63fcf864897a2cb95f"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/02-repo-hygiene.md": {
+    "mtime": 1787639252000,
+    "hash": "167f4c6b01ada1b30fffe47074f2fd1b"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/04-backend-security.md": {
+    "mtime": 1787638123000,
+    "hash": "600c17db95ff6df3975fc6b2e09c92aa"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/05-infra-resilience.md": {
+    "mtime": 1787642522000,
+    "hash": "9345e4b28926ea710e8a3280d6d890ba"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/06-performance.md": {
+    "mtime": 1787638157000,
+    "hash": "82925150881e545f0666450c570c2da5"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/07-news-achievements-port.md": {
+    "mtime": 1787657355000,
+    "hash": "9efab6b2a9ad037831b6a1ab1e99de48"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-01.md": {
+    "mtime": 1787641795000,
+    "hash": "690a046806076b8dfe75818781887fbb"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-02.md": {
+    "mtime": 1787640169000,
+    "hash": "ade00dbe6f608808894acb41d16e3371"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-03.md": {
+    "mtime": 1787643863000,
+    "hash": "04ae11142953e90ebf836815c1550721"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-04.md": {
+    "mtime": 1787656045000,
+    "hash": "4e4ed8df4ade962bbc1cbcae53eb37df"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-05.md": {
+    "mtime": 1787655866000,
+    "hash": "995afe0f2461729da44b6e21a6dc560f"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-06.md": {
+    "mtime": 1787664727000,
+    "hash": "bba44acd97b94e0b335dc1e09846f8ea"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-07.md": {
+    "mtime": 1787658948000,
+    "hash": "04d159cf55bbd19de2897dfc40e78626"
+  },
+  ".autopilot/2026-08-25-deploy-readiness-audit/tickets/report-08.md": {
+    "mtime": 1787668174000,
+    "hash": "ceafed227b43cd6ec286077d39540a56"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/2026-08-26-brief.md": {
+    "mtime": 1787742578756.677,
+    "hash": "08c3c871c18d6c05eeda47092008dc59"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/interfaces.md": {
+    "mtime": 1787823768174.5508,
+    "hash": "53804253e341e84e0e468d703d7d1c49"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/manifest.md": {
+    "mtime": 1787893971059.1533,
+    "hash": "d22fe7fa2332e9f175dc90d0531367cb"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/pitr-rehearsal-2026-08-26.txt": {
+    "mtime": 1787751345649.846,
+    "hash": "e4d2d6eba5b38114d946e834458098f1"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/spec.md": {
+    "mtime": 1787823768176.379,
+    "hash": "6b30bf0ec9d68df07cb37c2a039982a0"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/tickets/01-backend-hardening.md": {
+    "mtime": 1787893350655.5825,
+    "hash": "c83e0333f106cadd168e0643cf768532"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/tickets/02-frontend-access.md": {
+    "mtime": 1787893350656.2983,
+    "hash": "70eef502117fd3b5aa5ba1900b62212b"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/tickets/03-customer-docs.md": {
+    "mtime": 1787893366352.765,
+    "hash": "b91e48e942305289ed5a6597d7a55f81"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/tickets/04-data-safety.md": {
+    "mtime": 1787893064277.3845,
+    "hash": "3301ea4b2972b67c31b5204808500075"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/tickets/05-edge-deploy-alerts.md": {
+    "mtime": 1787893064278.2922,
+    "hash": "48c0a1d8c88faa63f66c3e000c0def67"
+  },
+  ".autopilot/2026-08-26-m0-security-hardening/tickets/06-ci-pipeline.md": {
+    "mtime": 1787893971059.7944,
+    "hash": "e9a4c83a0e49d78e11c81c7bd43c2bca"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/2026-08-28-brief.md": {
+    "mtime": 1787928751179.4539,
+    "hash": "d205f40caa094e885f7e2bbe802730ed"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/de-dupe-report.md": {
+    "mtime": 1787928981885.8718,
+    "hash": "a1e2b85e2d1f3a0af6dc3466798d3f59"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/interfaces.md": {
+    "mtime": 1787930162537.4521,
+    "hash": "03c0682bfb2fc26d1eb14658d3a6414c"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/manifest.md": {
+    "mtime": 1787930162589.6553,
+    "hash": "2c8e9a18dc53c50921bfad0832d4fc99"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/spec.md": {
+    "mtime": 1787928974163.063,
+    "hash": "a62053ac4334041667cc5d88b61d2282"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/tickets/01-llm-gateway.md": {
+    "mtime": 1787928832981.597,
+    "hash": "69658219c3703b8e3dfbe0255afc74bd"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/tickets/02-throttle-bcrypt-sse-scheduler.md": {
+    "mtime": 1787928832984.0664,
+    "hash": "cd6a545c3130d5ec71868caa115900e3"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/tickets/03-frontend-auth-audit.md": {
+    "mtime": 1787928832986.3074,
+    "hash": "d2cef68fb1b648de235269432156b62d"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/tickets/04-indexes-pagination.md": {
+    "mtime": 1787928832988.3372,
+    "hash": "c67aa4feecf1ec6392c22967a0186b4c"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/tickets/05-infra-limits-logs-nginx-dr.md": {
+    "mtime": 1787928832990.317,
+    "hash": "ecacb4f1fb3fa446fc5e01a7609b12e2"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/tickets/06-rag-matching-admin-docs.md": {
+    "mtime": 1787928974162.9666,
+    "hash": "1e429477826cdcc71ce8e785e1701a57"
+  },
+  ".autopilot/2026-08-28-m1-5k-stabilization--wip/tickets/07-dedupe-report.md": {
+    "mtime": 1787928832994.3086,
+    "hash": "531956d057998b21a519eeab80e61845"
+  },
+  ".autopilot/README.md": {
+    "mtime": 1787928766527.0957,
+    "hash": "630e7237bcaabd194ad7f9ba02089d97"
+  },
+  ".autopilot/dashboard.html": {
+    "mtime": 1787896990595.7014,
+    "hash": "0b86a5d27cad585996c39ade611f3916"
+  },
+  ".autopilot/index.html": {
+    "mtime": 1787896990595.7014,
+    "hash": "0b86a5d27cad585996c39ade611f3916"
+  },
+  ".github/workflows/ci.yml": {
+    "mtime": 1787842079861.1719,
+    "hash": "cb8e6fa1ad8e4f6526011bc93554474c"
+  },
+  "AGENTS.md": {
+    "mtime": 1787895530118.5076,
+    "hash": "d1d4121150b4ae56d3d9fc6a16760475"
+  },
+  "CLAUDE.md": {
+    "mtime": 1787895530118.5076,
+    "hash": "d1d4121150b4ae56d3d9fc6a16760475"
+  },
+  "PROGRESS.md": {
+    "mtime": 1787717644444.256,
+    "hash": "2ab71744e6e1b3382db69691e92487e2"
+  },
+  "README.md": {
+    "mtime": 1787893971062.1143,
+    "hash": "923087253e5823df03e2ae8c5da24ed1"
+  },
+  "docs/BACKLOG.md": {
+    "mtime": 1787893138577.888,
+    "hash": "873940a10a6973f0fa7cd16f8ce8ea30"
+  },
+  "docs/CLAUDE.md": {
+    "mtime": 1787717644444.506,
+    "hash": "c303410da1a8d38cc93b2391b945263c"
+  },
+  "docs/DESIGN.md": {
+    "mtime": 1787717644444.5957,
+    "hash": "fcd7e83032f20bd9fbf7c6ce174dd36f"
+  },
+  "docs/PRD.md": {
+    "mtime": 1787717644444.6804,
+    "hash": "7f4df0ea56ed14c056b6eec567bbe69d"
+  },
+  "docs/PROGRESS.md": {
+    "mtime": 1787717644444.7905,
+    "hash": "a1f23ce2818b4f1aedc1b5bd748cbfa1"
+  },
+  "docs/Plan.md": {
+    "mtime": 1787893971060.777,
+    "hash": "acdf085907003d128480f46af9b6789b"
+  },
+  "docs/Status.md": {
+    "mtime": 1787893971061.6301,
+    "hash": "e291339c95573062ccef94bd49733e34"
+  },
+  "docs/adr/0001-baza-audita-friday-rc-overlay.md": {
+    "mtime": 1787717644445.0552,
+    "hash": "c8dc05d8185ea107deee3ef4e39c8e7b"
+  },
+  "docs/adr/0002-kanonichnyy-bekend-novosti-i-dostizheniya.md": {
+    "mtime": 1787717644445.1167,
+    "hash": "01c46a35c5ed5ef32c2d7d424db8f508"
+  },
+  "docs/adr/0003-owasp-kak-kriteriy-ib.md": {
+    "mtime": 1787717644445.1733,
+    "hash": "1f116a9c31dd8c2cb685cec11529c02b"
+  },
+  "docs/adr/0004-fail-closed-fayly-i-prod-gard-sekretov.md": {
+    "mtime": 1787717644445.2278,
+    "hash": "2fa579bea91ff2fc06ba2be22bcb4298"
+  },
+  "docs/adr/0005-lokalnaya-proverka-prod-kontura.md": {
+    "mtime": 1787717644445.2817,
+    "hash": "83cd597c4f10c100db709c79ab0dab8c"
+  },
+  "docs/adr/0006-politika-chinit-vse-bezopasnoe.md": {
+    "mtime": 1787717644445.3384,
+    "hash": "601d3a5a48e807d172173e3fc273b0e5"
+  },
+  "docs/adr/0007-hba-least-privilege-fixed-subnets.md": {
+    "mtime": 1787895513137.9377,
+    "hash": "3fd1dc6863f27c50f8470e329e630065"
+  },
+  "docs/adr/0008-wal-history-offsite-retention-crypt-only.md": {
+    "mtime": 1787895526462.4873,
+    "hash": "9613541e8295913f8f0800e471b74c46"
+  },
+  "docs/adr/0009-backup-advisory-lock-and-operational-mounts.md": {
+    "mtime": 1787895537531.171,
+    "hash": "3cc20140d6f6c4524663441f2e90f092"
+  },
+  "docs/docs/agents/domain.md": {
+    "mtime": 1787717644445.4595,
+    "hash": "f674f8b4d04e509a14c425bd4a5ad63a"
+  },
+  "docs/docs/agents/issue-tracker.md": {
+    "mtime": 1787717644445.5208,
+    "hash": "99964efcd48d46ddbc3665cf2772666c"
+  },
+  "docs/version-map.md": {
+    "mtime": 1787717644445.6335,
+    "hash": "fde9ed0d1f6527d00536d98ab5a19c27"
+  },
+  "technozrelost-backend/.agents/skills/graphify/SKILL.md": {
+    "mtime": 1787717644448.792,
+    "hash": "a3fbec2ddba8d0a35825c242671b3655"
+  },
+  "technozrelost-backend/.graphify/GRAPH_REPORT.md": {
+    "mtime": 1787825687105.3462,
+    "hash": "bacd4de30cdcf7afe1a453456a2f0077"
+  },
+  "technozrelost-backend/AGENTS.md": {
+    "mtime": 1787717644450.5002,
+    "hash": "77abe0b46e54b5fac32f767a38c079e9"
+  },
+  "technozrelost-backend/README.md": {
+    "mtime": 1787717644450.6304,
+    "hash": "2561ddd9b162af0a1097e70b7d657845"
+  },
+  "technozrelost-backend/db/migrations/README.md": {
+    "mtime": 1787717644565.4207,
+    "hash": "5f144d95c71d1bc3c35a2af4a34182f0"
+  },
+  "technozrelost-backend/infra/README-DEPLOY.md": {
+    "mtime": 1787893199637.2458,
+    "hash": "56e8f495d7cbef248488fe76932e3d46"
+  },
+  "technozrelost-backend/infra/README-LOADTEST.md": {
+    "mtime": 1787717644567.7605,
+    "hash": "2ee7e64b8fc4c70168d13d9db6122a66"
+  },
+  "technozrelost-backend/infra/README.md": {
+    "mtime": 1787717644567.8523,
+    "hash": "e34d0ffff8782e9b030f21673fdeaca0"
+  },
+  "technozrelost-backend/infra/RUNBOOK-DATA.md": {
+    "mtime": 1787893971062.8103,
+    "hash": "e51593c446c86b5c564032fb407973bb"
+  },
+  "technozrelost-backend/infra/docker-compose.prod.yml": {
+    "mtime": 1787933080853.729,
+    "hash": "76ef25d4aa29c5ce2821b986558ac415"
+  },
+  "technozrelost-backend/infra/docker-compose.yml": {
+    "mtime": 1787890976707.76,
+    "hash": "f31546a62d08a9187030a357a67cede3"
+  },
+  "technozrelost-backend/infra/grafana/provisioning/dashboards.yml": {
+    "mtime": 1787717644568.5735,
+    "hash": "ef498a4b75d2d8e8c9550ff0ff9c722d"
+  },
+  "technozrelost-backend/infra/grafana/provisioning/datasources.yml": {
+    "mtime": 1787717644568.6343,
+    "hash": "5cf2d3803776f9011ba19ab8875ba87c"
+  },
+  "technozrelost-backend/infra/prometheus/prometheus.yml": {
+    "mtime": 1787717644569.3801,
+    "hash": "fd30241e6d8310c5c100b234cf41e6f5"
+  },
+  "technozrelost-frontend/.agents/skills/graphify/SKILL.md": {
+    "mtime": 1787717644575.8665,
+    "hash": "a3fbec2ddba8d0a35825c242671b3655"
+  },
+  "technozrelost-frontend/.graphify/GRAPH_REPORT.md": {
+    "mtime": 1787813053608.9258,
+    "hash": "b5fa8acffc4f5c2e3cb5c37964cedece"
+  },
+  "technozrelost-frontend/AGENTS.md": {
+    "mtime": 1787718349450.6892,
+    "hash": "e49f06a03ebedbd91597fa64b0a9451a"
+  },
+  "technozrelost-frontend/CLAUDE.md": {
+    "mtime": 1787717644577.2832,
+    "hash": "5c27369b226fcf2be8a6cfe52224e767"
+  },
+  "technozrelost-frontend/DESIGN.md": {
+    "mtime": 1787717644577.3728,
+    "hash": "fcd7e83032f20bd9fbf7c6ce174dd36f"
+  },
+  "technozrelost-frontend/PROGRESS.md": {
+    "mtime": 1787717644577.474,
+    "hash": "c3a80573ee942ab7edf299fe69c1a3e6"
+  },
+  "technozrelost-frontend/README.md": {
+    "mtime": 1787717644577.5234,
+    "hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "technozrelost-frontend/docs/browser-matrix.md": {
+    "mtime": 1787717644577.6245,
+    "hash": "b65f64e55796dbeca77543d87fa619f5"
+  },
+  "technozrelost-frontend/docs/prompts/frontend-backend-audit.md": {
+    "mtime": 1787717644577.7444,
+    "hash": "ac024446a3ec4a08a34f9cb5b8373019"
+  },
+  "technozrelost-frontend/docs/prompts/landing-page-task.md": {
+    "mtime": 1787717644577.8271,
+    "hash": "97de2bd75e5c8320001e04e92d67865d"
+  },
+  "technozrelost-frontend/docs/testing/stage1-ui-shell.tdd.md": {
+    "mtime": 1787717644577.919,
+    "hash": "e90e008cc1afd9450e02376bb1d93150"
+  },
+  "technozrelost-frontend/public/brand/logo-16.png": {
+    "mtime": 1787717644578.973,
+    "hash": "d0a129d8a57ca4132447bb5933e41941"
+  },
+  "technozrelost-frontend/public/brand/logo-32.png": {
+    "mtime": 1787717644579.0334,
+    "hash": "3619108c55ac76102145595ee90f2d83"
+  },
+  "technozrelost-frontend/public/brand/logo-64.png": {
+    "mtime": 1787717644579.1091,
+    "hash": "443c02757afa505c4fbad18b3731c7b0"
+  },
+  "technozrelost-frontend/public/brand/logo-star.png": {
+    "mtime": 1787717644579.3386,
+    "hash": "0b34fe62933a634db6d5be87552905aa"
+  },
+  "technozrelost-frontend/public/brand/tolese-512.png": {
+    "mtime": 1787717644579.4084,
+    "hash": "6ea03b49b6694a47637310e5e7847b2c"
+  },
+  "technozrelost-frontend/public/ornaments/udmurt-star-accent.svg": {
+    "mtime": 1787717644579.4937,
+    "hash": "1891f71bb2f908d0cb7192c5cf3ac79d"
+  },
+  "technozrelost-frontend/public/ornaments/udmurt-star-graphite.svg": {
+    "mtime": 1787717644579.5452,
+    "hash": "fe51e9faf7a0e4465c9869456b1213d0"
+  },
+  "technozrelost-frontend/public/ornaments/udmurt-star-strong.svg": {
+    "mtime": 1787717644579.5984,
+    "hash": "faa0eb2c086ffb539e8e7dc27a32d0bd"
+  },
+  "technozrelost-frontend/public/ornaments/udmurt-star-white.svg": {
+    "mtime": 1787717644579.649,
+    "hash": "d95cdc1077b80ffc08cae45c5c4b4ff4"
+  },
+  "technozrelost-frontend/public/videos/hero-bg.mp4": {
+    "mtime": 1787717644581.5417,
+    "hash": "043c0058b078b46ab066da2f91e41dc2"
+  }
+}
