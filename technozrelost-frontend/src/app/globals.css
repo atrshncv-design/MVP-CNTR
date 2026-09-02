@@ -54,6 +54,12 @@
   --tz-review: #b45309; /* тикет 02 — янтарный */
   --tz-danger: #c02526;
   --tz-neutral: #5a5d64;
+  /* WCAG AA текст на soft-фоне: затемнённые варианты для 4.5:1 (R03) */
+  --tz-success-text: #127336;
+  --tz-warning-text: #92400e;
+  --tz-review-text: #92400e;
+  --tz-accent-text: #c42627;
+  --tz-danger-text: var(--tz-danger);
 
   --tz-success-soft: rgba(21, 128, 61, 0.1);
   --tz-warning-soft: rgba(180, 83, 9, 0.1);
@@ -68,14 +74,14 @@
   --tz-shadow-pop: 0 8px 32px rgb(11 13 18 / 0.12);
   --tz-shadow-glow: 0 0 0 1px rgba(214, 48, 49, 0.25), 0 6px 24px rgba(214, 48, 49, 0.14);
 
-  /* Нейтральная палитра: тёплый бумажный оттенок (светлая) */
+  /* Нейтральная палитра: тёплый бумажный оттенок (светлая) — R03: gray-500 затемнён до 5.09:1 на белом (было 4.00) */
   --tz-p-white: #ffffff;
   --tz-p-gray-50: #faf8f3;
   --tz-p-gray-100: #f2efe8;
   --tz-p-gray-200: #e5e0d6;
   --tz-p-gray-300: #d3cdc1;
   --tz-p-gray-400: #a8a299;
-  --tz-p-gray-500: #7c7f87;
+  --tz-p-gray-500: #6b6e77;
   --tz-p-gray-600: #5a5d64;
   --tz-p-gray-700: #3f4248;
   --tz-p-gray-800: #26282d;
@@ -462,12 +468,13 @@
     line-height: 1.5;
     white-space: nowrap;
   }
-  .tz-badge-success { background: var(--tz-success-soft); color: var(--tz-success); }
-  .tz-badge-warning { background: var(--tz-warning-soft); color: var(--tz-warning); }
-  .tz-badge-review  { background: var(--tz-review-soft);  color: var(--tz-review); }
-  .tz-badge-danger  { background: var(--tz-danger-soft);  color: var(--tz-danger); }
+  /* R03: затемнённые text-цвета для контраста 4.5:1 на soft-фоне */
+  .tz-badge-success { background: var(--tz-success-soft); color: var(--tz-success-text); }
+  .tz-badge-warning { background: var(--tz-warning-soft); color: var(--tz-warning-text); }
+  .tz-badge-review  { background: var(--tz-review-soft);  color: var(--tz-review-text); }
+  .tz-badge-danger  { background: var(--tz-danger-soft);  color: var(--tz-danger-text); }
   .tz-badge-neutral { background: var(--tz-neutral-soft); color: var(--tz-muted); }
-  .tz-badge-accent  { background: var(--tz-accent-soft);  color: var(--tz-accent); }
+  .tz-badge-accent  { background: var(--tz-accent-soft);  color: var(--tz-accent-text); }
 
   /* ── УГТ-бейдж: цвет по уровню (D2/D5 — тёплая шкала) ──────── */
   .tz-ugt {
@@ -482,15 +489,16 @@
     line-height: 1.4;
     letter-spacing: 0.01em;
   }
-  .tz-ugt-1 { background: rgba(154, 42, 43, 0.12); color: var(--tz-ugt-1); } /* тикет 02 */
-  .tz-ugt-2 { background: rgba(249, 115, 22, 0.12); color: var(--tz-ugt-2); }
-  .tz-ugt-3 { background: rgba(251, 146, 60, 0.12); color: var(--tz-ugt-3); }
-  .tz-ugt-4 { background: rgba(245, 158, 11, 0.12); color: var(--tz-ugt-4); }
-  .tz-ugt-5 { background: rgba(234, 179, 8, 0.12); color: var(--tz-ugt-5); }
-  .tz-ugt-6 { background: rgba(202, 138, 4, 0.12); color: var(--tz-ugt-6); }
-  .tz-ugt-7 { background: rgba(132, 204, 22, 0.12); color: var(--tz-ugt-7); }
-  .tz-ugt-8 { background: rgba(101, 163, 13, 0.12); color: var(--tz-ugt-8); }
-  .tz-ugt-9 { background: rgba(22, 163, 74, 0.12); color: var(--tz-ugt-9); }
+  /* R03: UGT текст затемнён до 4.5:1 на 12% soft-фоне (axe contrast) */
+  .tz-ugt-1 { background: rgba(154, 42, 43, 0.12); color: var(--tz-ugt-1); } /* тикет 02 — уже 6.25:1 */
+  .tz-ugt-2 { background: rgba(249, 115, 22, 0.12); color: #bc3b1c; }
+  .tz-ugt-3 { background: rgba(251, 146, 60, 0.12); color: #a24817; }
+  .tz-ugt-4 { background: rgba(245, 158, 11, 0.12); color: #935e06; }
+  .tz-ugt-5 { background: rgba(234, 179, 8, 0.12); color: #8c6b04; }
+  .tz-ugt-6 { background: rgba(202, 138, 4, 0.12); color: #8d6002; }
+  .tz-ugt-7 { background: rgba(132, 204, 22, 0.12); color: #4f7a0d; }
+  .tz-ugt-8 { background: rgba(101, 163, 13, 0.12); color: #467209; }
+  .tz-ugt-9 { background: rgba(22, 163, 74, 0.12); color: #0f7233; }
 
   .tz-ugt-pill {
     display: inline-flex;

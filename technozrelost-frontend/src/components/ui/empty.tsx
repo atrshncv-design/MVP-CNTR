@@ -14,8 +14,12 @@ export function Empty({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="tz-card tz-empty">
-      {icon ? <span className="tz-empty-icon">{icon}</span> : null}
+    <div className="tz-card tz-empty" role="status" aria-live="polite">
+      {icon ? (
+        <span className="tz-empty-icon" aria-hidden="true">
+          {icon}
+        </span>
+      ) : null}
       <h2 className="tz-empty-title">{title}</h2>
       {description ? <p className="tz-empty-text">{description}</p> : null}
       {action ? <div className="mt-6">{action}</div> : null}

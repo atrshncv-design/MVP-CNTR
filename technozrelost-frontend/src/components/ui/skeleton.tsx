@@ -3,7 +3,7 @@
 import * as React from "react";
 
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={["animate-pulse rounded bg-tz-surface-2", className].filter(Boolean).join(" ")} {...props} />;
+  return <div aria-hidden="true" className={["animate-pulse rounded bg-tz-surface-2", className].filter(Boolean).join(" ")} {...props} />;
 }
 
 export function SkeletonCard() {
@@ -17,7 +17,7 @@ export function SkeletonCard() {
 
 export function Loading({ label = "Загрузка…" }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center py-20">
+    <div role="status" aria-live="polite" aria-label={label} className="flex items-center justify-center py-20">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-tz-accent border-t-transparent" aria-hidden="true" />
       <span className="sr-only">{label}</span>
     </div>

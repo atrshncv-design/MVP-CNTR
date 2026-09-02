@@ -31,6 +31,8 @@ export function FilterBar({
 }) {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [tagQuery, setTagQuery] = React.useState("");
+  const searchId = React.useId();
+  const tagSearchId = React.useId();
 
   const selectedTags = filters.tags ?? [];
   const hasFilters =
@@ -74,14 +76,18 @@ export function FilterBar({
     <div className="space-y-4">
       {/* Поиск */}
       <div>
-        <label className="tz-label">Поиск</label>
+        <label htmlFor={searchId} className="tz-label">
+          Поиск
+        </label>
         <div className="relative">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" />
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" aria-hidden="true" />
           <input
+            id={searchId}
             value={filters.search ?? ""}
             onChange={(e) => setFilters({ search: e.target.value || undefined })}
             placeholder="Поиск по названию…"
             className="tz-input pl-9"
+            aria-label="Поиск по названию"
           />
         </div>
       </div>
@@ -96,11 +102,16 @@ export function FilterBar({
             </button>
           ) : null}
         </div>
+        <label htmlFor={tagSearchId} className="sr-only">
+          Поиск по тегам
+        </label>
         <input
+          id={tagSearchId}
           value={tagQuery}
           onChange={(e) => setTagQuery(e.target.value)}
           placeholder="Поиск по тегам…"
           className="tz-input mb-2"
+          aria-label="Поиск по тегам"
         />
         <div className="flex max-h-40 flex-wrap gap-1.5 overflow-auto rounded-lg border border-tz-border p-2">
           {filteredTags.map((tag) => {

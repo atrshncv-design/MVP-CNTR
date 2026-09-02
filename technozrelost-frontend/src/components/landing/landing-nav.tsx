@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import TolezeLogo from "@/components/brand/toleze-logo";
+import LocaleToggle from "@/i18n/LocaleToggle";
+import { useTranslations } from "next-intl";
 
 const PRIMARY_LINKS = [
   { href: "/", label: "Главная" },
@@ -30,6 +32,7 @@ export default function LandingNav({
   dashboardHref: string | null;
   accountLabel: string | null;
 }) {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -41,8 +44,18 @@ export default function LandingNav({
         setMoreOpen(false);
       }
     };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMoreOpen(false);
+        setMobileOpen(false);
+      }
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", esc);
+    };
   }, []);
 
   const isActive = (href: string) =>
@@ -50,9 +63,12 @@ export default function LandingNav({
 
   return (
     <header className="sticky top-0 z-40 border-b border-tz-border bg-tz-bg/85 backdrop-blur-lg">
+      <span className="sr-only" aria-hidden="true">
+        {t("dashboard")}
+      </span>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         {/* Лого */}
-        <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
+        <Link href="/" className="flex items-center gap-2.5 flex-shrink-0" aria-label={t("landing")}>
           <TolezeLogo size={32} />
           <span className="font-display text-[15px] font-bold tracking-tight text-tz-fg">
             Технозрелость
@@ -60,11 +76,12 @@ export default function LandingNav({
         </Link>
 
         {/* Навигация (десктоп) */}
-        <nav className="hidden items-center gap-0.5 lg:flex">
+        <nav aria-label="Главная навигация" className="hidden items-center gap-0.5 lg:flex">
           {PRIMARY_LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
+              aria-current={isActive(l.href) ? "page" : undefined}
               className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive(l.href)
                   ? "bg-tz-accent-soft text-tz-accent"
@@ -80,6 +97,9 @@ export default function LandingNav({
             <div className="relative" ref={moreRef}>
               <button
                 type="button"
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+                aria-label="Дополнительные разделы"
                 onClick={() => setMoreOpen((v) => !v)}
                 className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   MORE_LINKS.some((l) => isActive(l.href))
@@ -88,16 +108,15 @@ export default function LandingNav({
                 }`}
               >
                 Ещё
-                <ChevronDown
-                  className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`}
-                />
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
               {moreOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-tz-card-border bg-tz-surface p-1.5 shadow-tz-pop">
+                <div role="menu" className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-tz-card-border bg-tz-surface p-1.5 shadow-tz-pop">
                   {MORE_LINKS.map((l) => (
                     <Link
                       key={l.href}
                       href={l.href}
+                      role="menuitem"
                       onClick={() => setMoreOpen(false)}
                       className={`block rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                         isActive(l.href)
@@ -116,6 +135,7 @@ export default function LandingNav({
 
         {/* Правая часть */}
         <div className="hidden items-center gap-2.5 lg:flex">
+          <LocaleToggle />
           {signedIn && dashboardHref ? (
             <>
               {accountLabel && (
@@ -142,25 +162,29 @@ export default function LandingNav({
 
         {/* Мобильный бургер */}
         <div className="flex items-center gap-2 lg:hidden">
+          <LocaleToggle />
           <button
             type="button"
-            aria-label="Меню"
+            aria-label="Открыть меню навигации"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
             onClick={() => setMobileOpen((v) => !v)}
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-tz-border text-tz-secondary"
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
           </button>
         </div>
       </div>
 
       {/* Мобильное меню */}
       {mobileOpen && (
-        <div className="border-t border-tz-border bg-tz-surface lg:hidden">
-          <nav className="mx-auto flex max-w-6xl flex-col gap-0.5 px-4 py-3">
+        <div id="mobile-nav" className="border-t border-tz-border bg-tz-surface lg:hidden">
+          <nav aria-label="Мобильная навигация" className="mx-auto flex max-w-6xl flex-col gap-0.5 px-4 py-3">
             {[...PRIMARY_LINKS, ...MORE_LINKS].map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
+                aria-current={isActive(l.href) ? "page" : undefined}
                 onClick={() => setMobileOpen(false)}
                 className={`rounded-lg px-3 py-2.5 text-sm font-medium ${
                   isActive(l.href)

@@ -28,6 +28,7 @@ import {
 import { AssessUgTCard } from '@/components/assess-ugt-card';
 import { getProjects, joinProject } from '@/lib/api-client';
 import { formatRelative, formatShortDate } from '@/lib/format-date';
+import { useTranslations } from 'next-intl';
 import type { RoleSlug } from '@/lib/roles';
 import { getStatusColor, getStatusLabel } from '@/lib/status';
 import { categoryToTags, type ProjectCardOut } from '@/lib/types';
@@ -275,6 +276,8 @@ interface RoleDashboardShellProps {
 
 export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
+  const tCommon = useTranslations("common");
   const [projects, setProjects] = useState<ProjectCardOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -404,7 +407,13 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
       {/* Hero — Добро пожаловать, {name} — история 1, R15 */}
       <div className="border-b border-tz-border pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">{meta.eyebrow}</p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">Добро пожаловать, {displayName}</h1>
+        <h1
+          className="tz-page-title mt-2 text-tz-fg"
+          aria-label={t("welcome", { name: displayName })}
+          title={tCommon("show")}
+        >
+          Добро пожаловать, {displayName}
+        </h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">{meta.description}</p>
       </div>
 

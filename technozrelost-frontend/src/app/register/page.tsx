@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ROLES } from "@/lib/roles";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 type Status = "idle" | "loading" | "error";
@@ -35,7 +35,7 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
+      const response = await fetch(`${CLIENT_API_BASE}/api/v1/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -62,7 +62,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="grid min-h-screen bg-tz-bg lg:grid-cols-[1.1fr_0.9fr]">
+    <main id="main-content" tabIndex={-1} className="grid min-h-screen bg-tz-bg focus:outline-none lg:grid-cols-[1.1fr_0.9fr]">
       <section
         className="relative hidden overflow-hidden px-12 py-14 text-white lg:flex lg:flex-col"
         style={{ background: "var(--tz-hero-bg)" }}

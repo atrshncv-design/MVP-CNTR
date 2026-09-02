@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { Modal } from "@/components/ui/modal";
 import {
   AlertCircle,
   CalendarClock,
@@ -14,7 +15,6 @@ import {
   Rocket,
   Trash2,
   Unlink,
-  X,
 } from "lucide-react";
 import {
   NEWS_STATUS_LABELS,
@@ -291,71 +291,31 @@ function NewsRow({
         </p>
       )}
 
-      {/* Модалка планирования */}
-      {scheduleOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Запланировать публикацию"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setScheduleOpen(false)}
-        >
-          <div
-            className="tz-card w-full max-w-md p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="tz-eyebrow">Отложенная публикация</p>
-                <h3 className="mt-1 font-semibold text-tz-fg">
-                  Запланировать новость
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setScheduleOpen(false)}
-                className="rounded-lg p-1.5 text-tz-muted transition hover:bg-tz-soft hover:text-tz-fg"
-                aria-label="Закрыть"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <p className="mt-1 text-sm text-tz-secondary line-clamp-1">
-              {item.title}
-            </p>
-            <label className="mt-4 block">
-              <span className="mb-1.5 block text-sm font-medium text-tz-secondary">
-                Дата и время публикации
-              </span>
-              <input
-                type="datetime-local"
-                min={localDateTimeMin()}
-                value={scheduleValue}
-                onChange={(e) => setScheduleValue(e.target.value)}
-                className="tz-input w-full"
-              />
-            </label>
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setScheduleOpen(false)}
-                className="tz-btn tz-btn-ghost"
-              >
-                Отмена
-              </button>
-              <button
-                type="button"
-                disabled={busy === "schedule"}
-                onClick={() => void handleSchedule()}
-                className="tz-btn tz-btn-primary"
-              >
-                <CalendarPlus size={14} />
-                Запланировать
-              </button>
-            </div>
-          </div>
+      {/* Модалка планирования — WCAG: через Modal с ловушкой фокуса */}
+      <Modal open={scheduleOpen} onClose={() => setScheduleOpen(false)} title="Запланировать новость" ariaLabel="Запланировать публикацию">
+        <p className="tz-eyebrow">Отложенная публикация</p>
+        <p className="mt-1 text-sm text-tz-secondary line-clamp-1">{item.title}</p>
+        <label className="mt-4 block">
+          <span className="mb-1.5 block text-sm font-medium text-tz-secondary">Дата и время публикации</span>
+          <input
+            type="datetime-local"
+            min={localDateTimeMin()}
+            value={scheduleValue}
+            onChange={(e) => setScheduleValue(e.target.value)}
+            className="tz-input w-full"
+            aria-label="Дата и время публикации"
+          />
+        </label>
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button type="button" onClick={() => setScheduleOpen(false)} className="tz-btn tz-btn-ghost">
+            Отмена
+          </button>
+          <button type="button" disabled={busy === "schedule"} onClick={() => void handleSchedule()} className="tz-btn tz-btn-primary">
+            <CalendarPlus size={14} aria-hidden="true" />
+            Запланировать
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

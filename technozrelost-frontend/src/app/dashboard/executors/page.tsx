@@ -9,6 +9,9 @@ import { CLIENT_API_BASE } from "@/lib/public-api";
 import { useRegistryFilters, useDebouncedValue } from "@/lib/filters";
 import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
+import { RegistryTable } from "@/features/registry/RegistryTable";
+import { RegistryViewToggle } from "@/features/registry/RegistryViewToggle";
+import { useRegistryView } from "@/features/registry/useRegistryView";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRealtime } from "@/features/registry/useRealtime";
 import { useRegistry as _useRegistryProjects } from "@/features/registry/useRegistry";
@@ -123,6 +126,7 @@ export default function ExecutorsPage() {
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 300);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const { isFav, toggle } = useFavorites("executors");
+  const [view, setView] = useRegistryView("executors");
 
   const [tab, setTab] = useState<"specialists" | "organizations">("specialists");
   const [items, setItems] = useState<Executor[]>([]);
@@ -217,6 +221,7 @@ export default function ExecutorsPage() {
         >
           <Building2 size={16} aria-hidden="true" /> Организации
         </button>
+        <RegistryViewToggle view={view} onChange={setView} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
@@ -230,27 +235,51 @@ export default function ExecutorsPage() {
           />
         </div>
         <div>
-          <RegistryGrid
-            items={paged}
-            loading={loading}
-            error={error}
-            errorStatus={errorStatus}
-            onRetry={refresh}
-            hasMore={hasMore}
-            onLoadMore={loadMore}
-            renderCard={(exec: Executor) => (
-              <ExecutorCard exec={exec} isFav={isFav(exec.id)} onToggle={() => toggle(exec.id)} />
-            )}
-            emptyTitle={favoritesOnly ? "Нет избранных исполнителей" : "Пока нет проектов — создайте заявку"}
-            emptyDescription={favoritesOnly ? "Отметьте исполнителей звёздочкой." : "В каталоге пока нет исполнителей"}
-            emptyAction={
-              favoritesOnly ? (
-                <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                  Показать все
-                </button>
-              ) : undefined
-            }
-          />
+          {view === "cards" ? (
+            <RegistryGrid
+              items={paged}
+              loading={loading}
+              error={error}
+              errorStatus={errorStatus}
+              onRetry={refresh}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              renderCard={(exec: Executor) => (
+                <ExecutorCard exec={exec} isFav={isFav(exec.id)} onToggle={() => toggle(exec.id)} />
+              )}
+              emptyTitle={favoritesOnly ? "Нет избранных исполнителей" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={favoritesOnly ? "Отметьте исполнителей звёздочкой." : "В каталоге пока нет исполнителей"}
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <RegistryTable
+              items={paged as unknown as Record<string, unknown>[]}
+              loading={loading}
+              error={error}
+              errorStatus={errorStatus}
+              onRetry={refresh}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              loadingMore={false}
+              isFavorite={isFav}
+              onToggleFavorite={toggle}
+              emptyTitle={favoritesOnly ? "Нет избранных исполнителей" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={favoritesOnly ? "Отметьте исполнителей звёздочкой." : "В каталоге пока нет исполнителей"}
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : undefined
+              }
+            />
+          )}
         </div>
       </div>
     </section>

@@ -7,6 +7,9 @@ import { useMemo, useState } from "react";
 import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryCard } from "@/features/registry/RegistryCard";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
+import { RegistryTable } from "@/features/registry/RegistryTable";
+import { RegistryViewToggle } from "@/features/registry/RegistryViewToggle";
+import { useRegistryView } from "@/features/registry/useRegistryView";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRegistry } from "@/features/registry/useRegistry";
 import { ExportButton } from "@/features/registry/export";
@@ -29,6 +32,7 @@ export default function ProjectsPage() {
   const registry = useRegistry({ registryKey: "projects" });
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const { isFav, toggle } = useFavorites("projects");
+  const [view, setView] = useRegistryView("projects");
 
   const displayItems = useMemo(() => {
     if (!favoritesOnly) return registry.items;
@@ -59,7 +63,10 @@ export default function ProjectsPage() {
               URL.
             </p>
           </div>
-          <ExportButton rows={displayItems} registryKey="projects" />
+          <div className="flex flex-wrap items-center gap-2">
+            <RegistryViewToggle view={view} onChange={setView} />
+            <ExportButton rows={displayItems} registryKey="projects" />
+          </div>
         </div>
       </div>
 
@@ -78,41 +85,74 @@ export default function ProjectsPage() {
         </div>
 
         <div>
-          <RegistryGrid
-            items={displayItems}
-            loading={registry.loading}
-            error={registry.error}
-            errorStatus={registry.errorStatus}
-            onRetry={registry.refresh}
-            hasMore={favoritesOnly ? false : registry.hasMore}
-            onLoadMore={registry.loadMore}
-            loadingMore={registry.loadingMore}
-            renderCard={(project) => (
-              <RegistryCard
-                project={project}
-                href={`/dashboard/project/${project.id}`}
-                isFavorite={isFav(project.id)}
-                onToggleFavorite={() => toggle(project.id)}
-              />
-            )}
-            emptyTitle={favoritesOnly ? "Нет избранных проектов" : "Пока нет проектов — создайте заявку"}
-            emptyDescription={
-              favoritesOnly
-                ? "Отметьте проекты звёздочкой, они появятся здесь."
-                : "Проекты появляются в реестре после публикации менеджером ЦНТР."
-            }
-            emptyAction={
-              favoritesOnly ? (
-                <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                  Показать все
-                </button>
-              ) : (
-                <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-                  Создать заявку
-                </Link>
-              )
-            }
-          />
+          {view === "cards" ? (
+            <RegistryGrid
+              items={displayItems}
+              loading={registry.loading}
+              error={registry.error}
+              errorStatus={registry.errorStatus}
+              onRetry={registry.refresh}
+              hasMore={favoritesOnly ? false : registry.hasMore}
+              onLoadMore={registry.loadMore}
+              loadingMore={registry.loadingMore}
+              renderCard={(project) => (
+                <RegistryCard
+                  project={project}
+                  href={`/dashboard/project/${project.id}`}
+                  isFavorite={isFav(project.id)}
+                  onToggleFavorite={() => toggle(project.id)}
+                />
+              )}
+              emptyTitle={favoritesOnly ? "Нет избранных проектов" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={
+                favoritesOnly
+                  ? "Отметьте проекты звёздочкой, они появятся здесь."
+                  : "Проекты появляются в реестре после публикации менеджером ЦНТР."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : (
+                  <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
+                    Создать заявку
+                  </Link>
+                )
+              }
+            />
+          ) : (
+            <RegistryTable
+              items={displayItems}
+              loading={registry.loading}
+              error={registry.error}
+              errorStatus={registry.errorStatus}
+              onRetry={registry.refresh}
+              hasMore={favoritesOnly ? false : registry.hasMore}
+              onLoadMore={registry.loadMore}
+              loadingMore={registry.loadingMore}
+              isFavorite={isFav}
+              onToggleFavorite={toggle}
+              getHref={(project) => `/dashboard/project/${(project as unknown as { id: number }).id}`}
+              emptyTitle={favoritesOnly ? "Нет избранных проектов" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={
+                favoritesOnly
+                  ? "Отметьте проекты звёздочкой, они появятся здесь."
+                  : "Проекты появляются в реестре после публикации менеджером ЦНТР."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : (
+                  <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
+                    Создать заявку
+                  </Link>
+                )
+              }
+            />
+          )}
         </div>
       </div>
     </section>

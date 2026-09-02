@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-export function Chip({ active, className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
+export function Chip({ active, className, type = "button", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
   const cls = ["tz-chip", active ? "tz-chip-active" : "", className].filter(Boolean).join(" ");
-  return <button className={cls} {...props} />;
+  return <button type={type} className={cls} aria-pressed={active} {...props} />;
 }

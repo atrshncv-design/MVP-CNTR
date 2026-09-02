@@ -10,13 +10,25 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 export function Select({ label, error, className, children, id, ...props }: SelectProps) {
   const autoId = React.useId();
   const selectId = id ?? autoId;
+  const errorId = `${selectId}-error`;
+  const hasError = Boolean(error);
   return (
-    <label className="block">
+    <label className="block" htmlFor={selectId}>
       {label ? <span className="tz-label">{label}</span> : null}
-      <select id={selectId} className={["tz-select", className].filter(Boolean).join(" ")} {...props}>
+      <select
+        id={selectId}
+        className={["tz-select", className].filter(Boolean).join(" ")}
+        aria-invalid={hasError || undefined}
+        aria-describedby={hasError ? errorId : undefined}
+        {...props}
+      >
         {children}
       </select>
-      {error ? <span className="mt-1 block text-xs text-tz-danger">{error}</span> : null}
+      {hasError ? (
+        <span id={errorId} role="alert" className="mt-1 block text-xs text-tz-danger">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }

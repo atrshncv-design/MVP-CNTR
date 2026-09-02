@@ -16,7 +16,7 @@ export function Pagination({
   if (!hasMore) return null;
   return (
     <div className="flex justify-center pt-6">
-      <Button variant="secondary" onClick={onLoadMore} loading={loading}>
+      <Button variant="secondary" onClick={onLoadMore} loading={loading} aria-label="Загрузить ещё записи">
         Показать ещё
       </Button>
     </div>
@@ -33,14 +33,16 @@ export function PageNav({
   onNext: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <Button variant="ghost" size="sm" onClick={onPrev} disabled={page <= 1}>
-        <ChevronLeft size={16} /> Назад
+    <nav aria-label="Навигация по страницам" className="flex items-center justify-between">
+      <Button variant="ghost" size="sm" onClick={onPrev} disabled={page <= 1} aria-label="Предыдущая страница">
+        <ChevronLeft size={16} aria-hidden="true" /> Назад
       </Button>
-      <span className="font-mono text-sm text-tz-muted">Стр. {page}</span>
-      <Button variant="ghost" size="sm" onClick={onNext}>
-        Далее <ChevronRight size={16} />
+      <span className="font-mono text-sm text-tz-muted" aria-live="polite" aria-atomic="true">
+        Стр. {page}
+      </span>
+      <Button variant="ghost" size="sm" onClick={onNext} aria-label="Следующая страница">
+        Далее <ChevronRight size={16} aria-hidden="true" />
       </Button>
-    </div>
+    </nav>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 const JOIN_ROLES = [
@@ -62,7 +62,7 @@ export default function JoinTokenClient({
     try {
       const isInvite = token.toUpperCase().startsWith("INV-");
       const endpoint = isInvite ? "/invites/accept" : "/projects/join";
-      const res = await fetch(`${API_URL}/api/v1${endpoint}`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

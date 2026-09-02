@@ -102,6 +102,55 @@ export function SessionExpiredModal() {
     }
   }, [session, status, pathname]);
 
+  const titleId = React.useId();
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  const prevFocus = React.useRef<HTMLElement | null>(null);
+
+  // WCAG: фокус-ловушка и Escape для модалки сессии (R03)
+  React.useEffect(() => {
+    if (!visible) return;
+    prevFocus.current = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const t = setTimeout(() => {
+      const focusable = dialog?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      const first = focusable?.[0] as HTMLElement | undefined;
+      if (first) first.focus();
+      else dialog?.focus();
+    }, 0);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setVisible(false);
+      }
+      if (e.key === "Tab" && dialog) {
+        const nodes = Array.from(
+          dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+        );
+        if (nodes.length === 0) return;
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+      prevFocus.current?.focus();
+    };
+  }, [visible]);
+
   if (!visible) return null;
 
   return (
@@ -109,10 +158,20 @@ export function SessionExpiredModal() {
       className="fixed inset-0 z-[100] flex items-center justify-center bg-tz-fg/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
       aria-label="Сессия истекла"
+      onClick={() => setVisible(false)}
     >
-      <div className="tz-card w-full max-w-md p-6 text-center shadow-2xl" data-testid="session-expired-modal">
-        <h2 className="text-lg font-bold text-tz-fg">Сессия истекла — войдите заново</h2>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="tz-card w-full max-w-md p-6 text-center shadow-2xl focus:outline-none"
+        data-testid="session-expired-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id={titleId} className="text-lg font-bold text-tz-fg">
+          Сессия истекла — войдите заново
+        </h2>
         <p className="mt-2 text-sm text-tz-muted">
           Ваша сессия истекла или права доступа изменились. Черновик сохранён в браузере и будет восстановлен после входа.
         </p>

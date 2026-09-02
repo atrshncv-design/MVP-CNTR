@@ -2,10 +2,18 @@
 
 import * as React from "react";
 
-export function Progress({ value, className, ...props }: { value: number } & React.HTMLAttributes<HTMLDivElement>) {
+export function Progress({ value, className, "aria-label": ariaLabel, ...props }: { value: number; "aria-label"?: string } & React.HTMLAttributes<HTMLDivElement>) {
   const v = Math.max(0, Math.min(100, value));
   return (
-    <div className={["tz-progress", className].filter(Boolean).join(" ")} {...props}>
+    <div
+      className={["tz-progress", className].filter(Boolean).join(" ")}
+      role="progressbar"
+      aria-valuenow={v}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={ariaLabel ?? `Прогресс ${v}%`}
+      {...props}
+    >
       <div className="tz-progress-fill" style={{ width: `${v}%` }} />
     </div>
   );

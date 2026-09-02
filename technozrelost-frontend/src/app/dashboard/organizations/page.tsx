@@ -10,6 +10,9 @@ import { CLIENT_API_BASE } from "@/lib/public-api";
 import { useRegistryFilters, useDebouncedValue } from "@/lib/filters";
 import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
+import { RegistryTable } from "@/features/registry/RegistryTable";
+import { RegistryViewToggle } from "@/features/registry/RegistryViewToggle";
+import { useRegistryView } from "@/features/registry/useRegistryView";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRealtime } from "@/features/registry/useRealtime";
 import { ExportButton } from "@/features/registry/export";
@@ -106,6 +109,7 @@ export default function OrganizationsPage() {
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 300);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const { isFav, toggle } = useFavorites("organizations");
+  const [view, setView] = useRegistryView("organizations");
 
   const [items, setItems] = useState<OrgRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,7 +211,10 @@ export default function OrganizationsPage() {
               колонка + drawer.
             </p>
           </div>
-          <ExportButton rows={filteredByClient} registryKey="organizations" />
+          <div className="flex flex-wrap items-center gap-2">
+            <RegistryViewToggle view={view} onChange={setView} />
+            <ExportButton rows={filteredByClient} registryKey="organizations" />
+          </div>
         </div>
       </div>
 
@@ -222,30 +229,61 @@ export default function OrganizationsPage() {
           />
         </div>
         <div>
-          <RegistryGrid
-            items={filteredByClient}
-            loading={loading}
-            error={error}
-            errorStatus={errorStatus}
-            onRetry={refresh}
-            hasMore={favoritesOnly ? false : hasMore}
-            onLoadMore={loadMore}
-            loadingMore={loadingMore}
-            renderCard={(org: OrgRecord) => (
-              <OrganizationCard org={org} isFav={isFav(org.id)} onToggle={() => toggle(org.id)} />
-            )}
-            emptyTitle={favoritesOnly ? "Нет избранных организаций" : "Пока нет проектов — создайте заявку"}
-            emptyDescription={
-              favoritesOnly ? "Отметьте организации звёздочкой." : "Организации появляются из карточек НИОКТР."
-            }
-            emptyAction={
-              favoritesOnly ? (
-                <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                  Показать все
-                </button>
-              ) : undefined
-            }
-          />
+          {view === "cards" ? (
+            <RegistryGrid
+              items={filteredByClient}
+              loading={loading}
+              error={error}
+              errorStatus={errorStatus}
+              onRetry={refresh}
+              hasMore={favoritesOnly ? false : hasMore}
+              onLoadMore={loadMore}
+              loadingMore={loadingMore}
+              renderCard={(org: OrgRecord) => (
+                <OrganizationCard org={org} isFav={isFav(org.id)} onToggle={() => toggle(org.id)} />
+              )}
+              emptyTitle={favoritesOnly ? "Нет избранных организаций" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={
+                favoritesOnly ? "Отметьте организации звёздочкой." : "Организации появляются из карточек НИОКТР."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <RegistryTable
+              items={filteredByClient as unknown as Record<string, unknown>[]}
+              loading={loading}
+              error={error}
+              errorStatus={errorStatus}
+              onRetry={refresh}
+              hasMore={favoritesOnly ? false : hasMore}
+              onLoadMore={loadMore}
+              loadingMore={loadingMore}
+              isFavorite={isFav}
+              onToggleFavorite={toggle}
+              getHref={(org) =>
+                (org as unknown as OrgRecord).ogrn
+                  ? `/dashboard/organizations/${encodeURIComponent((org as unknown as OrgRecord).ogrn!)}`
+                  : undefined
+              }
+              emptyTitle={favoritesOnly ? "Нет избранных организаций" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={
+                favoritesOnly ? "Отметьте организации звёздочкой." : "Организации появляются из карточек НИОКТР."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : undefined
+              }
+            />
+          )}
         </div>
       </div>
     </section>

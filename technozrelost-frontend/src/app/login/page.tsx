@@ -4,10 +4,12 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 type Status = "idle" | "loading" | "error";
 
 function LoginForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const params = useSearchParams();
   const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
@@ -73,6 +75,8 @@ function LoginForm() {
       <button
         type="submit"
         disabled={status === "loading"}
+        aria-label={t("submit")}
+        title={t("submit")}
         className="w-full rounded-lg bg-[var(--tz-accent)] px-4 py-3 font-bold text-white transition hover:bg-[var(--tz-accent-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tz-accent)] disabled:cursor-wait disabled:opacity-60"
       >
         {status === "loading" ? "Вход…" : "Войти в платформу"}
@@ -83,7 +87,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="grid min-h-screen bg-tz-bg lg:grid-cols-[1.1fr_0.9fr]">
+    <main id="main-content" tabIndex={-1} className="grid min-h-screen bg-tz-bg focus:outline-none lg:grid-cols-[1.1fr_0.9fr]">
       <section
         className="relative hidden overflow-hidden px-12 py-14 text-white lg:flex lg:flex-col"
         style={{ background: "var(--tz-hero-bg)" }}

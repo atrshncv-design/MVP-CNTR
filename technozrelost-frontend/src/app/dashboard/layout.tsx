@@ -5,6 +5,7 @@ import TolezeLogo from "@/components/brand/toleze-logo";
 import HeaderNav from "@/components/dashboard/header-nav";
 import MobileNav from "@/components/dashboard/mobile-nav";
 import { SessionExpiredModal } from "@/features/notifications/SessionExpiredModal";
+import LocaleToggle from "@/i18n/LocaleToggle";
 
 /**
  * Компактная шапка ЛК (по образцу internal-ux-redesign): логотип +
@@ -61,6 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <LocaleToggle />
             <NotificationBell />
 
             {/* Профиль: аватар с инициалами + имя (компактно на lg+) */}
@@ -102,7 +104,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </div>
       </header>
-      <main id="main-content" className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8">
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8 focus:outline-none">
         {children}
       </main>
       {/* G43: модалка «Сессия истекла — войдите заново» поверх страницы, без потери черновика tz:draft:{projectId} */}

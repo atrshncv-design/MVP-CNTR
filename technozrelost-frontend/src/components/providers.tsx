@@ -4,6 +4,7 @@ import { signOut, useSession, SessionProvider } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
+import { OfflineBanner } from "@/features/offline/OfflineBanner";
 import { isProtectedRoute } from "@/lib/roles";
 
 function SessionExpiryWatcher() {
@@ -27,6 +28,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <SessionExpiryWatcher />
+      {/* P3 R04: глобальный баннер offline + очередь localStorage `tz:offline:queue` + sync после online */}
+      <OfflineBanner />
       {children}
     </SessionProvider>
   );

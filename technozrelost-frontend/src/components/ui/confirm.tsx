@@ -23,14 +23,19 @@ export function Confirm({
   onCancel: () => void;
   loading?: boolean;
 }) {
+  const descId = React.useId();
   return (
-    <Modal open={open} onClose={onCancel} title={title}>
-      {description ? <p className="text-sm text-tz-secondary">{description}</p> : null}
+    <Modal open={open} onClose={onCancel} title={title} ariaDescribedBy={description ? descId : undefined}>
+      {description ? (
+        <p id={descId} className="text-sm text-tz-secondary">
+          {description}
+        </p>
+      ) : null}
       <div className="mt-6 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onCancel} disabled={loading}>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>
           Отмена
         </Button>
-        <Button variant={variant} onClick={onConfirm} loading={loading}>
+        <Button type="button" variant={variant} onClick={onConfirm} loading={loading} autoFocus>
           {confirmLabel}
         </Button>
       </div>

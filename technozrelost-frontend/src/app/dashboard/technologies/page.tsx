@@ -7,6 +7,9 @@ import { useMemo, useState } from "react";
 import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryCard } from "@/features/registry/RegistryCard";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
+import { RegistryTable } from "@/features/registry/RegistryTable";
+import { RegistryViewToggle } from "@/features/registry/RegistryViewToggle";
+import { useRegistryView } from "@/features/registry/useRegistryView";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRegistry } from "@/features/registry/useRegistry";
 import { ExportButton } from "@/features/registry/export";
@@ -22,6 +25,7 @@ export default function TechnologiesPage() {
   const registry = useRegistry({ registryKey: "technologies", initial: { ugt_min: 7 } });
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const { isFav, toggle } = useFavorites("technologies");
+  const [view, setView] = useRegistryView("technologies");
 
   const displayItems = useMemo(() => {
     let items = registry.items;
@@ -43,7 +47,10 @@ export default function TechnologiesPage() {
               реестр проектов с фильтром ugt_min=7. Бюджет виден всем.
             </p>
           </div>
-          <ExportButton rows={displayItems} registryKey="technologies" />
+          <div className="flex flex-wrap items-center gap-2">
+            <RegistryViewToggle view={view} onChange={setView} />
+            <ExportButton rows={displayItems} registryKey="technologies" />
+          </div>
         </div>
       </div>
 
@@ -60,41 +67,74 @@ export default function TechnologiesPage() {
         </div>
 
         <div>
-          <RegistryGrid
-            items={displayItems}
-            loading={registry.loading}
-            error={registry.error}
-            errorStatus={registry.errorStatus}
-            onRetry={registry.refresh}
-            hasMore={favoritesOnly ? false : registry.hasMore}
-            onLoadMore={registry.loadMore}
-            loadingMore={registry.loadingMore}
-            renderCard={(project) => (
-              <RegistryCard
-                project={project}
-                href={`/dashboard/project/${project.id}`}
-                isFavorite={isFav(project.id)}
-                onToggleFavorite={() => toggle(project.id)}
-              />
-            )}
-            emptyTitle={favoritesOnly ? "Нет избранных технологий" : "Технологий УГТ 7+ пока нет"}
-            emptyDescription={
-              favoritesOnly
-                ? "Отметьте технологии звёздочкой."
-                : "Технология попадает в этот реестр автоматически при подтверждении уровня УГТ 7 и выше."
-            }
-            emptyAction={
-              favoritesOnly ? (
-                <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                  Показать все
-                </button>
-              ) : (
-                <Link href="/dashboard/projects" className="tz-btn tz-btn-secondary">
-                  К реестру проектов
-                </Link>
-              )
-            }
-          />
+          {view === "cards" ? (
+            <RegistryGrid
+              items={displayItems}
+              loading={registry.loading}
+              error={registry.error}
+              errorStatus={registry.errorStatus}
+              onRetry={registry.refresh}
+              hasMore={favoritesOnly ? false : registry.hasMore}
+              onLoadMore={registry.loadMore}
+              loadingMore={registry.loadingMore}
+              renderCard={(project) => (
+                <RegistryCard
+                  project={project}
+                  href={`/dashboard/project/${project.id}`}
+                  isFavorite={isFav(project.id)}
+                  onToggleFavorite={() => toggle(project.id)}
+                />
+              )}
+              emptyTitle={favoritesOnly ? "Нет избранных технологий" : "Технологий УГТ 7+ пока нет"}
+              emptyDescription={
+                favoritesOnly
+                  ? "Отметьте технологии звёздочкой."
+                  : "Технология попадает в этот реестр автоматически при подтверждении уровня УГТ 7 и выше."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : (
+                  <Link href="/dashboard/projects" className="tz-btn tz-btn-secondary">
+                    К реестру проектов
+                  </Link>
+                )
+              }
+            />
+          ) : (
+            <RegistryTable
+              items={displayItems}
+              loading={registry.loading}
+              error={registry.error}
+              errorStatus={registry.errorStatus}
+              onRetry={registry.refresh}
+              hasMore={favoritesOnly ? false : registry.hasMore}
+              onLoadMore={registry.loadMore}
+              loadingMore={registry.loadingMore}
+              isFavorite={isFav}
+              onToggleFavorite={toggle}
+              getHref={(project) => `/dashboard/project/${(project as unknown as { id: number }).id}`}
+              emptyTitle={favoritesOnly ? "Нет избранных технологий" : "Технологий УГТ 7+ пока нет"}
+              emptyDescription={
+                favoritesOnly
+                  ? "Отметьте технологии звёздочкой."
+                  : "Технология попадает в этот реестр автоматически при подтверждении уровня УГТ 7 и выше."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : (
+                  <Link href="/dashboard/projects" className="tz-btn tz-btn-secondary">
+                    К реестру проектов
+                  </Link>
+                )
+              }
+            />
+          )}
         </div>
       </div>
     </section>

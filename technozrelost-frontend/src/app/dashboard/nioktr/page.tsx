@@ -10,6 +10,9 @@ import { CLIENT_API_BASE } from "@/lib/public-api";
 import { useRegistryFilters, useDebouncedValue } from "@/lib/filters";
 import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
+import { RegistryTable } from "@/features/registry/RegistryTable";
+import { RegistryViewToggle } from "@/features/registry/RegistryViewToggle";
+import { useRegistryView } from "@/features/registry/useRegistryView";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRealtime } from "@/features/registry/useRealtime";
 import { ExportButton } from "@/features/registry/export";
@@ -97,6 +100,7 @@ export default function NioktrPage() {
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 300);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const { isFav, toggle } = useFavorites("nioktr");
+  const [view, setView] = useRegistryView("nioktr");
 
   const [items, setItems] = useState<NioktrCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +201,7 @@ export default function NioktrPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <RegistryViewToggle view={view} onChange={setView} />
           <ExportButton rows={displayItems} registryKey="nioktr" />
           <Link
             href="/dashboard/organizations"
@@ -219,34 +224,67 @@ export default function NioktrPage() {
           />
         </div>
         <div>
-          <RegistryGrid
-            items={displayItems}
-            loading={loading}
-            error={error}
-            errorStatus={errorStatus}
-            onRetry={refresh}
-            hasMore={favoritesOnly ? false : hasMore}
-            onLoadMore={loadMore}
-            loadingMore={loadingMore}
-            renderCard={(card: NioktrCard) => (
-              <NioktrRegistryCard card={card} isFav={isFav(card.id)} onToggle={() => toggle(card.id)} />
-            )}
-            emptyTitle={favoritesOnly ? "Нет избранных НИОКТР" : "Пока нет проектов — создайте заявку"}
-            emptyDescription={
-              favoritesOnly ? "Отметьте карточки звёздочкой." : "По заданным фильтрам карточек не найдено — создайте заявку."
-            }
-            emptyAction={
-              favoritesOnly ? (
-                <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                  Показать все
-                </button>
-              ) : (
-                <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-                  Создать заявку
-                </Link>
-              )
-            }
-          />
+          {view === "cards" ? (
+            <RegistryGrid
+              items={displayItems}
+              loading={loading}
+              error={error}
+              errorStatus={errorStatus}
+              onRetry={refresh}
+              hasMore={favoritesOnly ? false : hasMore}
+              onLoadMore={loadMore}
+              loadingMore={loadingMore}
+              renderCard={(card: NioktrCard) => (
+                <NioktrRegistryCard card={card} isFav={isFav(card.id)} onToggle={() => toggle(card.id)} />
+              )}
+              emptyTitle={favoritesOnly ? "Нет избранных НИОКТР" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={
+                favoritesOnly ? "Отметьте карточки звёздочкой." : "По заданным фильтрам карточек не найдено — создайте заявку."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : (
+                  <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
+                    Создать заявку
+                  </Link>
+                )
+              }
+            />
+          ) : (
+            <RegistryTable
+              items={displayItems as unknown as Record<string, unknown>[]}
+              loading={loading}
+              error={error}
+              errorStatus={errorStatus}
+              onRetry={refresh}
+              hasMore={favoritesOnly ? false : hasMore}
+              onLoadMore={loadMore}
+              loadingMore={loadingMore}
+              isFavorite={isFav}
+              onToggleFavorite={toggle}
+              getHref={(card) =>
+                `/dashboard/nioktr/${encodeURIComponent((card as unknown as NioktrCard).registration_number ?? String((card as unknown as { id: number }).id))}`
+              }
+              emptyTitle={favoritesOnly ? "Нет избранных НИОКТР" : "Пока нет проектов — создайте заявку"}
+              emptyDescription={
+                favoritesOnly ? "Отметьте карточки звёздочкой." : "По заданным фильтрам карточек не найдено — создайте заявку."
+              }
+              emptyAction={
+                favoritesOnly ? (
+                  <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                    Показать все
+                  </button>
+                ) : (
+                  <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
+                    Создать заявку
+                  </Link>
+                )
+              }
+            />
+          )}
         </div>
       </div>
     </section>

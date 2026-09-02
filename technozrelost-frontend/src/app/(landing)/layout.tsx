@@ -17,12 +17,20 @@ export default async function LandingLayout({
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="fixed left-4 top-3 z-50 -translate-y-20 rounded bg-tz-surface px-3 py-2 font-semibold text-tz-fg shadow focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-tz-accent"
+      >
+        Перейти к основному содержимому
+      </a>
       <LandingNav
         signedIn={Boolean(session?.user)}
         dashboardHref={primary ? ROLE_DASHBOARD[primary] : null}
         accountLabel={accountLabel}
       />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
+        {children}
+      </main>
       <LandingFooter />
     </>
   );

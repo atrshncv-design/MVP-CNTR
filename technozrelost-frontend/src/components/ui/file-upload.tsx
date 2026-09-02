@@ -29,12 +29,34 @@ export function FileUpload({
     onFiles(list);
   };
 
+  const headingId = React.useId();
+  const errorId = React.useId();
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      inputRef.current?.click();
+    }
+  };
   return (
-    <div className="tz-card border-dashed p-6 text-center">
+    <div
+      className="tz-card border-dashed p-6 text-center"
+      role="group"
+      aria-labelledby={headingId}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        handle(e.dataTransfer.files);
+      }}
+    >
       <Upload size={22} className="mx-auto text-tz-muted" aria-hidden="true" />
-      <p className="mt-2 text-sm text-tz-secondary">
+      <p id={headingId} className="mt-2 text-sm text-tz-secondary">
         Перетащите файлы или{" "}
-        <button type="button" className="font-semibold text-tz-accent underline" onClick={() => inputRef.current?.click()}>
+        <button
+          type="button"
+          className="font-semibold text-tz-accent underline"
+          onClick={() => inputRef.current?.click()}
+          aria-label="Выбрать файлы для загрузки"
+        >
           выберите
         </button>
       </p>
@@ -47,9 +69,26 @@ export function FileUpload({
         accept={accept}
         multiple={multiple}
         className="hidden"
+        aria-label="Загрузка файлов"
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={error ? true : undefined}
         onChange={(e) => handle(e.target.files)}
+        tabIndex={-1}
       />
-      {error ? <p role="alert" className="mt-2 text-xs text-tz-danger">{error}</p> : null}
+      {/* клавиатурный доступ: фокус на группу срабатывает */}
+      <button
+        type="button"
+        className="sr-only focus:not-sr-only focus:mt-3 focus:inline-flex focus:rounded focus:border focus:border-tz-accent focus:px-3 focus:py-1 focus:text-sm"
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={onKeyDown}
+      >
+        Выбрать файлы
+      </button>
+      {error ? (
+        <p id={errorId} role="alert" className="mt-2 text-xs text-tz-danger">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

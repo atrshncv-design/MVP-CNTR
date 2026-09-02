@@ -7,9 +7,9 @@ type ToastItem = { id: string; message: string };
 export function ToastContainer({ toasts }: { toasts: ToastItem[] }) {
   if (!toasts.length) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+    <div aria-live="polite" aria-atomic="true" className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
       {toasts.map((t) => (
-        <div key={t.id} className="tz-card border-tz-accent px-4 py-3 text-sm shadow-tz-pop">
+        <div key={t.id} role="status" className="tz-card border-tz-accent px-4 py-3 text-sm shadow-tz-pop">
           {t.message}
         </div>
       ))}

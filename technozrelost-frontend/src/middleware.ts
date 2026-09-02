@@ -53,14 +53,19 @@ export default auth((req) => {
     return response;
   }
 
-  // FE-03: RefreshAccessTokenError → /login (бэкенд отказал в refresh, сессия невалидна).
+  // FE-03: RefreshAccessTokenError → /login только для защищённых/auth-маршрутов.
+  // Публичные страницы лендинга (/about, /news, /levels и т.д.) должны оставаться
+  // доступны даже с протухшей сессией в куках — иначе пользователь не может
+  // открыть сайт без ручной чистки cookies.
   if ((session as { error?: string } | null)?.error === "RefreshAccessTokenError") {
     if (pathname === "/login") {
       const res = NextResponse.next();
       return withCsp(res);
     }
-    const res = NextResponse.redirect(new URL("/login", req.nextUrl));
-    return withCsp(res);
+    if (isProtectedRoute(pathname) || isAuthRoute(pathname)) {
+      const res = NextResponse.redirect(new URL("/login", req.nextUrl));
+      return withCsp(res);
+    }
   }
 
   // 1. Auth-маршруты: залогиненного пользователя отправляем в его кабинет.

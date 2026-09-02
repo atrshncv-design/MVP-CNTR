@@ -27,7 +27,7 @@ export function Button({ variant = "primary", size = "md", loading, className, c
   const sizeCls = size === "sm" ? "tz-btn-sm" : size === "lg" ? "tz-btn-lg" : "";
   const cls = ["tz-btn", variantCls, sizeCls, className].filter(Boolean).join(" ");
   return (
-    <button className={cls} disabled={disabled || loading} {...props}>
+    <button className={cls} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
       {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" /> : null}
       {children}
     </button>
