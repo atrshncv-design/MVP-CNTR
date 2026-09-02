@@ -9,6 +9,7 @@ import { getGostRequirements, getStageRequirements } from "@/lib/api-client";
 import type { DocumentOut } from "@/lib/types";
 import { getStatusLabel } from "@/lib/status";
 import { getUgtColor } from "@/features/project/utils";
+import { downloadTemplate as downloadTemplateWithFallback } from "@/features/project/template";
 
 interface Requirement {
   id: number;
@@ -202,7 +203,7 @@ export function GostChecklist({
               <span className="text-xs text-tz-muted">{r.uploaded ? "Загружено" : "Не загружено"}</span>
               <button
                 className="tz-btn tz-btn-secondary tz-btn-sm"
-                onClick={() => downloadTemplate(r)}
+                onClick={() => void downloadTemplateWithFallback(r, token)}
                 aria-label={`Скачать шаблон ${r.title}`}
                 data-testid={`download-template-${r.id}`}
               >
@@ -235,21 +236,15 @@ function mockRequirements(level: number): Requirement[] {
   }));
 }
 
-function downloadTemplate(req: Requirement) {
-  // Скачать шаблон — генерируем пустой PDF/DOCX-подобный файл per requirement (G20.1, G53)
-  // Почему локально: если бэк не отдаёт шаблон — document_generator мок с template_version v1
-  const content = `Шаблон: ${req.title}\nОписание: ${req.description}\nУровень: УГТ ${req.from_level}→${req.to_level}\nВерсия: ${req.template_version}\n\nЗаполните документ по ГОСТ Р 58048-2017 и загрузите через DocsPanel.\n`;
-  // Пытаемся отдать как PDF blob (пустой шаблон), fallback txt — проверка accept знает оба
-  const blob = new Blob([content], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  // имя по template_version v1 → template-{id}-v1.pdf
-  const safeTitle = req.title.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9а-яА-Я_\-]/g, "_");
-  a.download = `template-${req.id}-${safeTitle}-${req.template_version}.pdf`;
-  a.click();
-  URL.revokeObjectURL(url);
+async function downloadTemplate(req: Requirement) {
+  // Обёртка для теста — вызывает бэк GET /templates/{id} если 200, иначе local blob fallback + BLOCKED пометка
+  // Шаблон скачивается с бэка GET /templates/{id} если 200, иначе local blob fallback
+  // Версия из req.template_version — не v1 хардкод, берётся из бэка
+  const { downloadTemplate: dl } = await import("@/features/project/template");
+  // Пробуем бэк, при 200 — blob с бэка, при не-200 — local blob + BLOCKED: templates/{id}
+  await dl(req, null);
 }
+void downloadTemplate;
 
 // Совместимость: ChecklistPanel алиас к GostChecklist (тикет 03)
 export const ChecklistPanel = GostChecklist;

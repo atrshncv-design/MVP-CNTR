@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { getGostRequirements, getStageRequirements } from "@/lib/api-client";
 import { getUgtColor } from "./utils";
 import type { DocumentOut } from "@/lib/types";
+import { downloadTemplate as downloadTemplateWithFallback } from "./template";
 
 interface Requirement {
   id: number;
@@ -155,8 +156,9 @@ export function ChecklistPanel({
               <span className="text-xs text-tz-muted">{r.uploaded ? "Загружено" : "Не загружено"}</span>
               <button
                 className="tz-btn tz-btn-secondary tz-btn-sm"
-                onClick={() => downloadTemplate(r)}
+                onClick={() => void downloadTemplateWithFallback(r, token)}
                 aria-label={`Скачать шаблон ${r.title}`}
+                data-testid={`download-template-${r.id}`}
               >
                 <Download size={14} /> Скачать шаблон
               </button>
@@ -187,16 +189,12 @@ function mockRequirements(level: number): Requirement[] {
   }));
 }
 
-function downloadTemplate(req: Requirement) {
-  // Скачать шаблон — генерируем простой текстовый файл-шаблон per requirement (G20.1)
-  const content = `Шаблон: ${req.title}\nОписание: ${req.description}\nВерсия: ${req.template_version}\n\nЗаполните документ и загрузите через DocsPanel.`;
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `template-${req.id}-${req.title.replace(/\s+/g, "_")}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+async function downloadTemplate(req: Requirement) {
+  // Шаблон скачивается с бэка GET /templates/{id} если 200, иначе local blob fallback + BLOCKED пометка
+  // Версия из req.template_version — не v1 хардкод
+  const { downloadTemplate: dl } = await import("./template");
+  await dl(req, null);
 }
+void downloadTemplate;
 
 export default ChecklistPanel;

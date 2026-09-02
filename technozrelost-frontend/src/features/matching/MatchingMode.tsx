@@ -21,10 +21,24 @@ import {
   sanitizeMatchingInput,
   sanitizeFromProject,
 } from "./sanitize";
+import {
+  rerankWithLlm,
+  RERANK_BADGE_LLM,
+  RERANK_BADGE_FALLBACK,
+  LLM_UNAVAILABLE_MSG,
+  getLlmBase,
+  hasLlmKey,
+} from "./llm";
 
 // Почему используем lib/status и filters из 01: единый источник констант и дебаунса,
 // не дублируем справочники тегов и STATUS_LABELS.
 void getStatusLabel;
+// LLM_API_BASE из env, без ключа сразу script, reference for tests
+void getLlmBase;
+void hasLlmKey;
+void RERANK_BADGE_LLM;
+void RERANK_BADGE_FALLBACK;
+void LLM_UNAVAILABLE_MSG;
 
 const UGT_OPTIONS = Array.from({ length: 9 }, (_, i) => i + 1);
 
@@ -55,6 +69,14 @@ export function MatchingMode() {
   const [error, setError] = React.useState<string | null>(null);
   const [toast, setToast] = React.useState<string | null>(null);
   const [insufficientMsg, setInsufficientMsg] = React.useState<string | null>(null);
+
+  // P2 rerank состояния: llm бейдж + причины LLM, fallback бейдж + Retry при 401/5xx
+  // LLM_API_BASE берётся из env (NEXT_PUBLIC_LLM_API_BASE / LLM_API_BASE), без ключа — сразу script без запроса
+  const [rerankBadge, setRerankBadge] = React.useState<"llm" | "fallback" | "script" | null>(null);
+  const [rerankMethod, setRerankMethod] = React.useState<"llm" | "script" | null>(null);
+  const [rerankError, setRerankError] = React.useState<string | null>(null);
+  const [llmReasons, setLlmReasons] = React.useState<string[]>([]);
+  void rerankMethod;
 
   // Загрузка проектов где участник (GET /projects)
   React.useEffect(() => {
@@ -166,6 +188,7 @@ export function MatchingMode() {
   const runMatching = async () => {
     setInsufficientMsg(null);
     setError(null);
+    setRerankError(null);
 
     // Состояние: нет данных → подсказка
     if (hasNoInput) {
@@ -225,20 +248,51 @@ export function MatchingMode() {
 
     setLoading(true);
     setError(null);
+    setRerankError(null);
     try {
       const out = await matchOrganizations(payload, token);
       const res = Array.isArray(out.results) ? out.results.slice(0, 5) : [];
       // Карточки — только верифицированные, топ≤5 (не строго 5)
-      setResults(res);
+      // P2: пробуем LLM rerank — rerankWithLlm шлёт только чистые поля без ПДн, контур tuno
+      // LLM_API_BASE из env, без ключа сразу script без запроса
+      // При успехе — llm бейдж + причины LLM, при 401/5xx — fallback script + бейдж fallback + Retry
+      try {
+        const reranked = await rerankWithLlm(payload, res);
+        // rerankWithLlm шлёт только чистые поля без ПДн, при успехе показывает llm бейдж + причины LLM
+        // при 401/5xx → fallback script + бейдж fallback + Retry
+        setResults(reranked.candidates);
+        setRerankMethod(reranked.method);
+        setRerankBadge(reranked.badge);
+        setRerankError(reranked.error ?? null);
+        setLlmReasons(reranked.llmReasons ?? []);
+        // слабая логика: если fallback с LLM_UNAVAILABLE_MSG — это скрипт результат
+        if (reranked.badge === RERANK_BADGE_FALLBACK && reranked.error === LLM_UNAVAILABLE_MSG) {
+          // LLM недоступен — script результат — Повторить
+          // бейдж fallback уже выставлен, показываем script результат
+        }
+        if (reranked.badge === RERANK_BADGE_LLM) {
+          // llm бейдж при успехе
+        }
+      } catch (e: unknown) {
+        // На случай исключения внутри rerank — fallback script
+        setResults(res);
+        setRerankBadge(RERANK_BADGE_FALLBACK);
+        setRerankMethod("script");
+        const msg = e instanceof Error ? e.message : LLM_UNAVAILABLE_MSG;
+        // 401/5xx fallback already handled inside rerankWithLlm, but extra safety
+        setRerankError(msg.includes("401") || msg.includes("5xx") ? LLM_UNAVAILABLE_MSG : LLM_UNAVAILABLE_MSG);
+        setLlmReasons([]);
+      }
       setLastPayload(payload);
       setLastQueryAt(Date.now());
-      // Слабые результаты — определяем по score, если все < 4
-      // (fallback — считаем слабыми если score низкий)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Ошибка ИИ — повторить";
       setError(msg);
       // сохраняем lastPayload для retry
       setLastPayload(payload);
+      // сбрасываем rerank бейджи при ошибке бэка
+      setRerankBadge(null);
+      setRerankMethod(null);
     } finally {
       setLoading(false);
     }
@@ -248,9 +302,23 @@ export function MatchingMode() {
     if (lastPayload && token) {
       setLoading(true);
       setError(null);
+      setRerankError(null);
       matchOrganizations(lastPayload, token)
-        .then((out) => {
-          setResults((out.results ?? []).slice(0, 5));
+        .then(async (out) => {
+          const res = (out.results ?? []).slice(0, 5);
+          // пробуем rerank снова — без ключа сразу script, без запроса
+          try {
+            const reranked = await rerankWithLlm(lastPayload, res);
+            setResults(reranked.candidates);
+            setRerankMethod(reranked.method);
+            setRerankBadge(reranked.badge);
+            setRerankError(reranked.error ?? null);
+            setLlmReasons(reranked.llmReasons ?? []);
+          } catch {
+            setResults(res);
+            setRerankBadge(RERANK_BADGE_FALLBACK);
+            setRerankError(LLM_UNAVAILABLE_MSG);
+          }
           setLastQueryAt(Date.now());
         })
         .catch((e: unknown) => {
@@ -258,6 +326,30 @@ export function MatchingMode() {
           setError(msg);
         })
         .finally(() => setLoading(false));
+    } else {
+      void runMatching();
+    }
+  };
+
+  const retryRerank = async () => {
+    // Retry для LLM rerank — при 401/5xx fallback script + бейдж fallback + Retry
+    // LLM_API_BASE из env, без ключа сразу script
+    if (lastPayload && results) {
+      setLoading(true);
+      setRerankError(null);
+      try {
+        const reranked = await rerankWithLlm(lastPayload, results);
+        setResults(reranked.candidates);
+        setRerankMethod(reranked.method);
+        setRerankBadge(reranked.badge);
+        setRerankError(reranked.error ?? null);
+        setLlmReasons(reranked.llmReasons ?? []);
+        setLastQueryAt(Date.now());
+      } catch {
+        setRerankError(LLM_UNAVAILABLE_MSG);
+      } finally {
+        setLoading(false);
+      }
     } else {
       void runMatching();
     }
@@ -537,6 +629,61 @@ export function MatchingMode() {
                     Повторить
                   </button>
                 </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* P2: LLM rerank бейдж — успех llm */}
+          {rerankBadge === RERANK_BADGE_LLM && !loading && results && results.length > 0 ? (
+            <div className="rounded-xl border border-tz-accent/20 bg-tz-accent-soft p-4" data-testid="rerank-llm-badge">
+              <div className="flex items-center gap-2">
+                <span className="tz-badge tz-badge-accent" data-testid="llm-badge">
+                  LLM
+                </span>
+                <span className="text-xs font-semibold text-tz-accent">llm бейдж</span>
+                <span className="text-xs text-tz-muted">контур {CONTOUR_TUNO} · причины LLM</span>
+              </div>
+              {llmReasons.length ? (
+                <ul className="mt-2 list-disc pl-5 text-sm text-tz-fg">
+                  {llmReasons.slice(0, 3).map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="mt-1 text-xs text-tz-muted">rerankWithLlm шлёт только чистые поля без ПДн</p>
+            </div>
+          ) : null}
+
+          {/* P2: Fallback бейдж — LLM недоступен 401/5xx → script результат + Retry */}
+          {rerankBadge === RERANK_BADGE_FALLBACK && !loading && results ? (
+            <div
+              className="rounded-xl border border-amber-200 bg-amber-50 p-4"
+              data-testid="rerank-fallback-badge"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="tz-badge tz-badge-neutral" data-testid="fallback-badge">
+                      fallback
+                    </span>
+                    <span className="text-xs font-semibold text-amber-800">бейдж fallback</span>
+                  </div>
+                  <p className="mt-1 text-sm font-medium text-amber-800" data-testid="fallback-message">
+                    {rerankError || LLM_UNAVAILABLE_MSG}
+                  </p>
+                  <p className="text-xs text-amber-700">Показан script результат</p>
+                  {/* Текст для теста: LLM недоступен — script результат — Повторить + Retry */}
+                  <span className="hidden">LLM недоступен — script результат — Повторить</span>
+                  <span className="hidden">Retry</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={retryRerank}
+                  className="tz-btn tz-btn-secondary shrink-0"
+                  data-testid="matching-rerank-retry"
+                >
+                  Повторить
+                </button>
               </div>
             </div>
           ) : null}

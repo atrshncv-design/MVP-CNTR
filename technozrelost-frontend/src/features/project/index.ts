@@ -1,6 +1,8 @@
 export { UgtLine } from "./UgtLine";
 export { ChecklistPanel } from "./ChecklistPanel";
 export { GostChecklist } from "@/features/docs/GostChecklist";
+export { KtPanel } from "./KtPanel";
+export { downloadTemplate, BLOCKED_REASON as TEMPLATE_BLOCKED_REASON, TEMPLATE_BLOCKED_FLAG } from "./template";
 export { CanvasBlocks } from "./CanvasBlocks";
 export type { CanvasValue } from "./CanvasBlocks";
 export { DocsPanel } from "@/features/docs/DocsPanel";

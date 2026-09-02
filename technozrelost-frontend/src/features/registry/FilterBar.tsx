@@ -7,6 +7,7 @@ import { Drawer } from "@/components/ui/drawer";
 import { PROJECT_TAGS } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/status";
 import type { RegistryParams } from "@/lib/types";
+import { SavedFilters } from "./saved-filters";
 
 /**
  * Единый фильтр реестров (тикет 04, G14, R21.1, G45, G49.1, G55).
@@ -225,6 +226,11 @@ export function FilterBar({
           Сбросить фильтры
         </button>
       ) : null}
+
+      {/* Сохранённые фильтры — без лимита (P2, R02) */}
+      <div className="pt-3">
+        <SavedFilters filters={filters} onApply={(patch) => setFilters(patch as Partial<RegistryParams>)} />
+      </div>
     </div>
   );
 

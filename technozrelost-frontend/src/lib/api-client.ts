@@ -4,6 +4,7 @@
 import { CLIENT_API_BASE, serverApiBase } from "./public-api.ts";
 import type { NewsCategory, NewsDetail, NewsFeed, NewsFeedParams } from "./news-types.ts";
 import type {
+  ControlPointOut,
   DocumentOut,
   MatchCandidate,
   MatchingIn,
@@ -459,6 +460,100 @@ export function getOrganizations(
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return apiRequest<import("./types").OrganizationOut[]>(`/nioktr/organizations${suffix}`, accessToken);
 }
+
+// ─── Контрольные точки КТ 1-4 — Go/No-Go аудитора (P2, R04, тикет 04) ──────────
+// Почему здесь: единый fetch-слой, бэк — PATCH /projects/{id}/control-points/{cpId}
+// check via ControlPoint, бейдж возврата, шаблон GET /templates/{id} с fallback BLOCKED.
+
+export interface ControlPointDecisionIn {
+  status: "approved" | "rejected";
+  decision?: string | null;
+}
+
+export function decideControlPoint(
+  projectId: number | string,
+  cpId: number | string,
+  status: "approved" | "rejected",
+  decision: string | null,
+  accessToken: string,
+): Promise<ControlPointOut> {
+  return apiRequest<ControlPointOut>(`/projects/${projectId}/control-points/${cpId}`, accessToken, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, decision }),
+  });
+}
+
+// Алиасы для совместимости с критерием тикета 04 — check via ControlPoint
+export const decideControlPointGoNoGo = decideControlPoint;
+export const patchControlPoint = decideControlPoint;
+export const updateControlPoint = decideControlPoint;
+
+// ─── Шаблоны документов — GET /templates/{id} с fallback local blob (P2, R05) ──
+// Почему здесь: шаблон скачивается с бэка если 200, иначе local blob fallback + BLOCKED пометка
+// GET /templates/{id} — бэкенд document_generator / rag templates, version из бэка не v1 хардкод
+
+export async function getTemplateBlob(
+  templateId: number | string,
+  accessToken: string,
+): Promise<Blob> {
+  const response = await fetch(`${getBaseUrl()}/api/v1/templates/${encodeURIComponent(String(templateId))}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!response.ok) throw new ApiError(`API request failed: ${response.status}`, response.status);
+  return response.blob();
+}
+
+// GET /templates/{id} — если 200 возвращаем blob, иначе бросаем для fallback + BLOCKED
+export const getTemplate = getTemplateBlob;
+export const fetchTemplate = getTemplateBlob;
+export const downloadTemplateBlob = getTemplateBlob;
+
+// ─── Сохранённые фильтры (P2, R02) ─────────────────────────────────────────
+// Почему единый модуль api-client: пробует бэкенд GET/POST/DELETE /filters/saved,
+// при 404 — fallback localStorage tz:saved-filters с пометкой BLOCKED.
+// Без лимита: бэк или localStorage не ограничивают количество.
+
+export interface SavedFilterOut {
+  id: string | number;
+  name: string;
+  filters: RegistryParams;
+  created_at: string;
+}
+
+export interface SavedFilterIn {
+  name: string;
+  filters: RegistryParams;
+}
+
+export function getSavedFilters(accessToken: string): Promise<SavedFilterOut[]> {
+  return apiRequest<SavedFilterOut[]>("/filters/saved", accessToken);
+}
+
+export function saveFilter(payload: SavedFilterIn, accessToken: string): Promise<SavedFilterOut> {
+  return apiRequest<SavedFilterOut>("/filters/saved", accessToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteFilter(
+  filterId: string | number,
+  accessToken: string,
+): Promise<void> {
+  return apiRequest<void>(`/filters/saved/${encodeURIComponent(String(filterId))}`, accessToken, {
+    method: "DELETE",
+  });
+}
+
+// Алиасы для совместимости с критерием тикета
+export const createSavedFilter = saveFilter;
+export const removeSavedFilter = deleteFilter;
+export const deleteSavedFilter = deleteFilter;
+export const getSavedFiltersList = getSavedFilters;
 
 // ─── Публичные новости (спека §3.7, тикет 05 backend) ─────────────────────
 // Эндпоинты доступны без токена (CurrentUserOptional); используются

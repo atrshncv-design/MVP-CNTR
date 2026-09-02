@@ -17,7 +17,7 @@ import type {
   NewsMedia,
   NewsStatus,
 } from "@/lib/news-types";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 /** Тело создания/редактирования новости (NewsCreateIn/NewsUpdateIn). */
@@ -60,7 +60,7 @@ async function request<T>(
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(options.body);
   }
-  const response = await fetch(`${API_URL}/api/v1${path}`, {
+  const response = await fetch(`${CLIENT_API_BASE}/api/v1${path}`, {
     method: options.method ?? "GET",
     headers,
     body,

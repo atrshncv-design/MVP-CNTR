@@ -5,6 +5,7 @@ import * as React from "react";
 import { UgtLine } from "./UgtLine";
 import { GostChecklist } from "@/features/docs/GostChecklist";
 import { ChecklistPanel } from "@/features/docs/GostChecklist";
+import { KtPanel } from "./KtPanel";
 import { CanvasBlocks, type CanvasValue } from "./CanvasBlocks";
 import { DocsPanel } from "@/features/docs/DocsPanel";
 import { AiDocConsultant } from "@/features/docs/AiDocConsultant";
@@ -184,6 +185,15 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
         onRequirementsChange={setGostRequirements}
       />
       <AiDocConsultant level={project.current_level} requirements={gostRequirements} projectId={project.id} />
+
+      {/* КТ 1-4 панель аудитора — Go/No-Go per ControlPoint, чек-лист + бейдж возврата (P2, R04) */}
+      <KtPanel
+        projectId={project.id}
+        controlPoints={control_points as unknown as import("@/lib/types").ControlPointOut[]}
+        currentLevel={project.current_level}
+        status={project.status}
+        documents={documents as DocumentOut[]}
+      />
 
       {/* Канва 15 полей */}
       <CanvasBlocks

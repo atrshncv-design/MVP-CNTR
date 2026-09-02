@@ -12,6 +12,7 @@ import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRealtime } from "@/features/registry/useRealtime";
+import { ExportButton } from "@/features/registry/export";
 // Импорт useRegistry для соответствия критерию «используется всеми 4 реестрами»
 import { useRegistry as _useRegistryProjects } from "@/features/registry/useRegistry";
 
@@ -192,16 +193,22 @@ export default function OrganizationsPage() {
   return (
     <section data-registry="organizations" className="mx-auto max-w-[1200px]">
       <div className="border-b border-tz-border pb-6">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[var(--tz-accent)] via-[var(--tz-accent-strong)] to-[var(--tz-fg)]">
-            <Building2 className="h-4.5 w-4.5 text-white" size={18} />
-          </span>
-          <h1 className="tz-page-title text-tz-fg">Каталог организаций</h1>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[var(--tz-accent)] via-[var(--tz-accent-strong)] to-[var(--tz-fg)]">
+                <Building2 className="h-4.5 w-4.5 text-white" size={18} />
+              </span>
+              <h1 className="tz-page-title text-tz-fg">Каталог организаций</h1>
+            </div>
+            <p className="mt-1.5 max-w-2xl text-sm text-tz-secondary">
+              Исполнители НИОКТР — только карточки (G33), фильтры в URL, пагинация 20 + «Показать
+              ещё» keyset, избранное звёздочка, realtime без ручного refresh, бюджет всем, мобилка 1
+              колонка + drawer.
+            </p>
+          </div>
+          <ExportButton rows={filteredByClient} registryKey="organizations" />
         </div>
-        <p className="mt-1.5 max-w-2xl text-sm text-tz-secondary">
-          Исполнители НИОКТР — только карточки (G33), фильтры в URL, пагинация 20 + «Показать ещё» keyset, избранное
-          звёздочка, realtime без ручного refresh, бюджет всем, мобилка 1 колонка + drawer.
-        </p>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">

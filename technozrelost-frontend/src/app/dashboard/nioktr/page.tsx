@@ -12,6 +12,7 @@ import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRealtime } from "@/features/registry/useRealtime";
+import { ExportButton } from "@/features/registry/export";
 import { useRegistry as _useRegistryProjects } from "@/features/registry/useRegistry";
 
 import type { NioktrCardOut } from "@/lib/types";
@@ -195,13 +196,16 @@ export default function NioktrPage() {
             «Показать ещё» keyset, избранное, realtime, скелетон + empty + Retry, мобилка 1 колонка + drawer.
           </p>
         </div>
-        <Link
-          href="/dashboard/organizations"
-          className="inline-flex items-center gap-2 rounded-xl border border-tz-border bg-tz-surface px-4 py-2 text-sm font-semibold text-tz-fg hover:bg-tz-hover"
-        >
-          <Building2 className="h-4 w-4" />
-          Каталог организаций
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportButton rows={displayItems} registryKey="nioktr" />
+          <Link
+            href="/dashboard/organizations"
+            className="inline-flex items-center gap-2 rounded-xl border border-tz-border bg-tz-surface px-4 py-2 text-sm font-semibold text-tz-fg hover:bg-tz-hover"
+          >
+            <Building2 className="h-4 w-4" />
+            Каталог организаций
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">

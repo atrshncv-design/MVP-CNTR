@@ -9,6 +9,7 @@ import { RegistryCard } from "@/features/registry/RegistryCard";
 import { RegistryGrid } from "@/features/registry/RegistryGrid";
 import { useFavorites } from "@/features/registry/favorites";
 import { useRegistry } from "@/features/registry/useRegistry";
+import { ExportButton } from "@/features/registry/export";
 
 /**
  * Реестр технологий — проекция проектов с УГТ 7+ (тикет 04, R20, G13, G14, G24).
@@ -33,12 +34,17 @@ export default function TechnologiesPage() {
   return (
     <section data-registry="technologies">
       <div className="border-b border-tz-border pb-6">
-        <p className="tz-eyebrow">Реестры платформы</p>
-        <h1 className="tz-page-title mt-2">Реестр технологий</h1>
-        <p className="mt-2 max-w-2xl text-tz-secondary">
-          Технологии — это проекты с уровнем УГТ 7+ (ГОСТ Р 58048-2017). Источник — тот же реестр
-          проектов с фильтром ugt_min=7. Бюджет виден всем.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="tz-eyebrow">Реестры платформы</p>
+            <h1 className="tz-page-title mt-2">Реестр технологий</h1>
+            <p className="mt-2 max-w-2xl text-tz-secondary">
+              Технологии — это проекты с уровнем УГТ 7+ (ГОСТ Р 58048-2017). Источник — тот же
+              реестр проектов с фильтром ugt_min=7. Бюджет виден всем.
+            </p>
+          </div>
+          <ExportButton rows={displayItems} registryKey="technologies" />
+        </div>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
