@@ -17,7 +17,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 interface NioktrCard {
@@ -70,7 +70,7 @@ export default function NioktrCardPage() {
       setError(null);
       try {
         const res = await fetch(
-          `${API_URL}/api/v1/nioktr/${encodeURIComponent(reg)}`,
+          `${CLIENT_API_BASE}/api/v1/nioktr/${encodeURIComponent(reg)}`,
           { headers: { Authorization: `Bearer ${session.user.accessToken}` } }
         );
         if (res.status === 404) throw new Error("Карточка не найдена");

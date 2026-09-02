@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { KeyRound, Loader2, LogIn, CheckCircle2, AlertCircle } from 'lucide-react';
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 /** Роли, доступные при вступлении в проект по токену */
@@ -68,7 +68,7 @@ export default function JoinProjectForm() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/join`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

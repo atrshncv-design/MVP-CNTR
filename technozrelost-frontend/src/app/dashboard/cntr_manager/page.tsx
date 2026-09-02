@@ -1,169 +1,18 @@
-"use client";
+import RoleDashboardShell from "@/features/dashboard/RoleDashboardShell";
+import { ManagerAnalytics } from "@/features/analytics";
 
-import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, Check, FileClock, GitPullRequest, Inbox, Loader2, RefreshCw, X } from "lucide-react";
-import ProfileVerificationQueue from "@/components/profile-verification-queue";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
-
-type Tab = "new" | "upgrades";
-type Draft = { id: number; name: string; description: string | null; preliminary_level: number | null; current_level: number; target_level: number; status: string; rejection_reason: string | null };
-type Promotion = { id: number; project_id: number; project_name: string; from_level: number; to_level: number; status: string; rejection_reason: string | null; attempt_no: number; evaluation_result: { success?: boolean; missing?: string[]; summary?: string }; verification_docs: Array<{ id: number; title: string }> };
-
-const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
-const statusLabels: Record<string, string> = { draft: "Черновик", auto_confirmed: "Подтверждён автоматически", published: "Опубликован", active: "В работе", rejected: "Отклонён" };
-const badge: Record<string, string> = { draft: "tz-badge-review", published: "tz-badge-success", active: "tz-badge-accent", rejected: "tz-badge-danger" };
-function detail(data: unknown, fallback: string) { return data && typeof data === "object" && typeof (data as { detail?: unknown }).detail === "string" ? (data as { detail: string }).detail : fallback; }
-
-export default function CntrManagerDashboard() {
-  const { data: session } = useSession();
-  const token = session?.user?.accessToken;
-  const [tab, setTab] = useState<Tab>("new");
-  const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!token) return;
-    setLoading(true); setError(null);
-    try {
-      const [draftRes, promotionRes] = await Promise.all([
-        fetch(`${API_URL}/api/v1/manager/queue/drafts`, { headers: auth(token) }),
-        fetch(`${API_URL}/api/v1/manager/queue/promotions`, { headers: auth(token) }),
-      ]);
-      const failed = [draftRes, promotionRes].find((r) => !r.ok);
-      if (failed) throw new Error(`Не удалось загрузить очередь (${failed.status}).`);
-      setDrafts(await draftRes.json()); setPromotions(await promotionRes.json());
-    } catch (e) { setError(e instanceof Error ? e.message : "Не удалось загрузить очередь."); }
-    finally { setLoading(false); }
-  }, [token]);
-  useEffect(() => {
-    (async () => { await load(); })();
-  }, [load]);
-
-  const decideDraft = async (id: number, approve: boolean) => {
-    if (!token) return;
-    const reason = approve ? undefined : window.prompt("Причина отклонения карточки")?.trim();
-    if (!approve && !reason) return;
-    setBusy(id);
-    try { const res = await fetch(`${API_URL}/api/v1/manager/queue/drafts/${id}/decide`, { method: "POST", headers: { ...auth(token), "Content-Type": "application/json" }, body: JSON.stringify({ approve, level: approve ? drafts.find((d) => d.id === id)?.preliminary_level : undefined, reason }) }); if (!res.ok) throw new Error(detail(await res.json().catch(() => null), `Ошибка решения (${res.status}).`)); await load(); }
-    catch (e) { setError(e instanceof Error ? e.message : "Не удалось обработать карточку."); } finally { setBusy(null); }
-  };
-  const decidePromotion = async (id: number, approve: boolean) => {
-    if (!token) return;
-    const reason = approve ? undefined : window.prompt("Причина отклонения заявки")?.trim();
-    if (!approve && !reason) return;
-    const missingText = approve ? undefined : window.prompt("Недостающие материалы (через запятую)")?.trim();
-    const missing = missingText ? missingText.split(",").map((s) => s.trim()).filter(Boolean) : [];
-    setBusy(id);
-    try { const res = await fetch(`${API_URL}/api/v1/manager/queue/promotions/${id}/decide`, { method: "POST", headers: { ...auth(token), "Content-Type": "application/json" }, body: JSON.stringify({ approve, reason, missing }) }); if (!res.ok) throw new Error(detail(await res.json().catch(() => null), `Ошибка решения (${res.status}).`)); await load(); }
-    catch (e) { setError(e instanceof Error ? e.message : "Не удалось обработать заявку."); } finally { setBusy(null); }
-  };
-
-  // Урезанный набор KPI менеджера (19-): только очереди, без бюджета и без "Все проекты" (cntr_manager:72,79)
-  const queueTotal = drafts.length + promotions.length;
-  const cards = [
-    { label: "Новые проекты", value: drafts.length, icon: FileClock },
-    { label: "Заявки на повышение УГТ", value: promotions.length, icon: GitPullRequest },
-    { label: "В очереди всего", value: queueTotal, icon: FileClock },
-  ];
-
+/**
+ * Менеджер — урезанная аналитика (тикет 08, G33.1).
+ * Только очередь drafts/promotions + 3 stat-cards + воронка по своим проектам,
+ * без отраслей/муниципалитетов. Очередь верификации организаций остаётся в shell.
+ */
+export default function Page() {
   return (
-    <section data-od-id="manager-dashboard">
-      <div className="border-b border-tz-border pb-6">
-        <p className="tz-eyebrow">Рабочий стол менеджера ЦНТР</p>
-        <h1 className="tz-page-title mt-2">Очереди верификации</h1>
-        <p className="mt-2 max-w-2xl text-tz-secondary">Проверяйте карточки проектов и заявки на повышение УГТ. Финальное решение по уровню остаётся за менеджером ЦНТР.</p>
+    <>
+      <RoleDashboardShell role="cntr_manager" />
+      <div className="mt-8">
+        <ManagerAnalytics />
       </div>
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {cards.map(({ label, value, icon: Icon }) => (
-          <div className="tz-card tz-stat p-5" key={label}>
-            <div className="tz-stat-label">
-              {label}
-              <span className="tz-stat-icon bg-tz-accent-soft text-tz-accent"><Icon size={18} /></span>
-            </div>
-            {loading ? <div className="h-8 w-16 animate-pulse rounded bg-tz-soft" /> : <p className="tz-stat-value">{value}</p>}
-          </div>
-        ))}
-      </div>
-      <div className="mt-10">
-        <div className="tz-tabs" role="tablist">
-          <button className={`tz-tab ${tab === "new" ? "tz-tab-active" : ""}`} onClick={() => setTab("new")}>
-            Новые проекты <span className="tz-tab-count">{drafts.length}</span>
-          </button>
-          <button className={`tz-tab ${tab === "upgrades" ? "tz-tab-active" : ""}`} onClick={() => setTab("upgrades")}>
-            Заявки на повышение УГТ <span className="tz-tab-count">{promotions.length}</span>
-          </button>
-        </div>
-        <div className="mt-6">
-          {loading ? (
-            <div className="tz-card h-32 animate-pulse bg-tz-soft" />
-          ) : error ? (
-            <div className="tz-card tz-empty">
-              <AlertCircle className="text-tz-danger" size={32} />
-              <p className="tz-empty-title">{error}</p>
-              <button className="tz-btn tz-btn-secondary" onClick={() => void load()}><RefreshCw size={15} /> Повторить</button>
-            </div>
-          ) : tab === "new" ? (
-            <div className="space-y-4">
-              {drafts.length === 0 ? (
-                <Empty icon={<Inbox size={22} />} title="Новых проектов на апрув нет" text="Черновики появляются здесь после экспресс-оценки УГТ. После апрува карточка публикуется в общем реестре." />
-              ) : (
-                drafts.map((draft) => (
-                  <div className="tz-card p-5" key={draft.id}>
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs text-tz-muted">ЦНТР-{draft.id}</span>
-                          <span className={`tz-badge ${badge.draft}`}>{statusLabels.draft}</span>
-                        </div>
-                        <h2 className="tz-card-title mt-2 text-tz-fg">{draft.name}</h2>
-                        <p className="mt-1 text-sm text-tz-muted">Предварительный уровень: <span className="font-mono font-semibold">УГТ {draft.preliminary_level ?? "—"}</span></p>
-                        {draft.description && <p className="mt-2 text-sm text-tz-secondary">{draft.description}</p>}
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="tz-btn tz-btn-primary" disabled={busy === draft.id} onClick={() => void decideDraft(draft.id, true)}>{busy === draft.id ? <Loader2 className="animate-spin" size={15} /> : <Check size={15} />} Апрувнуть и присвоить УГТ</button>
-                        <button className="tz-btn tz-btn-danger" disabled={busy === draft.id} onClick={() => void decideDraft(draft.id, false)}><X size={15} /> Отклонить</button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {promotions.length === 0 ? (
-                <Empty icon={<GitPullRequest size={22} />} title="Заявок на повышение пока нет" text="Заявка формируется автоматически после полного комплекта документов этапа и успешной предварительной оценки." />
-              ) : (
-                promotions.map((request) => (
-                  <div className="tz-card p-5" key={request.id}>
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-tz-muted">Заявка #{request.id} · попытка {request.attempt_no}</span>
-                          <span className="tz-badge tz-badge-review">На проверке</span>
-                        </div>
-                        <h2 className="tz-card-title mt-2 text-tz-fg">{request.project_name}</h2>
-                        <p className="mt-1 text-sm text-tz-secondary">УГТ {request.from_level} → УГТ {request.to_level}</p>
-                        <p className="mt-2 text-sm text-tz-muted">{request.evaluation_result.summary || "Предварительная оценка успешно пройдена."}</p>
-                        {request.verification_docs.length > 0 && <p className="mt-1 text-xs text-tz-accent">Верифицирующих документов: {request.verification_docs.length}</p>}
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="tz-btn tz-btn-primary" disabled={busy === request.id} onClick={() => void decidePromotion(request.id, true)}><Check size={15} /> Подтвердить</button>
-                        <button className="tz-btn tz-btn-danger" disabled={busy === request.id} onClick={() => void decidePromotion(request.id, false)}><X size={15} /> Отклонить</button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      <ProfileVerificationQueue />
-    </section>
+    </>
   );
 }
-function Empty({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) { return <div className="tz-card tz-empty"><span className="tz-empty-icon">{icon}</span><h2 className="tz-empty-title">{title}</h2><p className="tz-empty-text">{text}</p></div>; }

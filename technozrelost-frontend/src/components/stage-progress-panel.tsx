@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, FileUp, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 type Requirement = { id: number; from_level: number; to_level: number; title: string; description: string; template_version: string; uploaded: boolean };
@@ -29,7 +29,7 @@ export default function StageProgressPanel({ projectId, currentLevel, status }: 
     if (!token || status !== 'published') { setLoading(false); return; }
     setLoading(true); setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/stage-requirements`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/stage-requirements`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(errorText(data, `Не удалось загрузить требования (${res.status}).`));
       const list = data as Requirement[];
@@ -51,7 +51,7 @@ export default function StageProgressPanel({ projectId, currentLevel, status }: 
       form.append('stage_requirement_id', String(selectedId));
       form.append('title', file.name);
       form.append('file', file);
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/stage-document-file`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/stage-document-file`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}` },
         body: form,
       });
@@ -59,7 +59,7 @@ export default function StageProgressPanel({ projectId, currentLevel, status }: 
       if (!res.ok) throw new Error(errorText(data, `Не удалось загрузить документ (${res.status}).`));
       await load();
       if (data?.request_id) {
-        const evaluationRes = await fetch(`${API_URL}/api/v1/projects/${projectId}/stage-evaluate`, {
+        const evaluationRes = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/stage-evaluate`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -74,7 +74,7 @@ export default function StageProgressPanel({ projectId, currentLevel, status }: 
     if (!token) return;
     setBusy(true); setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/stage-evaluate`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/stage-evaluate`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(errorText(data, `Не удалось выполнить оценку (${res.status}).`));
       setEvaluation(data as Evaluation);

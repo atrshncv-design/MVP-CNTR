@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FileCheck, FileText, Loader2, ShieldCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 type Project = { id: number; name: string; current_level: number };
@@ -47,7 +47,7 @@ export default function VerificationDocsPanel() {
       }
       setDocsLoading(true);
       try {
-        const res = await fetch(`${API_URL}/api/v1/projects/${id}`, {
+        const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error(`Не удалось загрузить карточку проекта (${res.status}).`);
@@ -64,7 +64,7 @@ export default function VerificationDocsPanel() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(`${API_URL}/api/v1/projects`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${CLIENT_API_BASE}/api/v1/projects`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (res) => {
         if (!res.ok) throw new Error(`Не удалось загрузить проекты (${res.status}).`);
         return res.json();
@@ -92,7 +92,7 @@ export default function VerificationDocsPanel() {
     }
     setState('loading');
     setMessage('');
-    const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/verification-docs`, {
+    const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/verification-docs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({

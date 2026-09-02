@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Building2, CheckCircle2, Clock, FileX2, PlusCircle, Send, UserRound } from "lucide-react";
 
 import AchievementsShowcase from "@/components/dashboard/achievements-showcase";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 interface Profile {
@@ -75,7 +75,7 @@ export default function ProfilePage() {
   const load = async () => {
     if (!token) return;
     try {
-      const res = await fetch(`${API_URL}/api/v1/profile`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/profile`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       });
@@ -104,7 +104,7 @@ export default function ProfilePage() {
   const editable = profile !== null && (profile.state === "draft" || profile.state === "rejected");
 
   const patchProfile = async (body: Record<string, unknown>, method = "PATCH", path = "/profile") => {
-    const res = await fetch(`${API_URL}/api/v1${path}`, {
+    const res = await fetch(`${CLIENT_API_BASE}/api/v1${path}`, {
       method,
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),

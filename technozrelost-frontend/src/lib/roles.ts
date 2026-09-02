@@ -132,6 +132,10 @@ export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
   "/dashboard/organizations": ALL_ROLES,
   // Профиль пользователя — общий раздел (FE-01).
   "/dashboard/profile": ALL_ROLES,
+  // Подбор партнёра (тикет 05, R23, G27-G29): отдельный режим, доступен всем 8 ролям.
+  "/dashboard/matching": ALL_ROLES,
+  // Уведомления (тикет 07, R26.1, G43): колокольчик + страница — доступны всем ролям, как и профиль
+  "/dashboard/notifications": ALL_ROLES,
 };
 
 export function isProtectedRoute(pathname: string): boolean {

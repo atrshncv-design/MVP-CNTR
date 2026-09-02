@@ -13,7 +13,7 @@ import {
   Send,
   UserCog,
 } from "lucide-react";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 interface Invite {
@@ -55,11 +55,11 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
     if (!token) return;
     try {
       const [invitesRes, legalRes] = await Promise.all([
-        fetch(`${API_URL}/api/v1/projects/${projectId}/invites`, {
+        fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/invites`, {
           headers: auth(token),
           cache: "no-store",
         }),
-        fetch(`${API_URL}/api/v1/projects/${projectId}`, {
+        fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}`, {
           headers: auth(token),
           cache: "no-store",
         }),
@@ -94,7 +94,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
     setError(null);
     setNotice(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/invites`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/invites`, {
         method: "POST",
         headers: { ...auth(token), "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +124,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
     setError(null);
     try {
       const res = await fetch(
-        `${API_URL}/api/v1/projects/${projectId}/invites/${inviteId}/revoke`,
+        `${CLIENT_API_BASE}/api/v1/projects/${projectId}/invites/${inviteId}/revoke`,
         { method: "POST", headers: auth(token) },
       );
       if (!res.ok) throw new Error(`Ошибка отзыва (${res.status})`);
@@ -138,7 +138,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
     if (!token || !transferUserId.trim()) return;
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/transfer-admin`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/transfer-admin`, {
         method: "POST",
         headers: { ...auth(token), "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: Number(transferUserId) }),
@@ -162,7 +162,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
     if (!token) return;
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/legal`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/legal`, {
         method: "PATCH",
         headers: { ...auth(token), "Content-Type": "application/json" },
         body: JSON.stringify(legalForm),

@@ -12,7 +12,7 @@ import {
   ExternalLink,
   Trash2,
 } from 'lucide-react';
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 interface Source {
@@ -55,7 +55,7 @@ export default function AiAssistantPage() {
     setSending(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/chat`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

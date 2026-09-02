@@ -1,5 +1,5 @@
-import { UgtScalePageClient } from '@/components/ugt-scale';
+import { redirect } from 'next/navigation';
 
-export default function ProjectsPage() {
-  return <UgtScalePageClient />;
+export default function ProjectsRedirect() {
+  redirect('/dashboard/projects');
 }

@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 import { Medal } from "@/components/achievements/medal";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 interface AchievementItem {
@@ -46,7 +46,7 @@ export default function ProjectAchievements({ projectId }: { projectId: number }
         const headers: Record<string, string> = {};
         if (token) headers.Authorization = `Bearer ${token}`;
         const res = await fetch(
-          `${API_URL}/api/v1/projects/${projectId}/achievements`,
+          `${CLIENT_API_BASE}/api/v1/projects/${projectId}/achievements`,
           { headers, cache: "no-store" },
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

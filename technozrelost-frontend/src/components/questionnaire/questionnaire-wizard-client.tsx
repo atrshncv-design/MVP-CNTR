@@ -32,7 +32,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { UGT_LEVELS } from '@/lib/ugt-data';
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 type Dimension = 'scientific' | 'technical' | 'organizational' | 'production';
@@ -236,7 +236,7 @@ export default function QuestionnaireWizardClient() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_URL}/api/v1/assessments/template`)
+    fetch(`${CLIENT_API_BASE}/api/v1/assessments/template`)
       .then(async (response) => {
         if (!response.ok) throw new Error('Не удалось загрузить актуальную версию анкеты.');
         return response.json() as Promise<AssessmentTemplate>;
@@ -305,7 +305,7 @@ export default function QuestionnaireWizardClient() {
     }
     setSaving(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/assessments`, {
+      const response = await fetch(`${CLIENT_API_BASE}/api/v1/assessments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.user.accessToken}` },
         body: JSON.stringify({

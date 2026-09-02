@@ -78,3 +78,16 @@ test("middleware запрещает непокрытый маршрут вмес
   assert.match(source, /allowedRolesFor/);
   assert.match(source, /\/forbidden/, "нет записи в матрице → rewrite на /forbidden");
 });
+
+test("middleware не гонит публичный лендинг на /login из-за RefreshAccessTokenError", () => {
+  const source = read("src/middleware.ts");
+  // Редирект по ошибке refresh должен быть ограничен защищёнными/auth-маршрутами,
+  // иначе протухшая сессия блокирует открытие сайта.
+  assert.match(source, /RefreshAccessTokenError[\s\S]{0,400}isProtectedRoute\(pathname\)\s*\|\|\s*isAuthRoute\(pathname\)/);
+});
+
+test("SessionExpiryWatcher не вызывает signOut на публичных страницах", () => {
+  const source = read("src/components/providers.tsx");
+  assert.match(source, /isProtectedRoute\(pathname\)/);
+  assert.doesNotMatch(source, /if\s*\(\s*tokenError\s*===\s*["']RefreshAccessTokenError["']\s*\)\s*\{\s*void\s+signOut/);
+});

@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, FileUp, Loader2, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 interface ProjectFile {
@@ -47,7 +47,7 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
   const load = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/files`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/files`, {
         headers: auth(token),
         cache: "no-store",
       });
@@ -75,7 +75,7 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
     const form = new FormData();
     form.append("file", file);
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/files`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/files`, {
         method: "POST",
         headers: auth(token),
         body: form,
@@ -106,7 +106,7 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
   const download = async (fileId: number) => {
     if (!token) return;
     try {
-      const res = await fetch(`${API_URL}/api/v1/files/${fileId}/download`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/files/${fileId}/download`, {
         headers: auth(token),
       });
       if (!res.ok) {

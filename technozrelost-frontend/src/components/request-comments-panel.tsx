@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { FileText, Loader2, MessageSquare, RefreshCw, Send } from "lucide-react";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 interface ProjectRequest {
@@ -51,7 +51,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
   const loadRequests = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(`${API_URL}/api/v1/projects/${projectId}/requests`, {
+      const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${projectId}/requests`, {
         headers: auth(token),
         cache: "no-store",
       });
@@ -74,7 +74,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
       }
       try {
         const res = await fetch(
-          `${API_URL}/api/v1/projects/${projectId}/requests/${requestId}/comments`,
+          `${CLIENT_API_BASE}/api/v1/projects/${projectId}/requests/${requestId}/comments`,
           { headers: auth(token), cache: "no-store" },
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -104,7 +104,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
     setError(null);
     try {
       const res = await fetch(
-        `${API_URL}/api/v1/projects/${projectId}/requests/${selectedId}/comments`,
+        `${CLIENT_API_BASE}/api/v1/projects/${projectId}/requests/${selectedId}/comments`,
         {
           method: "POST",
           headers: { ...auth(token), "Content-Type": "application/json" },
@@ -133,7 +133,7 @@ export default function RequestCommentsPanel({ projectId }: { projectId: number 
     if (!token) return;
     try {
       const res = await fetch(
-        `${API_URL}/api/v1/projects/${projectId}/requests/${requestId}/conclusion.pdf`,
+        `${CLIENT_API_BASE}/api/v1/projects/${projectId}/requests/${requestId}/conclusion.pdf`,
         { headers: auth(token) },
       );
       if (!res.ok) {

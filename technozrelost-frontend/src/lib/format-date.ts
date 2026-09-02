@@ -36,3 +36,31 @@ export function formatRuDateTime(iso: string | null | undefined): string {
   if (Number.isNaN(date.getTime())) return "";
   return ruDateTimeFormatter.format(date);
 }
+
+/** «31.03.2027» — короткий формат для карточек (G47, 02). */
+export function formatShortDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const dd = String(date.getUTCDate()).padStart(2, "0");
+  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const yyyy = date.getUTCFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+/** «2 дня назад» — относительный тултип для короткой даты (G47). */
+export function formatRelative(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const diffMs = Date.now() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) return "сегодня";
+  if (diffDays === 1) return "1 день назад";
+  if (diffDays < 5) return `${diffDays} дня назад`;
+  if (diffDays < 21) return `${diffDays} дней назад`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 1) return `${diffDays} дней назад`;
+  if (diffMonths === 1) return "1 месяц назад";
+  return `${diffMonths} мес. назад`;
+}

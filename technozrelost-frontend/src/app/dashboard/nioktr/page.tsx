@@ -1,336 +1,250 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import {
-  AlertCircle,
-  ArrowRight,
-  Building2,
-  Calendar,
-  Filter,
-  FlaskConical,
-  Search,
-  Sparkles,
-} from "lucide-react";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { useSession } from "next-auth/react";
+import * as React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Building2, Calendar, FlaskConical, Sparkles } from "lucide-react";
 
+import { CLIENT_API_BASE } from "@/lib/public-api";
+import { useRegistryFilters, useDebouncedValue } from "@/lib/filters";
+import { FilterBar } from "@/features/registry/FilterBar";
+import { RegistryGrid } from "@/features/registry/RegistryGrid";
+import { useFavorites } from "@/features/registry/favorites";
+import { useRealtime } from "@/features/registry/useRealtime";
+import { useRegistry as _useRegistryProjects } from "@/features/registry/useRegistry";
 
-interface NioktrCard {
-  id: number;
-  registration_number: string;
-  name: string;
-  annotation: string | null;
-  keywords: string[];
-  nioktr_types: string[];
-  state_program: string | null;
-  federal_program: string | null;
-  created_date: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  is_ai_area: boolean;
-  is_ai_usage: boolean;
-  executor_name: string | null;
-  executor_short_name: string | null;
-  executor_ogrn: string | null;
-  executor_territory: string | null;
-  customer_name: string | null;
-  budgets: Array<{ funds?: string; budget_type?: string }>;
-  organization_id: number | null;
-  created_at: string | null;
-}
+import type { NioktrCardOut } from "@/lib/types";
 
-const PAGE_SIZE = 25;
+void _useRegistryProjects;
 
-/** Русская плюрализация */
-const pluralize = (n: number, one: string, few: string, many: string) => {
-  const abs = Math.abs(n) % 100;
-  const last = abs % 10;
-  if (abs > 10 && abs < 20) return many;
-  if (last > 1 && last < 5) return few;
-  if (last === 1) return one;
-  return many;
+const LIMIT = 20;
+
+type NioktrCard = NioktrCardOut & {
+  budgets?: Array<{ funds?: string; budget_type?: string }>;
+  is_ai_usage?: boolean;
+  executor_short_name?: string | null;
+  executor_territory?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
 };
+
+function NioktrRegistryCard({ card, isFav, onToggle }: { card: NioktrCard; isFav: boolean; onToggle: () => void }) {
+  return (
+    <div className="tz-card tz-card-hover flex h-full flex-col p-5">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        {card.is_ai_area ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-tz-accent-soft px-2.5 py-0.5 text-[11px] font-semibold text-tz-accent">
+            <Sparkles className="h-3 w-3" /> ИИ-направление
+          </span>
+        ) : (
+          <span className="rounded-full bg-tz-badge px-2.5 py-0.5 text-[11px] font-medium text-tz-secondary">НИОКТР</span>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onToggle();
+          }}
+          aria-pressed={isFav}
+          className={`grid h-8 w-8 place-items-center rounded-full border ${isFav ? "border-tz-accent bg-tz-accent-soft text-tz-accent" : "border-tz-border text-tz-muted hover:border-tz-accent hover:text-tz-accent"}`}
+        >
+          <span aria-hidden="true">{isFav ? "★" : "☆"}</span>
+        </button>
+      </div>
+      <span className="font-mono text-[11px] text-tz-muted">{card.registration_number || "—"}</span>
+      <Link
+        href={`/dashboard/nioktr/${encodeURIComponent(card.registration_number)}`}
+        className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-tz-fg hover:text-tz-accent"
+      >
+        {card.name || "—"}
+      </Link>
+      {card.annotation ? (
+        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-tz-secondary">{card.annotation}</p>
+      ) : (
+        <p className="mt-2 text-xs text-tz-muted">—</p>
+      )}
+      <div className="mt-auto pt-3">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] text-tz-secondary">
+          {card.executor_short_name ? (
+            <span className="inline-flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              {card.executor_short_name}
+            </span>
+          ) : (
+            <span>—</span>
+          )}
+          {card.created_date ? (
+            <span className="inline-flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {card.created_date}
+            </span>
+          ) : null}
+          {card.nioktr_types?.[0] ? <span className="rounded-md bg-tz-badge px-1.5 py-0.5">{card.nioktr_types[0]}</span> : null}
+        </div>
+        <div className="mt-2 text-xs font-medium text-tz-fg">Бюджет: —</div>
+      </div>
+    </div>
+  );
+}
 
 export default function NioktrPage() {
   const { data: session } = useSession();
-  const [cards, setCards] = useState<NioktrCard[]>([]);
-  const [types, setTypes] = useState<string[]>([]);
-  const [customers, setCustomers] = useState<string[]>([]);
+  const token = session?.user?.accessToken;
+
+  const { filters, setFilters } = useRegistryFilters({ limit: LIMIT });
+  const debouncedSearch = useDebouncedValue(filters.search ?? "", 300);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const { isFav, toggle } = useFavorites("nioktr");
+
+  const [items, setItems] = useState<NioktrCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [aiOnly, setAiOnly] = useState(false);
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [customerFilter, setCustomerFilter] = useState("all");
-  const [offset, setOffset] = useState(0);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
 
-  // Первичная загрузка + перезагрузка при смене фильтров (серверная фильтрация)
-  useEffect(() => {
-    if (!session?.user?.accessToken) return;
-    let cancelled = false;
-    const fetchData = async () => {
-      setLoading(true);
+  const fetchPage = useCallback(
+    async (nextOffset: number, replace: boolean) => {
+      if (!token) return;
+      if (replace) setLoading(true);
+      else setLoadingMore(true);
       setError(null);
+      setErrorStatus(null);
       try {
         const params = new URLSearchParams();
-        params.set("limit", String(PAGE_SIZE));
-        params.set("offset", "0");
-        if (search.trim()) params.set("search", search.trim());
-        if (aiOnly) params.set("ai", "true");
-        if (typeFilter !== "all") params.set("type", typeFilter);
-        if (customerFilter !== "all") params.set("customer", customerFilter);
-        const res = await fetch(`${API_URL}/api/v1/nioktr?${params}`, {
-          headers: { Authorization: `Bearer ${session.user.accessToken}` },
+        params.set("limit", String(LIMIT));
+        params.set("offset", String(nextOffset));
+        if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
+        if (filters.region) params.set("region", filters.region);
+        // tags/budget client-side, но ugt_min/max → ai фильтр уже в бэке
+        if (filters.ugt_min != null && filters.ugt_min >= 7) params.set("ai", "true");
+        const res = await fetch(`${CLIENT_API_BASE}/api/v1/nioktr?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
-        if (!res.ok) throw new Error(`API ${res.status}`);
-        const data: NioktrCard[] = await res.json();
-        if (cancelled) return;
-        setCards(data);
-        setHasMore(data.length === PAGE_SIZE);
-        setOffset(0);
-        // Опции фильтров — расширяем из приходящих данных
-        setTypes((prev) =>
-          Array.from(new Set([...prev, ...data.flatMap((c) => c.nioktr_types)])).sort()
-        );
-        setCustomers((prev) =>
-          Array.from(
-            new Set([
-              ...prev,
-              ...data.map((c) => c.customer_name).filter((x): x is string => !!x),
-            ])
-          ).sort()
-        );
+        if (!res.ok) {
+          const err = new Error(`API ${res.status}`) as Error & { status?: number };
+          err.status = res.status;
+          throw err;
+        }
+        const data = (await res.json()) as NioktrCard[];
+        // Сортировка по дате ↓ (G46) — created_date или id
+        const sorted = [...data].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+        if (replace) {
+          setItems(sorted);
+          setOffset(0);
+        } else {
+          setItems((prev) => [...prev, ...sorted]);
+          setOffset(nextOffset);
+        }
+        setHasMore(sorted.length >= LIMIT);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Ошибка загрузки");
+        const msg = e instanceof Error ? e.message : "Не удалось загрузить реестр";
+        setError(msg);
+        const st = (e as { status?: number }).status ?? null;
+        if (st) setErrorStatus(st);
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
+        setLoadingMore(false);
       }
-    };
-    fetchData();
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.user?.accessToken, search, aiOnly, typeFilter, customerFilter]);
+    },
+    [token, debouncedSearch, filters.region, filters.ugt_min],
+  );
 
-  // «Показать ещё» — пагинация по offset (вызывается из обработчика)
-  const loadMore = async () => {
-    if (!session?.user?.accessToken || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const params = new URLSearchParams();
-      params.set("limit", String(PAGE_SIZE));
-      params.set("offset", String(offset + PAGE_SIZE));
-      if (search.trim()) params.set("search", search.trim());
-      if (aiOnly) params.set("ai", "true");
-      if (typeFilter !== "all") params.set("type", typeFilter);
-      if (customerFilter !== "all") params.set("customer", customerFilter);
-      const res = await fetch(`${API_URL}/api/v1/nioktr?${params}`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
-      });
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data: NioktrCard[] = await res.json();
-      setCards((prev) => [...prev, ...data]);
-      setHasMore(data.length === PAGE_SIZE);
-      setOffset((prev) => prev + PAGE_SIZE);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка загрузки");
-    } finally {
-      setLoadingMore(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- загрузка реестра при смене фильтров
+    void fetchPage(0, true);
+  }, [fetchPage]);
+
+  const refresh = useCallback(() => void fetchPage(0, true), [fetchPage]);
+  useRealtime(refresh, { enabled: !!token });
+
+  const loadMore = useCallback(() => {
+    if (loadingMore || loading || !hasMore) return;
+    void fetchPage(offset + LIMIT, false);
+  }, [loadingMore, loading, hasMore, offset, fetchPage]);
+
+  const displayItems = useMemo(() => {
+    let out: NioktrCard[] = items;
+    // Клиентские фильтры: теги, статус, бюджет
+    if (filters.tags?.length) {
+      const tags = filters.tags;
+      out = out.filter((c) => tags.some((t) => c.keywords?.includes(t) || c.name?.includes(t)));
     }
-  };
+    if (filters.status) {
+      // НИОКТР статуса нет — показываем «—», фильтр клиентски пропускает
+    }
+    if (favoritesOnly) out = out.filter((c) => isFav(c.id));
+    return out;
+  }, [items, filters.tags, filters.status, favoritesOnly, isFav]);
 
   return (
-    <div className="mx-auto max-w-[1440px] px-5 py-8 sm:px-8">
-      {/* Заголовок */}
+    <section data-registry="nioktr" className="mx-auto max-w-[1440px]">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl tz-grad-bg shadow-[0_4px_18px_rgba(214,48,49,0.3)]">
+            <span className="grid h-9 w-9 place-items-center rounded-xl tz-grad-bg">
               <FlaskConical className="h-4.5 w-4.5 text-white" size={18} />
             </span>
             <h1 className="tz-page-title text-tz-fg">Реестр НИОКТР</h1>
           </div>
-          <p className="mt-1.5 text-sm text-tz-secondary">
-            Научно-исследовательские работы из федерального реестра — поиск по названию,
-            фильтры по направлению и заказчику
+          <p className="mt-1.5 max-w-2xl text-sm text-tz-secondary">
+            Карточки НИОКТР — только карточки (G33), поиск + теги 30+ + УГТ + регион + бюджет, пагинация 20 +
+            «Показать ещё» keyset, избранное, realtime, скелетон + empty + Retry, мобилка 1 колонка + drawer.
           </p>
         </div>
         <Link
           href="/dashboard/organizations"
-          className="inline-flex items-center gap-2 rounded-xl border border-tz-border bg-tz-surface px-4 py-2 text-sm font-semibold text-tz-fg transition-colors hover:bg-tz-hover"
+          className="inline-flex items-center gap-2 rounded-xl border border-tz-border bg-tz-surface px-4 py-2 text-sm font-semibold text-tz-fg hover:bg-tz-hover"
         >
           <Building2 className="h-4 w-4" />
           Каталог организаций
-          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      {/* Панель фильтров */}
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-tz-border bg-tz-surface p-4">
-        <div className="relative min-w-[220px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-tz-secondary" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && setSearch(e.currentTarget.value)}
-            placeholder="Поиск по названию работы…"
-            className="w-full rounded-xl border border-tz-border bg-tz-input px-9 py-2.5 text-sm text-tz-fg placeholder:text-tz-muted focus:border-tz-accent focus:outline-none"
+      <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
+        <div>
+          <FilterBar
+            filters={filters}
+            setFilters={setFilters}
+            favoritesOnly={favoritesOnly}
+            setFavoritesOnly={setFavoritesOnly}
+            registryKey="nioktr"
           />
         </div>
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-tz-fg">
-          <input
-            type="checkbox"
-            checked={aiOnly}
-            onChange={(e) => setAiOnly(e.target.checked)}
-            className="h-4 w-4 accent-tz-accent"
-          />
-          <Sparkles className="h-4 w-4 text-tz-accent" />
-          Только ИИ-направление
-        </label>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-xl border border-tz-border bg-tz-input px-3 py-2.5 text-sm text-tz-fg focus:border-tz-accent focus:outline-none"
-        >
-          <option value="all">Тип: любой</option>
-          {types.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <select
-          value={customerFilter}
-          onChange={(e) => setCustomerFilter(e.target.value)}
-          className="max-w-[240px] rounded-xl border border-tz-border bg-tz-input px-3 py-2.5 text-sm text-tz-fg focus:border-tz-accent focus:outline-none"
-        >
-          <option value="all">Заказчик: любой</option>
-          {customers.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <span className="tz-grad-bg inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white">
-          <Filter className="h-4 w-4" />
-          Фильтры применяются автоматически
-        </span>
-      </div>
-
-      {error && (
-        <div className="mb-4 flex items-center gap-2 rounded-xl border border-tz-danger-border bg-tz-danger-soft px-4 py-3 text-sm text-tz-danger">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
-      )}
-
-      {loading && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-44 animate-pulse rounded-2xl border border-tz-border bg-tz-surface"
-            />
-          ))}
-        </div>
-      )}
-
-      {!loading && cards.length === 0 && !error && (
-        <div className="rounded-2xl border border-tz-border bg-tz-surface p-10 text-center text-tz-secondary">
-          По заданным фильтрам карточек не найдено
-        </div>
-      )}
-
-      {!loading && cards.length > 0 && (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {cards.map((card, i) => (
-              <motion.div
-                key={card.registration_number}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i % PAGE_SIZE, 6) * 0.03 }}
-              >
-                <Link
-                  href={`/dashboard/nioktr/${encodeURIComponent(card.registration_number)}`}
-                  className="group flex h-full flex-col rounded-2xl border border-tz-border bg-tz-surface p-5 transition-all hover:border-tz-accent/50 hover:bg-tz-hover"
-                >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    {card.is_ai_area ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-tz-accent-soft px-2.5 py-0.5 text-[11px] font-semibold text-tz-accent">
-                        <Sparkles className="h-3 w-3" /> ИИ-направление
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-tz-badge px-2.5 py-0.5 text-[11px] font-medium text-tz-secondary">
-                        НИОКТР
-                      </span>
-                    )}
-                    <span className="font-mono text-[11px] text-tz-muted">
-                      {card.registration_number}
-                    </span>
-                  </div>
-                  <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-tz-fg group-hover:text-tz-accent">
-                    {card.name}
-                  </h3>
-                  {card.annotation && (
-                    <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-tz-secondary">
-                      {card.annotation}
-                    </p>
-                  )}
-                  <div className="mt-auto pt-3">
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-tz-secondary">
-                      {card.executor_short_name && (
-                        <span className="inline-flex items-center gap-1">
-                          <Building2 className="h-3 w-3" />
-                          {card.executor_short_name}
-                        </span>
-                      )}
-                      {card.start_date && (
-                        <span className="inline-flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {card.start_date}
-                        </span>
-                      )}
-                      {card.nioktr_types[0] && (
-                        <span className="rounded-md bg-tz-badge px-1.5 py-0.5">
-                          {card.nioktr_types[0]}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+        <div>
+          <RegistryGrid
+            items={displayItems}
+            loading={loading}
+            error={error}
+            errorStatus={errorStatus}
+            onRetry={refresh}
+            hasMore={favoritesOnly ? false : hasMore}
+            onLoadMore={loadMore}
+            loadingMore={loadingMore}
+            renderCard={(card: NioktrCard) => (
+              <NioktrRegistryCard card={card} isFav={isFav(card.id)} onToggle={() => toggle(card.id)} />
+            )}
+            emptyTitle={favoritesOnly ? "Нет избранных НИОКТР" : "Пока нет проектов — создайте заявку"}
+            emptyDescription={
+              favoritesOnly ? "Отметьте карточки звёздочкой." : "По заданным фильтрам карточек не найдено — создайте заявку."
+            }
+            emptyAction={
+              favoritesOnly ? (
+                <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                  Показать все
+                </button>
+              ) : (
+                <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
+                  Создать заявку
                 </Link>
-              </motion.div>
-            ))}
-          </div>
-          {hasMore && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => {
-                  void loadMore();
-                }}
-                disabled={loadingMore}
-                className="rounded-xl border border-tz-border bg-tz-surface px-6 py-2.5 text-sm font-semibold text-tz-fg transition-colors hover:bg-tz-hover disabled:opacity-50"
-              >
-                {loadingMore ? "Загрузка…" : "Показать ещё"}
-              </button>
-            </div>
-          )}
-          <p className="mt-4 text-center text-xs text-tz-muted">
-            {pluralize(
-              offset + (hasMore ? PAGE_SIZE : cards.length),
-              "карточка",
-              "карточки",
-              "карточек"
-            )}{" "}
-            в выборке
-          </p>
-        </>
-      )}
-    </div>
+              )
+            }
+          />
+        </div>
+      </div>
+    </section>
   );
 }

@@ -16,23 +16,10 @@ import {
   SHOWCASE_CATEGORIES,
   type ShowcaseProject,
 } from "@/lib/showcase";
+import { getStatusLabel, getStatusColor } from "@/lib/status";
 import ProjectRadar from "@/components/dashboard/project-radar";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
-
-const STATUS_LABELS: Record<ShowcaseProject["status"], string> = {
-  draft: "Черновик",
-  active: "В работе",
-  review: "На проверке",
-  completed: "Завершён",
-};
-
-const STATUS_COLORS: Record<ShowcaseProject["status"], string> = {
-  draft: "var(--tz-muted)",
-  active: "var(--tz-accent)",
-  review: "#b45309",
-  completed: "var(--tz-success)",
-};
 
 function formatBudget(budget: number | null): string {
   if (budget == null) return "Бюджет не указан";
@@ -174,11 +161,11 @@ function ProjectModal({
               <span
                 className="rounded-full px-3 py-1 text-[11px] font-medium"
                 style={{
-                  backgroundColor: `${STATUS_COLORS[project.status]}14`,
-                  color: STATUS_COLORS[project.status],
+                  backgroundColor: `${getStatusColor(project.status)}14`,
+                  color: getStatusColor(project.status),
                 }}
               >
-                {STATUS_LABELS[project.status]}
+                {getStatusLabel(project.status)}
               </span>
             </div>
 

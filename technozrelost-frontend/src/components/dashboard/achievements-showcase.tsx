@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Medal } from "@/components/achievements/medal";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 const GROUP_LABELS: Record<string, string> = {
@@ -75,7 +75,7 @@ export default function AchievementsShowcase() {
         return;
       }
       try {
-        const res = await fetch(`${API_URL}/api/v1/achievements/mine`, {
+        const res = await fetch(`${CLIENT_API_BASE}/api/v1/achievements/mine`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });

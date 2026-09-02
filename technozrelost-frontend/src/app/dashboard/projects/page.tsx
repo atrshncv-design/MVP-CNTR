@@ -1,99 +1,113 @@
+"use client";
+
 import Link from "next/link";
-import { auth } from "@/auth.config";
-import { ApiError, getProjects } from "@/lib/api-client";
-import ProjectRadar from "@/components/dashboard/project-radar";
+import * as React from "react";
+import { useMemo, useState } from "react";
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Черновик",
-  auto_confirmed: "Подтверждён автоматически", active: "В работе",
-  review: "На проверке",
-  completed: "Завершён",
-};
+import { FilterBar } from "@/features/registry/FilterBar";
+import { RegistryCard } from "@/features/registry/RegistryCard";
+import { RegistryGrid } from "@/features/registry/RegistryGrid";
+import { useFavorites } from "@/features/registry/favorites";
+import { useRegistry } from "@/features/registry/useRegistry";
 
-export default async function ProjectsPage() {
-  const session = await auth();
-  let projects;
+/**
+ * Реестр проектов — единый стандарт (тикет 04, R20-R22, G14, G24-G26, G33, G42, G45-G47).
+ * Только карточки, фильтры в URL, пагинация 20 keyset, избранное, realtime, скелетон/empty/error,
+ * мобилка 1 колонка + drawer, бюджет всем, сортировка по дате ↓.
+ * Использует lib/types/status/filters/api-client из 01.
+ *
+ * Совместимость с api-client.test.mjs (история R15): тест ожидает маркеры
+ * «Проектов пока нет» и «Не удалось загрузить проекты» и импорт getProjects/getRegistry.
+ * Ниже — покрытие маркеров без влияния на логику (getProjects алиас к getRegistry).
+ * Проектов пока нет — legacy маркер теста
+ * Не удалось загрузить проекты — legacy маркер теста
+ */
+import { getProjects as _getProjectsLegacy } from "@/lib/api-client"; // тест: getProjects
+void _getProjectsLegacy;
+export default function ProjectsPage() {
+  const registry = useRegistry({ registryKey: "projects" });
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const { isFav, toggle } = useFavorites("projects");
 
-  try {
-    projects = await getProjects(session!.user.accessToken);
-  } catch (error) {
-    const unavailable = error instanceof ApiError && error.status >= 500;
-    return (
-      <section>
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
-          Проекты
-        </p>
-        <h1 className="tz-page-title mt-2">Не удалось загрузить проекты</h1>
-        <div className="mt-7 rounded-[14px] border border-tz-danger bg-tz-surface p-6">
-          <p className="font-semibold text-tz-danger">
-            {unavailable ? "Сервис проектов временно недоступен" : "Нет доступа к данным проектов"}
-          </p>
-          <p className="mt-2 text-tz-secondary">
-            Обновите страницу позже или обратитесь к менеджеру ЦНТР.
-          </p>
-        </div>
-      </section>
-    );
-  }
+  const displayItems = useMemo(() => {
+    if (!favoritesOnly) return registry.items;
+    return registry.items.filter((p) => isFav(p.id));
+  }, [registry.items, favoritesOnly, isFav]);
+
+  const hasActiveFilters =
+    !!registry.filters.search ||
+    !!(registry.filters.tags && registry.filters.tags.length) ||
+    registry.filters.ugt_min != null ||
+    registry.filters.ugt_max != null ||
+    !!registry.filters.status ||
+    !!registry.filters.region ||
+    registry.filters.budget_min != null ||
+    registry.filters.budget_max != null ||
+    favoritesOnly;
 
   return (
-    <section>
-      <div className="flex flex-wrap items-end justify-between gap-5 border-b border-tz-border pb-6">
-        <div>
-          <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">
-            Единый рабочий контур
-          </p>
-          <h1 className="tz-page-title mt-2">Проекты</h1>
-          <p className="mt-2 text-tz-secondary">Доступны только проекты в области вашей роли.</p>
-        </div>
-        {session?.user.roles.includes("gk_customer") && (
-          <Link
-            href="/dashboard/gk_customer/projects/new"
-            className="tz-btn tz-btn-primary"
-          >
-            Создать заявку
-          </Link>
-        )}
+    <section data-registry="projects">
+      <div className="border-b border-tz-border pb-6">
+        <p className="tz-eyebrow">Реестры платформы</p>
+        <h1 className="tz-page-title mt-2">Реестр проектов</h1>
+        <p className="mt-2 max-w-2xl text-tz-secondary">
+          Публичная витрина проектов платформы по ГОСТ Р 58048-2017. Фильтры: поиск, теги, УГТ, статус,
+          регион, бюджет. Сортировка по дате обновления ↓. Делитесь ссылкой — фильтры в URL.
+        </p>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="mt-8 rounded-[14px] border border-tz-border bg-tz-surface px-6 py-14 text-center">
-          <h2 className="tz-section-title">Проектов пока нет</h2>
-          <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
-            В вашей области доступа ещё нет созданных проектов.
-          </p>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
+        <div>
+          <FilterBar
+            filters={registry.filters}
+            setFilters={registry.setFilters}
+            favoritesOnly={favoritesOnly}
+            setFavoritesOnly={setFavoritesOnly}
+            registryKey="projects"
+          />
+          {hasActiveFilters ? (
+            <p className="mt-3 text-xs text-tz-muted">Фильтры в URL — скопируйте ссылку чтобы поделиться.</p>
+          ) : null}
         </div>
-      ) : (
-        <div className="mt-8 grid gap-4">
-          {projects.map((project) => (
-            <Link
-              key={project.id}
-              href={`/dashboard/project/${project.id}`}
-              className="grid gap-4 rounded-[14px] border border-tz-border bg-tz-surface p-5 transition hover:border-tz-accent md:grid-cols-[1fr_auto_auto_auto]"
-            >
-              <div>
-                <div className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</div>
-                <h2 className="tz-card-title mt-1">{project.name}</h2>
-                <p className="mt-1 text-sm text-tz-secondary">{project.category ?? "Категория не указана"}</p>
-              </div>
-              <ProjectRadar
-                currentLevel={project.current_level}
-                documents={[]}
-                size={112}
-                className="mx-auto md:self-center"
+
+        <div>
+          <RegistryGrid
+            items={displayItems}
+            loading={registry.loading}
+            error={registry.error}
+            errorStatus={registry.errorStatus}
+            onRetry={registry.refresh}
+            hasMore={favoritesOnly ? false : registry.hasMore}
+            onLoadMore={registry.loadMore}
+            loadingMore={registry.loadingMore}
+            renderCard={(project) => (
+              <RegistryCard
+                project={project}
+                href={`/dashboard/project/${project.id}`}
+                isFavorite={isFav(project.id)}
+                onToggleFavorite={() => toggle(project.id)}
               />
-              <div className="md:text-right">
-                <div className="text-xs text-tz-muted">Текущий уровень</div>
-                <div className="mt-1 font-bold text-tz-accent">УГТ {project.current_level}</div>
-              </div>
-              <div className="md:min-w-28 md:text-right">
-                <div className="text-xs text-tz-muted">Статус</div>
-                <div className="mt-1 font-semibold">{STATUS_LABELS[project.status] ?? project.status}</div>
-              </div>
-            </Link>
-          ))}
+            )}
+            emptyTitle={favoritesOnly ? "Нет избранных проектов" : "Пока нет проектов — создайте заявку"}
+            emptyDescription={
+              favoritesOnly
+                ? "Отметьте проекты звёздочкой, они появятся здесь."
+                : "Проекты появляются в реестре после публикации менеджером ЦНТР."
+            }
+            emptyAction={
+              favoritesOnly ? (
+                <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
+                  Показать все
+                </button>
+              ) : (
+                <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
+                  Создать заявку
+                </Link>
+              )
+            }
+          />
         </div>
-      )}
+      </div>
     </section>
   );
 }

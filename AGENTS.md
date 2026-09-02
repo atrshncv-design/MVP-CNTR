@@ -99,5 +99,9 @@ B2B/B2G платформа ЦНТР по ГОСТ Р 58048-2017 (НИОКР-пр
 
 ## Как здесь работает Autopilot
 - Проект — цифровая платформа «Технозрелость» (B2B/B2G, ГОСТ Р 58048-2017). Сборка — навыком `/autopilot` (требования/спека/таски в `.autopilot/`, прогресс `dashboard.html`). Требование из `manifest.md` может снять только пользователь.
-- Если работа продолжается — скажи «продолжи автопилот»: состояние поднимется из `.autopilot/state.js` (текущий tier T2, slug `m0-security-hardening`, mode semi), переспрашивать ничего не нужно.
+- Если работа продолжается — скажи «продолжи автопилот»: состояние поднимется из `.autopilot/state.js` (текущий tier T2, slug `frontend-lk-unification`, mode interview deep), переспрашивать ничего не нужно.
+
+## 2026-09-01 — Унификация frontend (8 ЛК, карточка УГТ, реестры, matching)
+
+Интервью deep: 92 требования (R01-R34+G01-G58) → спека 48 историй, 8 тасков 3 волны. Убрано: эксперт УГТ (стало 8 ролей), мок `CATEGORIES ["AI/ML","НИОКТР"]`, дубли `STATUS_LABELS` 7 файлов. Добавлено: `lib/types.ts` (PROJECT_TAGS 32, tags 1-5), `lib/status.ts` (7 статусов draft→archived), `lib/filters.ts` (URL-шаринг 300ms дебаунс), `api-client.ts` единый (31→1 сырой fetch), `ui/*` 24 компонента, `features/dashboard/RoleDashboardShell` (8 ЛК топбар 72px+табы), `features/project/*` (UgtLine дробные сектора=числу StageRequirement, ChecklistPanel, CanvasBlocks 15 полей, DocsPanel drag-n-drop 25МБ, AiDocConsultant узкий без ПДн), `features/registry/*` (только карточки limit 20 keyset, realtime SSE, избранное localStorage), `features/matching/*` (/dashboard/matching всем, 8 состояний, обезличивание contour tuno без ПДн), `features/notifications/*` (колокольчик+страница, модалка сессии), `features/analytics/*` (админ макс, менеджер урезан, HardGateBadge). Тесты 58/58, build ok. Следующий заход — P2: экспорт, серверные сохранённые фильтры, LLM rerank, КТ 1-4.
 <!-- autopilot:end -->

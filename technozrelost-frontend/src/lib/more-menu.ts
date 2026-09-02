@@ -1,4 +1,5 @@
 import {
+  Bell,
   Building2,
   Database,
   FileText,
@@ -41,6 +42,8 @@ export const MORE_MENU_ITEMS: MoreMenuItem[] = [
   // Профиль включает витрину «Мои достижения»; аналитика достижений —
   // вкладка кабинета cntr_admin («Рабочий стол» ведёт в кабинет роли).
   { label: "Профиль", href: "/dashboard/profile", icon: UserRound, isReady: true },
+  // Уведомления (тикет 07): колокольчик + страница, доступна всем ролям
+  { label: "Уведомления", href: "/dashboard/notifications", icon: Bell, isReady: true },
 ];
 
 /**

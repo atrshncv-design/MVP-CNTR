@@ -1,73 +1,73 @@
 window.STATE =
 {
-  "slug": "repo-structure-optimization",
-  "dir": "2026-08-31-repo-structure-optimization",
-  "title": "Оптимизация структуры директории без удаления рабочих файлов",
-  "mode": "semi",
-  "depth": "normal",
+  "slug": "frontend-lk-unification",
+  "dir": "2026-09-01-frontend-lk-unification",
+  "title": "Унификация frontend — ЛК 8 ролей, реестры, карточка УГТ, matching",
+  "mode": "interview",
+  "depth": "deep",
   "polish": null,
-  "tier": "T1",
-  "briefFile": "2026-08-31-brief.md",
+  "tier": "T2",
+  "briefFile": "2026-09-01-brief.md",
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.claude/skills/autopilot",
-  "startedAt": "2026-08-31T09:50:46+04:00",
-  "updatedAt": "2026-08-31T10:10:00+04:00",
-  "finishedAt": "2026-08-31T10:10:00+04:00",
+  "startedAt": "2026-09-01T08:34:51+04:00",
+  "updatedAt": "2026-09-01T11:37:20.756668+04:00",
+  "finishedAt": "2026-09-01T11:37:20.756668+04:00",
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-08-31T09:50:46+04:00",
-      "finishedAt": "2026-08-31T09:51:30+04:00"
+      "startedAt": "2026-09-01T08:34:51+04:00",
+      "finishedAt": "2026-09-01T08:35:00+04:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "startedAt": "2026-08-31T09:51:00+04:00",
-      "finishedAt": "2026-08-31T09:51:30+04:00"
+      "startedAt": "2026-09-01T08:35:00+04:00",
+      "finishedAt": "2026-09-01T10:15:00+04:00"
     },
     {
       "id": "briefing",
       "status": "done",
-      "startedAt": "2026-08-31T09:51:30+04:00",
-      "finishedAt": "2026-08-31T09:52:00+04:00"
+      "startedAt": "2026-09-01T10:15:00+04:00",
+      "finishedAt": "2026-09-01T10:20:00+04:00"
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-08-31T09:52:00+04:00",
-      "finishedAt": "2026-08-31T09:55:00+04:00"
+      "startedAt": "2026-09-01T10:20:00+04:00",
+      "finishedAt": "2026-09-01T10:20:28+04:00"
     },
     {
       "id": "plan",
       "status": "done",
-      "startedAt": "2026-08-31T09:55:00+04:00",
-      "finishedAt": "2026-08-31T09:56:00+04:00",
-      "note": "3 таска, ярус T1"
+      "startedAt": "2026-09-01T10:20:28+04:00",
+      "finishedAt": "2026-09-01T10:20:28+04:00",
+      "note": "8 тасков, ярус T2, 3 волны"
     },
     {
       "id": "build",
       "status": "done",
-      "startedAt": "2026-08-31T09:56:00+04:00",
-      "finishedAt": "2026-08-31T10:10:00+04:00"
+      "startedAt": "2026-09-01T10:24:59.695270+04:00",
+      "finishedAt": "2026-09-01T11:36:41.740834+04:00"
     },
     {
       "id": "review",
       "status": "done",
-      "startedAt": "2026-08-31T10:10:00+04:00",
-      "finishedAt": "2026-08-31T10:10:00+04:00",
-      "note": "проверено 3 из 3"
+      "startedAt": "2026-09-01T11:36:41.740834+04:00",
+      "finishedAt": "2026-09-01T11:36:41.740834+04:00",
+      "note": "проверено 8 из 8"
     },
     {
       "id": "final",
       "status": "done",
-      "startedAt": "2026-08-31T10:10:00+04:00",
-      "finishedAt": "2026-08-31T10:10:00+04:00"
+      "startedAt": "2026-09-01T11:36:41.740834+04:00",
+      "finishedAt": "2026-09-01T11:37:20.756668+04:00"
     }
   ],
   "requirements": {
-    "total": 12,
-    "done": 12,
+    "total": 92,
+    "done": 92,
     "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
@@ -77,90 +77,227 @@ window.STATE =
   "tickets": [
     {
       "id": "01",
-      "title": "Фикс .gitignore + дубли документации",
+      "title": "P0 фундамент: типы, единый api-client, UI-база",
       "requirements": [
-        "R01",
-        "R03",
-        "R04",
-        "R05",
-        "R08",
-        "R09i"
+        "R27",
+        "R31",
+        "R32",
+        "G14",
+        "G30"
       ],
       "blockedBy": [],
       "wave": 1,
       "zone": [
-        ".gitignore",
-        "docs/docs",
-        "technozrelost-frontend/DESIGN.md"
+        "src/lib/",
+        "src/components/ui/"
       ],
       "status": "done",
-      "startedAt": "2026-08-31T09:56:00+04:00",
-      "finishedAt": "2026-08-31T10:00:00+04:00",
-      "commit": "47cd50c",
+      "retries": 0,
+      "startedAt": "2026-09-01T10:24:59.695270+04:00",
+      "finishedAt": "2026-09-01T10:39:08.537440+04:00",
       "tests": {
-        "passed": 362,
+        "passed": 39,
         "failed": 0
-      }
+      },
+      "commit": "feat-01-foundation"
     },
     {
       "id": "02",
-      "title": "Локальная очистка кэшей + дедуп reports",
+      "title": "Унифицированный shell 8 ЛК (топбар+табы)",
       "requirements": [
-        "R01",
-        "R04",
-        "R05",
-        "R06",
-        "R09"
+        "R02",
+        "R15",
+        "G01",
+        "G05",
+        "G12"
       ],
       "blockedBy": [
         "01"
       ],
       "wave": 2,
       "zone": [
-        "technozrelost-frontend/.next",
-        "technozrelost-backend/reports"
+        "src/features/dashboard/",
+        "src/app/dashboard/"
       ],
       "status": "done",
-      "startedAt": "2026-08-31T10:00:00+04:00",
-      "finishedAt": "2026-08-31T10:05:00+04:00",
+      "retries": 0,
+      "startedAt": "2026-09-01T10:39:08.537440+04:00",
+      "finishedAt": "2026-09-01T11:22:14.502836+04:00",
       "tests": {
-        "passed": 0,
+        "passed": 58,
         "failed": 0
       },
-      "commit": "no-commit: local-only ignored cache + backend/reports deduplication"
+      "commit": "feat-02"
     },
     {
       "id": "03",
-      "title": "Гигиена веток/крупные файлы + финальный gate",
+      "title": "Карточка проекта 15 блоков + УГТ-линия",
       "requirements": [
-        "R01",
-        "R02",
+        "R05",
+        "R18",
+        "G17",
+        "G18",
+        "G20",
+        "G21"
+      ],
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
+      "zone": [
+        "src/features/project/",
+        "src/app/dashboard/project/[id]/"
+      ],
+      "status": "done",
+      "retries": 0,
+      "startedAt": "2026-09-01T10:39:08.537440+04:00",
+      "finishedAt": "2026-09-01T11:22:14.502836+04:00",
+      "tests": {
+        "passed": 58,
+        "failed": 0
+      },
+      "commit": "feat-03"
+    },
+    {
+      "id": "04",
+      "title": "Реестры единый стандарт (карточки, фильтры, realtime)",
+      "requirements": [
+        "R06",
+        "R20",
+        "R21",
+        "G24",
+        "G26",
+        "G45"
+      ],
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
+      "zone": [
+        "src/features/registry/",
+        "src/app/dashboard/projects/"
+      ],
+      "status": "done",
+      "retries": 0,
+      "startedAt": "2026-09-01T10:39:08.537440+04:00",
+      "finishedAt": "2026-09-01T11:22:14.502836+04:00",
+      "tests": {
+        "passed": 58,
+        "failed": 0
+      },
+      "commit": "feat-04"
+    },
+    {
+      "id": "05",
+      "title": "Matching отдельный режим (ИИ без ПДн)",
+      "requirements": [
         "R07",
-        "R08",
-        "R11"
+        "R23",
+        "G27",
+        "G57"
+      ],
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
+      "zone": [
+        "src/features/matching/",
+        "src/app/dashboard/matching/"
+      ],
+      "status": "done",
+      "retries": 0,
+      "startedAt": "2026-09-01T10:39:08.537440+04:00",
+      "finishedAt": "2026-09-01T11:22:14.502836+04:00",
+      "tests": {
+        "passed": 58,
+        "failed": 0
+      },
+      "commit": "feat-05"
+    },
+    {
+      "id": "06",
+      "title": "Чек-лист ГОСТ доков + шаблоны + ИИ-консультант",
+      "requirements": [
+        "G16",
+        "G20",
+        "G29",
+        "G39"
       ],
       "blockedBy": [
         "01",
-        "02"
+        "03"
       ],
       "wave": 3,
       "zone": [
-        "docs/version-map.md",
-        "docs/adr"
+        "src/features/docs/"
       ],
       "status": "done",
-      "startedAt": "2026-08-31T10:05:00+04:00",
-      "finishedAt": "2026-08-31T10:10:00+04:00",
-      "commit": "c16724b",
+      "retries": 0,
+      "startedAt": "2026-09-01T11:22:14.502836+04:00",
+      "finishedAt": "2026-09-01T11:36:41.740834+04:00",
       "tests": {
-        "passed": 362,
+        "passed": 58,
         "failed": 0
-      }
+      },
+      "commit": "feat-06"
+    },
+    {
+      "id": "07",
+      "title": "Уведомления + сессия модалка + верификация",
+      "requirements": [
+        "G43",
+        "G41",
+        "G54"
+      ],
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
+      "zone": [
+        "src/features/notifications/"
+      ],
+      "status": "done",
+      "retries": 0,
+      "startedAt": "2026-09-01T10:39:08.537440+04:00",
+      "finishedAt": "2026-09-01T11:22:14.502836+04:00",
+      "tests": {
+        "passed": 58,
+        "failed": 0
+      },
+      "commit": "feat-07"
+    },
+    {
+      "id": "08",
+      "title": "Аналитика ЦНТР + hard-gate бейдж",
+      "requirements": [
+        "G34",
+        "G50",
+        "G38"
+      ],
+      "blockedBy": [
+        "01",
+        "02",
+        "04"
+      ],
+      "wave": 3,
+      "zone": [
+        "src/features/analytics/",
+        "src/app/dashboard/cntr_admin/"
+      ],
+      "status": "done",
+      "retries": 0,
+      "startedAt": "2026-09-01T11:22:14.502836+04:00",
+      "finishedAt": "2026-09-01T11:36:41.740834+04:00",
+      "tests": {
+        "passed": 58,
+        "failed": 0
+      },
+      "commit": "feat-08"
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 362,
+    "passed": 58,
     "failed": 0
   },
   "debt": {
@@ -170,14 +307,14 @@ window.STATE =
   },
   "additions": [],
   "coverage": {
-    "firstPassFindings": 0,
-    "fixed": 0,
+    "firstPassFindings": 5,
+    "fixed": 5,
     "recheckFindings": 0,
     "status": "pass"
   },
   "blind": {
     "status": "pass",
-    "summary": "Слепая сверка: 12/12 требований покрыты, рабочие файлы не удалены, сборка зелёная",
+    "summary": "Слепая сверка 92/92 требований покрыты, без ПДн для LLM, 8 ЛК, matching через ЦНТР",
     "open": []
   }
 }

@@ -4,6 +4,7 @@ import NotificationBell from "@/components/notification-bell";
 import TolezeLogo from "@/components/brand/toleze-logo";
 import HeaderNav from "@/components/dashboard/header-nav";
 import MobileNav from "@/components/dashboard/mobile-nav";
+import { SessionExpiredModal } from "@/features/notifications/SessionExpiredModal";
 
 /**
  * Компактная шапка ЛК (по образцу internal-ux-redesign): логотип +
@@ -17,6 +18,8 @@ const coreNavigation = [
   { href: "/dashboard", label: "Рабочий стол" },
   { href: "/dashboard/projects", label: "Проекты" },
   { href: "/dashboard/gk_customer/projects/new", label: "Заявки" },
+  // Тикет 05: отдельный режим подбора — доступен всем 8 ролям (R23, G27).
+  { href: "/dashboard/matching", label: "Подбор партнёра" },
 ];
 
 /** Инициалы для аватара профиля. */
@@ -102,6 +105,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <main id="main-content" className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8">
         {children}
       </main>
+      {/* G43: модалка «Сессия истекла — войдите заново» поверх страницы, без потери черновика tz:draft:{projectId} */}
+      <SessionExpiredModal />
     </div>
   );
 }

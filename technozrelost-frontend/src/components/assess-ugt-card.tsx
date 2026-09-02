@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Gauge } from "lucide-react";
-import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
 /**
@@ -19,7 +19,7 @@ export function AssessUgTCard() {
   useEffect(() => {
     if (!session?.user?.accessToken) return;
     let cancelled = false;
-    fetch(`${API_URL}/api/v1/assessments/mine`, {
+    fetch(`${CLIENT_API_BASE}/api/v1/assessments/mine`, {
       headers: { Authorization: `Bearer ${session.user.accessToken}` },
     })
       .then((r) => (r.ok ? r.json() : []))
