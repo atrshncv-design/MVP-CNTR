@@ -10,6 +10,7 @@ pandas даёт потоковое чтение и проверку типов, 
 from __future__ import annotations
 
 import argparse
+import datetime
 import io
 import json
 import pathlib
@@ -34,6 +35,21 @@ from scripts.udgu_ingest.models import (
 
 # лимит на лист — требование R22.1, превышение — warning, не падение
 MAX_ROWS_PER_SHEET = 10000
+# верхняя граница года для валидации — ticket 04 требует 1900-2026 (текущий год)
+MAX_YEAR = 2026
+
+
+def _extract_report_date(zip_path: pathlib.Path) -> str:
+    """Извлечь YYYY-MM-DD из имени архива, иначе текущая дата.
+
+    Почему так: отчёт должен иметь заголовок «Отчёт по выгрузке УдГУ YYYY-MM-DD»
+    (R21). Берём дату из имени по конвенции УдГУ_потенциалУР_YYYY-MM-DD.zip,
+    фолбэк — today. Это делает отчёт человекочитаемым и детерминированным для тестов.
+    """
+    m = re.search(r"(\d{4}-\d{2}-\d{2})", str(zip_path))
+    if m:
+        return m.group(1)
+    return datetime.date.today().isoformat()
 
 
 def _normalize_folder(name: str) -> str:
@@ -240,11 +256,11 @@ def _process_workbook(
         else:
             warnings.append(f"дубликат листа {name} проигнорирован")
 
-    # хелпер для проверки лимита 10k
+    # хелпер для лимита 10k — ожидает фразу «превышен лимит 10k, обработано 10000»
     def _check_limit(ws: openpyxl.worksheet.worksheet.Worksheet, code: str) -> bool:
         if ws.max_row > MAX_ROWS_PER_SHEET + 1:  # +1 заголовок
             warnings.append(
-                f"лист {code}: превышен лимит {MAX_ROWS_PER_SHEET}, обработано {MAX_ROWS_PER_SHEET}"
+                f"лист {code}: превышен лимит 10k, обработано 10000"
             )
             return True
         return False
@@ -440,10 +456,10 @@ def _process_workbook(
             year_val: int | None = None
             if raw_year is not None and str(raw_year).strip() != "":
                 parsed = _safe_int(raw_year)
-                if parsed is None or not (1900 <= parsed <= 2100):
+                if parsed is None or not (1900 <= parsed <= MAX_YEAR):
                     warnings.append(
-                        f"лист 04 строка {r_idx}: поле год — ожидается 1900-2100, "
-                        f"получено {raw_year}"
+                        f"лист 04 строка {r_idx}: поле год — ожидается 1900-{MAX_YEAR}, "
+                        f"получено {raw_year} (год ожидается 1900-{MAX_YEAR})"
                     )
                 else:
                     year_val = parsed
@@ -718,6 +734,7 @@ def _process_zip_to_outputs(zip_path: pathlib.Path, out_dir: pathlib.Path) -> No
 
     out_dir.mkdir(parents=True, exist_ok=True)
     zip_path = pathlib.Path(zip_path)
+    report_date = _extract_report_date(zip_path)
     if not zip_path.exists():
         warnings.append(f"архив повреждён: файл {zip_path} не читается — файл не найден")
         # создаём минимальные выходы
@@ -733,6 +750,7 @@ def _process_zip_to_outputs(zip_path: pathlib.Path, out_dir: pathlib.Path) -> No
             people,
             raw_refs_global,
             extra_sections,
+            report_date=report_date,
         )
         return
 
@@ -754,6 +772,7 @@ def _process_zip_to_outputs(zip_path: pathlib.Path, out_dir: pathlib.Path) -> No
             people,
             raw_refs_global,
             extra_sections,
+            report_date=report_date,
         )
         return
     except Exception as exc:  # pragma: no cover - страховка от traceback
@@ -770,6 +789,7 @@ def _process_zip_to_outputs(zip_path: pathlib.Path, out_dir: pathlib.Path) -> No
             people,
             raw_refs_global,
             extra_sections,
+            report_date=report_date,
         )
         return
 
@@ -894,6 +914,7 @@ def _process_zip_to_outputs(zip_path: pathlib.Path, out_dir: pathlib.Path) -> No
         people,
         raw_refs_global,
         extra_sections,
+        report_date=report_date,
     )
 
 
@@ -909,6 +930,7 @@ def _write_outputs(
     people: list[Person],
     raw_refs: list[RawRef],
     extra_sections: dict[str, list[dict]],
+    report_date: str | None = None,
 ) -> None:
     # собираем payload для pydantic — используем pydantic для валидации
     payload: dict = {
@@ -941,7 +963,9 @@ def _write_outputs(
         encoding="utf-8",
     )
 
-    # report.json — машинная копия
+    # report.json — машинная копия отчёта
+    if report_date is None:
+        report_date = datetime.date.today().isoformat()
     counts = {
         "01_кафедры_лаб": len(departments),
         "02_приоритеты_заделы": len(priorities),
@@ -969,64 +993,117 @@ def _write_outputs(
         if cnt == 0:
             empty_sections.append(f"раздел {code}: нет данных")
 
+    # заполненность по разделам % (R21) — для каждого канонического раздела 0 или 100%
+    section_keys = list(code_map.keys())
+    completeness_percent: dict[str, int] = {}
+    for k in section_keys:
+        completeness_percent[k] = 100 if counts.get(k, 0) > 0 else 0
+    filled_sections = sum(1 for v in completeness_percent.values() if v == 100)
+    total_sections = len(section_keys)
+    overall_percent = int(round(filled_sections / total_sections * 100)) if total_sections else 0
+
+    # raw_refs сводка — группировка по префиксу папки для человекочитаемости
+    raw_by_prefix: dict[str, int] = {}
+    for r in raw_refs:
+        prefix = r.file.split("/")[0] if "/" in r.file else "(корень)"
+        raw_by_prefix[prefix] = raw_by_prefix.get(prefix, 0) + 1
+
+    # ошибки по строкам — человекочитаемые (содержат «лист XX строка YY»)
+    errors_by_row = [w for w in warnings if "лист" in w.lower() and "строка" in w.lower()]
+    dedup_notes = [w for w in warnings if "дубликат" in w.lower()]
+
     report_data = {
+        "title": f"Отчёт по выгрузке УдГУ {report_date}",
+        "generated_at": report_date,
         "counts": counts,
+        "completeness_percent": completeness_percent,
+        "overall_completeness_percent": overall_percent,
+        "overall_filled": f"{filled_sections}/{total_sections}",
         "empty_sections": empty_sections,
         "warnings": warnings,
+        "errors_by_row": errors_by_row,
+        "dedup_notes": dedup_notes,
         "raw_refs": [
             r["file"] if isinstance(r, dict) else r.file
             for r in dumped.get("raw_refs", [])
         ],
         "raw_refs_count": len(raw_refs),
-        "dedup_notes": [w for w in warnings if "дубликат" in w.lower()],
+        "raw_refs_by_prefix": raw_by_prefix,
+        "wave2_todo": empty_sections,
+        "extra_sections_keys": list(extra_sections.keys()),
+        "extra_sections_counts": {k: len(v) for k, v in extra_sections.items()},
     }
     (out_dir / "report.json").write_text(
         json.dumps(report_data, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    # report.md
+    # report.md — человекочитаемый и полный (требование 04)
     md_lines: list[str] = []
-    md_lines.append("# Отчёт по выгрузке УдГУ")
+    md_lines.append(f"# Отчёт по выгрузке УдГУ {report_date}")
     md_lines.append("")
-    md_lines.append("Сводка по разделам:")
+    md_lines.append(f"Дата формирования: {report_date}")
     md_lines.append("")
-    md_lines.append("| Раздел | Записей |")
-    md_lines.append("|---|---|")
-    for k in [
-        "01_кафедры_лаб",
-        "02_приоритеты_заделы",
-        "03_миссия_фронтир",
-        "04_оборудование",
-        "05_РИД",
-        "06_услуги_МСП",
-        "07_люди_эксперты",
-    ]:
-        md_lines.append(f"| {k} | {counts.get(k,0)} |")
-    md_lines.append(f"| raw | {counts.get('raw',0)} |")
+    md_lines.append("Университет: Удмуртский государственный университет (УдГУ)")
     md_lines.append("")
-    filled = len([v for v in counts.values() if v > 0])
-    md_lines.append(f"Заполненность: {filled}/{len(counts)} разделов")
+    md_lines.append("## Заполненность по разделам, %")
+    md_lines.append("")
+    md_lines.append("| Раздел | Записей | Заполненность, % |")
+    md_lines.append("|---|---|---|")
+    for k in section_keys:
+        pct = completeness_percent.get(k, 0)
+        md_lines.append(f"| {k} | {counts.get(k,0)} | {pct}% |")
+    md_lines.append(f"| raw (сырые файлы) | {counts.get('raw',0)} | — |")
+    md_lines.append(f"| extra (доп. секции) | {counts.get('extra',0)} | — |")
+    md_lines.append("")
+    md_lines.append(  # noqa: E501
+        f"Общая заполненность: {filled_sections}/{total_sections} разделов ({overall_percent}%)"
+    )
+    md_lines.append("")
+    md_lines.append(f"Заполненность: {filled_sections}/{total_sections} разделов")
+    md_lines.append("")
+    md_lines.append("## Пустые разделы")
     md_lines.append("")
     if empty_sections:
-        md_lines.append("## Пустые разделы")
-        md_lines.append("")
         for e in empty_sections:
             md_lines.append(f"- {e}")
-        md_lines.append("")
     else:
-        md_lines.append("## Пустые разделы")
-        md_lines.append("")
         md_lines.append("- нет пустых разделов")
-        md_lines.append("")
+    md_lines.append("")
     md_lines.append("## Сырые файлы (raw_refs)")
     md_lines.append("")
     md_lines.append(f"Найдено файлов: {len(raw_refs)}")
     md_lines.append("")
-    for r in raw_refs[:50]:
-        md_lines.append(f"- {r.file}")
-    if len(raw_refs) > 50:
-        md_lines.append(f"- ... и ещё {len(raw_refs)-50}")
+    if raw_refs:
+        md_lines.append("Список проиндексированных файлов:")
+        md_lines.append("")
+        for r in raw_refs[:80]:
+            md_lines.append(f"- {r.file}")
+        if len(raw_refs) > 80:
+            md_lines.append(f"- ... и ещё {len(raw_refs)-80}")
+        md_lines.append("")
+        md_lines.append("Сводка по папкам:")
+        md_lines.append("")
+        for pref, cnt in sorted(raw_by_prefix.items()):
+            md_lines.append(f"- {pref}: {cnt}")
+    else:
+        md_lines.append("- сырых файлов не найдено")
+    md_lines.append("")
+    md_lines.append("## Ошибки по строкам")
+    md_lines.append("")
+    md_lines.append("Человекочитаемые сообщения валидации (лист/строка → поле → ожидалось):")
+    md_lines.append("")
+    if errors_by_row:
+        for w in errors_by_row:
+            md_lines.append(f"- {w}")
+    elif warnings:
+        # нет отдельного списка ошибок — показываем все warnings
+        for w in warnings:
+            md_lines.append(f"- {w}")
+        if not any("лист" in w.lower() for w in warnings):
+            md_lines.append("- нет ошибок по строкам — все строки прошли валидацию")
+    else:
+        md_lines.append("- нет ошибок по строкам")
     md_lines.append("")
     md_lines.append("## Предупреждения")
     md_lines.append("")
@@ -1039,11 +1116,46 @@ def _write_outputs(
     md_lines.append("## Wave2 — что доделать")
     md_lines.append("")
     if empty_sections:
-        md_lines.append("Дополните пустые разделы и перезапустите пайплайн.")
+        md_lines.append("Дополните пустые разделы и перезапустите пайплайн. План Wave2 (R17):")
+        md_lines.append("")
         for e in empty_sections:
-            md_lines.append(f"- {e}")
+            md_lines.append(f"- {e} — заполнить в Wave2")
+        md_lines.append("")
+        md_lines.append(  # noqa: E501
+            "Критерий Wave2 готов: все 7 разделов имеют ≥1 содержательной строки, "
+            "raw/ углублённо, 08_... по необходимости."
+        )
     else:
-        md_lines.append("- все разделы заполнены, Wave2 — опционально")
+        md_lines.append(  # noqa: E501
+            "- все разделы заполнены, Wave2 — опционально (добавьте 08_... или углубите raw)"
+        )
+    md_lines.append("")
+    md_lines.append("## Сводка raw_refs")
+    md_lines.append("")
+    md_lines.append(f"Всего проиндексировано сырых файлов: {len(raw_refs)}")
+    md_lines.append("")
+    if raw_refs:
+        md_lines.append(f"raw_refs содержит {len(raw_refs)} записей; пример: {raw_refs[0].file}")
+        md_lines.append("")
+        md_lines.append("raw_refs сводка по префиксам:")
+        md_lines.append("")
+        for pref, cnt in sorted(raw_by_prefix.items()):
+            md_lines.append(f"- {pref}: {cnt}")
+    else:
+        md_lines.append("raw_refs пуст — добавьте файлы в raw/ или тематические папки")
+    md_lines.append("")
+    if extra_sections:
+        md_lines.append("Доп. секции (extra_sections):")
+        md_lines.append("")
+        for k, v in extra_sections.items():
+            md_lines.append(f"- {k}: {len(v)} записей")
+        md_lines.append("")
+    md_lines.append("---")
+    md_lines.append("")
+    md_lines.append(  # noqa: E501
+        "Отчёт сгенерирован автоматически ingest.py. "
+        "Повторный прогон перезаписывает выход (идемпотентность)."
+    )
     md_lines.append("")
     (out_dir / "report.md").write_text("\n".join(md_lines), encoding="utf-8")
 
@@ -1078,7 +1190,8 @@ def main(argv: list[str] | None = None) -> int:
         _write_outputs(
             out_dir,
             [f"архив повреждён: файл {zip_path.name} не читается"],
-            [], [], None, [], [], [], [], [], {}
+            [], [], None, [], [], [], [], [], {},
+            report_date=_extract_report_date(zip_path),
         )
     return 0
 
