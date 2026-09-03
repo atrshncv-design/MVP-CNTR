@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import * as React from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { PROJECT_TAGS, validateTags } from "@/lib/types";
 import type { ProjectDetailOut, ProjectCardOut } from "@/lib/types";
 import { useDebouncedValue } from "@/lib/filters";
@@ -98,6 +99,7 @@ const FIELD_DEFS: Array<{
  * Редактируемость: только если status===draft или роль в {manager,admin,lead}, иначе disabled + подсказка «Только загрузка документов».
  */
 export function CanvasBlocks({ project, detail, value, onChange, className = "" }: CanvasBlocksProps) {
+  const t = useTranslations("projects");
   const { data: session } = useSession();
   const userRoles: string[] = (session?.user?.roles as string[]) ?? [];
   const userId = session?.user?.id ? Number(session.user.id) : null;
@@ -106,7 +108,7 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
   const isLead = detail?.members.some((m) => m.user_id === userId && m.role_in_project === "lead") ?? false;
   const canEdit = project.status === "draft" || isManager || isLead;
   // если статус не draft и не привилегированная роль — только загрузка документов
-  const disabledHint = !canEdit ? "Только загрузка документов" : undefined;
+  const disabledHint = !canEdit ? t("onlyDocs") : undefined;
 
   const [local, setLocal] = React.useState<CanvasValue>(() => value ?? defaultCanvas(project));
 
@@ -133,13 +135,38 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
     return true;
   });
 
+  // i18n mapping for canvas field labels
+  const fieldLabel = (key: string): string => {
+    const map: Record<string, string> = {
+      name: t("fieldName"),
+      stageDescription: t("fieldStageDescription"),
+      configuration: t("fieldConfiguration"),
+      architecture: t("fieldArchitecture"),
+      targetCharacteristics: t("fieldTargetCharacteristics"),
+      achievedCharacteristics: t("fieldAchievedCharacteristics"),
+      criticalElements: t("fieldCriticalElements"),
+      prerequisites: t("fieldPrerequisites"),
+      deviations: t("fieldDeviations"),
+      deviationReasons: t("fieldDeviationReasons"),
+      deviationMeasures: t("fieldDeviationMeasures"),
+      results: t("fieldResults"),
+      confirmationDocs: t("fieldConfirmationDocs"),
+      transitionPlan: t("fieldTransitionPlan"),
+      responsible: t("fieldResponsible"),
+      deadline: t("fieldDeadline"),
+      notes: t("fieldNotes"),
+      futurePlans: t("fieldFuturePlans"),
+    };
+    return map[key] ?? (FIELD_DEFS.find((f) => f.key === key)?.label ?? key);
+  };
+
   // дебаунс поиска по тегам (lib/filters, G55)
   const [tagQuery, setTagQuery] = React.useState("");
   const debouncedQuery = useDebouncedValue(tagQuery, 300);
   const filteredTags = React.useMemo(() => {
     if (!debouncedQuery) return PROJECT_TAGS;
     const q = debouncedQuery.toLowerCase();
-    return (PROJECT_TAGS as readonly string[]).filter((t) => t.toLowerCase().includes(q));
+    return (PROJECT_TAGS as readonly string[]).filter((tTag) => tTag.toLowerCase().includes(q));
   }, [debouncedQuery]);
 
   // подсчёт видимых — для теста 15 блоков (без учёта скрытых на УГТ1)
@@ -150,33 +177,33 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
     <section className={`tz-card p-6 ${className}`} data-testid="canvas-blocks" aria-label="Канва проекта 15 блоков">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="tz-eyebrow">Канва 5.5 — 15 блоков</p>
-          <h2 className="tz-card-title mt-1">Паспорт проекта</h2>
+          <p className="tz-eyebrow">{t("canvasEyebrow")}</p>
+          <h2 className="tz-card-title mt-1">{t("canvasTitle")}</h2>
           <p className="mt-1 text-sm text-tz-muted">
-            Заполните поля канвы. На УГТ1 скрыты «Архитектура» и «Предтребования», на УГТ9 — блок «Дальнейшие планы».
+            {t("canvasDesc")}
           </p>
         </div>
         {!canEdit && (
           <span className="tz-badge tz-badge-neutral" title={disabledHint}>
-            Только загрузка документов
+            {t("onlyDocs")}
           </span>
         )}
       </div>
 
       {!canEdit && (
         <p className="mt-3 rounded-lg border border-tz-border bg-tz-soft px-3 py-2 text-sm text-tz-muted">
-          Поля редактируются только если статус — черновик или ваша роль: manager/admin/lead. Сейчас — {disabledHint}
+          {t("editHint", { hint: disabledHint ?? "" })}
         </p>
       )}
 
       {/* Мультитеги 1-5 */}
       <div className="mt-6">
-        <label className="tz-label">Теги проекта (1-5 из 30+ справочника) *</label>
+        <label className="tz-label">{t("tagsLabel")}</label>
         <input
           type="text"
           value={tagQuery}
           onChange={(e) => setTagQuery(e.target.value)}
-          placeholder="Поиск по 30+ тегам..."
+          placeholder={t("tagSearchPlaceholder")}
           className="tz-input mb-3"
           aria-label="Поиск тегов"
           disabled={!canEdit}
@@ -191,7 +218,7 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
                 disabled={!canEdit}
                 onClick={() => {
                   if (!canEdit) return;
-                  const next = active ? local.tags.filter((t) => t !== tag) : [...local.tags, tag];
+                  const next = active ? local.tags.filter((tTag) => tTag !== tag) : [...local.tags, tag];
                   if (next.length > 5) return;
                   handleChange("tags", next);
                 }}
@@ -205,26 +232,26 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
             );
           })}
         </div>
-        {local.tags.length > 0 && <p className="mt-2 text-xs text-tz-muted">Выбрано: {local.tags.join(", ")}</p>}
+        {local.tags.length > 0 && <p className="mt-2 text-xs text-tz-muted">{t("selected", { tags: local.tags.join(", ") })}</p>}
         {tagError && <p role="alert" className="mt-2 text-xs text-tz-danger">{tagError}</p>}
         {!canEdit && <p className="mt-1 text-xs text-tz-muted">{disabledHint}</p>}
       </div>
 
       {/* Бюджет всем виден */}
       <div className="mt-6">
-        <label className="tz-label">Бюджет проекта (виден всем)</label>
+        <label className="tz-label">{t("budgetLabel")}</label>
         <input
           type="text"
           inputMode="numeric"
           value={local.budget}
           onChange={(e) => handleChange("budget", e.target.value)}
           disabled={!canEdit}
-          placeholder="Например, 5 000 000"
+          placeholder={t("budgetPlaceholder")}
           className="tz-input"
           aria-label="Бюджет проекта"
         />
         {!canEdit && <p className="mt-1 text-xs text-tz-muted">{disabledHint}</p>}
-        <p className="mt-1 text-xs text-tz-muted">Бюджет виден всем ролям (G38), сортировка/дата не в карточке.</p>
+        <p className="mt-1 text-xs text-tz-muted">{t("budgetHint")}</p>
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -234,7 +261,7 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
           return (
             <div key={field.key as string} className={isTextArea ? "md:col-span-2" : ""}>
               <label className="tz-label" htmlFor={`canvas-${String(field.key)}`}>
-                {field.label}
+                {fieldLabel(String(field.key))}
               </label>
               {isTextArea ? (
                 <textarea
@@ -269,7 +296,7 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
         })}
       </div>
 
-      <p className="mt-4 font-mono text-xs text-tz-muted">Полей в канве: {visibleFields.length} (на УГТ {level}) · скрытых: {FIELD_DEFS.length - visibleFields.length}</p>
+      <p className="mt-4 font-mono text-xs text-tz-muted">{t("fieldsCount", { visible: visibleFields.length, level, hidden: FIELD_DEFS.length - visibleFields.length })}</p>
     </section>
   );
 }

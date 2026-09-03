@@ -7,6 +7,7 @@
 
 import * as React from "react";
 import { Bell, CheckCheck, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { formatRelative, formatShortDate } from "@/lib/format-date";
 
@@ -14,8 +15,9 @@ import { useNotifications, type NotificationsFilter } from "./useNotifications";
 import { useNotificationsStream } from "./useNotificationsStream";
 
 function NotificationsSkeleton() {
+  const t = useTranslations("notifications");
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Загрузка уведомлений">
+    <div className="space-y-3" aria-busy="true" aria-label={t("skeletonLabel")}>
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="tz-card p-5">
           <div className="h-4 w-32 animate-pulse rounded bg-tz-surface-2" />
@@ -28,6 +30,7 @@ function NotificationsSkeleton() {
 }
 
 export function NotificationsPage() {
+  const t = useTranslations("notifications");
   const { items, loading, error, reload, markRead, filtered } = useNotifications({ pollMs: 30_000 });
   const [filter, setFilter] = React.useState<NotificationsFilter>("all");
 
@@ -42,29 +45,29 @@ export function NotificationsPage() {
   if (error) {
     return (
       <div className="tz-card tz-empty" role="alert">
-        <p className="tz-empty-title">Не удалось загрузить уведомления</p>
+        <p className="tz-empty-title">{t("loadFailed")}</p>
         <p className="tz-empty-text">{error}</p>
         <button onClick={() => void reload()} className="tz-btn tz-btn-secondary mt-4">
-          <RefreshCw size={15} /> Повторить
+          <RefreshCw size={15} /> {t("retry")}
         </button>
       </div>
     );
   }
 
   return (
-    <section className="mx-auto max-w-3xl" aria-label="Уведомления">
+    <section className="mx-auto max-w-3xl" aria-label={t("title")}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-tz-accent-soft text-tz-accent">
             <Bell size={18} />
           </span>
           <div>
-            <h1 className="text-xl font-bold text-tz-fg">Уведомления</h1>
-            <p className="text-sm text-tz-muted">{unreadCount > 0 ? `${unreadCount} непрочитано` : "Нет непрочитанных"}</p>
+            <h1 className="text-xl font-bold text-tz-fg">{t("title")}</h1>
+            <p className="text-sm text-tz-muted">{unreadCount > 0 ? t("subtitleUnread", { count: unreadCount }) : t("subtitleNoUnread")}</p>
           </div>
         </div>
-        <button onClick={() => void reload()} className="tz-btn tz-btn-ghost tz-btn-sm" aria-label="Обновить">
-          <RefreshCw size={15} /> Обновить
+        <button onClick={() => void reload()} className="tz-btn tz-btn-ghost tz-btn-sm" aria-label={t("update")}>
+          <RefreshCw size={15} /> {t("update")}
         </button>
       </div>
 
@@ -76,7 +79,7 @@ export function NotificationsPage() {
           onClick={() => setFilter("all")}
           className={`tz-btn ${filter === "all" ? "tz-btn-primary" : "tz-btn-ghost"} tz-btn-sm`}
         >
-          Все
+          {t("filterAll")}
         </button>
         <button
           role="tab"
@@ -84,7 +87,7 @@ export function NotificationsPage() {
           onClick={() => setFilter("unread")}
           className={`tz-btn ${filter === "unread" ? "tz-btn-primary" : "tz-btn-ghost"} tz-btn-sm`}
         >
-          Непрочитано
+          {t("filterUnread")}
         </button>
       </div>
 
@@ -93,9 +96,9 @@ export function NotificationsPage() {
           <span className="tz-empty-icon">
             <Bell size={22} />
           </span>
-          <h2 className="tz-empty-title">Нет уведомлений</h2>
+          <h2 className="tz-empty-title">{t("emptyTitle")}</h2>
           <p className="tz-empty-text">
-            Здесь появятся уведомления о публикации проекта и matching-заявках через ЦНТР.
+            {t("emptyDesc")}
           </p>
         </div>
       ) : (
@@ -110,9 +113,9 @@ export function NotificationsPage() {
               >
                 <span className="mt-1 shrink-0">
                   {n.is_read ? (
-                    <CheckCheck size={16} className="text-tz-muted" aria-label="Прочитано" />
+                    <CheckCheck size={16} className="text-tz-muted" aria-label={t("read")} />
                   ) : (
-                    <span className="block h-2.5 w-2.5 rounded-full bg-tz-accent" aria-label="Непрочитано" />
+                    <span className="block h-2.5 w-2.5 rounded-full bg-tz-accent" aria-label={t("unread")} />
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -130,9 +133,9 @@ export function NotificationsPage() {
                   <button
                     onClick={() => void markRead(n.id)}
                     className="tz-btn tz-btn-ghost tz-btn-sm shrink-0"
-                    aria-label={`Отметить «${n.title}» как прочитанное`}
+                    aria-label={t("markReadAria", { title: n.title })}
                   >
-                    Прочитано
+                    {t("read")}
                   </button>
                 )}
               </li>

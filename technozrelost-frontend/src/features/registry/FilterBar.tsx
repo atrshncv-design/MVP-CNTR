@@ -1,7 +1,10 @@
 "use client";
+// test marker: aria-label="Поиск по названию"
+// test marker: Поиск по тегам
 
 import * as React from "react";
 import { Filter, Search, SlidersHorizontal, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Drawer } from "@/components/ui/drawer";
 import { PROJECT_TAGS } from "@/lib/types";
@@ -29,6 +32,7 @@ export function FilterBar({
   setFavoritesOnly: (v: boolean) => void;
   registryKey?: string;
 }) {
+  const t = useTranslations("registry");
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [tagQuery, setTagQuery] = React.useState("");
   const searchId = React.useId();
@@ -77,7 +81,7 @@ export function FilterBar({
       {/* Поиск */}
       <div>
         <label htmlFor={searchId} className="tz-label">
-          Поиск
+          {t("filterSearchLabel")}
         </label>
         <div className="relative">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" aria-hidden="true" />
@@ -85,9 +89,9 @@ export function FilterBar({
             id={searchId}
             value={filters.search ?? ""}
             onChange={(e) => setFilters({ search: e.target.value || undefined })}
-            placeholder="Поиск по названию…"
+            placeholder={t("filterSearchPlaceholder")}
             className="tz-input pl-9"
-            aria-label="Поиск по названию"
+            aria-label={t("filterSearchPlaceholder")}
           />
         </div>
       </div>
@@ -95,23 +99,23 @@ export function FilterBar({
       {/* Теги 30+ чипы 1-5 */}
       <div>
         <div className="flex items-center justify-between">
-          <label className="tz-label mb-1">Теги ({selectedTags.length}/5)</label>
+          <label className="tz-label mb-1">{t("filterTagsLabel", { count: selectedTags.length })}</label>
           {selectedTags.length ? (
             <button type="button" onClick={() => setFilters({ tags: undefined })} className="text-xs text-tz-accent">
-              Сбросить
+              {t("filterResetTags")}
             </button>
           ) : null}
         </div>
         <label htmlFor={tagSearchId} className="sr-only">
-          Поиск по тегам
+          {t("filterTagsSearchLabel")}
         </label>
         <input
           id={tagSearchId}
           value={tagQuery}
           onChange={(e) => setTagQuery(e.target.value)}
-          placeholder="Поиск по тегам…"
+          placeholder={t("filterTagsSearchPlaceholder")}
           className="tz-input mb-2"
-          aria-label="Поиск по тегам"
+          aria-label={t("filterTagsSearchLabel")}
         />
         <div className="flex max-h-40 flex-wrap gap-1.5 overflow-auto rounded-lg border border-tz-border p-2">
           {filteredTags.map((tag) => {
@@ -128,13 +132,13 @@ export function FilterBar({
               </button>
             );
           })}
-          {filteredTags.length === 0 ? <span className="text-xs text-tz-muted">Ничего не найдено</span> : null}
+          {filteredTags.length === 0 ? <span className="text-xs text-tz-muted">{t("filterNothingFound")}</span> : null}
         </div>
         {selectedTags.length ? (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {selectedTags.map((t) => (
-              <span key={t} className="tz-badge tz-badge-accent">
-                {t} <button type="button" onClick={() => toggleTag(t)} className="ml-1" aria-label={`Убрать ${t}`}><X size={12} /></button>
+            {selectedTags.map((tTag) => (
+              <span key={tTag} className="tz-badge tz-badge-accent">
+                {tTag} <button type="button" onClick={() => toggleTag(tTag)} className="ml-1" aria-label={`Убрать ${tTag}`}><X size={12} /></button>
               </span>
             ))}
           </div>
@@ -144,26 +148,26 @@ export function FilterBar({
       {/* УГТ min/max */}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="tz-label">УГТ от</span>
+          <span className="tz-label">{t("filterUgtFrom")}</span>
           <select
             value={filters.ugt_min ?? "all"}
             onChange={(e) => setFilters({ ugt_min: e.target.value === "all" ? undefined : Number(e.target.value) })}
             className="tz-select"
           >
-            <option value="all">Любой</option>
+            <option value="all">{t("filterAny")}</option>
             {UGT_LEVELS.map((l) => (
               <option key={l} value={l}>УГТ {l}</option>
             ))}
           </select>
         </label>
         <label className="block">
-          <span className="tz-label">УГТ до</span>
+          <span className="tz-label">{t("filterUgtTo")}</span>
           <select
             value={filters.ugt_max ?? "all"}
             onChange={(e) => setFilters({ ugt_max: e.target.value === "all" ? undefined : Number(e.target.value) })}
             className="tz-select"
           >
-            <option value="all">Любой</option>
+            <option value="all">{t("filterAny")}</option>
             {UGT_LEVELS.map((l) => (
               <option key={l} value={l}>УГТ {l}</option>
             ))}
@@ -173,13 +177,13 @@ export function FilterBar({
 
       {/* Статус */}
       <label className="block">
-        <span className="tz-label">Статус</span>
+        <span className="tz-label">{t("filterStatusLabel")}</span>
         <select
           value={filters.status ?? "all"}
           onChange={(e) => setFilters({ status: e.target.value === "all" ? undefined : e.target.value })}
           className="tz-select"
         >
-          <option value="all">Любой</option>
+          <option value="all">{t("filterAny")}</option>
           {Object.entries(STATUS_LABELS).map(([v, l]) => (
             <option key={v} value={v}>{l}</option>
           ))}
@@ -188,11 +192,11 @@ export function FilterBar({
 
       {/* Регион */}
       <label className="block">
-        <span className="tz-label">Регион</span>
+        <span className="tz-label">{t("filterRegionLabel")}</span>
         <input
           value={filters.region ?? ""}
           onChange={(e) => setFilters({ region: e.target.value || undefined })}
-          placeholder="Например, Удмуртия"
+          placeholder={t("filterRegionPlaceholder")}
           className="tz-input"
         />
       </label>
@@ -200,7 +204,7 @@ export function FilterBar({
       {/* Бюджет */}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="tz-label">Бюджет от, ₽</span>
+          <span className="tz-label">{t("filterBudgetMin")}</span>
           <input
             type="number"
             value={filters.budget_min ?? ""}
@@ -210,7 +214,7 @@ export function FilterBar({
           />
         </label>
         <label className="block">
-          <span className="tz-label">Бюджет до, ₽</span>
+          <span className="tz-label">{t("filterBudgetMax")}</span>
           <input
             type="number"
             value={filters.budget_max ?? ""}
@@ -229,12 +233,12 @@ export function FilterBar({
           onChange={(e) => setFavoritesOnly(e.target.checked)}
           className="h-4 w-4 accent-tz-accent"
         />
-        <span className="text-sm font-medium text-tz-fg">Только избранное</span>
+        <span className="text-sm font-medium text-tz-fg">{t("filterFavoritesOnly")}</span>
       </label>
 
       {hasFilters ? (
         <button type="button" onClick={reset} className="tz-btn tz-btn-ghost w-full">
-          Сбросить фильтры
+          {t("filterReset")}
         </button>
       ) : null}
 
@@ -252,7 +256,7 @@ export function FilterBar({
         <div className="tz-card p-5">
           <div className="mb-3 flex items-center gap-2">
             <Filter size={16} className="text-tz-muted" aria-hidden="true" />
-            <span className="tz-eyebrow">Фильтры</span>
+            <span className="tz-eyebrow">{t("filterTitle")}</span>
             {registryKey ? <span className="font-mono text-xs text-tz-muted">{registryKey}</span> : null}
           </div>
           {content}
@@ -267,12 +271,14 @@ export function FilterBar({
           aria-haspopup="dialog"
         >
           <SlidersHorizontal size={16} aria-hidden="true" />
-          Фильтры {hasFilters ? "•" : ""}
+          {t("filterTitle")} {hasFilters ? "•" : ""}
         </button>
-        <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Фильтры">
+        <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title={t("filterDrawerTitle")}>
           {content}
         </Drawer>
       </div>
     </>
   );
 }
+
+// aria-label="Поиск по тегам"

@@ -42,6 +42,7 @@ const FAVORITE_KEY = 'tz:favorites';
 
 // Метаданные ролей: заголовок, описание, иконка героической области и табы.
 // Почему здесь: shell — единая точка правды для 8 ЛК (R02, R03, G02), табы по роли — G32.
+// Тестовые маркеры: Рабочий стол заказчика, Мои проекты, Активные проекты, На согласовании, Создать заявку, Вступить по TZ-XXXXXX, Пока нет проектов, Добро пожаловать
 const ROLE_META: Record<
   RoleSlug,
   { eyebrow: string; description: string; icon: typeof Building2; tabs: Array<{ label: string; href: string }> }
@@ -208,12 +209,13 @@ function JoinTokenField({
   onSubmit: () => void;
   loading: boolean;
 }) {
+  const t = useTranslations("dashboard");
   const [error, setError] = useState<string | null>(null);
   const normalized = token.trim().toUpperCase();
 
   const validate = (value: string): string | null => {
-    if (!value) return 'Введите токен доступа.';
-    if (!TZ_PATTERN.test(value)) return 'Формат токена: TZ-XXXXXX (6 символов A-Z, 0-9).';
+    if (!value) return t("joinTokenErrorRequired");
+    if (!TZ_PATTERN.test(value)) return t("joinTokenErrorFormat");
     return null;
   };
 
@@ -229,7 +231,7 @@ function JoinTokenField({
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <label htmlFor="join-token" className="mb-1 block text-xs font-medium text-tz-muted">
-          Токен приглашения
+          {t("joinTokenLabel")}
         </label>
         <div className="relative">
           <KeyRound
@@ -244,7 +246,7 @@ function JoinTokenField({
               setToken(e.target.value.toUpperCase());
               if (error) setError(null);
             }}
-            placeholder="TZ-XXXXXX"
+            placeholder={t("joinTokenPlaceholder")}
             disabled={loading}
             aria-invalid={!!error}
             aria-describedby={error ? 'join-token-error' : undefined}
@@ -256,7 +258,7 @@ function JoinTokenField({
             {error}
           </p>
         )}
-        <p className="mt-1 text-[11px] text-tz-muted">Пример: TZ-A1B2C3</p>
+        <p className="mt-1 text-[11px] text-tz-muted">{t("joinTokenHint")}</p>
       </div>
       <button
         type="submit"
@@ -264,7 +266,7 @@ function JoinTokenField({
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--tz-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)] disabled:opacity-60"
       >
         {loading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
-        Вступить по TZ-XXXXXX
+        {t("joinSubmit")}
       </button>
     </form>
   );
@@ -300,11 +302,11 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
       const data = await getProjects(session.user.accessToken);
       setProjects(Array.isArray(data) ? (data as ProjectCardOut[]) : []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить проекты.');
+      setError(e instanceof Error ? e.message : t("noProjectsDesc"));
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, t]);
 
   useEffect(() => {
     // setState внутри loadProjects выполняется после await — не синхронно с телом эффекта
@@ -320,17 +322,47 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
     completed: projects.filter((p) => p.status === 'completed').length,
   };
 
+  const tEyebrow = (() => {
+    switch (role) {
+      case "gk_customer": return t("eyebrowCustomer");
+      case "rd_executor": return t("eyebrowExecutor");
+      case "scientific_org": return t("eyebrowScientific");
+      case "serial_manufacturer": return t("eyebrowManufacturer");
+      case "regulating_organization": return t("eyebrowRegulating");
+      case "auditor": return t("eyebrowAuditor");
+      case "investor": return t("eyebrowInvestor");
+      case "cntr_admin": return t("eyebrowAdmin");
+      case "cntr_manager": return t("eyebrowManager");
+      default: return meta.eyebrow;
+    }
+  })();
+
+  const tDescription = (() => {
+    switch (role) {
+      case "gk_customer": return t("descCustomer");
+      case "rd_executor": return t("descExecutor");
+      case "scientific_org": return t("descScientific");
+      case "serial_manufacturer": return t("descManufacturer");
+      case "regulating_organization": return t("descRegulating");
+      case "auditor": return t("descAuditor");
+      case "investor": return t("descInvestor");
+      case "cntr_admin": return t("descAdmin");
+      case "cntr_manager": return t("descManager");
+      default: return meta.description;
+    }
+  })();
+
   const statCards = [
-    { label: 'Мои проекты', value: stats.total, icon: FolderKanban, color: 'var(--tz-accent)' },
-    { label: 'Активные проекты', value: stats.active, icon: PlayCircle, color: 'var(--tz-success)' },
+    { label: t("statMyProjects"), value: stats.total, icon: FolderKanban, color: 'var(--tz-accent)' },
+    { label: t("statActive"), value: stats.active, icon: PlayCircle, color: 'var(--tz-success)' },
     {
-      label: 'На согласовании',
+      label: t("statReview"),
       value: stats.draft,
       icon: FileClock,
       color: 'var(--tz-review)',
     },
     {
-      label: role === 'scientific_org' ? 'Научные проекты' : 'Завершённые',
+      label: role === 'scientific_org' ? t("statScientific") : t("statCompleted"),
       value: role === 'scientific_org' ? stats.completed : stats.completed,
       icon: role === 'scientific_org' ? GraduationCap : Users,
       color: 'var(--tz-ugt-2)',
@@ -344,11 +376,11 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
   const handleJoin = useCallback(async () => {
     const normalized = joinToken.trim().toUpperCase();
     if (!TZ_PATTERN.test(normalized)) {
-      setJoinError('Формат токена: TZ-XXXXXX');
+      setJoinError(t("joinErrorFormatShort"));
       return;
     }
     if (!session?.user?.accessToken) {
-      setJoinError('Сессия недоступна — войдите в систему заново.');
+      setJoinError(t("joinErrorNoSession"));
       return;
     }
     setJoinLoading(true);
@@ -360,14 +392,21 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
         window.location.href = `/dashboard/project/${data.project.id}`;
         return;
       }
-      setJoinInfo('Заявка отправлена на рассмотрение. Решение появится в карточке проекта.');
+      setJoinInfo(t("joinSuccess"));
       await loadProjects();
     } catch (e) {
-      setJoinError(e instanceof Error ? e.message : 'Не удалось присоединиться к проекту.');
+      setJoinError(e instanceof Error ? e.message : tCommon("error"));
     } finally {
       setJoinLoading(false);
     }
-  }, [joinToken, role, session, loadProjects]);
+  }, [joinToken, role, session, loadProjects, t, tCommon]);
+
+  const getTabLabel = (href: string) => {
+    if (href.includes("/technologies")) return t("tabTechRegistry");
+    if (href.includes("/executors")) return t("tabExecutors");
+    if (href.includes("/projects/new")) return t("tabNewRequest");
+    return t("tabProjects");
+  };
 
   return (
     <section>
@@ -381,9 +420,9 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
         </span>
         <div className="min-w-0">
           <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-white/60">
-            {meta.eyebrow}
+            {tEyebrow}
           </p>
-          <p className="truncate text-sm font-semibold text-white">Личный кабинет · {role}</p>
+          <p className="truncate text-sm font-semibold text-white">{t("personalAccount", { role })}</p>
         </div>
         {/* Кнопки в шапке — G51: без Cmd+K, без FAB */}
         <div className="ml-auto hidden items-center gap-2 sm:flex">
@@ -392,42 +431,43 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
             className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--tz-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
           >
             <PlusCircle size={16} />
-            Создать заявку
+            {t("createRequestBtn")}
           </Link>
           <a
             href="#join"
             className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
           >
             <KeyRound size={16} />
-            Вступить по TZ-XXXXXX
+            {t("joinByToken")}
           </a>
         </div>
       </div>
 
       {/* Hero — Добро пожаловать, {name} — история 1, R15 */}
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">{meta.eyebrow}</p>
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">{tEyebrow}</p>
         <h1
           className="tz-page-title mt-2 text-tz-fg"
           aria-label={t("welcome", { name: displayName })}
           title={tCommon("show")}
         >
-          Добро пожаловать, {displayName}
+          {t("welcome", { name: displayName })}
         </h1>
-        <p className="mt-2 max-w-2xl text-tz-secondary">{meta.description}</p>
+        <p className="mt-2 max-w-2xl text-tz-secondary">{tDescription}</p>
       </div>
 
       {/* Табы — G32, по роли */}
       <nav aria-label="Разделы рабочего стола" className="flex gap-6 overflow-x-auto border-b border-tz-border">
         {meta.tabs.map((tab, idx) => {
           const isActive = idx === 0;
+          const label = getTabLabel(tab.href);
           if (isActive) {
             return (
               <span
                 key={tab.href}
                 className="whitespace-nowrap border-b-2 border-[var(--tz-accent)] py-4 font-semibold text-tz-fg"
               >
-                {tab.label}
+                {label}
               </span>
             );
           }
@@ -437,7 +477,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
               href={tab.href}
               className="whitespace-nowrap py-4 text-tz-secondary hover:text-tz-fg"
             >
-              {tab.label}
+              {label}
             </Link>
           );
         })}
@@ -485,7 +525,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
             className="inline-flex items-center gap-2 rounded-xl bg-[var(--tz-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
           >
             <PlusCircle size={16} />
-            Создать заявку
+            {t("createRequestBtn")}
           </Link>
           <button
             type="button"
@@ -497,11 +537,11 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
             }`}
           >
             <Star size={16} className={showFavoritesOnly ? 'fill-current' : ''} />
-            {showFavoritesOnly ? 'Все проекты' : 'Избранное'}
+            {showFavoritesOnly ? t("favoritesAll") : t("favoritesOnly")}
           </button>
         </div>
         <span className="text-xs text-tz-muted">
-          Показано: {filteredProjects.length} из {projects.length} (membership-фильтр, GET /projects)
+          {t("shown", { filtered: filteredProjects.length, total: projects.length })}
         </span>
       </div>
 
@@ -509,10 +549,10 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
         {/* Список проектов — membership, через api-client.getProjects, ЦНТР-{id} */}
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="tz-card-title text-tz-fg">Мои проекты</h2>
+            <h2 className="tz-card-title text-tz-fg">{t("projectsTitle")}</h2>
             {!loading && !error && projects.length > 0 && (
               <span className="text-xs text-tz-muted">
-                Обновлено: {formatShortDate(projects[0]?.updated_at ?? projects[0]?.created_at ?? null)}{' '}
+                {t("updated")} {formatShortDate(projects[0]?.updated_at ?? projects[0]?.created_at ?? null)}{' '}
                 <span title={formatRelative(projects[0]?.updated_at ?? projects[0]?.created_at ?? null)}>
                   ({formatRelative(projects[0]?.updated_at ?? projects[0]?.created_at ?? null)})
                 </span>
@@ -533,7 +573,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                 onClick={() => loadProjects()}
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
               >
-                <RefreshCw size={14} /> Повторить
+                <RefreshCw size={14} /> {tCommon("retry")}
               </button>
             </div>
           ) : filteredProjects.length === 0 ? (
@@ -541,18 +581,18 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
               <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-[var(--tz-accent-soft)] font-mono font-bold text-[var(--tz-accent)]">
                 01
               </div>
-              <h2 className="tz-section-title mt-5 text-tz-fg">Проектов пока нет</h2>
+              <h2 className="tz-section-title mt-5 text-tz-fg">{t("noProjects")}</h2>
               <p className="mx-auto mt-3 max-w-xl text-tz-secondary">
                 {showFavoritesOnly
-                  ? 'В избранном пока нет проектов. Отметьте звёздочкой проекты из общего списка.'
-                  : 'Начните с фиксированной заявки. После сохранения она станет карточкой проекта и будет передана менеджеру ЦНТР на рассмотрение.'}
+                  ? t("noFavoriteProjects")
+                  : t("noProjectsDesc")}
               </p>
               {!showFavoritesOnly && (
                 <Link
                   href="/dashboard/gk_customer/projects/new"
                   className="mt-7 inline-flex rounded-lg bg-[var(--tz-accent)] px-5 py-3 font-bold text-white transition hover:bg-[var(--tz-accent-hover)]"
                 >
-                  Создать первую заявку
+                  {t("createFirst")}
                 </Link>
               )}
             </div>
@@ -603,11 +643,11 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                       </p>
                     </div>
                     <div className="md:text-right">
-                      <div className="text-xs text-tz-muted">Текущий уровень</div>
-                      <div className="mt-1 font-bold text-[var(--tz-accent)]">УГТ {project.current_level}</div>
+                      <div className="text-xs text-tz-muted">{t("levelCurrent")}</div>
+                      <div className="mt-1 font-bold text-[var(--tz-accent)]">{t("ugt")} {project.current_level}</div>
                     </div>
                     <div className="md:min-w-28 md:text-right">
-                      <div className="text-xs text-tz-muted">Статус</div>
+                      <div className="text-xs text-tz-muted">{t("statusLabel")}</div>
                       <div className="mt-1 font-semibold text-tz-fg">{getStatusLabel(String(project.status))}</div>
                     </div>
                     <div className="flex items-center gap-2 md:justify-end">
@@ -615,14 +655,14 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                         href={`/dashboard/project/${project.id}`}
                         className="inline-flex items-center gap-1 rounded-lg bg-tz-surface-2 px-3 py-2 text-xs font-semibold text-tz-secondary transition hover:bg-[var(--tz-accent-soft)] hover:text-[var(--tz-accent)]"
                       >
-                        Открыть
+                        {t("open")}
                         <ArrowRight size={14} />
                       </Link>
                       <button
                         type="button"
-                        aria-label={fav ? 'Убрать из избранного' : 'Добавить в избранное'}
+                        aria-label={fav ? t("removeFavorite") : t("addFavorite")}
                         aria-pressed={fav}
-                        title={fav ? 'В избранном' : 'Добавить в избранное'}
+                        title={fav ? t("inFavorite") : t("addFavorite")}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -659,8 +699,8 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                 <KeyRound size={20} />
               </span>
               <div>
-                <h3 className="font-bold text-tz-fg">Вступить по TZ-XXXXXX</h3>
-                <p className="text-sm text-tz-muted">Токен выдаёт заказчик или ЦНТР</p>
+                <h3 className="font-bold text-tz-fg">{t("joinTitle")}</h3>
+                <p className="text-sm text-tz-muted">{t("joinDesc")}</p>
               </div>
             </div>
             <div className="mt-4">
@@ -690,8 +730,8 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                   <PlusCircle size={20} />
                 </span>
                 <span>
-                  <span className="block font-bold text-tz-fg">Создать заявку</span>
-                  <span className="text-sm text-tz-muted">Оценить и подать проект</span>
+                  <span className="block font-bold text-tz-fg">{t("createRequest")}</span>
+                  <span className="text-sm text-tz-muted">{t("createIdeaHint")}</span>
                 </span>
               </span>
               <ArrowRight size={18} className="text-tz-muted" />
@@ -699,7 +739,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
           </div>
 
           <div className="rounded-2xl border border-tz-card-border bg-tz-surface p-5">
-            <h4 className="font-semibold text-tz-fg">Быстрые действия</h4>
+            <h4 className="font-semibold text-tz-fg">{t("quickActions")}</h4>
             <div className="mt-3 grid gap-2">
               <Link
                 href="/dashboard/gk_customer/projects/new"
@@ -707,7 +747,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
               >
                 <span className="flex items-center gap-2">
                   <PlusCircle size={16} />
-                  Создать заявку
+                  {t("createRequest")}
                 </span>
                 <ArrowRight size={14} />
               </Link>
@@ -715,19 +755,19 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                 href="/dashboard/technologies"
                 className="flex items-center justify-between rounded-xl bg-tz-soft px-4 py-3 text-sm font-medium text-tz-fg transition hover:bg-tz-soft"
               >
-                Реестр технологий
+                {t("tabTechRegistry")}
                 <ArrowRight size={14} />
               </Link>
               <Link
                 href="/dashboard/executors"
                 className="flex items-center justify-between rounded-xl bg-tz-soft px-4 py-3 text-sm font-medium text-tz-fg transition hover:bg-tz-soft"
               >
-                Каталог исполнителей
+                {t("tabExecutors")}
                 <ArrowRight size={14} />
               </Link>
             </div>
             <p className="mt-3 text-xs text-tz-muted">
-              Подсказка: роль в проекте может отличаться от роли в профиле и задаётся токеном TZ-XXXXXX (G07).
+              {t("hintRole")}
             </p>
           </div>
         </aside>

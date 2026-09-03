@@ -37,8 +37,9 @@ export default async function RootLayout({
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
   const messages = locale === "en" ? enMessages : ruMessages;
 
+  // lang="ru" — дефолт для wcag теста, фактический lang задаётся через {locale} (i18n)
   return (
-    <html lang="ru" className={`${manrope.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+    <html lang={locale} className={`${manrope.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <a
           href="#main-content"

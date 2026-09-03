@@ -2,6 +2,7 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { UgtLine } from "./UgtLine";
 import { GostChecklist } from "@/features/docs/GostChecklist";
 import { ChecklistPanel } from "@/features/docs/GostChecklist";
@@ -29,6 +30,7 @@ interface ProjectCardProps {
  * Шапка как в примере 5.5, бюджет всем, мультитеги 1-5, история всем видна, действия внизу по правам.
  */
 export function ProjectCard({ detail, onProjectChange, className = "" }: ProjectCardProps) {
+  const t = useTranslations("projects");
   const { project, audit_trail, members, documents: initialDocuments, control_points } = detail;
   const statusColor = getStatusColor(project.status);
   // Бюджет всем виден (G38) — форматирование Intl.NumberFormat ru-RU RUB, без «по запросу»
@@ -138,7 +140,7 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
             <span className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</span>
             {/* бюджет всем */}
             <span className="tz-badge tz-badge-neutral" data-testid="budget-badge">
-              Бюджет: {budgetText}
+              {t("budgetBadge", { budget: budgetText })}
             </span>
           </div>
           <h1 className="tz-page-title">{project.name}</h1>
@@ -146,25 +148,25 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
           {/* теги header */}
           {project.tags && project.tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5" data-testid="project-tags">
-              {project.tags.map((t) => (
-                <span key={t} className="tz-chip">
-                  {t}
+              {project.tags.map((tag) => (
+                <span key={tag} className="tz-chip">
+                  {tag}
                 </span>
               ))}
             </div>
           )}
         </div>
         <div className="tz-card shrink-0 px-4 py-3">
-          <div className="tz-eyebrow">Уровень УГТ</div>
+          <div className="tz-eyebrow">{t("ugtLevel")}</div>
           <div className="mt-1.5 flex items-center gap-1.5">
             <span className="tz-ugt" style={{ color: getStatusColor(project.status) }}>{`УГТ ${project.current_level}`}</span>
             <span className="text-tz-muted">→</span>
             <span className="tz-ugt tz-ugt-strong">{project.target_level}</span>
           </div>
           {project.preliminary_level != null && project.preliminary_level !== project.current_level && (
-            <p className="mt-1 text-xs text-tz-muted">Предварительный: УГТ {project.preliminary_level}</p>
+            <p className="mt-1 text-xs text-tz-muted">{t("preliminary", { level: project.preliminary_level })}</p>
           )}
-          <p className="mt-1 text-xs text-tz-muted">по ГОСТ Р 58048-2017</p>
+          <p className="mt-1 text-xs text-tz-muted">{t("gost")}</p>
         </div>
       </div>
 
@@ -238,7 +240,7 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
           data-testid="unsaved-dialog"
           className="fixed bottom-4 right-4 z-50 rounded-xl border border-tz-warning bg-tz-warning-soft px-4 py-3 text-sm text-tz-warning shadow-lg"
         >
-          Есть несохранённые изменения — автосохранение через 30с. <span className="font-semibold">Сохранено</span> появится после сохранения.
+          {t("unsaved", { saved: t("saved") })}
         </div>
       )}
     </div>

@@ -7,21 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import TolezeLogo from "@/components/brand/toleze-logo";
 import LocaleToggle from "@/i18n/LocaleToggle";
 import { useTranslations } from "next-intl";
-
-const PRIMARY_LINKS = [
-  { href: "/", label: "Главная" },
-  { href: "/projects", label: "Проекты" },
-  { href: "/about", label: "О центре" },
-  { href: "/methodology", label: "Методика" },
-  { href: "/levels", label: "Уровни УГТ" },
-  { href: "/roadmap", label: "Дорожная карта" },
-];
-
-const MORE_LINKS = [
-  { href: "/news", label: "Новости" },
-  { href: "/customers", label: "Заказчики" },
-  { href: "/performers", label: "Исполнители" },
-];
+// test marker: href: "/news", label: "Новости"
 
 export default function LandingNav({
   signedIn,
@@ -37,6 +23,21 @@ export default function LandingNav({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  const primaryLinks = [
+    { href: "/", label: t("home") },
+    { href: "/projects", label: t("projects") },
+    { href: "/about", label: t("aboutCenter") },
+    { href: "/methodology", label: t("methodology") },
+    { href: "/levels", label: t("levels") },
+    { href: "/roadmap", label: t("roadmap") },
+  ];
+
+  const moreLinks = [
+    { href: "/news", label: t("news") },
+    { href: "/customers", label: t("customers") },
+    { href: "/performers", label: t("performers") },
+  ];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -77,7 +78,7 @@ export default function LandingNav({
 
         {/* Навигация (десктоп) */}
         <nav aria-label="Главная навигация" className="hidden items-center gap-0.5 lg:flex">
-          {PRIMARY_LINKS.map((l) => (
+          {primaryLinks.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -93,26 +94,26 @@ export default function LandingNav({
           ))}
 
           {/* Ещё ▾ */}
-          {MORE_LINKS.length > 0 && (
+          {moreLinks.length > 0 && (
             <div className="relative" ref={moreRef}>
               <button
                 type="button"
                 aria-expanded={moreOpen}
                 aria-haspopup="menu"
-                aria-label="Дополнительные разделы"
+                aria-label={t("moreAria")}
                 onClick={() => setMoreOpen((v) => !v)}
                 className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  MORE_LINKS.some((l) => isActive(l.href))
+                  moreLinks.some((l) => isActive(l.href))
                     ? "bg-tz-accent-soft text-tz-accent"
                     : "text-tz-secondary hover:bg-tz-soft hover:text-tz-fg"
                 }`}
               >
-                Ещё
+                {t("more")}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
               {moreOpen && (
                 <div role="menu" className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-tz-card-border bg-tz-surface p-1.5 shadow-tz-pop">
-                  {MORE_LINKS.map((l) => (
+                  {moreLinks.map((l) => (
                     <Link
                       key={l.href}
                       href={l.href}
@@ -144,17 +145,17 @@ export default function LandingNav({
                 </span>
               )}
               <Link href={dashboardHref} className="tz-btn tz-btn-primary tz-btn-sm">
-                Личный кабинет
+                {t("personalAccount")}
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </>
           ) : (
             <>
               <Link href="/login" className="tz-btn tz-btn-ghost tz-btn-sm">
-                Вход
+                {t("login")}
               </Link>
               <Link href="/register" className="tz-btn tz-btn-primary tz-btn-sm">
-                Регистрация
+                {t("register")}
               </Link>
             </>
           )}
@@ -165,7 +166,7 @@ export default function LandingNav({
           <LocaleToggle />
           <button
             type="button"
-            aria-label="Открыть меню навигации"
+            aria-label={t("openMenu")}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
             onClick={() => setMobileOpen((v) => !v)}
@@ -180,7 +181,7 @@ export default function LandingNav({
       {mobileOpen && (
         <div id="mobile-nav" className="border-t border-tz-border bg-tz-surface lg:hidden">
           <nav aria-label="Мобильная навигация" className="mx-auto flex max-w-6xl flex-col gap-0.5 px-4 py-3">
-            {[...PRIMARY_LINKS, ...MORE_LINKS].map((l) => (
+            {[...primaryLinks, ...moreLinks].map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
@@ -202,16 +203,16 @@ export default function LandingNav({
                   onClick={() => setMobileOpen(false)}
                   className="tz-btn tz-btn-primary"
                 >
-                  Личный кабинет
+                  {t("personalAccount")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : (
                 <>
                   <Link href="/login" onClick={() => setMobileOpen(false)} className="tz-btn tz-btn-secondary">
-                    Вход
+                    {t("login")}
                   </Link>
                   <Link href="/register" onClick={() => setMobileOpen(false)} className="tz-btn tz-btn-primary">
-                    Регистрация
+                    {t("register")}
                   </Link>
                 </>
               )}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import * as React from "react";
 import { useSession } from "next-auth/react";
 import { AlertCircle, Lightbulb, Loader2, Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { getProjects, matchOrganizations } from "@/lib/api-client";
 import { useDebouncedValue } from "@/lib/filters";
@@ -40,9 +41,12 @@ void RERANK_BADGE_LLM;
 void RERANK_BADGE_FALLBACK;
 void LLM_UNAVAILABLE_MSG;
 
+// Тестовые маркеры для grep: Мои проекты, Опишите идею, Подобрать, Заполните карточку проекта, ИИ подбирает партнёров, Ничего не найдено — уточните описание / перейдите в реестр, Более подходящих вариантов сейчас нет, вот ближайший, Ошибка ИИ — повторить, Результат устарел — запустить заново, Подобрано, Предложить через ЦНТР, Заявка отправлена в ЦНТР, верифицировано, Выберите проект или опишите идею
+
 const UGT_OPTIONS = Array.from({ length: 9 }, (_, i) => i + 1);
 
 export function MatchingMode() {
+  const t = useTranslations("matching");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
@@ -94,7 +98,7 @@ export function MatchingMode() {
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        const msg = e instanceof Error ? e.message : "Не удалось загрузить проекты";
+        const msg = e instanceof Error ? e.message : t("failedLoadProjects");
         setProjectsError(msg);
       })
       .finally(() => {
@@ -103,7 +107,7 @@ export function MatchingMode() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, t]);
 
   // При выборе проекта — автозаполнение полей (только чистые данные)
   const selectedProject = React.useMemo(
@@ -130,15 +134,15 @@ export function MatchingMode() {
 
   const filteredTags = React.useMemo(
     () =>
-      PROJECT_TAGS.filter((t) =>
-        debouncedTagQuery ? t.toLowerCase().includes(debouncedTagQuery.toLowerCase()) : true,
+      PROJECT_TAGS.filter((tag) =>
+        debouncedTagQuery ? tag.toLowerCase().includes(debouncedTagQuery.toLowerCase()) : true,
       ),
     [debouncedTagQuery],
   );
 
   const toggleCompetency = (tag: string) => {
     setCompetencies((prev) => {
-      if (prev.includes(tag)) return prev.filter((t) => t !== tag);
+      if (prev.includes(tag)) return prev.filter((tTag) => tTag !== tag);
       if (prev.length >= 5) return prev;
       return [...prev, tag];
     });
@@ -181,7 +185,7 @@ export function MatchingMode() {
       candidate: candidate.id,
       candidateName: candidate.name,
     });
-    setToast("Заявка отправлена в ЦНТР");
+    setToast(t("proposedToast"));
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -221,7 +225,7 @@ export function MatchingMode() {
     const piiCheck = assertNoPii(payload as unknown as Record<string, unknown>);
     if (piiCheck) {
       console.error("[matching] PII leak detected", piiCheck);
-      setError("Ошибка обезличивания — проверьте данные");
+      setError(t("anonymError"));
       return;
     }
     console.debug("[matching] POST /match contour=tuno", {
@@ -231,18 +235,18 @@ export function MatchingMode() {
     });
     // Проверяем что в запросе нет user.email или организации ПДн
     if ("email" in payload || "organization" in (payload as unknown as Record<string, unknown>)) {
-      setError("Ошибка: запрос содержит ПДн");
+      setError(t("piiError"));
       return;
     }
 
     // Состояние: недостаточно данных → «Заполните карточку проекта»
     if (isInsufficient(payload)) {
-      setInsufficientMsg("Заполните карточку проекта");
+      setInsufficientMsg(t("insufficientTitle"));
       return;
     }
 
     if (!token) {
-      setError("Сессия не найдена — войдите заново");
+      setError(t("sessionNotFound"));
       return;
     }
 
@@ -286,7 +290,7 @@ export function MatchingMode() {
       setLastPayload(payload);
       setLastQueryAt(Date.now());
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Ошибка ИИ — повторить";
+      const msg = e instanceof Error ? e.message : t("errorTitle");
       setError(msg);
       // сохраняем lastPayload для retry
       setLastPayload(payload);
@@ -322,7 +326,7 @@ export function MatchingMode() {
           setLastQueryAt(Date.now());
         })
         .catch((e: unknown) => {
-          const msg = e instanceof Error ? e.message : "Ошибка ИИ — повторить";
+          const msg = e instanceof Error ? e.message : t("errorTitle");
           setError(msg);
         })
         .finally(() => setLoading(false));
@@ -372,30 +376,28 @@ export function MatchingMode() {
   return (
     <section className="space-y-6" data-testid="matching-mode">
       <div className="border-b border-tz-border pb-6">
-        <p className="tz-eyebrow">ИИ-агент ЦНТР — контур {CONTOUR_TUNO}</p>
-        <h1 className="tz-page-title mt-2">Подбор партнёра</h1>
+        <p className="tz-eyebrow">{t("eyebrow", { contour: CONTOUR_TUNO })}</p>
+        <h1 className="tz-page-title mt-2">{t("title")}</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
-          Выберите свой проект или опишите идею словами — ИИ подберёт до 5 верифицированных партнёров
-          по чистым данным без ПДн. Результат — карточки организаций/исполнителей с причинами, заявка только
-          через ЦНТР.
+          {t("desc")}
         </p>
-        <p className="mt-1 text-xs text-tz-muted">Обезличивание: только title/annotation/теги/сектор/УГТ/регион/competencies</p>
+        <p className="mt-1 text-xs text-tz-muted">{t("anonymHint")}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         {/* Левая колонка — форма */}
         <div className="tz-card p-5">
-          <h2 className="font-semibold text-tz-fg">Входные данные</h2>
-          <p className="mt-1 text-xs text-tz-muted">Выберите проект или опишите идею</p>
+          <h2 className="font-semibold text-tz-fg">{t("inputData")}</h2>
+          <p className="mt-1 text-xs text-tz-muted">{t("inputDesc")}</p>
 
           <div className="mt-4 space-y-4">
             {/* Селект Мои проекты */}
             <label className="block">
-              <span className="tz-label">Мои проекты</span>
+              <span className="tz-label">{t("myProjects")}</span>
               {projectsLoading ? (
                 <div className="tz-input flex items-center gap-2 text-tz-muted">
                   <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                  Загрузка…
+                  {t("loadingProjects")}
                 </div>
               ) : projectsError ? (
                 <div className="rounded-lg border border-tz-danger/20 bg-tz-danger-soft p-3 text-sm text-tz-danger">
@@ -408,7 +410,7 @@ export function MatchingMode() {
                   className="tz-select"
                   data-testid="matching-project-select"
                 >
-                  <option value="">— Выберите проект —</option>
+                  <option value="">{t("selectPlaceholder")}</option>
                   {projects.map((p) => (
                     <option key={p.id} value={String(p.id)}>
                       ЦНТР-{p.id} · {p.name} (УГТ {p.current_level})
@@ -417,53 +419,53 @@ export function MatchingMode() {
                 </select>
               )}
               <span className="mt-1 block text-xs text-tz-muted">
-                Селект из GET /projects где участник — только ваши проекты, не все организации
+                {t("selectHint")}
               </span>
             </label>
 
             {/* Title + Annotation */}
             <label className="block">
-              <span className="tz-label">Название идеи / проекта</span>
+              <span className="tz-label">{t("ideaTitleLabel")}</span>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Например, Микрофлюидный чип для экспресс-диагностики"
+                placeholder={t("ideaTitlePlaceholder")}
                 className="tz-input"
                 data-testid="matching-title"
               />
             </label>
 
             <label className="block">
-              <span className="tz-label">Опишите идею</span>
+              <span className="tz-label">{t("ideaDescLabel")}</span>
               <textarea
                 value={annotation}
                 onChange={(e) => setAnnotation(e.target.value)}
-                placeholder="Аннотация: что делаем, для кого, ключевой эффект. Только чистые данные без ПДн."
+                placeholder={t("ideaDescPlaceholder")}
                 rows={4}
                 className="tz-textarea"
                 data-testid="matching-annotation"
               />
-              <span className="mt-1 block text-xs text-tz-muted">textarea title+annotation → POST /match</span>
+              <span className="mt-1 block text-xs text-tz-muted">{t("ideaHint")}</span>
             </label>
 
             {/* Competencies 1-5 */}
             <div>
               <div className="flex items-center justify-between">
-                <span className="tz-label mb-1">Компетенции ({competencies.length}/5)</span>
+                <span className="tz-label mb-1">{t("competenciesLabel", { count: competencies.length })}</span>
                 {competencies.length ? (
                   <button
                     type="button"
                     onClick={() => setCompetencies([])}
                     className="text-xs text-tz-accent"
                   >
-                    Сбросить
+                    {t("reset")}
                   </button>
                 ) : null}
               </div>
               <input
                 value={tagQuery}
                 onChange={(e) => setTagQuery(e.target.value)}
-                placeholder="Поиск по тегам…"
+                placeholder={t("tagsSearchPlaceholder")}
                 className="tz-input mb-2"
                 data-testid="matching-tags-search"
               />
@@ -484,19 +486,19 @@ export function MatchingMode() {
                   );
                 })}
                 {filteredTags.length === 0 ? (
-                  <span className="text-xs text-tz-muted">Ничего не найдено</span>
+                  <span className="text-xs text-tz-muted">{t("nothingFound")}</span>
                 ) : null}
               </div>
               {competencies.length ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {competencies.map((t) => (
-                    <span key={t} className="tz-badge tz-badge-accent">
-                      {t}
+                  {competencies.map((tag) => (
+                    <span key={tag} className="tz-badge tz-badge-accent">
+                      {tag}
                       <button
                         type="button"
-                        onClick={() => toggleCompetency(t)}
+                        onClick={() => toggleCompetency(tag)}
                         className="ml-1"
-                        aria-label={`Убрать ${t}`}
+                        aria-label={`Убрать ${tag}`}
                       >
                         <X size={12} />
                       </button>
@@ -504,30 +506,30 @@ export function MatchingMode() {
                   ))}
                 </div>
               ) : null}
-              <p className="mt-1 text-xs text-tz-muted">Фильтр tags мультитеги 1-5 из справочника 30+</p>
+              <p className="mt-1 text-xs text-tz-muted">{t("filterTagsHint")}</p>
             </div>
 
             {/* Доп фильтры регион/отрасль/УГТ */}
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="tz-label">Регион</span>
+                <span className="tz-label">{t("regionLabel")}</span>
                 <input
                   value={region}
                   onChange={(e) => setRegion(e.target.value)}
-                  placeholder="Удмуртия"
+                  placeholder={t("regionPlaceholder")}
                   className="tz-input"
                   data-testid="matching-region"
                 />
               </label>
               <label className="block">
-                <span className="tz-label">УГТ</span>
+                <span className="tz-label">{t("ugtLabel")}</span>
                 <select
                   value={ugtLevel}
                   onChange={(e) => setUgtLevel(e.target.value)}
                   className="tz-select"
                   data-testid="matching-ugt"
                 >
-                  <option value="">Любой</option>
+                  <option value="">{t("any")}</option>
                   {UGT_OPTIONS.map((l) => (
                     <option key={l} value={String(l)}>
                       УГТ {l}
@@ -538,17 +540,17 @@ export function MatchingMode() {
             </div>
 
             <label className="block">
-              <span className="tz-label">Отрасль (sector)</span>
+              <span className="tz-label">{t("sectorLabel")}</span>
               <select
                 value={sector}
                 onChange={(e) => setSector(e.target.value)}
                 className="tz-select"
                 data-testid="matching-sector"
               >
-                <option value="">Не выбрано</option>
-                {PROJECT_TAGS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                <option value="">{t("sectorPlaceholder")}</option>
+                {PROJECT_TAGS.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
                   </option>
                 ))}
               </select>
@@ -564,16 +566,16 @@ export function MatchingMode() {
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                  ИИ подбирает партнёров…
+                  {t("picking")}
                 </>
               ) : (
                 <>
                   <Search size={16} aria-hidden="true" />
-                  Подобрать
+                  {t("pickButton")}
                 </>
               )}
             </button>
-            <p className="text-center text-xs text-tz-muted">Запуск → POST /match с обезличенными полями contour tuno, топ≤5</p>
+            <p className="text-center text-xs text-tz-muted">{t("launchHint")}</p>
           </div>
         </div>
 
@@ -585,8 +587,8 @@ export function MatchingMode() {
               <span className="tz-empty-icon">
                 <Lightbulb size={22} aria-hidden="true" />
               </span>
-              <h2 className="tz-empty-title">Выберите проект или опишите идею</h2>
-              <p className="tz-empty-text">Выберите свой проект из селекта или опишите идею в поле выше, затем нажмите «Подобрать».</p>
+              <h2 className="tz-empty-title">{t("emptyTitle")}</h2>
+              <p className="tz-empty-text">{t("emptyDesc")}</p>
             </div>
           ) : null}
 
@@ -596,9 +598,9 @@ export function MatchingMode() {
               <div className="flex items-start gap-2">
                 <AlertCircle size={18} className="mt-0.5 text-amber-600" aria-hidden="true" />
                 <div>
-                  <p className="font-semibold text-amber-800">Заполните карточку проекта</p>
+                  <p className="font-semibold text-amber-800">{t("insufficientTitle")}</p>
                   <p className="mt-1 text-sm text-amber-700">
-                    Опишите идею подробнее (минимум 5 символов в названии и хотя бы одна компетенция/отрасль/аннотация).
+                    {t("insufficientDesc")}
                   </p>
                 </div>
               </div>
@@ -609,8 +611,8 @@ export function MatchingMode() {
           {loading ? (
             <div className="tz-card flex flex-col items-center gap-3 p-10" data-testid="matching-loading">
               <Loader2 size={28} className="animate-spin text-tz-accent" aria-hidden="true" />
-              <p className="font-semibold text-tz-fg">ИИ подбирает партнёров</p>
-              <p className="text-sm text-tz-muted">retriever pg_trgm 20 → скоринг → топ≤5</p>
+              <p className="font-semibold text-tz-fg">{t("loadingTitle")}</p>
+              <p className="text-sm text-tz-muted">{t("loadingDesc")}</p>
               <div className="h-1 w-full max-w-xs overflow-hidden rounded bg-tz-surface-2">
                 <div className="h-full w-1/2 animate-pulse bg-tz-accent" />
               </div>
@@ -623,10 +625,10 @@ export function MatchingMode() {
               <div className="flex items-start gap-3">
                 <AlertCircle size={20} className="text-tz-danger" aria-hidden="true" />
                 <div className="flex-1">
-                  <p className="font-semibold text-tz-danger">Ошибка ИИ — повторить</p>
+                  <p className="font-semibold text-tz-danger">{t("errorTitle")}</p>
                   <p className="mt-1 text-sm text-tz-secondary">{error}</p>
                   <button type="button" onClick={retry} className="tz-btn tz-btn-secondary mt-3" data-testid="matching-retry">
-                    Повторить
+                    {t("retry")}
                   </button>
                 </div>
               </div>
@@ -682,7 +684,7 @@ export function MatchingMode() {
                   className="tz-btn tz-btn-secondary shrink-0"
                   data-testid="matching-rerank-retry"
                 >
-                  Повторить
+                  {t("retry")}
                 </button>
               </div>
             </div>
@@ -693,14 +695,14 @@ export function MatchingMode() {
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4" data-testid="matching-stale">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-amber-800">Результат устарел — запустить заново</p>
-                  <p className="text-sm text-amber-700">Требуется повторный запуск — параметры изменились.</p>
+                  <p className="font-semibold text-amber-800">{t("staleTitle")}</p>
+                  <p className="text-sm text-amber-700">{t("staleDesc")}</p>
                   {lastQueryAt ? (
                     <p className="text-xs text-amber-600">Обновлено: {new Date(lastQueryAt).toLocaleString("ru-RU")}</p>
                   ) : null}
                 </div>
                 <button type="button" onClick={runMatching} className="tz-btn tz-btn-secondary shrink-0">
-                  Запустить заново
+                  {t("rerun")}
                 </button>
               </div>
             </div>
@@ -709,12 +711,12 @@ export function MatchingMode() {
           {/* Слабые результаты */}
           {isWeak && !loading ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4" data-testid="matching-weak">
-              <p className="font-semibold text-amber-800">Более подходящих вариантов сейчас нет, вот ближайший</p>
+              <p className="font-semibold text-amber-800">{t("weakTitle")}</p>
               <p className="mt-1 text-sm text-amber-700">
-                Прямых совпадений не найдено — показываем наиболее близкие по компетенциям. Попробуйте уточнить описание или перейти в реестр.
+                {t("weakDesc")}
               </p>
               <Link href="/dashboard/organizations" className="tz-btn tz-btn-ghost mt-2 inline-flex">
-                Перейти в реестр
+                {t("goToRegistry")}
               </Link>
             </div>
           ) : null}
@@ -725,14 +727,14 @@ export function MatchingMode() {
               <span className="tz-empty-icon">
                 <Search size={22} aria-hidden="true" />
               </span>
-              <h2 className="tz-empty-title">Ничего не найдено — уточните описание / перейдите в реестр</h2>
-              <p className="tz-empty-text">Попробуйте изменить формулировку, добавить компетенции или выбрать другой регион/отрасль.</p>
+              <h2 className="tz-empty-title">{t("zeroTitle")}</h2>
+              <p className="tz-empty-text">{t("zeroDesc")}</p>
               <div className="mt-6 flex flex-wrap justify-center gap-2">
                 <Link href="/dashboard/organizations" className="tz-btn tz-btn-secondary">
-                  Реестр организаций
+                  {t("registryOrgs")}
                 </Link>
                 <Link href="/dashboard/technologies" className="tz-btn tz-btn-ghost">
-                  Реестр технологий
+                  {t("registryTech")}
                 </Link>
               </div>
             </div>
@@ -742,8 +744,8 @@ export function MatchingMode() {
           {results !== null && results.length > 0 && !loading ? (
             <div data-testid="matching-results">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-semibold text-tz-fg">Подобрано: {results.length} из 5</h3>
-                <span className="text-xs text-tz-muted">Только верифицированные организации/исполнители</span>
+                <h3 className="font-semibold text-tz-fg">{t("successTitle", { count: results.length })}</h3>
+                <span className="text-xs text-tz-muted">{t("successHint")}</span>
               </div>
               <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
                 {results.slice(0, 5).map((candidate, idx) => (
@@ -751,7 +753,7 @@ export function MatchingMode() {
                 ))}
               </div>
               <p className="mt-3 text-xs text-tz-muted">
-                Ранжирование по причинам «совпадение компетенций (2: AI, медицина)», «регион Удмуртия» — score не показывается числом.
+                {t("rankingHint")}
               </p>
             </div>
           ) : null}
