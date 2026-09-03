@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, FileText, ListChecks } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 import { UGT_LEVELS } from "@/lib/ugt-data";
 
@@ -13,30 +14,37 @@ export const metadata: Metadata = {
 /** Цвет уровня из токенов темы (тёплые низкие → зелёные высокие). */
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
-/** Склонение по числу: 1 → one, 2–4 → few, 5+ → many. */
-function plural(n: number, one: string, few: string, many: string): string {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return one;
-  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
-  return many;
-}
+export default async function LevelsPage() {
+  const t = await getTranslations("levels");
+  const tUgt = await getTranslations("ugtData");
+  const plural = (n: number, one: string, few: string, many: string): string => {
+    // Use translated words from t where possible, but keep logic for RU/EN
+    const m10 = n % 10;
+    const m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+    return many;
+  };
 
-export default function LevelsPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       <Reveal>
-        <p className="tz-eyebrow">Методика · ГОСТ Р 58048-2017</p>
-        <h1 className="tz-page-title mt-3 max-w-2xl">Уровни готовности технологий 1–9</h1>
+        <p className="tz-eyebrow">{t("eyebrow")}</p>
+        <h1 className="tz-page-title mt-3 max-w-2xl">{t("title")}</h1>
         <p className="tz-lead mt-4 max-w-2xl">
-          Каждый уровень описывает проверяемый результат: что должно быть сделано,
-          какие документы и доказательства собраны. Переход на следующий уровень
-          возможен только при выполнении требований текущего.
+          {t("lead")}
         </p>
       </Reveal>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {UGT_LEVELS.map((lvl, i) => (
+        {UGT_LEVELS.map((lvl, i) => {
+          let displayName = lvl.name;
+          let displayShort = lvl.short;
+          let displayCode = lvl.code;
+          try { displayName = tUgt(`level${lvl.id}Name`); } catch {}
+          try { displayShort = tUgt(`level${lvl.id}Short`); } catch {}
+          try { displayCode = tUgt(`code${lvl.id}`); } catch {}
+          return (
           <Reveal key={lvl.id} delay={(i % 3) * 0.06}>
             <Link
               href={`/levels/${lvl.id}`}
@@ -52,16 +60,16 @@ export default function LevelsPage() {
                 </div>
                 <div className="flex-1">
                   <span className="font-mono text-sm font-medium" style={{ color: ugtColor(lvl.id) }}>
-                    {lvl.code}
+                    {displayCode}
                   </span>
                   <h2 className="mt-0.5 text-xl font-semibold leading-snug text-tz-fg">
-                    {lvl.name}
+                    {displayName}
                   </h2>
                 </div>
               </div>
 
               <p className="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-tz-secondary">
-                {lvl.short}
+                {displayShort}
               </p>
 
               <div className="my-4 h-px w-full bg-tz-border/60" />
@@ -70,12 +78,12 @@ export default function LevelsPage() {
                 <span className="flex items-center gap-1.5 text-xs font-medium text-tz-muted">
                   <ListChecks size={14} />
                   {lvl.requirements.length}{" "}
-                  {plural(lvl.requirements.length, "требование", "требования", "требований")}
+                  {plural(lvl.requirements.length, t("requirement"), t("requirementsFew"), t("requirementsMany"))}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs font-medium text-tz-muted">
                   <FileText size={14} />
                   {lvl.deliverables.length}{" "}
-                  {plural(lvl.deliverables.length, "результат", "результата", "результатов")}
+                  {plural(lvl.deliverables.length, t("result"), t("resultsFew"), t("resultsMany"))}
                 </span>
               </div>
 
@@ -83,7 +91,7 @@ export default function LevelsPage() {
                 className="mt-4 inline-flex items-center gap-1 text-sm font-medium transition-colors"
                 style={{ color: ugtColor(lvl.id) }}
               >
-                Подробнее
+                {t("more")}
                 <ArrowRight
                   size={14}
                   className="transition-transform group-hover:translate-x-0.5"
@@ -91,7 +99,8 @@ export default function LevelsPage() {
               </div>
             </Link>
           </Reveal>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

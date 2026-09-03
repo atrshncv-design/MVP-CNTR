@@ -11,6 +11,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   SHOWCASE_PROJECTS,
   SHOWCASE_CATEGORIES,
@@ -20,15 +21,6 @@ import { getStatusLabel, getStatusColor } from "@/lib/status";
 import ProjectRadar from "@/components/dashboard/project-radar";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
-
-function formatBudget(budget: number | null): string {
-  if (budget == null) return "Бюджет не указан";
-  return new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "RUB",
-    maximumFractionDigits: 0,
-  }).format(budget);
-}
 
 /* ================================================================== */
 /*  Маленькая карточка (без радара)                                   */
@@ -43,7 +35,21 @@ function ProjectCard({
   index: number;
   onOpen: (p: ShowcaseProject) => void;
 }) {
+  const t = useTranslations("projectsLanding");
+  const tUgt = useTranslations("ugtData");
   const color = ugtColor(project.current_level);
+  const codeLabel = (() => {
+    try { return tUgt(`code${project.current_level}`); } catch { return `УГТ ${project.current_level}`; }
+  })();
+  const categoryLabel = (() => {
+    const map: Record<string, string> = {
+      "AI/ML": t("catAI"),
+      "НИОКТР": t("catNIOKTR"),
+      "Производство": t("catManufacturing"),
+      "Медицина": t("catMedicine"),
+    };
+    return map[project.category] ?? project.category;
+  })();
   return (
     <motion.button
       type="button"
@@ -61,10 +67,10 @@ function ProjectCard({
             className="rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold"
             style={{ backgroundColor: `${color}18`, color }}
           >
-            УГТ {project.current_level}
+            {codeLabel}
           </span>
           <span className="rounded-full bg-tz-soft/70 px-2.5 py-0.5 font-mono text-[11px] font-medium text-tz-muted">
-            {project.category}
+            {categoryLabel}
           </span>
         </div>
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-tz-border/60 bg-tz-soft/60 text-tz-muted transition-colors group-hover:border-tz-accent/40 group-hover:text-tz-accent">
@@ -99,6 +105,8 @@ function ProjectModal({
   project: ShowcaseProject | null;
   onClose: () => void;
 }) {
+  const t = useTranslations("projectsLanding");
+  const tUgt = useTranslations("ugtData");
   // Esc — закрыть
   useEffect(() => {
     if (!project) return;
@@ -114,6 +122,15 @@ function ProjectModal({
   }, [project, onClose]);
 
   const color = project ? ugtColor(project.current_level) : "var(--tz-accent)";
+
+  const formatBudget = (budget: number | null) => {
+    if (budget == null) return t("budgetNotSpecified");
+    return new Intl.NumberFormat("ru-RU", {
+      style: "currency",
+      currency: "RUB",
+      maximumFractionDigits: 0,
+    }).format(budget);
+  };
 
   return (
     <AnimatePresence>
@@ -142,7 +159,7 @@ function ProjectModal({
               type="button"
               onClick={onClose}
               className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-tz-border/60 bg-tz-soft/60 text-tz-muted transition-colors hover:border-tz-accent/40 hover:text-tz-accent"
-              aria-label="Закрыть"
+              aria-label={t("close")}
             >
               <X size={16} />
             </button>
@@ -153,10 +170,18 @@ function ProjectModal({
                 className="rounded-full px-3 py-1 font-mono text-xs font-semibold"
                 style={{ backgroundColor: `${color}18`, color }}
               >
-                УГТ {project.current_level}
+                {(() => { try { return tUgt(`code${project.current_level}`); } catch { return `УГТ ${project.current_level}`; }})()}
               </span>
               <span className="rounded-full bg-tz-soft/70 px-3 py-1 font-mono text-xs font-medium text-tz-muted">
-                {project.category}
+                {(() => {
+                  const map: Record<string, string> = {
+                    "AI/ML": t("catAI"),
+                    "НИОКТР": t("catNIOKTR"),
+                    "Производство": t("catManufacturing"),
+                    "Медицина": t("catMedicine"),
+                  };
+                  return map[project.category] ?? project.category;
+                })()}
               </span>
               <span
                 className="rounded-full px-3 py-1 text-[11px] font-medium"
@@ -186,7 +211,7 @@ function ProjectModal({
                   size={200}
                 />
                 <p className="text-center text-[11.5px] leading-relaxed text-tz-muted">
-                  Радар готовности по 4 категориям (ГОСТ Р 58048-2017)
+                  {t("radarCaption")}
                 </p>
               </div>
 
@@ -199,15 +224,15 @@ function ProjectModal({
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-tz-border/60 bg-tz-soft/40 p-4">
                     <p className="font-mono text-[10px] uppercase tracking-widest text-tz-muted">
-                      Уровень УГТ
+                      {t("level")}
                     </p>
                     <p className="mt-1 font-mono text-lg font-bold" style={{ color }}>
-                      {project.current_level} из 9
+                      {project.current_level} {t("outOf")}
                     </p>
                   </div>
                   <div className="rounded-xl border border-tz-border/60 bg-tz-soft/40 p-4">
                     <p className="font-mono text-[10px] uppercase tracking-widest text-tz-muted">
-                      Бюджет
+                      {t("budget")}
                     </p>
                     <p className="mt-1 font-mono text-lg font-bold text-tz-fg">
                       {formatBudget(project.budget)}
@@ -218,13 +243,13 @@ function ProjectModal({
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-tz-border/60 bg-tz-soft/40 p-4">
                     <p className="font-mono text-[10px] uppercase tracking-widest text-tz-muted">
-                      Категория
+                      {t("category")}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-tz-fg">{project.category}</p>
                   </div>
                   <div className="rounded-xl border border-tz-border/60 bg-tz-soft/40 p-4">
                     <p className="font-mono text-[10px] uppercase tracking-widest text-tz-muted">
-                      Организация
+                      {t("organization")}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-tz-fg">{project.org}</p>
                   </div>
@@ -232,8 +257,7 @@ function ProjectModal({
 
                 <div className="mt-6 rounded-xl border border-tz-border/60 bg-tz-accent/5 p-4">
                   <p className="text-[12.5px] leading-relaxed text-tz-secondary">
-                    Полные данные проекта, документы этапов и контакты исполнителей
-                    доступны в личном кабинете платформы.
+                    {t("fullData")}
                   </p>
                 </div>
               </div>
@@ -250,6 +274,7 @@ function ProjectModal({
 /* ================================================================== */
 
 export default function ProjectsShowcase() {
+  const t = useTranslations("projectsLanding");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [minLevel, setMinLevel] = useState("all");
@@ -273,6 +298,16 @@ export default function ProjectsShowcase() {
 
   const levelOptions = ["all", ...Array.from({ length: 9 }, (_, i) => String(i + 1))];
 
+  const formatCategory = (c: string) => {
+    const map: Record<string, string> = {
+      "AI/ML": t("catAI"),
+      "НИОКТР": t("catNIOKTR"),
+      "Производство": t("catManufacturing"),
+      "Медицина": t("catMedicine"),
+    };
+    return map[c] ?? c;
+  };
+
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       {/* Шапка */}
@@ -281,12 +316,10 @@ export default function ProjectsShowcase() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
-        <p className="tz-eyebrow">Реестр платформы</p>
-        <h1 className="tz-page-title mt-3 max-w-2xl">Витрина проектов</h1>
+        <p className="tz-eyebrow">{t("eyebrow")}</p>
+        <h1 className="tz-page-title mt-3 max-w-2xl">{t("title")}</h1>
         <p className="tz-lead mt-4 max-w-2xl">
-          Проекты региона, прошедшие оценку уровня готовности технологий по
-          ГОСТ Р 58048-2017. Нажмите на карточку, чтобы открыть радар зрелости
-          и детали проекта.
+          {t("desc")}
         </p>
       </motion.div>
 
@@ -298,7 +331,7 @@ export default function ProjectsShowcase() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск: название, организация, регион…"
+            placeholder={t("searchPlaceholder")}
             className="h-10 w-full rounded-xl border border-tz-border/60 bg-tz-bg pl-9 pr-3 text-sm text-tz-fg outline-none transition-colors placeholder:text-tz-muted focus:border-tz-accent"
           />
         </div>
@@ -307,12 +340,12 @@ export default function ProjectsShowcase() {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="h-10 cursor-pointer rounded-xl border border-tz-border/60 bg-tz-bg px-3 text-sm text-tz-fg outline-none focus:border-tz-accent"
-          aria-label="Категория"
+          aria-label={t("ariaSearch")}
         >
-          <option value="all">Все категории</option>
+          <option value="all">{t("allCategories")}</option>
           {SHOWCASE_CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {formatCategory(c)}
             </option>
           ))}
         </select>
@@ -321,12 +354,12 @@ export default function ProjectsShowcase() {
           value={minLevel}
           onChange={(e) => setMinLevel(e.target.value)}
           className="h-10 cursor-pointer rounded-xl border border-tz-border/60 bg-tz-bg px-3 text-sm text-tz-fg outline-none focus:border-tz-accent"
-          aria-label="УГТ от"
+          aria-label={t("ariaUgtFrom")}
         >
-          <option value="all">УГТ от: любой</option>
+          <option value="all">{t("ugtFromAny")}</option>
           {levelOptions.slice(1).map((l) => (
             <option key={l} value={l}>
-              УГТ от {l}
+              {t("ugtFrom", { level: l })}
             </option>
           ))}
         </select>
@@ -335,12 +368,12 @@ export default function ProjectsShowcase() {
           value={maxLevel}
           onChange={(e) => setMaxLevel(e.target.value)}
           className="h-10 cursor-pointer rounded-xl border border-tz-border/60 bg-tz-bg px-3 text-sm text-tz-fg outline-none focus:border-tz-accent"
-          aria-label="УГТ до"
+          aria-label={t("ariaUgtTo")}
         >
-          <option value="all">УГТ до: любой</option>
+          <option value="all">{t("ugtToAny")}</option>
           {levelOptions.slice(1).map((l) => (
             <option key={l} value={l}>
-              УГТ до {l}
+              {t("ugtTo", { level: l })}
             </option>
           ))}
         </select>
@@ -348,7 +381,7 @@ export default function ProjectsShowcase() {
 
       {/* Счётчик */}
       <p className="mt-6 text-[12.5px] text-tz-muted">
-        Показано проектов: <span className="font-mono font-semibold text-tz-fg">{filtered.length}</span> из {SHOWCASE_PROJECTS.length}
+        {t("shown", { filtered: filtered.length, total: SHOWCASE_PROJECTS.length })}
       </p>
 
       {/* Сетка маленьких карточек */}
@@ -361,8 +394,8 @@ export default function ProjectsShowcase() {
       ) : (
         <div className="mt-4 rounded-2xl border border-dashed border-tz-border bg-tz-surface/50 px-6 py-16 text-center">
           <Layers size={32} className="mx-auto text-tz-muted/60" />
-          <h3 className="mt-4 text-lg font-semibold text-tz-fg">Ничего не найдено</h3>
-          <p className="mt-1.5 text-sm text-tz-muted">Попробуйте изменить фильтры или запрос.</p>
+          <h3 className="mt-4 text-lg font-semibold text-tz-fg">{t("nothingFound")}</h3>
+          <p className="mt-1.5 text-sm text-tz-muted">{t("tryOtherFilters")}</p>
         </div>
       )}
 
@@ -379,20 +412,18 @@ export default function ProjectsShowcase() {
             <Lock size={20} />
           </span>
           <div>
-            <h3 className="tz-card-title">Живой реестр — в личном кабинете</h3>
+            <h3 className="tz-card-title">{t("liveRegistry")}</h3>
             <p className="mt-1.5 max-w-xl text-[13.5px] leading-relaxed text-tz-secondary">
-              Публичная витрина показывает демонстрационные данные. Зарегистрируйтесь,
-              чтобы видеть актуальные проекты, технологии УГТ 7+ и контакты исполнителей
-              по ГОСТ Р 58048-2017.
+              {t("liveDesc")}
             </p>
           </div>
         </div>
         <div className="flex shrink-0 gap-3">
           <Link href="/register" className="tz-btn tz-btn-primary">
-            Зарегистрироваться <ArrowRight className="h-4 w-4" />
+            {t("register")} <ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/login" className="tz-btn tz-btn-secondary">
-            Войти
+            {t("login")}
           </Link>
         </div>
       </motion.div>

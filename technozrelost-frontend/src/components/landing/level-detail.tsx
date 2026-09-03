@@ -16,6 +16,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { UGT_LEVELS, type UGTLevel, type RiskItem } from "@/lib/ugt-data";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
@@ -23,27 +24,29 @@ const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 function getKpiIcon(label: string) {
-  if (label.includes("Публикации")) return FileText;
-  if (label.includes("Патенты")) return Gauge;
+  if (label.includes("Публикации") || label.toLowerCase().includes("publication")) return FileText;
+  if (label.includes("Патенты") || label.toLowerCase().includes("patent")) return Gauge;
   return Target;
 }
 
-function getProbabilityConfig(probability: RiskItem["probability"]) {
-  switch (probability) {
-    case "low":
-      return { label: "Низкая", color: "#22C55E", bg: "rgba(34,197,94,0.12)" };
-    case "medium":
-      return { label: "Средняя", color: "#EAB308", bg: "rgba(234,179,8,0.14)" };
-    case "high":
-      return { label: "Высокая", color: "#EF4444", bg: "rgba(239,68,68,0.12)" };
-    default:
-      return { label: "Средняя", color: "#EAB308", bg: "rgba(234,179,8,0.14)" };
-  }
-}
-
 export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
+  const t = useTranslations("levelDetail");
+  const tUgt = useTranslations("ugtData");
   const color = ugtColor(level.id);
   const nextLevel = UGT_LEVELS.find((l) => l.id === level.id + 1) ?? null;
+
+  const getProbabilityConfig = (probability: RiskItem["probability"]) => {
+    switch (probability) {
+      case "low":
+        return { label: t("probLow"), color: "#22C55E", bg: "rgba(34,197,94,0.12)" };
+      case "medium":
+        return { label: t("probMedium"), color: "#EAB308", bg: "rgba(234,179,8,0.14)" };
+      case "high":
+        return { label: t("probHigh"), color: "#EF4444", bg: "rgba(239,68,68,0.12)" };
+      default:
+        return { label: t("probMedium"), color: "#EAB308", bg: "rgba(234,179,8,0.14)" };
+    }
+  };
 
   // Чек-лист
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
@@ -58,6 +61,13 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
     setCheckedItems((prev) => ({ ...prev, [index]: !prev[index] }));
   const toggleRisk = (index: number) =>
     setExpandedRisks((prev) => ({ ...prev, [index]: !prev[index] }));
+
+  const translateKpiLabel = (raw: string) => {
+    if (raw.includes("Публикации")) return t("publications");
+    if (raw.includes("Патенты")) return t("patents");
+    if (raw.includes("Прототип")) return t("prototype");
+    return raw;
+  };
 
   return (
     <>
@@ -80,6 +90,8 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
           {UGT_LEVELS.map((l) => {
             const isCurrent = l.id === level.id;
             const isCompleted = l.id < level.id;
+            let code = l.code;
+            try { code = tUgt(`code${l.id}`); } catch {}
             return (
               <Link
                 key={l.id}
@@ -110,7 +122,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                   className="hidden font-mono text-[10px] font-medium sm:block"
                   style={{ color: isCurrent ? ugtColor(l.id) : "var(--tz-muted)" }}
                 >
-                  {l.code}
+                  {code}
                 </span>
               </Link>
             );
@@ -126,9 +138,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.6, ease: easeOutExpo }}
         >
-          <h2 className="tz-section-title">Критерии оценки</h2>
+          <h2 className="tz-section-title">{t("checklistTitle")}</h2>
           <p className="tz-lead mt-3 max-w-2xl">
-            Используйте чек-лист для самопроверки соответствия вашего проекта требованиям уровня
+            {t("checklistDesc")}
           </p>
         </motion.div>
 
@@ -144,7 +156,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
             />
           </div>
           <span className="shrink-0 font-mono text-sm text-tz-secondary">
-            {checkedCount}/{totalRequirements} выполнено
+            {checkedCount}/{totalRequirements} {t("done")}
           </span>
           <span className="shrink-0 font-mono text-2xl font-semibold" style={{ color }}>
             {progressPercent}%
@@ -222,7 +234,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
               className="mt-6 block rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:scale-[1.03]"
               style={{ color, background: `${color}0d` }}
             >
-              Сбросить прогресс
+              {t("resetProgress")}
             </motion.button>
           )}
         </AnimatePresence>
@@ -239,8 +251,8 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.6, ease: easeOutExpo }}
               >
-                <h2 className="tz-section-title">Переход на следующий уровень</h2>
-                <p className="tz-lead mt-3 max-w-2xl">Что необходимо для достижения {nextLevel.code}</p>
+                <h2 className="tz-section-title">{t("transitionTitle")}</h2>
+                <p className="tz-lead mt-3 max-w-2xl">{t("transitionDesc", { nextCode: (() => { try { return tUgt(`code${nextLevel.id}`); } catch { return nextLevel.code; } })() })}</p>
               </motion.div>
 
               <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -258,9 +270,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                       className="rounded-full px-3 py-1 font-mono text-sm font-semibold"
                       style={{ background: `${color}18`, color }}
                     >
-                      {level.code}
+                      {(() => { try { return tUgt(`code${level.id}`); } catch { return level.code; }})()}
                     </span>
-                    <span className="font-semibold text-tz-fg">{level.name}</span>
+                    <span className="font-semibold text-tz-fg">{(() => { try { return tUgt(`level${level.id}Name`); } catch { return level.name; }})()}</span>
                   </div>
                   <div className="my-4 h-px bg-tz-border/60" />
                   <ul className="flex flex-col gap-2.5">
@@ -290,9 +302,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                         color: ugtColor(nextLevel.id),
                       }}
                     >
-                      {nextLevel.code}
+                      {(() => { try { return tUgt(`code${nextLevel.id}`); } catch { return nextLevel.code; }})()}
                     </span>
-                    <span className="font-semibold text-tz-fg">{nextLevel.name}</span>
+                    <span className="font-semibold text-tz-fg">{(() => { try { return tUgt(`level${nextLevel.id}Name`); } catch { return nextLevel.name; }})()}</span>
                   </div>
                   <div className="my-4 h-px bg-tz-border/60" />
                   <ul className="flex flex-col gap-2.5">
@@ -323,7 +335,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                   }}
                 >
                   <Map size={20} />
-                  Roadmap: перейти к плану действий
+                  {t("roadmapCta")}
                   <ArrowRight size={18} />
                 </Link>
               </motion.div>
@@ -343,10 +355,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
               >
                 <Target size={36} className="text-white" />
               </div>
-              <h2 className="tz-page-title mt-6">Максимальный уровень достигнут</h2>
+              <h2 className="tz-page-title mt-6">{t("maxReached")}</h2>
               <p className="mx-auto mt-4 max-w-[560px] tz-lead">
-                УГТ 9 — уровень успешной эксплуатации. Ваш проект полностью зрелый и находится в
-                промышленной эксплуатации.
+                {t("maxDesc")}
               </p>
               <Link
                 href="/register"
@@ -354,7 +365,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                 style={{ background: "var(--tz-accent)", boxShadow: "0 4px 20px var(--tz-accent)40" }}
               >
                 <Zap size={20} />
-                Оценить новую технологию
+                {t("assessNew")}
                 <ArrowRight size={18} />
               </Link>
             </motion.div>
@@ -370,8 +381,8 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.6, ease: easeOutExpo }}
         >
-          <h2 className="tz-section-title">Ключевые показатели</h2>
-          <p className="tz-lead mt-3 max-w-2xl">Метрики и результаты уровня</p>
+          <h2 className="tz-section-title">{t("kpiTitle")}</h2>
+          <p className="tz-lead mt-3 max-w-2xl">{t("kpiDesc")}</p>
         </motion.div>
 
         <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -389,7 +400,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
               >
                 <Icon size={32} style={{ color }} />
                 <div className="mt-4 font-mono text-3xl font-semibold text-tz-fg">{value}</div>
-                <p className="mt-2 text-sm text-tz-secondary">{label}</p>
+                <p className="mt-2 text-sm text-tz-secondary">{translateKpiLabel(label)}</p>
               </motion.div>
             );
           })}
@@ -405,17 +416,17 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
           >
             <Zap size={32} style={{ color }} />
             <div className="mt-4 font-mono text-3xl font-semibold text-tz-fg">
-              {level.id <= 3 ? "1–3 мес" : level.id <= 6 ? "3–8 мес" : "8–24 мес"}
+              {level.id <= 3 ? t("devTimeShort") : level.id <= 6 ? t("devTimeMid") : t("devTimeLong")}
             </div>
-            <p className="mt-2 text-sm text-tz-secondary">Срок разработки</p>
+            <p className="mt-2 text-sm text-tz-secondary">{t("devTime")}</p>
           </motion.div>
         </div>
 
         {/* Документы уровня */}
         <div className="mt-20">
-          <h3 className="tz-card-title">Документы уровня</h3>
+          <h3 className="tz-card-title">{t("docsTitle")}</h3>
           <p className="mt-3 text-base text-tz-secondary">
-            Шаблоны документов и артефактов для скачивания
+            {t("docsDesc")}
           </p>
 
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -448,12 +459,12 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => alert("Шаблон документа будет доступен в следующей версии")}
+                  onClick={() => alert(t("templateAlert"))}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                   style={{ backgroundColor: color, boxShadow: `0 4px 12px ${color}30` }}
                 >
                   <Download size={16} />
-                  Скачать образец
+                  {t("downloadSample")}
                 </button>
               </motion.div>
             ))}
@@ -461,9 +472,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
 
           {/* Результаты уровня */}
           <div className="mt-16">
-            <h3 className="tz-card-title">Результаты уровня</h3>
+            <h3 className="tz-card-title">{t("resultsTitle")}</h3>
             <p className="mt-3 text-base text-tz-secondary">
-              Артефакты, которые должны быть созданы при прохождении {level.code}
+              {t("resultsDesc", { code: (() => { try { return tUgt(`code${level.id}`); } catch { return level.code; }})() })}
             </p>
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {level.deliverables.map((item, i) => (
@@ -485,7 +496,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-semibold leading-snug text-tz-fg">{item}</p>
                     <p className="mt-0.5 font-mono text-[11px] uppercase tracking-widest text-tz-muted">
-                      Результат {i + 1} из {level.deliverables.length}
+                      {t("resultOf", { current: i + 1, total: level.deliverables.length })}
                     </p>
                   </div>
                 </motion.div>
@@ -504,9 +515,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
             viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.6, ease: easeOutExpo }}
           >
-            <h2 className="tz-section-title">Риски и меры предосторожности</h2>
+            <h2 className="tz-section-title">{t("risksTitle")}</h2>
             <p className="tz-lead mt-3 max-w-2xl">
-              Возможные риски на данном уровне и рекомендуемые решения
+              {t("risksDesc")}
             </p>
           </motion.div>
 
@@ -581,7 +592,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                             </div>
                             <div>
                               <span className="text-xs font-medium uppercase tracking-[0.06em]" style={{ color: "#22C55E" }}>
-                                Рекомендуемое решение
+                                {t("recommended")}
                               </span>
                               <p className="mt-1.5 text-base leading-relaxed text-tz-secondary">
                                 {riskItem.solution}

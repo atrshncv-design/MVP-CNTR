@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, FlaskConical, Factory, Landmark, Rocket } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 
 export const metadata: Metadata = {
@@ -9,44 +10,44 @@ export const metadata: Metadata = {
     "Кому платформа «Технозрелость» помогает как исполнителю: R&D-организациям, серийным производителям, регулирующим организациям, инженерным командам.",
 };
 
-const PERFORMERS = [
-  {
-    icon: FlaskConical,
-    title: "R&D-исполнители и разработчики",
-    text: "Ведите технологический проект по уровням УГТ: фиксируйте результаты каждого этапа, загружайте документы и получайте автозаявку на повышение уровня автоматически — по полноте комплекта. Платформа сама напомнит, чего не хватает для перехода N→N+1.",
-    points: ["Документы этапов вместо отчётов «в стол»", "Автозаявка на повышение УГТ", "Публикация в реестре после апрува"],
-  },
-  {
-    icon: Factory,
-    title: "Серийные производители",
-    text: "Берите зрелые технологии (УГТ 7+) в лицензирование и производство: реестр технологий с фильтрами, карточка с документами и заявка на лицензию одним кликом.",
-    points: ["Доступ к реестру УГТ 7+", "Заявка на лицензию из карточки", "Прямой контакт с владельцем технологии"],
-  },
-  {
-    icon: Landmark,
-    title: "Регулирующие организации",
-    text: "Присоединяйтесь к проекту по токену TZ-XXXXXX и добавляйте верифицирующие документы — подтверждение УГТ. Эти документы попадают в очередь менеджера ЦНТР и становятся материалом для официального решения.",
-    points: ["Вступление по токену", "Верифицирующие документы", "Материал для решения менеджера"],
-  },
-  {
-    icon: Rocket,
-    title: "Инженерные команды и стартапы",
-    text: "Покажите инвесторам и заказчикам объективный уровень готовности вашей разработки. Экспресс-оценка бесплатна и занимает минуты — вы сразу увидите, каких уровней не хватает до внедрения.",
-    points: ["Бесплатная экспресс-оценка", "Радар зрелости по 4 категориям", "Понятный путь до УГТ 7+"],
-  },
-];
+export default async function PerformersPage() {
+  const t = await getTranslations("performers");
+  const PERFORMERS = [
+    {
+      icon: FlaskConical,
+      title: t("card1Title"),
+      text: t("card1Text"),
+      points: [t("card1p1"), t("card1p2"), t("card1p3")],
+    },
+    {
+      icon: Factory,
+      title: t("card2Title"),
+      text: t("card2Text"),
+      points: [t("card2p1"), t("card2p2"), t("card2p3")],
+    },
+    {
+      icon: Landmark,
+      title: t("card3Title"),
+      text: t("card3Text"),
+      points: [t("card3p1"), t("card3p2"), t("card3p3")],
+    },
+    {
+      icon: Rocket,
+      title: t("card4Title"),
+      text: t("card4Text"),
+      points: [t("card4p1"), t("card4p2"), t("card4p3")],
+    },
+  ];
 
-export default function PerformersPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       <Reveal>
-        <p className="tz-eyebrow">Исполнителям</p>
+        <p className="tz-eyebrow">{t("eyebrow")}</p>
         <h1 className="tz-page-title mt-3 max-w-2xl">
-          Как платформа помогает доводить технологии до внедрения
+          {t("title")}
         </h1>
         <p className="tz-lead mt-4 max-w-2xl">
-          Для исполнителей платформа — это рабочий инструмент проекта: документы,
-          этапы, верификация и выход на заказчиков и инвесторов через реестры.
+          {t("lead")}
         </p>
       </Reveal>
 
@@ -75,10 +76,10 @@ export default function PerformersPage() {
       <Reveal delay={0.1}>
         <div className="mt-12 flex flex-wrap gap-3">
           <Link href="/register" className="tz-btn tz-btn-primary">
-            Начать проект <ArrowRight className="h-4 w-4" />
+            {t("startProject")} <ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/methodology" className="tz-btn tz-btn-secondary">
-            Изучить методику
+            {t("methodology")}
           </Link>
         </div>
       </Reveal>

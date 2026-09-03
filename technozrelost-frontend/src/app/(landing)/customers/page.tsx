@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Building2, Landmark, Factory, TrendingUp } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 
 export const metadata: Metadata = {
@@ -9,45 +10,44 @@ export const metadata: Metadata = {
     "Кому платформа «Технозрелость» помогает как заказчику: госкомпаниям, научным организациям, инвесторам, региональным ведомствам.",
 };
 
-const CUSTOMERS = [
-  {
-    icon: Building2,
-    title: "Госкомпании и крупные заказчики",
-    text: "Оцените зрелость разработок до закупки или контракта: официальный УГТ по ГОСТ Р 58048-2017, документы этапов и радар зрелости вместо «верю на слово». Управляйте портфелем технологических проектов, командой и бюджетом в одном кабинете.",
-    points: ["Экспресс-оценка УГТ перед решением", "Генерация ТЗ, паспорта и ТЭО", "Прозрачная верификация Центра"],
-  },
-  {
-    icon: Landmark,
-    title: "Научные организации",
-    text: "Покажите готовность ваших разработок к внедрению: публикации, патентные исследования и результаты исследований фиксируются как документы уровней УГТ 1–3. Инвесторы и производители видят научный задел в реестрах платформы.",
-    points: ["Реестр научного задела", "Мини-ТЗ и паспорта разработок", "Выход на индустриальных партнёров"],
-  },
-  {
-    icon: Factory,
-    title: "Серийные производители",
-    text: "Ищите технологии, готовые к внедрению: реестр технологий УГТ 7+ с фильтрами по области и бюджету. Подавайте заявку на лицензирование прямо из карточки технологии.",
-    points: ["Реестр технологий УГТ 7+", "Заявка на лицензию из карточки", "Фильтры по технологии и бюджету"],
-  },
-  {
-    icon: TrendingUp,
-    title: "Инвесторы",
-    text: "Принимайте решения на данных, а не на презентациях: общий реестр проектов с УГТ-уровнями, радар зрелости и документы этапов. Виден весь путь проекта — от черновика до серийного производства.",
-    points: ["Реестр проектов с УГТ", "Радар зрелости read-only", "История верификаций Центра"],
-  },
-];
+export default async function CustomersPage() {
+  const t = await getTranslations("customers");
+  const CUSTOMERS = [
+    {
+      icon: Building2,
+      title: t("card1Title"),
+      text: t("card1Text"),
+      points: [t("card1p1"), t("card1p2"), t("card1p3")],
+    },
+    {
+      icon: Landmark,
+      title: t("card2Title"),
+      text: t("card2Text"),
+      points: [t("card2p1"), t("card2p2"), t("card2p3")],
+    },
+    {
+      icon: Factory,
+      title: t("card3Title"),
+      text: t("card3Text"),
+      points: [t("card3p1"), t("card3p2"), t("card3p3")],
+    },
+    {
+      icon: TrendingUp,
+      title: t("card4Title"),
+      text: t("card4Text"),
+      points: [t("card4p1"), t("card4p2"), t("card4p3")],
+    },
+  ];
 
-export default function CustomersPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       <Reveal>
-        <p className="tz-eyebrow">Заказчикам</p>
+        <p className="tz-eyebrow">{t("eyebrow")}</p>
         <h1 className="tz-page-title mt-3 max-w-2xl">
-          Кому платформа помогает принимать решения о технологиях
+          {t("title")}
         </h1>
         <p className="tz-lead mt-4 max-w-2xl">
-          Платформа превращает оценку технологий из экспертного мнения в проверяемый
-          процесс: официальный УГТ, документы этапов и решения менеджера ЦНТР видны
-          всем сторонам проекта.
+          {t("lead")}
         </p>
       </Reveal>
 
@@ -85,10 +85,10 @@ export default function CustomersPage() {
       <Reveal delay={0.1}>
         <div className="mt-12 flex flex-wrap gap-3">
           <Link href="/register" className="tz-btn tz-btn-primary">
-            Зарегистрироваться <ArrowRight className="h-4 w-4" />
+            {t("register")} <ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/levels" className="tz-btn tz-btn-secondary">
-            Посмотреть уровни УГТ
+            {t("viewLevels")}
           </Link>
         </div>
       </Reveal>

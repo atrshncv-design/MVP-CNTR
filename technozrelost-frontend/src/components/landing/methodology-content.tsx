@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   UGT_LEVELS,
   UGP_LEVELS,
@@ -111,16 +112,16 @@ function InfoBlock({
 /*  Hero: тёмный, быстрые ссылки-пилюли                               */
 /* ================================================================== */
 
-const QUICK_NAV = [
-  { label: "Шкала УГТ", href: "#ugt-levels" },
-  { label: "Шкала УГП", href: "#ugp-levels" },
-  { label: "Шкала УГИ", href: "#ugi-levels" },
-  { label: "Шкала УГС", href: "#ugs-levels" },
-  { label: "Процесс оценки", href: "#assessment-process" },
-  { label: "Матрица соответствия", href: "#correspondence" },
-];
-
 function MethodologyHero() {
+  const t = useTranslations("methodology");
+  const QUICK_NAV = [
+    { label: t("quickNavUGT"), href: "#ugt-levels" },
+    { label: t("quickNavUGP"), href: "#ugp-levels" },
+    { label: t("quickNavUGI"), href: "#ugi-levels" },
+    { label: t("quickNavUGS"), href: "#ugs-levels" },
+    { label: t("quickNavProcess"), href: "#assessment-process" },
+    { label: t("quickNavCorrespondence"), href: "#correspondence" },
+  ];
   const scrollToSection = (href: string) => {
     const id = href.replace("#", "");
     const el = document.getElementById(id);
@@ -151,10 +152,10 @@ function MethodologyHero() {
           transition={{ delay: 0.1, duration: 0.4 }}
         >
           <Link href="/" className="transition-colors hover:text-white">
-            Главная
+            {t("breadcrumbHome")}
           </Link>
           <ArrowRight size={14} />
-          <span>Методология</span>
+          <span>{t("breadcrumbCurrent")}</span>
         </motion.div>
 
         <motion.div
@@ -171,7 +172,7 @@ function MethodologyHero() {
               color: "#ff6b6b",
             }}
           >
-            ГОСТ Р 58048-2017
+            {t("gostBadge")}
           </span>
         </motion.div>
 
@@ -182,7 +183,7 @@ function MethodologyHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6, ease: easeOutExpo }}
         >
-          Методология оценки уровня готовности технологий
+          {t("heroTitle")}
         </motion.h1>
 
         <motion.p
@@ -192,10 +193,7 @@ function MethodologyHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5, ease: easeOutExpo }}
         >
-          Межгосударственный стандарт, устанавливающий единую методологию оценки
-          готовности технологий (ОГТ), готовности производства (ОГП), готовности
-          интеграции (ОГИ) и готовности системы (ОГС) для принятия решений о
-          трансфере технологий и управления НИОКР.
+          {t("heroDesc")}
         </motion.p>
 
         <motion.div
@@ -240,7 +238,30 @@ function UGTAccordionItem({
   index: number;
 }) {
   const [open, setOpen] = useState(index === 0);
+  const t = useTranslations("methodology");
+  const tUgt = useTranslations("ugtData");
   const color = ugtColor(level.id);
+  const displayCode = (() => {
+    try {
+      return tUgt(`code${level.id}`);
+    } catch {
+      return level.code;
+    }
+  })();
+  const displayName = (() => {
+    try {
+      return tUgt(`level${level.id}Name`);
+    } catch {
+      return level.name;
+    }
+  })();
+  const displayDesc = (() => {
+    try {
+      return tUgt(`level${level.id}Desc`);
+    } catch {
+      return level.description;
+    }
+  })();
 
   return (
     <motion.div
@@ -272,9 +293,9 @@ function UGTAccordionItem({
               className="rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold"
               style={{ backgroundColor: `${color}18`, color }}
             >
-              {level.code}
+              {displayCode}
             </span>
-            <span className="text-sm font-medium text-tz-fg">{level.name}</span>
+            <span className="text-sm font-medium text-tz-fg">{displayName}</span>
           </div>
         </div>
         <div className="shrink-0">
@@ -296,12 +317,12 @@ function UGTAccordionItem({
           >
             <div className="border-t border-tz-border/60 px-5 py-5 sm:px-6">
               <p className="text-sm leading-relaxed text-tz-secondary sm:text-base" style={{ lineHeight: 1.7 }}>
-                {level.description}
+                {displayDesc}
               </p>
               <div className="mt-4">
                 <span className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-tz-muted">
                   <CheckCircle size={14} />
-                  Ключевые критерии
+                  {t("keyCriteria")}
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {level.requirements.slice(0, 4).map((r) => (
@@ -328,21 +349,18 @@ function UGTAccordionItem({
 /* ================================================================== */
 
 function UGTLevelsSection() {
+  const t = useTranslations("methodology");
+  const tUgt = useTranslations("ugtData");
   return (
     <section id="ugt-levels" className="bg-tz-surface/40">
       <div className="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeader
-          label="Уровни готовности технологий"
-          title="Шкала УГТ 1–9"
-          subtitle="Приложение Б, таблица Б.1 — полные описания уровней готовности технологий"
+          label={t("ugtLabel")}
+          title={t("ugtTitle")}
+          subtitle={t("ugtSubtitle")}
         />
-        <InfoBlock icon={BookOpen} title="Что такое УГТ?">
-          <strong className="text-tz-fg">УГТ (Уровень Готовности Технологии)</strong> — это
-          показатель, количественно выражающий степень зрелости разрабатываемой технологии.
-          Шкала включает 9 уровней: от базовых научных принципов (УГТ 1) до успешной
-          эксплуатации в реальных условиях (УГТ 9). Каждый уровень описывает конкретное
-          состояние технологии и критерии, которым она должна соответствовать. УГТ является
-          основной метрикой для принятия решений о переходе между этапами разработки.
+        <InfoBlock icon={BookOpen} title={t("whatIsUGT")}>
+          {t("whatIsUGTDesc")}
         </InfoBlock>
 
         {/* Горизонтальная шкала */}
@@ -353,7 +371,10 @@ function UGTLevelsSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          {UGT_LEVELS.map((level, i) => (
+          {UGT_LEVELS.map((level, i) => {
+            const code = (() => { try { return tUgt(`code${level.id}`); } catch { return level.code; }})();
+            const name = (() => { try { return tUgt(`level${level.id}Name`); } catch { return level.name; }})();
+            return (
             <motion.div
               key={level.id}
               className="group relative flex-1"
@@ -368,13 +389,14 @@ function UGTLevelsSection() {
                 className="flex h-12 items-center justify-center rounded-lg text-xs font-medium text-white transition-transform duration-200 group-hover:scale-y-110 sm:text-sm"
                 style={{ backgroundColor: ugtColor(level.id) }}
               >
-                <span className="font-mono">{level.code}</span>
+                <span className="font-mono">{code}</span>
               </Link>
               <p className="mt-2 hidden text-center text-xs leading-tight text-tz-secondary sm:block">
-                {level.name}
+                {name}
               </p>
             </motion.div>
-          ))}
+            );
+          })}
         </motion.div>
 
         {/* Аккордеон */}
@@ -486,59 +508,52 @@ function AuxLevelsSection({
 /*  Процесс оценки (7 шагов)                                          */
 /* ================================================================== */
 
-const PROCESS_STEPS = [
-  {
-    number: 1,
-    title: "Самооценка",
-    description:
-      "Заинтересованная сторона (производитель технологии) проводит предварительную оценку по критериям Приложения В ГОСТ Р 58048-2017, заполняя опросник для каждого критического элемента технологии (КЭТ).",
-  },
-  {
-    number: 2,
-    title: "Формирование команды экспертов",
-    description:
-      "Создаётся независимая команда экспертов по предметной области, которая будет проводить объективную оценку. Эксперты должны обладать компетенциями в области оцениваемой технологии.",
-  },
-  {
-    number: 3,
-    title: "Идентификация КЭТ",
-    description:
-      "Определяются критические элементы технологии — ключевые компоненты и программное обеспечение, на основе которых будет проводиться оценка. Для каждого КЭТ формируется портфель доказательств.",
-  },
-  {
-    number: 4,
-    title: "Сбор доказательств",
-    description:
-      "Собираются фактические данные о достигнутом уровне: протоколы испытаний, научные публикации, техническая документация, акты демонстрации, отчёты о НИОКР.",
-  },
-  {
-    number: 5,
-    title: "Оценка экспертами",
-    description:
-      "Независимая команда проводит оценку зрелости КЭТ: ОГТ (оценка готовности технологий), ОГП (оценка готовности производства), ОГИ (оценка готовности интеграции), ОГС (оценка готовности системы).",
-  },
-  {
-    number: 6,
-    title: "Составление отчёта",
-    description:
-      "На основе ответов рассчитывается процент выполнения критериев для каждого уровня и формируется итоговый отчёт с детализацией по всем направлениям оценки.",
-  },
-  {
-    number: 7,
-    title: "План развития",
-    description:
-      "Подготовка отчёта с рекомендациями по дальнейшему развитию технологии и планом мероприятий по достижению целевого уровня УГТ. Определяются сроки, ресурсы и ответственные.",
-  },
-];
-
 function ProcessSection() {
+  const t = useTranslations("methodology");
+  const PROCESS_STEPS = [
+    {
+      number: 1,
+      title: t("step1Title"),
+      description: t("step1Desc"),
+    },
+    {
+      number: 2,
+      title: t("step2Title"),
+      description: t("step2Desc"),
+    },
+    {
+      number: 3,
+      title: t("step3Title"),
+      description: t("step3Desc"),
+    },
+    {
+      number: 4,
+      title: t("step4Title"),
+      description: t("step4Desc"),
+    },
+    {
+      number: 5,
+      title: t("step5Title"),
+      description: t("step5Desc"),
+    },
+    {
+      number: 6,
+      title: t("step6Title"),
+      description: t("step6Desc"),
+    },
+    {
+      number: 7,
+      title: t("step7Title"),
+      description: t("step7Desc"),
+    },
+  ];
   return (
     <section id="assessment-process" className="bg-tz-surface/40">
       <div className="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeader
-          label="Процесс оценки"
-          title="Как проводится оценка по ГОСТ Р 58048-2017"
-          subtitle="Семь последовательных шагов — от самооценки до плана развития технологии"
+          label={t("processLabel")}
+          title={t("processTitle")}
+          subtitle={t("processSubtitle")}
         />
         <motion.div
           variants={staggerContainer}
@@ -591,13 +606,14 @@ const MATRIX_DATA = [
 ];
 
 function CorrespondenceSection() {
+  const t = useTranslations("methodology");
   return (
     <section id="correspondence">
       <div className="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeader
-          label="Матрица соответствия"
-          title="Соответствие шкал УГТ, УГП, УГИ и УГС"
-          subtitle="Оценка зрелости технологии ведётся по четырём взаимосвязанным шкалам"
+          label={t("matrixLabel")}
+          title={t("matrixTitle")}
+          subtitle={t("matrixSubtitle")}
         />
         <motion.div
           variants={staggerContainer}
@@ -608,19 +624,19 @@ function CorrespondenceSection() {
         >
           <div className="grid grid-cols-5 gap-px bg-tz-border/40">
             <div className="bg-tz-surface px-3 py-3 text-xs font-semibold uppercase tracking-wider text-tz-muted">
-              УГТ
+              {t("colUGT")}
             </div>
             <div className="bg-tz-surface px-3 py-3 text-xs font-semibold uppercase tracking-wider text-tz-muted">
-              УГП
+              {t("colUGP")}
             </div>
             <div className="bg-tz-surface px-3 py-3 text-xs font-semibold uppercase tracking-wider text-tz-muted">
-              УГИ
+              {t("colUGI")}
             </div>
             <div className="bg-tz-surface px-3 py-3 text-xs font-semibold uppercase tracking-wider text-tz-muted">
-              УГС
+              {t("colUGS")}
             </div>
             <div className="bg-tz-surface px-3 py-3 text-xs font-semibold uppercase tracking-wider text-tz-muted">
-              Диапазон
+              {t("colRange")}
             </div>
             {MATRIX_DATA.map((row, i) => (
               <motion.div
@@ -656,10 +672,10 @@ function CorrespondenceSection() {
           transition={{ duration: 0.5, ease: easeOutExpo }}
         >
           <Link href="/levels" className="tz-btn tz-btn-primary">
-            Все уровни УГТ <ArrowRight className="h-4 w-4" />
+            {t("allLevels")} <ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/register" className="tz-btn tz-btn-secondary">
-            Пройти оценку
+            {t("takeAssessment")}
           </Link>
         </motion.div>
       </div>
@@ -672,30 +688,61 @@ function CorrespondenceSection() {
 /* ================================================================== */
 
 export default function MethodologyContent() {
+  const t = useTranslations("methodology");
+  // Translate UGP/UGI/UGS level names via t if available, fallback to raw
+  const tAny = t as unknown as (key: string) => string;
+  const ugpLevels = UGP_LEVELS.map((lvl) => {
+    try {
+      const key = `ugp${lvl.id}`;
+      const translated = tAny(key);
+      return { ...lvl, name: translated !== key ? translated : lvl.name };
+    } catch {
+      return lvl;
+    }
+  });
+  const ugiLevels = UGI_LEVELS.map((lvl) => {
+    try {
+      const key = `ugi${lvl.id}`;
+      const translated = tAny(key);
+      return { ...lvl, name: translated !== key ? translated : lvl.name };
+    } catch {
+      return lvl;
+    }
+  });
+  const ugsLevels = UGS_LEVELS.map((lvl) => {
+    try {
+      const key = `ugs${lvl.id}`;
+      const translated = tAny(key);
+      return { ...lvl, name: translated !== key ? translated : lvl.name };
+    } catch {
+      return lvl;
+    }
+  });
+  // Translate code columns for UGS? Keep code as is but UGS codes are like "УГС 1" — translate via methodology? For EN, codes should be SRL 1 etc but we keep UGS codes; the data's code remains Russian, but we could map via tUgtData? Keep as is for now.
   return (
     <>
       <MethodologyHero />
       <UGTLevelsSection />
       <AuxLevelsSection
         id="ugp-levels"
-        label="Оценка готовности производства"
-        title="Шкала УГП 1–10"
-        subtitle="Уровни готовности производства — от определения основных факторов до полномасштабного производства"
-        levels={UGP_LEVELS}
+        label={t("ugpLabel")}
+        title={t("ugpTitle")}
+        subtitle={t("ugpSubtitle")}
+        levels={ugpLevels}
       />
       <AuxLevelsSection
         id="ugi-levels"
-        label="Оценка готовности интеграции"
-        title="Шкала УГИ 1–9"
-        subtitle="Уровни готовности интеграции технологии в систему"
-        levels={UGI_LEVELS}
+        label={t("ugiLabel")}
+        title={t("ugiTitle")}
+        subtitle={t("ugiSubtitle")}
+        levels={ugiLevels}
       />
       <AuxLevelsSection
         id="ugs-levels"
-        label="Оценка готовности системы"
-        title="Шкала УГС 1–5"
-        subtitle="Уровни готовности системы с числовыми диапазонами оценки"
-        levels={UGS_LEVELS}
+        label={t("ugsLabel")}
+        title={t("ugsTitle")}
+        subtitle={t("ugsSubtitle")}
+        levels={ugsLevels}
       />
       <ProcessSection />
       <CorrespondenceSection />

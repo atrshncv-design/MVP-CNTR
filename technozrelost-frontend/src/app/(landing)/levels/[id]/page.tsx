@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Home, ArrowLeft, ArrowRight } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { UGT_LEVELS, type UGTLevel } from "@/lib/ugt-data";
 import LevelDetailInteractive from "@/components/landing/level-detail";
 
@@ -25,19 +26,30 @@ export async function generateMetadata({
   };
 }
 
-function getStageLabel(id: number): string {
-  if (id <= 2) return "Исследование";
-  if (id <= 4) return "Подтверждение концепции";
-  if (id <= 6) return "Прототипирование";
-  if (id === 7) return "Полевые испытания";
-  if (id === 8) return "Квалификация";
-  return "Эксплуатация";
-}
-
-function LevelDetail({ level }: { level: UGTLevel }) {
+async function LevelDetail({ level }: { level: UGTLevel }) {
+  const t = await getTranslations("levelDetail");
+  const tUgt = await getTranslations("ugtData");
   const prev = UGT_LEVELS.find((l) => l.id === level.id - 1);
   const next = UGT_LEVELS.find((l) => l.id === level.id + 1);
   const color = ugtColor(level.id);
+
+  const getStageLabel = (id: number): string => {
+    if (id <= 2) return t("stageResearch");
+    if (id <= 4) return t("stageConcept");
+    if (id <= 6) return t("stagePrototype");
+    if (id === 7) return t("stageField");
+    if (id === 8) return t("stageQualify");
+    return t("stageOperate");
+  };
+
+  let displayCode = level.code;
+  let displayName = level.name;
+  let displayShort = level.short;
+  let displayDesc = level.description;
+  try { displayCode = tUgt(`code${level.id}`); } catch {}
+  try { displayName = tUgt(`level${level.id}Name`); } catch {}
+  try { displayShort = tUgt(`level${level.id}Short`); } catch {}
+  try { displayDesc = tUgt(`level${level.id}Desc`); } catch {}
 
   return (
     <>
@@ -63,15 +75,15 @@ function LevelDetail({ level }: { level: UGTLevel }) {
           <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-tz-muted">
             <Link href="/" className="flex items-center gap-1 transition-colors hover:text-tz-accent">
               <Home size={14} />
-              <span>Главная</span>
+              <span>{t("breadcrumbHome")}</span>
             </Link>
             <ChevronRight size={14} />
             <Link href="/levels" className="transition-colors hover:text-tz-accent">
-              Уровни УГТ
+              {t("breadcrumbLevels")}
             </Link>
             <ChevronRight size={14} />
             <span className="font-medium" style={{ color }}>
-              {level.code}
+              {displayCode}
             </span>
           </nav>
 
@@ -88,7 +100,7 @@ function LevelDetail({ level }: { level: UGTLevel }) {
                     boxShadow: `0 2px 8px ${color}15`,
                   }}
                 >
-                  {level.code}
+                  {displayCode}
                 </span>
                 <span className="rounded-full bg-tz-surface/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.08em] text-tz-muted">
                   {getStageLabel(level.id)}
@@ -99,14 +111,14 @@ function LevelDetail({ level }: { level: UGTLevel }) {
                 className="tz-page-title mt-5"
                 style={{ letterSpacing: "-0.02em", lineHeight: 1.12 }}
               >
-                {level.name}
+                {displayName}
               </h1>
 
               <p className="mt-4 max-w-[700px] text-lg font-medium leading-relaxed text-tz-fg">
-                {level.short}
+                {displayShort}
               </p>
               <p className="mt-4 max-w-[700px] text-base leading-relaxed text-tz-secondary">
-                {level.description}
+                {displayDesc}
               </p>
             </div>
 
@@ -119,10 +131,10 @@ function LevelDetail({ level }: { level: UGTLevel }) {
                   style={{ boxShadow: "0 4px 20px rgba(11,13,18,0.06)" }}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-[0.06em] text-tz-muted">
-                    <ArrowLeft size={12} /> Предыдущий
+                    <ArrowLeft size={12} /> {t("prev")}
                   </span>
                   <span className="mt-1 block text-sm font-semibold text-tz-fg">
-                    {prev.code}: {prev.name}
+                    {(() => { try { return `${tUgt(`code${prev.id}`)}: ${tUgt(`level${prev.id}Name`)}`; } catch { return `${prev.code}: ${prev.name}`; } })()}
                   </span>
                 </Link>
               )}
@@ -133,10 +145,10 @@ function LevelDetail({ level }: { level: UGTLevel }) {
                   style={{ boxShadow: "0 4px 20px rgba(11,13,18,0.06)" }}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-[0.06em] text-tz-muted">
-                    Следующий <ArrowRight size={12} />
+                    {t("next")} <ArrowRight size={12} />
                   </span>
                   <span className="mt-1 block text-sm font-semibold text-tz-fg">
-                    {next.code}: {next.name}
+                    {(() => { try { return `${tUgt(`code${next.id}`)}: ${tUgt(`level${next.id}Name`)}`; } catch { return `${next.code}: ${next.name}`; } })()}
                   </span>
                 </Link>
               )}

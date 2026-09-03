@@ -23,6 +23,7 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { UGT_LEVELS, ROADMAP_TRANSITIONS, type TransitionDoc, type TransitionRisk } from "@/lib/ugt-data";
 
 /* ================================================================== */
@@ -35,28 +36,10 @@ const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 const easeBounce = [0.34, 1.56, 0.64, 1] as [number, number, number, number];
 const easeSmooth = [0.4, 0, 0.2, 1] as [number, number, number, number];
 
-const PRESETS = [
-  { label: "Полный путь: УГТ 1→9", from: 1, to: 9, borderColor: "linear-gradient(135deg, #9a2a2b 0%, #e06a2a 33%, #84cc16 66%, #16a34a 100%)" },
-  { label: "Исследование: УГТ 1→3", from: 1, to: 3, borderColor: "#e0522f" },
-  { label: "Прототипирование: УГТ 4→6", from: 4, to: 6, borderColor: "#eab308" },
-  { label: "Внедрение: УГТ 7→9", from: 7, to: 9, borderColor: "#16a34a" },
-];
-
 function parseMonths(timeStr: string): number {
   const match = timeStr.match(/(\d+)[-\u2013](\d+)/);
   if (!match) return 0;
   return (parseInt(match[1]) + parseInt(match[2])) / 2;
-}
-
-function getProbabilityConfig(probability: TransitionRisk["probability"]) {
-  switch (probability) {
-    case "low":
-      return { label: "Низкая", color: "#16a34a", bg: "rgba(22,163,74,0.12)", border: "rgba(22,163,74,0.35)" };
-    case "medium":
-      return { label: "Средняя", color: "#ca8a04", bg: "rgba(202,138,4,0.12)", border: "rgba(202,138,4,0.35)" };
-    case "high":
-      return { label: "Высокая", color: "#dc2626", bg: "rgba(220,38,38,0.12)", border: "rgba(220,38,38,0.35)" };
-  }
 }
 
 /* ================================================================== */
@@ -99,7 +82,7 @@ function PresetPill({
   onClick,
   index,
 }: {
-  preset: (typeof PRESETS)[number];
+  preset: { label: string; from: number; to: number; borderColor: string };
   onClick: () => void;
   index: number;
 }) {
@@ -140,11 +123,12 @@ function RoadmapNode({
   status: "completed" | "current" | "upcoming";
   index: number;
 }) {
+  const t = useTranslations("roadmap");
   const isCompleted = status === "completed";
   const isCurrent = status === "current";
   const color = ugtColor(level.id);
 
-  const statusLabel = isCompleted ? "Завершён" : isCurrent ? "Текущий" : "Ожидает";
+  const statusLabel = isCompleted ? t("statusCompleted") : isCurrent ? t("statusCurrent") : t("statusUpcoming");
   const statusBg = isCompleted ? "rgba(22,163,74,0.1)" : isCurrent ? `${color}1A` : "var(--tz-border)";
   const statusText = isCompleted ? "#16a34a" : isCurrent ? color : "var(--tz-muted)";
 
@@ -261,6 +245,7 @@ function DocumentCard({
   index: number;
   accentColor: string;
 }) {
+  const t = useTranslations("roadmap");
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -281,12 +266,12 @@ function DocumentCard({
       </div>
       <button
         type="button"
-        onClick={() => alert("Шаблон будет доступен в следующей версии")}
+        onClick={() => alert(t("templateAlert") ?? "Template will be available in next version")}
         className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all hover:scale-[1.02]"
         style={{ background: `${accentColor}1A`, color: accentColor }}
       >
         <Download size={13} />
-        Скачать
+        {t("download")}
       </button>
     </motion.div>
   );
@@ -294,7 +279,13 @@ function DocumentCard({
 
 function RiskCard({ risk, index }: { risk: TransitionRisk; index: number }) {
   const [solutionOpen, setSolutionOpen] = useState(false);
-  const config = getProbabilityConfig(risk.probability);
+  const t = useTranslations("roadmap");
+  const getLabel = (p: TransitionRisk["probability"]) => {
+    if (p === "low") return { label: t("probLow"), color: "#16a34a", bg: "rgba(22,163,74,0.12)", border: "rgba(22,163,74,0.35)" };
+    if (p === "medium") return { label: t("probMedium"), color: "#ca8a04", bg: "rgba(202,138,4,0.12)", border: "rgba(202,138,4,0.35)" };
+    return { label: t("probHigh"), color: "#dc2626", bg: "rgba(220,38,38,0.12)", border: "rgba(220,38,38,0.35)" };
+  };
+  const config = getLabel(risk.probability);
 
   return (
     <motion.div
@@ -337,7 +328,7 @@ function RiskCard({ risk, index }: { risk: TransitionRisk; index: number }) {
           <motion.div animate={{ rotate: solutionOpen ? 180 : 0 }} transition={{ duration: 0.25 }}>
             <ChevronDown size={14} />
           </motion.div>
-          {solutionOpen ? "Скрыть решение" : "Показать решение"}
+          {solutionOpen ? t("hideSolution") : t("showSolution")}
         </button>
 
         <AnimatePresence>
@@ -380,6 +371,7 @@ function TransitionCard({
   index: number;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const t = useTranslations("roadmap");
   const fromColor = ugtColor(fromLevel.id);
   const toColor = ugtColor(toLevel.id);
 
@@ -421,16 +413,16 @@ function TransitionCard({
                 <Clock size={13} /> {transition.estimatedTime}
               </span>
               <span className="flex items-center gap-1">
-                <ListTodo size={13} /> {transition.actions.length} задач
+                <ListTodo size={13} /> {t("tasksCount", { count: transition.actions.length })}
               </span>
               <span className="flex items-center gap-1">
-                <FileCheck size={13} /> {toLevel.deliverables.length} результата
+                <FileCheck size={13} /> {t("resultsCountShort", { count: toLevel.deliverables.length })}
               </span>
               <span className="flex items-center gap-1">
-                <FileText size={13} /> {transition.documents.length} документов
+                <FileText size={13} /> {t("docsCount", { count: transition.documents.length })}
               </span>
               <span className="flex items-center gap-1">
-                <AlertTriangle size={13} /> {transition.risks.length} риска
+                <AlertTriangle size={13} /> {t("risksCount", { count: transition.risks.length })}
               </span>
             </div>
           </div>
@@ -440,7 +432,7 @@ function TransitionCard({
             <ChevronDown size={24} className="text-tz-muted" />
           </motion.div>
           <span className="text-[11px] font-medium text-tz-muted">
-            {expanded ? "Свернуть" : "Развернуть"}
+            {expanded ? t("collapse") : t("expand")}
           </span>
         </div>
       </button>
@@ -461,7 +453,7 @@ function TransitionCard({
                 <div>
                   <h5 className="mb-4 flex items-center gap-2 text-lg font-semibold text-tz-fg">
                     <ClipboardList size={20} className="text-tz-secondary" />
-                    Задачи
+                    {t("tasks")}
                   </h5>
                   <div className="flex flex-col gap-3">
                     {transition.actions.map((task, i) => (
@@ -486,7 +478,7 @@ function TransitionCard({
                 <div>
                   <h5 className="mb-4 flex items-center gap-2 text-lg font-semibold text-tz-fg">
                     <Target size={20} className="text-tz-secondary" />
-                    Результаты
+                    {t("results")}
                   </h5>
                   <div className="flex flex-col gap-3">
                     {toLevel.deliverables.map((result, i) => (
@@ -508,7 +500,7 @@ function TransitionCard({
                     style={{ background: `${toColor}1A`, color: toColor }}
                   >
                     <Clock size={15} />
-                    Срок выполнения: {transition.estimatedTime}
+                    {t("deadline", { time: transition.estimatedTime })}
                   </div>
 
                   <div className="mt-4">
@@ -516,7 +508,7 @@ function TransitionCard({
                       href={`/levels/${toLevel.id}`}
                       className="inline-flex items-center gap-1 text-sm font-medium text-tz-accent transition-colors hover:underline"
                     >
-                      Подробнее об {toLevel.code}
+                      {t("moreAbout", { code: toLevel.code })}
                       <ArrowRight size={14} />
                     </Link>
                   </div>
@@ -528,7 +520,7 @@ function TransitionCard({
                 <div className="mt-8 border-t border-tz-border/60 pt-6">
                   <h5 className="mb-4 flex items-center gap-2 text-lg font-semibold text-tz-fg">
                     <FileText size={20} className="text-tz-secondary" />
-                    Ключевые документы
+                    {t("keyDocuments")}
                   </h5>
                   <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                     {transition.documents.map((doc, i) => (
@@ -543,7 +535,7 @@ function TransitionCard({
                 <div className="mt-8 border-t border-tz-border/60 pt-6">
                   <h5 className="mb-4 flex items-center gap-2 text-lg font-semibold text-tz-fg">
                     <AlertTriangle size={20} className="text-tz-secondary" />
-                    Риски и решения
+                    {t("risksAndSolutions")}
                   </h5>
                   <div className="flex flex-col gap-3">
                     {transition.risks.map((risk, i) => (
@@ -603,6 +595,7 @@ function CircularProgress({
   fromColor: string;
   toColor: string;
 }) {
+  const t = useTranslations("roadmap");
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
@@ -642,7 +635,7 @@ function CircularProgress({
           {percentage}%
         </text>
         <text x="100" y="118" textAnchor="middle" className="text-xs font-medium uppercase tracking-[0.05em]" fill="rgba(255,255,255,0.5)">
-          завершено
+          {t("completed")}
         </text>
       </svg>
     </motion.div>
@@ -654,21 +647,43 @@ function CircularProgress({
 /* ================================================================== */
 
 export default function RoadmapContent() {
+  const t = useTranslations("roadmap");
+  const tUgt = useTranslations("ugtData");
   const [currentUgt, setCurrentUgt] = useState<number>(0);
   const [targetUgt, setTargetUgt] = useState<number>(0);
   const [showRoadmap, setShowRoadmap] = useState(false);
 
+  const PRESETS = [
+    { label: t("presetFull"), from: 1, to: 9, borderColor: "linear-gradient(135deg, #9a2a2b 0%, #e06a2a 33%, #84cc16 66%, #16a34a 100%)" },
+    { label: t("presetResearch"), from: 1, to: 3, borderColor: "#e0522f" },
+    { label: t("presetPrototype"), from: 4, to: 6, borderColor: "#eab308" },
+    { label: t("presetDeploy"), from: 7, to: 9, borderColor: "#16a34a" },
+  ];
+
+  const getNotDefined = t("notDefined");
   const currentOptions = [
-    { value: 0, label: "Не определён" },
-    ...UGT_LEVELS.map((l) => ({ value: l.id, label: `${l.code} — ${l.name}` })),
+    { value: 0, label: getNotDefined },
+    ...UGT_LEVELS.map((l) => {
+      let code = l.code;
+      let name = l.name;
+      try { code = tUgt(`code${l.id}`); } catch {}
+      try { name = tUgt(`level${l.id}Name`); } catch {}
+      return { value: l.id, label: `${code} — ${name}` };
+    }),
   ];
 
   const targetOptions = [
-    { value: 0, label: "Не определён" },
-    ...UGT_LEVELS.filter((l) => l.id > currentUgt).map((l) => ({
-      value: l.id,
-      label: `${l.code} — ${l.name}`,
-    })),
+    { value: 0, label: getNotDefined },
+    ...UGT_LEVELS.filter((l) => l.id > currentUgt).map((l) => {
+      let code = l.code;
+      let name = l.name;
+      try { code = tUgt(`code${l.id}`); } catch {}
+      try { name = tUgt(`level${l.id}Name`); } catch {}
+      return {
+        value: l.id,
+        label: `${code} — ${name}`,
+      };
+    }),
   ];
 
   const buildRoadmap = () => {
@@ -701,23 +716,35 @@ export default function RoadmapContent() {
 
   const summaryStats = useMemo(() => {
     if (transitionsInRange.length === 0) return null;
-    const totalMonths = transitionsInRange.reduce((sum, t) => sum + parseMonths(t.estimatedTime), 0);
-    const totalActions = transitionsInRange.reduce((sum, t) => sum + t.actions.length, 0);
-    const totalDeliverables = transitionsInRange.reduce((sum, t) => {
-      const toLevel = UGT_LEVELS.find((l) => l.id === t.to);
+    const totalMonths = transitionsInRange.reduce((sum, tr) => sum + parseMonths(tr.estimatedTime), 0);
+    const totalActions = transitionsInRange.reduce((sum, tr) => sum + tr.actions.length, 0);
+    const totalDeliverables = transitionsInRange.reduce((sum, tr) => {
+      const toLevel = UGT_LEVELS.find((l) => l.id === tr.to);
       return sum + (toLevel?.deliverables.length ?? 0);
     }, 0);
 
     return {
-      duration: `${Math.round(totalMonths * 0.8)}–${Math.round(totalMonths * 1.2)} месяцев`,
-      transitions: `${transitionsInRange.length} переходов`,
-      tasks: `${totalActions} задач`,
-      deliverables: `${totalDeliverables} результатов`,
+      duration: `${Math.round(totalMonths * 0.8)}–${Math.round(totalMonths * 1.2)} ${t("totalDuration").toLowerCase().includes("месяц") ? "месяцев" : "months"}`,
+      transitions: `${transitionsInRange.length} ${t("stagesCount").toLowerCase().includes("этап") ? "переходов" : "stages"}`,
+      tasks: `${totalActions} ${t("totalTasks").toLowerCase().includes("задач") ? "задач" : "tasks"}`,
+      deliverables: `${totalDeliverables} ${t("resultsCount").toLowerCase().includes("результат") ? "результатов" : "deliverables"}`,
       percentage: Math.round((currentUgt / targetUgt) * 100),
       fromColor: ugtColor(currentUgt),
       toColor: ugtColor(targetUgt),
     };
-  }, [transitionsInRange, currentUgt, targetUgt]);
+  }, [transitionsInRange, currentUgt, targetUgt, t]);
+
+  // Simpler duration formatting using translation keys? We'll use raw numeric + translation
+  // But to keep consistent, we will use earlier logic with translated suffix
+  const fmtDuration = useMemo(() => {
+    if (!summaryStats) return "";
+    const totalMonths = transitionsInRange.reduce((sum, tr) => sum + parseMonths(tr.estimatedTime), 0);
+    const lo = Math.round(totalMonths * 0.8);
+    const hi = Math.round(totalMonths * 1.2);
+    // Use Intl? Keep Russian suffix for ru, English for en — detect via t
+    const isRu = t("totalDuration") === "Общий срок";
+    return `${lo}–${hi} ${isRu ? "месяцев" : "months"}`;
+  }, [transitionsInRange, t, summaryStats]);
 
   return (
     <>
@@ -736,10 +763,10 @@ export default function RoadmapContent() {
             className="mb-6 flex items-center gap-2 text-sm text-white/45"
           >
             <Link href="/" className="transition-colors hover:text-tz-accent">
-              Главная
+              {t("breadcrumbHome")}
             </Link>
             <ChevronDown size={14} className="-rotate-90" />
-            <span className="text-white/65">Дорожная карта</span>
+            <span className="text-white/65">{t("breadcrumbCurrent")}</span>
           </motion.nav>
 
           <motion.h1
@@ -748,7 +775,7 @@ export default function RoadmapContent() {
             transition={{ delay: 0.2, duration: 0.6, ease: easeOutExpo }}
             className="max-w-[720px] text-4xl font-bold tracking-tight text-white sm:text-[52px] sm:leading-[1.1]"
           >
-            Дорожная карта развития
+            {t("heroTitle")}
           </motion.h1>
 
           <motion.p
@@ -757,9 +784,7 @@ export default function RoadmapContent() {
             transition={{ delay: 0.5, duration: 0.5, ease: easeOutExpo }}
             className="mt-6 max-w-[640px] text-lg leading-relaxed text-white/65"
           >
-            Спланируйте путь вашего проекта от текущего уровня готовности к целевому.
-            Каждый переход между УГТ сопровождается конкретным планом действий
-            по методологии ГОСТ Р 58048-2017.
+            {t("heroDesc")}
           </motion.p>
 
           {/* Селекторы */}
@@ -772,13 +797,13 @@ export default function RoadmapContent() {
           >
             <div className="flex flex-wrap items-end gap-6 sm:gap-8">
               <UgtSelect
-                label="Текущий УГТ"
+                label={t("currentUGT")}
                 value={currentUgt}
                 onChange={handleCurrentChange}
                 options={currentOptions}
               />
               <UgtSelect
-                label="Целевой УГТ"
+                label={t("targetUGT")}
                 value={targetUgt}
                 onChange={(v) => {
                   setTargetUgt(v);
@@ -794,14 +819,14 @@ export default function RoadmapContent() {
                 style={{ boxShadow: "0 8px 24px rgba(214,48,49,0.35), inset 0 1px 0 rgba(255,255,255,0.2)" }}
               >
                 <Map size={18} />
-                Построить карту
+                {t("buildMap")}
               </motion.button>
             </div>
 
             {/* Пресеты */}
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <span className="mr-2 text-xs font-medium uppercase tracking-[0.08em] text-white/40">
-                Быстрый выбор:
+                {t("quickChoice")}
               </span>
               {PRESETS.map((preset, i) => (
                 <PresetPill key={preset.label} preset={preset} onClick={() => handlePreset(preset)} index={i} />
@@ -828,7 +853,7 @@ export default function RoadmapContent() {
                 transition={{ delay: 0.1, duration: 0.5, ease: easeOutExpo }}
                 className="mb-2 text-center text-3xl font-bold text-tz-fg sm:text-[40px]"
               >
-                Визуальный путь
+                {t("visualPath")}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -836,7 +861,7 @@ export default function RoadmapContent() {
                 transition={{ delay: 0.2, duration: 0.4 }}
                 className="mb-12 text-center text-lg text-tz-secondary"
               >
-                УГТ {currentUgt} → УГТ {targetUgt}
+                {t("ugtTransition", { from: currentUgt, to: targetUgt })}
               </motion.p>
 
               {/* Desktop */}
@@ -914,7 +939,7 @@ export default function RoadmapContent() {
                 transition={{ duration: 0.5, ease: easeOutExpo }}
                 className="mb-2 text-3xl font-bold text-tz-fg sm:text-[40px]"
               >
-                Переходы между уровнями
+                {t("transitionsTitle")}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -923,7 +948,7 @@ export default function RoadmapContent() {
                 transition={{ delay: 0.1, duration: 0.4 }}
                 className="mb-10 text-lg text-tz-secondary"
               >
-                Развёрнутый план действий для каждого этапа
+                {t("transitionsDesc")}
               </motion.p>
 
               <div className="flex flex-col gap-5">
@@ -969,7 +994,7 @@ export default function RoadmapContent() {
                 transition={{ duration: 0.5, ease: easeOutExpo }}
                 className="mb-2 text-3xl font-bold text-white sm:text-[40px]"
               >
-                Сводка дорожной карты
+                {t("summaryTitle")}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -978,14 +1003,14 @@ export default function RoadmapContent() {
                 transition={{ delay: 0.1, duration: 0.4 }}
                 className="mb-12 text-lg text-white/60"
               >
-                Общая картина пути развития
+                {t("summaryDesc")}
               </motion.p>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                <SummaryCard icon={Clock} value={summaryStats.duration} label="Общий срок" color="#e0522f" index={0} />
-                <SummaryCard icon={Route} value={summaryStats.transitions} label="Количество этапов" color="#84cc16" index={1} />
-                <SummaryCard icon={ListTodo} value={summaryStats.tasks} label="Всего задач" color="#eab308" index={2} />
-                <SummaryCard icon={FileCheck} value={summaryStats.deliverables} label="Результаты" color="#16a34a" index={3} />
+                <SummaryCard icon={Clock} value={fmtDuration} label={t("totalDuration")} color="#e0522f" index={0} />
+                <SummaryCard icon={Route} value={`${transitionsInRange.length}`} label={t("stagesCount")} color="#84cc16" index={1} />
+                <SummaryCard icon={ListTodo} value={`${transitionsInRange.reduce((s, tr) => s + tr.actions.length, 0)}`} label={t("totalTasks")} color="#eab308" index={2} />
+                <SummaryCard icon={FileCheck} value={`${transitionsInRange.reduce((s, tr) => { const lvl = UGT_LEVELS.find((l) => l.id === tr.to); return s + (lvl?.deliverables.length ?? 0); }, 0)}`} label={t("resultsCount")} color="#16a34a" index={3} />
               </div>
 
               <div className="mt-12 flex flex-col items-center">
@@ -1003,13 +1028,13 @@ export default function RoadmapContent() {
                   className="mt-8 flex flex-wrap items-center justify-center gap-4"
                 >
                   <span className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400">
-                    <Shield size={14} /> Технологический риск: низкий
+                    <Shield size={14} /> {t("techRiskLow")}
                   </span>
                   <span className="flex items-center gap-2 rounded-full bg-yellow-500/10 px-4 py-2 text-sm font-medium text-yellow-400">
-                    <Layers size={14} /> Интеграционный риск: средний
+                    <Layers size={14} /> {t("integRiskMedium")}
                   </span>
                   <span className="flex items-center gap-2 rounded-full bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-400">
-                    <AlertCircle size={14} /> Производственный риск: средний
+                    <AlertCircle size={14} /> {t("prodRiskMedium")}
                   </span>
                 </motion.div>
               </div>
@@ -1021,14 +1046,14 @@ export default function RoadmapContent() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="mt-12 flex flex-col items-center text-center"
               >
-                <h4 className="text-2xl font-semibold text-white">Готовы начать?</h4>
+                <h4 className="text-2xl font-semibold text-white">{t("readyTitle")}</h4>
                 <Link
                   href="/register"
                   className="mt-6 inline-flex items-center gap-2 rounded-xl bg-tz-accent px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:shadow-xl"
                   style={{ boxShadow: "0 8px 24px rgba(214,48,49,0.3), inset 0 1px 0 rgba(255,255,255,0.2)" }}
                 >
                   <TrendingUp size={18} />
-                  Перейти к оценке проекта
+                  {t("goToAssessment")}
                   <ArrowRight size={18} />
                 </Link>
               </motion.div>
@@ -1053,11 +1078,10 @@ export default function RoadmapContent() {
               <Map size={36} className="text-tz-accent" style={{ opacity: 0.6 }} />
             </div>
             <h3 className="mt-6 text-xl font-semibold text-tz-muted">
-              Выберите текущий и целевой УГТ
+              {t("placeholderTitle")}
             </h3>
             <p className="mt-2 max-w-[360px] text-tz-muted">
-              Чтобы построить дорожную карту, укажите текущий уровень технологической
-              готовности и желаемый целевой
+              {t("placeholderDesc")}
             </p>
           </motion.div>
         </section>

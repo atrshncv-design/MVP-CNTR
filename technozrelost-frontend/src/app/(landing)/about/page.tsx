@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Landmark, Target, Users2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 
 export const metadata: Metadata = {
@@ -9,38 +10,35 @@ export const metadata: Metadata = {
     "Центр технологического развития Удмуртской Республики и цифровая платформа «Технозрелость»: миссия, нормативная база, что даёт платформа.",
 };
 
-const POINTS = [
-  {
-    icon: Target,
-    title: "Миссия Центра",
-    text: "Центр технологического развития Удмуртской Республики помогает региональным компаниям, научным организациям и инвесторам доводить технологии до промышленного применения — от научной идеи до серийного производства.",
-  },
-  {
-    icon: BookOpen,
-    title: "Нормативная база",
-    text: "Оценка готовности технологий ведётся по ГОСТ Р 58048-2017 «Управление технологическим развитием. Оценка уровней готовности технологий». Платформа опирается на пакет методических ГОСТов и материалов концепции Центра НТР.",
-  },
-  {
-    icon: Users2,
-    title: "Экосистема",
-    text: "Заказчики, R&D-исполнители, научные организации, серийные производители, регулирующие организации, инвесторы, аудиторы и команда Центра работают в едином контуре: один проект — одна карточка, общие реестры, прозрачные решения.",
-  },
-];
+export default async function AboutPage() {
+  const t = await getTranslations("about");
+  const POINTS = [
+    {
+      icon: Target,
+      title: t("missionTitle"),
+      text: t("missionText"),
+    },
+    {
+      icon: BookOpen,
+      title: t("legalTitle"),
+      text: t("legalText"),
+    },
+    {
+      icon: Users2,
+      title: t("ecosystemTitle"),
+      text: t("ecosystemText"),
+    },
+  ];
 
-export default function AboutPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       <Reveal>
-        <p className="tz-eyebrow">О центре</p>
+        <p className="tz-eyebrow">{t("eyebrow")}</p>
         <h1 className="tz-page-title mt-3 max-w-2xl">
-          Центр технологического развития Удмуртской Республики
+          {t("title")}
         </h1>
         <p className="tz-lead mt-4 max-w-2xl">
-          «Технозрелость» — цифровая платформа Центра НТР УР. Она переводит оценку
-          технологической зрелости из разрозненных экспертных практик в прозрачный
-          стандартизированный процесс: каждая технология получает уровень по ГОСТ
-          Р 58048-2017, а решение о готовности к внедрению принимается на основании
-          документов, а не мнений.
+          {t("lead")}
         </p>
       </Reveal>
 
@@ -63,16 +61,14 @@ export default function AboutPage() {
           <div className="max-w-xl">
             <div className="flex items-center gap-2">
               <Landmark className="h-4 w-4 text-tz-accent-hover" />
-              <p className="tz-eyebrow">Что даёт платформа</p>
+              <p className="tz-eyebrow">{t("whatGivesEyebrow")}</p>
             </div>
             <p className="mt-2 text-[14px] leading-relaxed text-tz-secondary">
-              Заказчикам — оценку зрелости разработок перед закупкой; разработчикам —
-              понятный путь роста УГТ с документами каждого этапа; инвесторам — реестр
-              технологий УГТ 7+; региону — единую картину технологического потенциала.
+              {t("whatGivesText")}
             </p>
           </div>
           <Link href="/methodology" className="tz-btn tz-btn-primary">
-            Методика оценки <ArrowRight className="h-4 w-4" />
+            {t("methodology")} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </Reveal>
