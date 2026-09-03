@@ -1,0 +1,793 @@
+{
+  "$defs": {
+    "Department": {
+      "additionalProperties": false,
+      "description": "Кафедра / лаборатория (01_кафедры_лаб).",
+      "properties": {
+        "name": {
+          "description": "Название кафедры/лаборатории",
+          "title": "Name",
+          "type": "string"
+        },
+        "faculty": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Факультет/институт",
+          "title": "Faculty"
+        },
+        "head": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Руководитель",
+          "title": "Head"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Описание",
+          "title": "Description"
+        },
+        "competencies": {
+          "description": "Компетенции как в платформе (list[str])",
+          "items": {
+            "type": "string"
+          },
+          "title": "Competencies",
+          "type": "array"
+        },
+        "raw_refs": {
+          "description": "Ссылки на сырые файлы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Raw Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Department",
+      "type": "object"
+    },
+    "Equipment": {
+      "additionalProperties": false,
+      "description": "Оборудование (04_оборудование).",
+      "properties": {
+        "name": {
+          "description": "Название оборудования",
+          "title": "Name",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Модель",
+          "title": "Model"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Год выпуска",
+          "title": "Year"
+        },
+        "characteristics": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Характеристики",
+          "title": "Characteristics"
+        },
+        "available_for_sme": {
+          "default": false,
+          "description": "Доступно для МСП",
+          "title": "Available For Sme",
+          "type": "boolean"
+        },
+        "access_conditions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Условия доступа",
+          "title": "Access Conditions"
+        },
+        "contact": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Контакт",
+          "title": "Contact"
+        },
+        "competencies": {
+          "description": "Компетенции как в платформе",
+          "items": {
+            "type": "string"
+          },
+          "title": "Competencies",
+          "type": "array"
+        },
+        "raw_refs": {
+          "description": "Фото/паспорт как файл",
+          "items": {
+            "type": "string"
+          },
+          "title": "Raw Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Equipment",
+      "type": "object"
+    },
+    "Mission": {
+      "additionalProperties": false,
+      "description": "Миссия и фронтир университета (03_миссия_фронтир).",
+      "properties": {
+        "mission_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Текст миссии",
+          "title": "Mission Text"
+        },
+        "frontier": {
+          "description": "Фронтир 3-5 направлений",
+          "items": {
+            "type": "string"
+          },
+          "title": "Frontier",
+          "type": "array"
+        },
+        "strategy_until": {
+          "anyOf": [
+            {
+              "maximum": 2100,
+              "minimum": 2000,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Горизонт стратегии (год)",
+          "title": "Strategy Until"
+        },
+        "document_links": {
+          "description": "Ссылки на документы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Document Links",
+          "type": "array"
+        }
+      },
+      "title": "Mission",
+      "type": "object"
+    },
+    "Patent": {
+      "additionalProperties": false,
+      "description": "РИД: патент / публикация / ПО (05_РИД).",
+      "properties": {
+        "title": {
+          "description": "Название РИД",
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Тип: патент, публикация, ПО",
+          "title": "Kind"
+        },
+        "number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Номер",
+          "title": "Number"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Дата (ISO или год)",
+          "title": "Date"
+        },
+        "authors": {
+          "description": "Авторы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Статус",
+          "title": "Status"
+        },
+        "link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ссылка/файл",
+          "title": "Link"
+        },
+        "competencies": {
+          "description": "Компетенции как в платформе",
+          "items": {
+            "type": "string"
+          },
+          "title": "Competencies",
+          "type": "array"
+        },
+        "raw_refs": {
+          "description": "Ссылки на сырые файлы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Raw Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "Patent",
+      "type": "object"
+    },
+    "Person": {
+      "additionalProperties": false,
+      "description": "Эксперт / человек (07_люди_эксперты).",
+      "properties": {
+        "full_name": {
+          "description": "ФИО",
+          "title": "Full Name",
+          "type": "string"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Должность",
+          "title": "Position"
+        },
+        "department": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Кафедра/лаборатория",
+          "title": "Department"
+        },
+        "competencies": {
+          "description": "Компетенции как в платформе",
+          "items": {
+            "type": "string"
+          },
+          "title": "Competencies",
+          "type": "array"
+        },
+        "contacts": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Контакты",
+          "title": "Contacts"
+        },
+        "raw_refs": {
+          "description": "Ссылки на сырые файлы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Raw Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "full_name"
+      ],
+      "title": "Person",
+      "type": "object"
+    },
+    "Priority": {
+      "additionalProperties": false,
+      "description": "Приоритет / научный задел (02_приоритеты_заделы).",
+      "properties": {
+        "title": {
+          "description": "Направление / приоритет",
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Описание задела",
+          "title": "Description"
+        },
+        "trl": {
+          "anyOf": [
+            {
+              "maximum": 9,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Уровень готовности TRL 1-9",
+          "title": "Trl"
+        },
+        "competencies": {
+          "description": "Компетенции как в платформе",
+          "items": {
+            "type": "string"
+          },
+          "title": "Competencies",
+          "type": "array"
+        },
+        "publications": {
+          "description": "Публикации/патенты-ссылки",
+          "items": {
+            "type": "string"
+          },
+          "title": "Publications",
+          "type": "array"
+        },
+        "collaborations": {
+          "description": "Коллаборации",
+          "items": {
+            "type": "string"
+          },
+          "title": "Collaborations",
+          "type": "array"
+        },
+        "raw_refs": {
+          "description": "Ссылки на сырые файлы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Raw Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "Priority",
+      "type": "object"
+    },
+    "RawRef": {
+      "additionalProperties": false,
+      "description": "Ссылка на сырой файл (папка raw/ или тематическая папка).",
+      "properties": {
+        "file": {
+          "description": "Путь к файлу внутри архива",
+          "title": "File",
+          "type": "string"
+        },
+        "entity_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Тип сущности",
+          "title": "Entity Type"
+        },
+        "entity_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Идентификатор сущности",
+          "title": "Entity Id"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Описание",
+          "title": "Description"
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "title": "RawRef",
+      "type": "object"
+    },
+    "Service": {
+      "additionalProperties": false,
+      "description": "Услуга для МСП (06_услуги_МСП).",
+      "properties": {
+        "name": {
+          "description": "Название услуги",
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Описание",
+          "title": "Description"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Формат: консалт/испытания/НИОКР",
+          "title": "Format"
+        },
+        "competencies": {
+          "description": "Компетенция как в платформе",
+          "items": {
+            "type": "string"
+          },
+          "title": "Competencies",
+          "type": "array"
+        },
+        "terms": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Сроки",
+          "title": "Terms"
+        },
+        "price_order": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Порядок цены",
+          "title": "Price Order"
+        },
+        "cases": {
+          "description": "Кейсы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Cases",
+          "type": "array"
+        },
+        "contact": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Контакт",
+          "title": "Contact"
+        },
+        "raw_refs": {
+          "description": "Ссылки на сырые файлы",
+          "items": {
+            "type": "string"
+          },
+          "title": "Raw Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Service",
+      "type": "object"
+    },
+    "University": {
+      "additionalProperties": false,
+      "description": "Метаданные университета — заголовок выгрузки.",
+      "properties": {
+        "name": {
+          "description": "Полное наименование университета",
+          "title": "Name",
+          "type": "string"
+        },
+        "short_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Краткое наименование",
+          "title": "Short Name"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Регион",
+          "title": "Region"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Краткое описание",
+          "title": "Description"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "University",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "description": "Схема выгрузки УдГУ для реестра потенциала УР — 7 разделов + raw_refs + university + extra_sections",
+  "properties": {
+    "university": {
+      "$ref": "#/$defs/University",
+      "description": "Метаданные университета"
+    },
+    "departments": {
+      "description": "01_кафедры_лаб",
+      "items": {
+        "$ref": "#/$defs/Department"
+      },
+      "title": "Departments",
+      "type": "array"
+    },
+    "priorities": {
+      "description": "02_приоритеты_заделы",
+      "items": {
+        "$ref": "#/$defs/Priority"
+      },
+      "title": "Priorities",
+      "type": "array"
+    },
+    "mission": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Mission"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "03_миссия_фронтир"
+    },
+    "equipment": {
+      "description": "04_оборудование",
+      "items": {
+        "$ref": "#/$defs/Equipment"
+      },
+      "title": "Equipment",
+      "type": "array"
+    },
+    "patents": {
+      "description": "05_РИД",
+      "items": {
+        "$ref": "#/$defs/Patent"
+      },
+      "title": "Patents",
+      "type": "array"
+    },
+    "services": {
+      "description": "06_услуги_МСП",
+      "items": {
+        "$ref": "#/$defs/Service"
+      },
+      "title": "Services",
+      "type": "array"
+    },
+    "people": {
+      "description": "07_люди_эксперты",
+      "items": {
+        "$ref": "#/$defs/Person"
+      },
+      "title": "People",
+      "type": "array"
+    },
+    "raw_refs": {
+      "description": "Индекс сырых файлов",
+      "items": {
+        "$ref": "#/$defs/RawRef"
+      },
+      "title": "Raw Refs",
+      "type": "array"
+    },
+    "extra_sections": {
+      "additionalProperties": {
+        "items": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "description": "Расширяемые секции 08_...: имя -> список записей",
+      "title": "Extra Sections",
+      "type": "object"
+    }
+  },
+  "required": [
+    "university"
+  ],
+  "title": "UdguImport",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}
