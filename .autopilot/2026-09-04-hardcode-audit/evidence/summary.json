@@ -1,0 +1,12 @@
+{
+ "frontend_findings": 1420,
+ "backend_findings": 799,
+ "frontend_files_hit": 115,
+ "backend_files_hit": 51,
+ "parity": {
+  "ru_keys": 1767,
+  "en_keys": 1767,
+  "missing_in_en": 0,
+  "missing_in_ru": 0
+ }
+}
