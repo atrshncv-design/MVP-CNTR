@@ -7,7 +7,7 @@ import { Filter, Search, SlidersHorizontal, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Drawer } from "@/components/ui/drawer";
-import { PROJECT_TAGS } from "@/lib/types";
+import { PROJECT_TAGS, getTagLabel, asTranslateFn } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/status";
 import type { RegistryParams } from "@/lib/types";
 import { SavedFilters } from "./saved-filters";
@@ -33,6 +33,7 @@ export function FilterBar({
   registryKey?: string;
 }) {
   const t = useTranslations("registry");
+  const taxT = asTranslateFn(useTranslations("taxonomy"));
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [tagQuery, setTagQuery] = React.useState("");
   const searchId = React.useId();
@@ -57,8 +58,8 @@ export function FilterBar({
     setFilters({ tags: next.length ? next : undefined });
   };
 
-  const filteredTags = PROJECT_TAGS.filter((t) =>
-    tagQuery ? t.toLowerCase().includes(tagQuery.toLowerCase()) : true,
+  const filteredTags = PROJECT_TAGS.filter((tag) =>
+    tagQuery ? getTagLabel(taxT, tag).toLowerCase().includes(tagQuery.toLowerCase()) : true,
   );
 
   const reset = () => {
@@ -128,7 +129,7 @@ export function FilterBar({
                 className={`tz-chip ${active ? "tz-chip-active" : ""}`}
                 aria-pressed={active}
               >
-                {tag}
+                {getTagLabel(taxT, tag)}
               </button>
             );
           })}
@@ -138,7 +139,7 @@ export function FilterBar({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {selectedTags.map((tTag) => (
               <span key={tTag} className="tz-badge tz-badge-accent">
-                {tTag} <button type="button" onClick={() => toggleTag(tTag)} className="ml-1" aria-label={`Убрать ${tTag}`}><X size={12} /></button>
+                {getTagLabel(taxT, tTag)} <button type="button" onClick={() => toggleTag(tTag)} className="ml-1" aria-label={`Убрать ${getTagLabel(taxT, tTag)}`}><X size={12} /></button>
               </span>
             ))}
           </div>

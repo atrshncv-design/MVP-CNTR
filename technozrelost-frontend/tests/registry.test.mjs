@@ -30,18 +30,17 @@ test("registry api-client: getRegistry with tags → URL contains tags, limit 20
   assert.match(src, /qs\.append\("tags"/);
 });
 
-test("registry filters: 30+ tags справочник, 1-5 выбор", () => {
-  const types = read("src/lib/types.ts");
-  assert.match(types, /PROJECT_TAGS/);
-  // 32 тега живут в словаре taxonomy (обе локали), lib резолвит их через перевод
-  const ru = JSON.parse(read("src/messages/ru.json"));
-  const en = JSON.parse(read("src/messages/en.json"));
-  assert.ok(Array.isArray(ru.taxonomy.tags) && ru.taxonomy.tags.length >= 30, "должно быть 30+ тегов");
-  assert.equal(ru.taxonomy.tags.length, en.taxonomy.tags.length);
-  assert.equal(ru.taxonomy.tags[0], "AI/ML");
-  assert.match(types, /TAGS_MAX = 5/);
-  assert.match(types, /TAGS_MIN = 1/);
-  assert.match(types, /getProjectTags|taxonomy/);
+test("registry filters: 30+ tags справочник, 1-5 выбор", async () => {
+  const types = await import("../src/lib/types.ts");
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.ok(types.PROJECT_TAGS.length >= 30, "должно быть 30+ тегов");
+  // 32 тега резолвятся через словарь taxonomy в обеих локалях
+  const ru = types.getProjectTags(translatorFor("taxonomy", "ru"));
+  const en = types.getProjectTags(translatorFor("taxonomy", "en"));
+  assert.equal(ru.length, en.length);
+  assert.equal(ru[0], "AI/ML");
+  assert.equal(types.TAGS_MAX, 5);
+  assert.equal(types.TAGS_MIN, 1);
 
   const filterBar = read("src/features/registry/FilterBar.tsx");
   assert.match(filterBar, /PROJECT_TAGS/);

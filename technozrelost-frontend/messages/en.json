@@ -683,18 +683,15 @@
         "docs": [
           {
             "name": "Scientific publications",
-            "description": "Sample layout of a research paper for publishing study results",
-            "template": "Шаблон_научной_статьи.docx"
+            "description": "Sample layout of a research paper for publishing study results"
           },
           {
             "name": "Theoretical justification",
-            "description": "Template for the technology theoretical justification document",
-            "template": "Шаблон_теоретического_обоснования.docx"
+            "description": "Template for the technology theoretical justification document"
           },
           {
             "name": "Patent research",
-            "description": "Form for conducting patent research and prior-art analysis",
-            "template": "Шаблон_патентных_исследований.docx"
+            "description": "Form for conducting patent research and prior-art analysis"
           }
         ],
         "kpi": {
@@ -732,18 +729,15 @@
         "docs": [
           {
             "name": "Conceptual design",
-            "description": "Structure and contents of a technology conceptual design",
-            "template": "Шаблон_концептуального_проекта.docx"
+            "description": "Structure and contents of a technology conceptual design"
           },
           {
             "name": "Technical specification",
-            "description": "GOST-style technical specification for technology development",
-            "template": "Шаблон_технического_задания.docx"
+            "description": "GOST-style technical specification for technology development"
           },
           {
             "name": "Models and calculations",
-            "description": "Template for documenting computational models and simulation results",
-            "template": "Шаблон_расчетных_моделей.xlsx"
+            "description": "Template for documenting computational models and simulation results"
           }
         ],
         "kpi": {
@@ -781,18 +775,15 @@
         "docs": [
           {
             "name": "Laboratory results",
-            "description": "Form for documenting laboratory experiment results",
-            "template": "Шаблон_лабораторных_результатов.xlsx"
+            "description": "Form for documenting laboratory experiment results"
           },
           {
             "name": "Small-scale models",
-            "description": "Description of a small-scale model and its test results",
-            "template": "Шаблон_описания_модели.docx"
+            "description": "Description of a small-scale model and its test results"
           },
           {
             "name": "Research report",
-            "description": "Structure of a research work report",
-            "template": "Шаблон_отчета_НИР.docx"
+            "description": "Structure of a research work report"
           }
         ],
         "kpi": {
@@ -830,18 +821,15 @@
         "docs": [
           {
             "name": "Laboratory breadboard",
-            "description": "Description of the laboratory breadboard, its characteristics and configuration",
-            "template": "Шаблон_описания_макета.docx"
+            "description": "Description of the laboratory breadboard, its characteristics and configuration"
           },
           {
             "name": "Test protocols",
-            "description": "Unified laboratory test protocol form",
-            "template": "Шаблон_протокола_испытаний.docx"
+            "description": "Unified laboratory test protocol form"
           },
           {
             "name": "Technical documentation",
-            "description": "Breadboard technical documentation structure",
-            "template": "Шаблон_техдокументации.docx"
+            "description": "Breadboard technical documentation structure"
           }
         ],
         "kpi": {
@@ -879,18 +867,15 @@
         "docs": [
           {
             "name": "Detailed breadboards",
-            "description": "Detailed breadboard specification for test-bench trials",
-            "template": "Шаблон_детального_макета.docx"
+            "description": "Detailed breadboard specification for test-bench trials"
           },
           {
             "name": "Test-bench trials",
-            "description": "Test-bench trial programme and methodology",
-            "template": "Шаблон_стендовых_испытаний.docx"
+            "description": "Test-bench trial programme and methodology"
           },
           {
             "name": "Integration report",
-            "description": "System component integration report form",
-            "template": "Шаблон_отчета_интеграции.docx"
+            "description": "System component integration report form"
           }
         ],
         "kpi": {
@@ -928,18 +913,15 @@
         "docs": [
           {
             "name": "System prototype",
-            "description": "System prototype technical specification",
-            "template": "Шаблон_спецификации_прототипа.docx"
+            "description": "System prototype technical specification"
           },
           {
             "name": "Demonstration report",
-            "description": "Prototype demonstration report form",
-            "template": "Шаблон_демо_отчета.docx"
+            "description": "Prototype demonstration report form"
           },
           {
             "name": "Prototype documentation",
-            "description": "Prototype technical documentation package",
-            "template": "Шаблон_документации_прототипа.docx"
+            "description": "Prototype technical documentation package"
           }
         ],
         "kpi": {
@@ -977,18 +959,15 @@
         "docs": [
           {
             "name": "Field-trial prototype",
-            "description": "Prototype acceptance statement for field trials",
-            "template": "Шаблон_акта_приемки_прототипа.docx"
+            "description": "Prototype acceptance statement for field trials"
           },
           {
             "name": "Field test protocols",
-            "description": "Field (operational) test protocol form",
-            "template": "Шаблон_полевых_протоколов.docx"
+            "description": "Field (operational) test protocol form"
           },
           {
             "name": "Readiness statement",
-            "description": "Technology readiness statement for low-rate production",
-            "template": "Шаблон_акта_готовности.docx"
+            "description": "Technology readiness statement for low-rate production"
           }
         ],
         "kpi": {
@@ -1027,18 +1006,15 @@
         "docs": [
           {
             "name": "Qualified system",
-            "description": "Certificate of technical characteristics compliance",
-            "template": "Шаблон_сертификата_соответствия.docx"
+            "description": "Certificate of technical characteristics compliance"
           },
           {
             "name": "Software certification",
-            "description": "Software certification paperwork",
-            "template": "Шаблон_сертификации_ПО.docx"
+            "description": "Software certification paperwork"
           },
           {
             "name": "Pilot line",
-            "description": "Pilot production line readiness statement",
-            "template": "Шаблон_акта_пилотной_линии.docx"
+            "description": "Pilot production line readiness statement"
           }
         ],
         "kpi": {
@@ -1078,23 +1054,19 @@
         "docs": [
           {
             "name": "Operational system",
-            "description": "System commissioning statement",
-            "template": "Шаблон_акта_ввода_в_эксплуатацию.docx"
+            "description": "System commissioning statement"
           },
           {
             "name": "Training plan",
-            "description": "Operating personnel training plan",
-            "template": "Шаблон_плана_обучения.docx"
+            "description": "Operating personnel training plan"
           },
           {
             "name": "Support plan",
-            "description": "In-service technical support plan",
-            "template": "Шаблон_плана_поддержки.docx"
+            "description": "In-service technical support plan"
           },
           {
             "name": "Programme protection plan",
-            "description": "Configuration management and programme protection plan",
-            "template": "Шаблон_плана_защиты.docx"
+            "description": "Configuration management and programme protection plan"
           }
         ],
         "kpi": {
@@ -1232,18 +1204,15 @@
         "docs": [
           {
             "name": "Research paper",
-            "description": "Sample layout of a research publication",
-            "template": "Шаблон_научной_статьи.docx"
+            "description": "Sample layout of a research publication"
           },
           {
             "name": "Concept proposal",
-            "description": "Technology concept proposal form",
-            "template": "Шаблон_концептуального_предложения.docx"
+            "description": "Technology concept proposal form"
           },
           {
             "name": "Patent research report",
-            "description": "Patent research report",
-            "template": "Шаблон_патентных_исследований.docx"
+            "description": "Patent research report"
           }
         ],
         "risks": [
@@ -1268,18 +1237,15 @@
         "docs": [
           {
             "name": "Technical specification",
-            "description": "Specification for running experiments",
-            "template": "Шаблон_технического_задания.docx"
+            "description": "Specification for running experiments"
           },
           {
             "name": "Laboratory test protocol",
-            "description": "Laboratory test protocol form",
-            "template": "Шаблон_протокола_лаб_испытаний.docx"
+            "description": "Laboratory test protocol form"
           },
           {
             "name": "Computational study report",
-            "description": "Computational study report",
-            "template": "Шаблон_отчета_расчетов.docx"
+            "description": "Computational study report"
           }
         ],
         "risks": [
@@ -1304,18 +1270,15 @@
         "docs": [
           {
             "name": "Breadboard specification",
-            "description": "Laboratory breadboard technical specification",
-            "template": "Шаблон_спецификации_макета.docx"
+            "description": "Laboratory breadboard technical specification"
           },
           {
             "name": "Test programme",
-            "description": "Test programme and methodology",
-            "template": "Шаблон_программы_испытаний.docx"
+            "description": "Test programme and methodology"
           },
           {
             "name": "Technical report",
-            "description": "Laboratory test report",
-            "template": "Шаблон_технического_отчета.docx"
+            "description": "Laboratory test report"
           }
         ],
         "risks": [
@@ -1340,18 +1303,15 @@
         "docs": [
           {
             "name": "Integration plan",
-            "description": "System component integration plan",
-            "template": "Шаблон_плана_интеграции.docx"
+            "description": "System component integration plan"
           },
           {
             "name": "Test-bench trial programme",
-            "description": "Test-bench trial programme",
-            "template": "Шаблон_стендовых_испытаний.docx"
+            "description": "Test-bench trial programme"
           },
           {
             "name": "Integration report",
-            "description": "Integration results report",
-            "template": "Шаблон_отчета_интеграции.docx"
+            "description": "Integration results report"
           }
         ],
         "risks": [
@@ -1376,18 +1336,15 @@
         "docs": [
           {
             "name": "Prototype specification",
-            "description": "System prototype technical specification",
-            "template": "Шаблон_спецификации_прототипа.docx"
+            "description": "System prototype technical specification"
           },
           {
             "name": "Demonstration programme",
-            "description": "Prototype demonstration programme",
-            "template": "Шаблон_программы_демо.docx"
+            "description": "Prototype demonstration programme"
           },
           {
             "name": "Demonstration statement",
-            "description": "Demonstration record",
-            "template": "Шаблон_акта_демонстрации.docx"
+            "description": "Demonstration record"
           }
         ],
         "risks": [
@@ -1412,18 +1369,15 @@
         "docs": [
           {
             "name": "Field trial programme",
-            "description": "Field trial programme",
-            "template": "Шаблон_программы_полевых.docx"
+            "description": "Field trial programme"
           },
           {
             "name": "Operating manual",
-            "description": "Operating manual for field trials",
-            "template": "Шаблон_руководства_эксплуатации.docx"
+            "description": "Operating manual for field trials"
           },
           {
             "name": "Field test protocol",
-            "description": "Field test protocol",
-            "template": "Шаблон_протокола_полевых.docx"
+            "description": "Field test protocol"
           }
         ],
         "risks": [
@@ -1448,18 +1402,15 @@
         "docs": [
           {
             "name": "Certification application",
-            "description": "Certification application",
-            "template": "Шаблон_заявки_сертификация.docx"
+            "description": "Certification application"
           },
           {
             "name": "DT&E report",
-            "description": "Development, test and evaluation report",
-            "template": "Шаблон_отчета_DTE.docx"
+            "description": "Development, test and evaluation report"
           },
           {
             "name": "Pilot line statement",
-            "description": "Pilot production line readiness statement",
-            "template": "Шаблон_акта_пилотной_линии.docx"
+            "description": "Pilot production line readiness statement"
           }
         ],
         "risks": [
@@ -1484,18 +1435,15 @@
         "docs": [
           {
             "name": "OT&E report",
-            "description": "Operational test and evaluation report",
-            "template": "Шаблон_отчета_OTE.docx"
+            "description": "Operational test and evaluation report"
           },
           {
             "name": "Commissioning statement",
-            "description": "System commissioning statement",
-            "template": "Шаблон_акта_ввода_эксплуатацию.docx"
+            "description": "System commissioning statement"
           },
           {
             "name": "Support plan",
-            "description": "In-service technical support plan",
-            "template": "Шаблон_плана_поддержки.docx"
+            "description": "In-service technical support plan"
           }
         ],
         "risks": [
@@ -2753,120 +2701,114 @@
     "projects": {
       "p1": {
         "name": "Composite materials for aircraft manufacturing",
-        "category": "R&D",
+        "category": "nioktr",
         "description": "Development of carbon-fibre interior panels with a fire-resistant coating: from laboratory samples to test-bench trials.",
         "org": "Research and production association",
         "region": "Izhevsk"
       },
       "p2": {
         "name": "AI-based diagnostics assistant",
-        "category": "AI/ML",
+        "category": "ai",
         "description": "A computer-vision model for detecting weld defects: trained on the plant dataset, 96% accuracy on validation.",
         "org": "IT company",
         "region": "Sarapul"
       },
       "p3": {
         "name": "Robotic system for agriculture",
-        "category": "Manufacturing",
+        "category": "manufacturing",
         "description": "An autonomous precision fertilisation system: the prototype passed field trials at two farms of the republic.",
         "org": "Machine-building plant",
         "region": "Votkinsk"
       },
       "p4": {
         "name": "Biodegradable packaging films",
-        "category": "R&D",
+        "category": "nioktr",
         "description": "Starch- and PVA-based films: laboratory property checks complete, scale-up on the pilot line under way.",
         "org": "University laboratory",
         "region": "Izhevsk"
       },
       "p5": {
         "name": "Energy-efficient pump drive",
-        "category": "Manufacturing",
+        "category": "manufacturing",
         "description": "A regenerative variable-frequency drive: the mock-up confirmed 18% energy savings, with serial production in preparation.",
         "org": "Electric machine-building plant",
         "region": "Izhevsk"
       },
       "p6": {
         "name": "Soil monitoring sensor platform",
-        "category": "AI/ML",
+        "category": "ai",
         "description": "A soil-sensor network with AI data aggregation: 40 devices in the pilot zone, LPWAN data links.",
         "org": "Agrotech startup",
         "region": "Glazov"
       },
       "p7": {
         "name": "High-temperature ceramics",
-        "category": "R&D",
+        "category": "nioktr",
         "description": "Silicon-nitride-based ceramics for burner devices: basic principles confirmed, industrial partner sought.",
         "org": "Materials institute",
         "region": "Izhevsk"
       },
       "p8": {
         "name": "Assembly shop digital twin",
-        "category": "AI/ML",
+        "category": "ai",
         "description": "A shop simulation model with logistics optimisation: verified on the live flow, +9% productivity effect.",
         "org": "Engineering company",
         "region": "Izhevsk"
       },
       "p9": {
         "name": "Medical training simulator",
-        "category": "Medicine",
+        "category": "medicine",
         "description": "A surgical training simulator with haptic feedback: the prototype was tested at the medical university.",
         "org": "Medtech resident",
         "region": "Izhevsk"
       }
     },
-    "categories": [
-      "AI/ML",
-      "R&D",
-      "Manufacturing",
-      "Medicine"
-    ]
+    "categories": {
+      "ai": "AI/ML",
+      "nioktr": "R&D",
+      "manufacturing": "Manufacturing",
+      "medicine": "Medicine"
+    }
   },
   "taxonomy": {
-    "tags": [
-      "AI/ML",
-      "Computer vision",
-      "Natural language processing",
-      "Robotics",
-      "Biotech",
-      "Medicine",
-      "Pharma",
-      "Energy",
-      "Oil & gas",
-      "Materials science",
-      "Composites",
-      "Industrial technologies",
-      "Additive manufacturing",
-      "Electronics",
-      "Microelectronics",
-      "Quantum technologies",
-      "Photonics",
-      "Hydrogen technologies",
-      "Batteries",
-      "IT systems",
-      "Cybersecurity",
-      "Transport",
-      "Agriculture",
-      "Aerospace",
-      "Mechanical engineering",
-      "Chemistry",
-      "Construction",
-      "Environmental protection",
-      "Logistics",
-      "Education",
-      "Fintech",
-      "Telecom"
-    ],
+    "tags": {
+      "ai": "AI/ML",
+      "computer-vision": "Computer vision",
+      "nlp": "Natural language processing",
+      "robotics": "Robotics",
+      "biotech": "Biotech",
+      "medicine": "Medicine",
+      "pharma": "Pharma",
+      "energy": "Energy",
+      "oil-gas": "Oil & gas",
+      "materials-science": "Materials science",
+      "composites": "Composites",
+      "industrial-tech": "Industrial technologies",
+      "additive": "Additive manufacturing",
+      "electronics": "Electronics",
+      "microelectronics": "Microelectronics",
+      "quantum": "Quantum technologies",
+      "photonics": "Photonics",
+      "hydrogen": "Hydrogen technologies",
+      "batteries": "Batteries",
+      "it-systems": "IT systems",
+      "cybersecurity": "Cybersecurity",
+      "transport": "Transport",
+      "agriculture": "Agriculture",
+      "aerospace": "Aerospace",
+      "mechanical-eng": "Mechanical engineering",
+      "chemistry": "Chemistry",
+      "construction": "Construction",
+      "environment": "Environmental protection",
+      "logistics": "Logistics",
+      "education": "Education",
+      "fintech": "Fintech",
+      "telecom": "Telecom"
+    },
     "validation": {
       "minTags": "Select at least {min} tag",
       "maxTags": "Select at most {max} tags",
       "unknownTags": "Unknown tags: {list}"
-    },
-    "legacy": {
-      "nioktr": "НИОКТР",
-      "software": "Программное обеспечение",
-      "hardware": "Аппаратные средства",
-      "infosystems": "Информационные системы"
     }
   }
 }

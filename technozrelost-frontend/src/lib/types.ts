@@ -1,73 +1,65 @@
 /**
  * Single product model (ticket 01, R17, G14, G30).
  * One place keeps the schema in sync: tasks 02-08 import from here.
- * Display strings live in the taxonomy dictionary (next-intl); this module
- * holds only key metadata plus resolvers taking a translator function.
+ * Display strings resolve through the taxonomy dictionary (next-intl) via a
+ * translator of the current locale; canonical backend values (tags, legacy
+ * category names) live in protocol.json, which is locale-independent data.
  */
 
 import type { ProjectStatus } from "./status";
-import ruMessages from "../messages/ru.json" with { type: "json" };
-
-/** Translator function shape (next-intl scoped translator is compatible via adapter, see below). */
-export type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
+import protocolData from "./protocol.json" with { type: "json" };
 
 /**
- * Adapter for a next-intl scoped translator, e.g.:
- *   const t = useTranslations("taxonomy");
- *   getProjectTags((key, params) => t(key as never, params as never));
- * The cast is needed because next-intl types keys as a closed union.
+ * Translator function shape: call for a single string (ICU params supported),
+ * raw for structured dictionary entries (arrays/objects).
+ * next-intl scoped translators satisfy it via asTranslateFn; tests use the
+ * translatorFor factory (real createTranslator, both locales).
  */
-export function asTranslateFn(
-  t: (key: never, params?: Record<string, string | number>) => string,
-): TranslateFn {
-  return (key, params) => t(key as never, params);
+export type TranslateFn = {
+  (key: string, params?: Record<string, string | number>): string;
+  raw(key: string): unknown;
+};
+
+/**
+ * Adapter for a next-intl scoped translator (useTranslations / getTranslations
+ * / createTranslator result), e.g.:
+ *   const t = useTranslations("taxonomy");
+ *   getProjectTags(asTranslateFn(t));
+ * Runtime identity: next-intl translators already expose call + raw.
+ */
+export function asTranslateFn(t: unknown): TranslateFn {
+  return t as TranslateFn;
 }
 
-interface TaxonomyDict {
-  tags: string[];
-  validation: { minTags: string; maxTags: string; unknownTags: string };
-  legacy: { nioktr: string; software: string; hardware: string; infosystems: string };
+interface Protocol {
+  tags: Record<string, string>;
+  legacy: Record<string, { match: string; tag: string }>;
 }
 
-function taxonomyDict(): TaxonomyDict {
-  return (ruMessages as unknown as { taxonomy: TaxonomyDict }).taxonomy;
+function protocol(): Protocol {
+  return protocolData as unknown as Protocol;
 }
 
-/** Fill {param} placeholders of a dictionary template (no string glue in callers). */
-function fill(template: string, params: Record<string, string | number>): string {
-  let out = template;
-  for (const [k, v] of Object.entries(params)) out = out.split(`{${k}}`).join(String(v));
-  return out;
-}
+/** Stable tag slugs in canonical order (keys of taxonomy.tags). */
+export const TAG_SLUGS: readonly string[] = Object.keys(protocol().tags);
 
 // ─── Tag catalogue — 32 standardised topics (G14, R20) ──────────────────────
 
 /**
  * 32 standardised project tags (multi-tag 1-5).
- * Canonical values come from taxonomy.tags (RU dictionary); English labels
- * resolve through getProjectTags / getTagLabel with a taxonomy translator.
+ * Canonical backend values (locale-independent); English labels resolve
+ * through getProjectTags / getTagLabel with a taxonomy translator.
  */
-export const PROJECT_TAGS: readonly string[] = taxonomyDict().tags;
+export const PROJECT_TAGS: readonly string[] = Object.values(protocol().tags);
 
 export type ProjectTag = (typeof PROJECT_TAGS)[number];
 
 export const TAGS_MIN = 1;
 export const TAGS_MAX = 5;
 
-/** Tag index by canonical RU value (stable positions in taxonomy.tags). */
-const TAG_INDEX_BY_VALUE: ReadonlyMap<string, number> = new Map(
-  PROJECT_TAGS.map((tag, index) => [tag, index] as [string, number]),
-);
-
-/** Legacy backend category value -> canonical tag index (no literals in code). */
-const LEGACY_TAG_SLUGS: ReadonlyArray<readonly [keyof TaxonomyDict["legacy"], number]> = [
-  ["nioktr", 11],
-  ["software", 19],
-  ["hardware", 13],
-  ["infosystems", 19],
-];
-const LEGACY_TAG_INDEX: ReadonlyMap<string, number> = new Map(
-  LEGACY_TAG_SLUGS.map(([slug, index]) => [taxonomyDict().legacy[slug], index]),
+/** Tag slug by canonical value (stable keys, never positional indices). */
+const TAG_SLUG_BY_VALUE: ReadonlyMap<string, string> = new Map(
+  Object.entries(protocol().tags).map(([slug, value]) => [value, slug]),
 );
 
 export function isValidTags(tags: string[]): boolean {
@@ -76,33 +68,27 @@ export function isValidTags(tags: string[]): boolean {
   return tags.every((t) => (PROJECT_TAGS as readonly string[]).includes(t));
 }
 
-export function validateTags(tags: string[]): string | null {
-  const v = taxonomyDict().validation;
-  if (tags.length < TAGS_MIN) return fill(v.minTags, { min: TAGS_MIN });
-  if (tags.length > TAGS_MAX) return fill(v.maxTags, { max: TAGS_MAX });
-  const invalid = tags.filter((t) => !(PROJECT_TAGS as readonly string[]).includes(t));
-  if (invalid.length) return fill(v.unknownTags, { list: invalid.join(", ") });
-  return null;
-}
-
-/** Localised tag validation via dictionary params (preferred in screens). */
-export function validateTagsT(t: TranslateFn, tags: string[]): string | null {
+/**
+ * Localised tag validation; substitutions are ICU params of the standard
+ * translator (no custom substitution engine).
+ */
+export function validateTags(t: TranslateFn, tags: string[]): string | null {
   if (tags.length < TAGS_MIN) return t("validation.minTags", { min: TAGS_MIN });
   if (tags.length > TAGS_MAX) return t("validation.maxTags", { max: TAGS_MAX });
-  const invalid = tags.filter((tag) => !TAG_INDEX_BY_VALUE.has(tag));
+  const invalid = tags.filter((tag) => !TAG_SLUG_BY_VALUE.has(tag));
   if (invalid.length) return t("validation.unknownTags", { list: invalid.join(", ") });
   return null;
 }
 
 /** Localised labels for the whole catalogue, in canonical order. */
 export function getProjectTags(t: TranslateFn): string[] {
-  return PROJECT_TAGS.map((_, index) => t(`tags.${index}`));
+  return TAG_SLUGS.map((slug) => t(`tags.${slug}`));
 }
 
 /** Localised label for one canonical tag value; unknown values pass through. */
 export function getTagLabel(t: TranslateFn, tag: string): string {
-  const index = TAG_INDEX_BY_VALUE.get(tag);
-  return index === undefined ? tag : t(`tags.${index}`);
+  const slug = TAG_SLUG_BY_VALUE.get(tag);
+  return slug === undefined ? tag : t(`tags.${slug}`);
 }
 
 /**
@@ -119,9 +105,11 @@ export function categoryToTags(category: string | null | undefined): string[] {
   if (!category) return [];
   // a catalogue value maps to a single tag, otherwise keep as fallback tag
   if ((PROJECT_TAGS as readonly string[]).includes(category)) return [category];
-  // legacy categories map to the closest catalogue tag (by index, see above)
-  const legacyIndex = LEGACY_TAG_INDEX.get(category);
-  if (legacyIndex !== undefined) return [PROJECT_TAGS[legacyIndex]];
+  // legacy categories map to the closest catalogue tag (by stable slug)
+  const tags = protocol().tags;
+  for (const entry of Object.values(protocol().legacy)) {
+    if (entry.match === category && tags[entry.tag] !== undefined) return [tags[entry.tag]];
+  }
   return [category];
 }
 

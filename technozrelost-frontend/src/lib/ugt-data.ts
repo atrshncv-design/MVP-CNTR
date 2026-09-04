@@ -1,14 +1,13 @@
 /**
  * UGT/UGP/UGI/UGS methodology content (GOST R 58048-2017).
- * Display strings live in the ugt dictionary (next-intl); this module holds
- * only key metadata (ids, colors, ranges, month estimates) plus resolvers
- * taking a translator function scoped to the ugt namespace.
- * Compat exports below resolve through the RU dictionary, so existing
- * screens keep working until they migrate to the resolvers.
+ * Display strings resolve through the ugt dictionary (next-intl) via a
+ * translator of the current locale; this module holds only key metadata
+ * (ids, colors, ranges, month estimates) plus resolvers. No locale is the
+ * default: every display string comes from t().
  */
 
 import type { TranslateFn } from "./types";
-import ruMessages from "../messages/ru.json" with { type: "json" };
+import protocolData from "./protocol.json" with { type: "json" };
 
 export interface DeliverableDoc {
   name: string;
@@ -36,64 +35,26 @@ export interface UGTLevel {
   risks: RiskItem[];
 }
 
-interface DictDoc {
-  name: string;
-  template: string;
-  description: string;
+interface Protocol {
+  levelDocTemplates: Record<string, string[]>;
+  transitionDocTemplates: Record<string, string[]>;
 }
 
-interface DictLevel {
-  code: string;
-  name: string;
-  short: string;
-  description: string;
-  requirements: string[];
-  deliverables: string[];
-  docs: DictDoc[];
-  kpi: { publications: string; patents: string; prototype: string };
-  risks: { risk: string; solution: string }[];
+function protocol(): Protocol {
+  return protocolData as unknown as Protocol;
 }
 
-interface DictNamed {
-  code: string;
-  name: string;
+/** String array at a dictionary path (structured entries via t.raw). */
+function strArr(t: TranslateFn, key: string): string[] {
+  const value = t.raw(key);
+  return Array.isArray(value) ? value.filter((x): x is string => typeof x === "string") : [];
 }
 
-interface DictTransition {
-  title: string;
-  actions: string[];
-  docs: DictDoc[];
-  risks: { risk: string; solution: string }[];
-  estimatedTime: string;
+/** Entry count of a dictionary array (objects included). */
+function arrLen(t: TranslateFn, key: string): number {
+  const value = t.raw(key);
+  return Array.isArray(value) ? value.length : 0;
 }
-
-interface UgtDict {
-  levels: Record<string, DictLevel>;
-  kpiLabels: { publications: string; patents: string; prototype: string };
-  ugp: Record<string, DictNamed>;
-  ugi: Record<string, DictNamed>;
-  ugs: Record<string, DictNamed>;
-  transitions: Record<string, DictTransition>;
-}
-
-function ugtDict(): UgtDict {
-  return (ruMessages as unknown as { ugt: UgtDict }).ugt;
-}
-
-/** Dot-path lookup over the RU ugt dictionary (compat path only). */
-function lookupRu(path: string): string {
-  const parts = path.split(".");
-  let cur: unknown = ugtDict();
-  for (const part of parts) {
-    if (Array.isArray(cur)) cur = cur[Number(part)];
-    else if (cur !== null && typeof cur === "object") {
-      cur = (cur as Record<string, unknown>)[part];
-    } else return "";
-  }
-  return typeof cur === "string" ? cur : "";
-}
-
-const ruT: TranslateFn = (key) => lookupRu(key);
 
 /**
  * Curated risk probabilities mirror the legacy table.
@@ -120,18 +81,17 @@ const UGT_META: ReadonlyArray<{ id: number; color: string }> = [
   { id: 9, color: "#FF7A2E" },
 ];
 
-const UGT_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+/** Level ids for static generation (locale-free). */
+export const UGT_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
-/** Entry counts are structural (ru/en parity is asserted by tests). */
-function levelCounts(id: number): { req: number; deliv: number; docs: number; risks: number } {
-  const ref = ugtDict().levels[`l${id}`];
-  return { req: ref.requirements.length, deliv: ref.deliverables.length, docs: ref.docs.length, risks: ref.risks.length };
-}
+/** Level colors by id order (locale-free design tokens). */
+export const UGT_COLORS: readonly string[] = UGT_META.map((m) => m.color);
 
 function toUgtLevel(t: TranslateFn, id: number): UGTLevel {
   const base = `levels.l${id}`;
-  const n = levelCounts(id);
-  const ref = ugtDict().levels[`l${id}`];
+  const templates = protocol().levelDocTemplates[`l${id}`] ?? [];
+  const docsCount = arrLen(t, `${base}.docs`);
+  const risksCount = arrLen(t, `${base}.risks`);
   return {
     id,
     code: t(`${base}.code`),
@@ -139,11 +99,11 @@ function toUgtLevel(t: TranslateFn, id: number): UGTLevel {
     short: t(`${base}.short`),
     description: t(`${base}.description`),
     color: UGT_META[id - 1].color,
-    requirements: Array.from({ length: n.req }, (_, i) => t(`${base}.requirements.${i}`)),
-    deliverables: Array.from({ length: n.deliv }, (_, i) => t(`${base}.deliverables.${i}`)),
-    deliverableDocs: Array.from({ length: n.docs }, (_, i) => ({
+    requirements: strArr(t, `${base}.requirements`),
+    deliverables: strArr(t, `${base}.deliverables`),
+    deliverableDocs: Array.from({ length: docsCount }, (_, i) => ({
       name: t(`${base}.docs.${i}.name`),
-      template: ref.docs[i].template,
+      template: templates[i] ?? "",
       description: t(`${base}.docs.${i}.description`),
     })),
     kpi: {
@@ -151,16 +111,13 @@ function toUgtLevel(t: TranslateFn, id: number): UGTLevel {
       [t("kpiLabels.patents")]: t(`${base}.kpi.patents`),
       [t("kpiLabels.prototype")]: t(`${base}.kpi.prototype`),
     },
-    risks: Array.from({ length: n.risks }, (_, i) => ({
+    risks: Array.from({ length: risksCount }, (_, i) => ({
       risk: t(`${base}.risks.${i}.risk`),
       solution: t(`${base}.risks.${i}.solution`),
       probability: levelProbability(id, i),
     })),
   };
 }
-
-/** Compat: UGT levels resolved through the RU dictionary (same values as before). */
-export const UGT_LEVELS: UGTLevel[] = UGT_IDS.map((id) => toUgtLevel(ruT, id));
 
 /** Localised UGT levels (translator scoped to the ugt namespace). */
 export function getUgtLevels(t: TranslateFn): UGTLevel[] {
@@ -197,9 +154,6 @@ function toUgpLevel(t: TranslateFn, id: number, color: string): UGPLevel {
   return { id, code: t(`ugp.l${id}.code`), name: t(`ugp.l${id}.name`), color };
 }
 
-/** Compat: UGP levels resolved through the RU dictionary. */
-export const UGP_LEVELS: UGPLevel[] = UGP_META.map((meta) => toUgpLevel(ruT, meta.id, meta.color));
-
 /** Localised UGP levels. */
 export function getUgpLevels(t: TranslateFn): UGPLevel[] {
   return UGP_META.map((meta) => toUgpLevel(t, meta.id, meta.color));
@@ -228,9 +182,6 @@ function toUgiLevel(t: TranslateFn, id: number, color: string): UGILevel {
   return { id, code: t(`ugi.l${id}.code`), name: t(`ugi.l${id}.name`), color };
 }
 
-/** Compat: UGI levels resolved through the RU dictionary. */
-export const UGI_LEVELS: UGILevel[] = UGI_META.map((meta) => toUgiLevel(ruT, meta.id, meta.color));
-
 /** Localised UGI levels. */
 export function getUgiLevels(t: TranslateFn): UGILevel[] {
   return UGI_META.map((meta) => toUgiLevel(t, meta.id, meta.color));
@@ -255,11 +206,6 @@ const UGS_META: ReadonlyArray<{ id: number; range: string; color: string }> = [
 function toUgsLevel(t: TranslateFn, id: number, range: string, color: string): UGSLevel {
   return { id, code: t(`ugs.l${id}.code`), name: t(`ugs.l${id}.name`), range, color };
 }
-
-/** Compat: UGS levels resolved through the RU dictionary. */
-export const UGS_LEVELS: UGSLevel[] = UGS_META.map((meta) =>
-  toUgsLevel(ruT, meta.id, meta.range, meta.color),
-);
 
 /** Localised UGS levels. */
 export function getUgsLevels(t: TranslateFn): UGSLevel[] {
@@ -311,18 +257,20 @@ function transitionProbability(from: number, riskIndex: number): TransitionRisk[
 
 function toTransition(t: TranslateFn, from: number, to: number): RoadmapTransition {
   const base = `transitions.from${from}to${to}`;
-  const ref = ugtDict().transitions[`from${from}to${to}`];
+  const templates = protocol().transitionDocTemplates[`from${from}to${to}`] ?? [];
+  const docsCount = arrLen(t, `${base}.docs`);
+  const risksCount = arrLen(t, `${base}.risks`);
   return {
     from,
     to,
     title: t(`${base}.title`),
-    actions: ref.actions.map((_, i) => t(`${base}.actions.${i}`)),
-    documents: ref.docs.map((d, i) => ({
+    actions: strArr(t, `${base}.actions`),
+    documents: Array.from({ length: docsCount }, (_, i) => ({
       name: t(`${base}.docs.${i}.name`),
-      template: d.template,
+      template: templates[i] ?? "",
       description: t(`${base}.docs.${i}.description`),
     })),
-    risks: ref.risks.map((_, i) => ({
+    risks: Array.from({ length: risksCount }, (_, i) => ({
       risk: t(`${base}.risks.${i}.risk`),
       solution: t(`${base}.risks.${i}.solution`),
       probability: transitionProbability(from, i),
@@ -330,11 +278,6 @@ function toTransition(t: TranslateFn, from: number, to: number): RoadmapTransiti
     estimatedTime: t(`${base}.estimatedTime`),
   };
 }
-
-/** Compat: roadmap transitions resolved through the RU dictionary. */
-export const ROADMAP_TRANSITIONS: RoadmapTransition[] = TRANSITION_META.map((meta) =>
-  toTransition(ruT, meta.from, meta.to),
-);
 
 /** Localised roadmap transitions. */
 export function getRoadmapTransitions(t: TranslateFn): RoadmapTransition[] {

@@ -24,7 +24,16 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { UGT_LEVELS, ROADMAP_TRANSITIONS, type TransitionDoc, type TransitionRisk } from "@/lib/ugt-data";
+import {
+  getUgtLevels,
+  getRoadmapTransitions,
+  getTransitionMonths,
+  type UGTLevel,
+  type RoadmapTransition,
+  type TransitionDoc,
+  type TransitionRisk,
+} from "@/lib/ugt-data";
+import { asTranslateFn } from "@/lib/types";
 
 /* ================================================================== */
 /*  Константы и хелперы                                               */
@@ -36,10 +45,11 @@ const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 const easeBounce = [0.34, 1.56, 0.64, 1] as [number, number, number, number];
 const easeSmooth = [0.4, 0, 0.2, 1] as [number, number, number, number];
 
-function parseMonths(timeStr: string): number {
-  const match = timeStr.match(/(\d+)[-\u2013](\d+)/);
-  if (!match) return 0;
-  return (parseInt(match[1]) + parseInt(match[2])) / 2;
+/** Average months for a transition from numeric metadata (locale-free). */
+function transitionAvgMonths(from: number, to: number): number {
+  const months = getTransitionMonths(from, to);
+  if (!months) return 0;
+  return (months.min + months.max) / 2;
 }
 
 /* ================================================================== */
@@ -119,7 +129,7 @@ function RoadmapNode({
   status,
   index,
 }: {
-  level: (typeof UGT_LEVELS)[number];
+  level: UGTLevel;
   status: "completed" | "current" | "upcoming";
   index: number;
 }) {
@@ -365,9 +375,9 @@ function TransitionCard({
   toLevel,
   index,
 }: {
-  transition: (typeof ROADMAP_TRANSITIONS)[number];
-  fromLevel: (typeof UGT_LEVELS)[number];
-  toLevel: (typeof UGT_LEVELS)[number];
+  transition: RoadmapTransition;
+  fromLevel: UGTLevel;
+  toLevel: UGTLevel;
   index: number;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -648,7 +658,9 @@ function CircularProgress({
 
 export default function RoadmapContent() {
   const t = useTranslations("roadmap");
-  const tUgt = useTranslations("ugtData");
+  const dictT = asTranslateFn(useTranslations("ugt"));
+  const levels = useMemo(() => getUgtLevels(dictT), [dictT]);
+  const allTransitions = useMemo(() => getRoadmapTransitions(dictT), [dictT]);
   const [currentUgt, setCurrentUgt] = useState<number>(0);
   const [targetUgt, setTargetUgt] = useState<number>(0);
   const [showRoadmap, setShowRoadmap] = useState(false);
@@ -663,25 +675,17 @@ export default function RoadmapContent() {
   const getNotDefined = t("notDefined");
   const currentOptions = [
     { value: 0, label: getNotDefined },
-    ...UGT_LEVELS.map((l) => {
-      let code = l.code;
-      let name = l.name;
-      try { code = tUgt(`code${l.id}`); } catch {}
-      try { name = tUgt(`level${l.id}Name`); } catch {}
-      return { value: l.id, label: `${code} — ${name}` };
+    ...levels.map((l) => {
+      return { value: l.id, label: `${l.code} — ${l.name}` };
     }),
   ];
 
   const targetOptions = [
     { value: 0, label: getNotDefined },
-    ...UGT_LEVELS.filter((l) => l.id > currentUgt).map((l) => {
-      let code = l.code;
-      let name = l.name;
-      try { code = tUgt(`code${l.id}`); } catch {}
-      try { name = tUgt(`level${l.id}Name`); } catch {}
+    ...levels.filter((l) => l.id > currentUgt).map((l) => {
       return {
         value: l.id,
-        label: `${code} — ${name}`,
+        label: `${l.code} — ${l.name}`,
       };
     }),
   ];
@@ -706,20 +710,20 @@ export default function RoadmapContent() {
 
   const levelsInRange = useMemo(() => {
     if (!showRoadmap || currentUgt === 0 || targetUgt === 0) return [];
-    return UGT_LEVELS.filter((l) => l.id >= currentUgt && l.id <= targetUgt);
-  }, [showRoadmap, currentUgt, targetUgt]);
+    return levels.filter((l) => l.id >= currentUgt && l.id <= targetUgt);
+  }, [showRoadmap, currentUgt, targetUgt, levels]);
 
   const transitionsInRange = useMemo(() => {
     if (!showRoadmap || currentUgt === 0 || targetUgt === 0) return [];
-    return ROADMAP_TRANSITIONS.filter((t) => t.from >= currentUgt && t.to <= targetUgt);
-  }, [showRoadmap, currentUgt, targetUgt]);
+    return allTransitions.filter((tr) => tr.from >= currentUgt && tr.to <= targetUgt);
+  }, [showRoadmap, currentUgt, targetUgt, allTransitions]);
 
   const summaryStats = useMemo(() => {
     if (transitionsInRange.length === 0) return null;
-    const totalMonths = transitionsInRange.reduce((sum, tr) => sum + parseMonths(tr.estimatedTime), 0);
+    const totalMonths = transitionsInRange.reduce((sum, tr) => sum + transitionAvgMonths(tr.from, tr.to), 0);
     const totalActions = transitionsInRange.reduce((sum, tr) => sum + tr.actions.length, 0);
     const totalDeliverables = transitionsInRange.reduce((sum, tr) => {
-      const toLevel = UGT_LEVELS.find((l) => l.id === tr.to);
+      const toLevel = levels.find((l) => l.id === tr.to);
       return sum + (toLevel?.deliverables.length ?? 0);
     }, 0);
 
@@ -732,13 +736,13 @@ export default function RoadmapContent() {
       fromColor: ugtColor(currentUgt),
       toColor: ugtColor(targetUgt),
     };
-  }, [transitionsInRange, currentUgt, targetUgt, t]);
+  }, [transitionsInRange, currentUgt, targetUgt, t, levels]);
 
   // Simpler duration formatting using translation keys? We'll use raw numeric + translation
   // But to keep consistent, we will use earlier logic with translated suffix
   const fmtDuration = useMemo(() => {
     if (!summaryStats) return "";
-    const totalMonths = transitionsInRange.reduce((sum, tr) => sum + parseMonths(tr.estimatedTime), 0);
+    const totalMonths = transitionsInRange.reduce((sum, tr) => sum + transitionAvgMonths(tr.from, tr.to), 0);
     const lo = Math.round(totalMonths * 0.8);
     const hi = Math.round(totalMonths * 1.2);
     // Use Intl? Keep Russian suffix for ru, English for en — detect via t
@@ -953,8 +957,8 @@ export default function RoadmapContent() {
 
               <div className="flex flex-col gap-5">
                 {transitionsInRange.map((transition, i) => {
-                  const fromLevel = UGT_LEVELS.find((l) => l.id === transition.from)!;
-                  const toLevel = UGT_LEVELS.find((l) => l.id === transition.to)!;
+                  const fromLevel = levels.find((l) => l.id === transition.from)!;
+                  const toLevel = levels.find((l) => l.id === transition.to)!;
                   return (
                     <TransitionCard
                       key={`${transition.from}-${transition.to}`}
@@ -1010,7 +1014,7 @@ export default function RoadmapContent() {
                 <SummaryCard icon={Clock} value={fmtDuration} label={t("totalDuration")} color="#e0522f" index={0} />
                 <SummaryCard icon={Route} value={`${transitionsInRange.length}`} label={t("stagesCount")} color="#84cc16" index={1} />
                 <SummaryCard icon={ListTodo} value={`${transitionsInRange.reduce((s, tr) => s + tr.actions.length, 0)}`} label={t("totalTasks")} color="#eab308" index={2} />
-                <SummaryCard icon={FileCheck} value={`${transitionsInRange.reduce((s, tr) => { const lvl = UGT_LEVELS.find((l) => l.id === tr.to); return s + (lvl?.deliverables.length ?? 0); }, 0)}`} label={t("resultsCount")} color="#16a34a" index={3} />
+                <SummaryCard icon={FileCheck} value={`${transitionsInRange.reduce((s, tr) => { const lvl = levels.find((l) => l.id === tr.to); return s + (lvl?.deliverables.length ?? 0); }, 0)}`} label={t("resultsCount")} color="#16a34a" index={3} />
               </div>
 
               <div className="mt-12 flex flex-col items-center">

@@ -3,13 +3,9 @@
 import { motion } from 'framer-motion';
 import { BookOpen, FileText, Beaker, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { UGT_LEVELS } from '@/lib/ugt-data';
-
-function getKpiIcon(label: string) {
-  if (label.includes('Публикации')) return BookOpen;
-  if (label.includes('Патенты')) return FileText;
-  return Beaker;
-}
+import { useTranslations } from 'next-intl';
+import { getUgtLevels } from '@/lib/ugt-data';
+import { asTranslateFn } from '@/lib/types';
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
@@ -40,6 +36,15 @@ const heroVariants = {
 };
 
 export default function UgtScalePageClient() {
+  const tUgtDict = useTranslations('ugt');
+  const levels = getUgtLevels(asTranslateFn(tUgtDict));
+  const kpiPublications = tUgtDict('kpiLabels.publications');
+  const kpiPatents = tUgtDict('kpiLabels.patents');
+  const getKpiIcon = (label: string) => {
+    if (label === kpiPublications) return BookOpen;
+    if (label === kpiPatents) return FileText;
+    return Beaker;
+  };
   return (
     <>
       <section
@@ -86,7 +91,7 @@ export default function UgtScalePageClient() {
               variants={heroVariants}
               className="mx-auto mt-10 flex h-2 max-w-[600px] overflow-hidden rounded-full"
             >
-              {UGT_LEVELS.map((level) => (
+              {levels.map((level) => (
                 <div
                   key={level.id}
                   className="h-full flex-1"
@@ -98,7 +103,7 @@ export default function UgtScalePageClient() {
               variants={heroVariants}
               className="mx-auto mt-2 flex max-w-[600px] justify-between"
             >
-              {UGT_LEVELS.map((level) => (
+              {levels.map((level) => (
                 <span
                   key={level.id}
                   className="font-mono text-[10px] font-medium"
@@ -120,7 +125,7 @@ export default function UgtScalePageClient() {
           variants={containerVariants}
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {UGT_LEVELS.map((level) => {
+          {levels.map((level) => {
             const kpiEntries = Object.entries(level.kpi);
             return (
               <motion.div key={level.id} variants={itemVariants}>

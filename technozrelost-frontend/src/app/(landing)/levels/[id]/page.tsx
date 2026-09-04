@@ -3,13 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Home, ArrowLeft, ArrowRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { UGT_LEVELS, type UGTLevel } from "@/lib/ugt-data";
+import { UGT_IDS, getUgtLevel, getUgtLevels, type UGTLevel } from "@/lib/ugt-data";
+import { asTranslateFn } from "@/lib/types";
 import LevelDetailInteractive from "@/components/landing/level-detail";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
 export function generateStaticParams() {
-  return UGT_LEVELS.map((lvl) => ({ id: String(lvl.id) }));
+  return UGT_IDS.map((id) => ({ id: String(id) }));
 }
 
 export async function generateMetadata({
@@ -18,19 +19,23 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const lvl = UGT_LEVELS.find((l) => String(l.id) === id);
-  if (!lvl) return { title: "Уровень не найден — Технозрелость" };
+  const levelId = Number(id);
+  if (!Number.isInteger(levelId) || !(UGT_IDS as readonly number[]).includes(levelId)) {
+    return { title: "Уровень не найден — Технозрелость" };
+  }
+  const t = asTranslateFn(await getTranslations("ugt"));
+  const lvl = getUgtLevel(t, levelId);
   return {
-    title: `УГТ ${lvl.id} — ${lvl.name} — Технозрелость`,
+    title: `${lvl.code} — ${lvl.name} — Технозрелость`,
     description: lvl.short,
   };
 }
 
 async function LevelDetail({ level }: { level: UGTLevel }) {
   const t = await getTranslations("levelDetail");
-  const tUgt = await getTranslations("ugtData");
-  const prev = UGT_LEVELS.find((l) => l.id === level.id - 1);
-  const next = UGT_LEVELS.find((l) => l.id === level.id + 1);
+  const levels = getUgtLevels(asTranslateFn(await getTranslations("ugt")));
+  const prev = levels.find((l) => l.id === level.id - 1);
+  const next = levels.find((l) => l.id === level.id + 1);
   const color = ugtColor(level.id);
 
   const getStageLabel = (id: number): string => {
@@ -42,14 +47,10 @@ async function LevelDetail({ level }: { level: UGTLevel }) {
     return t("stageOperate");
   };
 
-  let displayCode = level.code;
-  let displayName = level.name;
-  let displayShort = level.short;
-  let displayDesc = level.description;
-  try { displayCode = tUgt(`code${level.id}`); } catch {}
-  try { displayName = tUgt(`level${level.id}Name`); } catch {}
-  try { displayShort = tUgt(`level${level.id}Short`); } catch {}
-  try { displayDesc = tUgt(`level${level.id}Desc`); } catch {}
+  const displayCode = level.code;
+  const displayName = level.name;
+  const displayShort = level.short;
+  const displayDesc = level.description;
 
   return (
     <>
@@ -134,7 +135,7 @@ async function LevelDetail({ level }: { level: UGTLevel }) {
                     <ArrowLeft size={12} /> {t("prev")}
                   </span>
                   <span className="mt-1 block text-sm font-semibold text-tz-fg">
-                    {(() => { try { return `${tUgt(`code${prev.id}`)}: ${tUgt(`level${prev.id}Name`)}`; } catch { return `${prev.code}: ${prev.name}`; } })()}
+                    {`${prev.code}: ${prev.name}`}
                   </span>
                 </Link>
               )}
@@ -148,7 +149,7 @@ async function LevelDetail({ level }: { level: UGTLevel }) {
                     {t("next")} <ArrowRight size={12} />
                   </span>
                   <span className="mt-1 block text-sm font-semibold text-tz-fg">
-                    {(() => { try { return `${tUgt(`code${next.id}`)}: ${tUgt(`level${next.id}Name`)}`; } catch { return `${next.code}: ${next.name}`; } })()}
+                    {`${next.code}: ${next.name}`}
                   </span>
                 </Link>
               )}
@@ -169,7 +170,9 @@ export default async function LevelPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const level = UGT_LEVELS.find((l) => String(l.id) === id);
-  if (!level) notFound();
+  const levelId = Number(id);
+  if (!Number.isInteger(levelId) || !(UGT_IDS as readonly number[]).includes(levelId)) notFound();
+  const t = asTranslateFn(await getTranslations("ugt"));
+  const level = getUgtLevel(t, levelId);
   return <LevelDetail level={level} />;
 }

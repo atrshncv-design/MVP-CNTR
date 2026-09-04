@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 
 import { getProjects, matchOrganizations } from "@/lib/api-client";
 import { useDebouncedValue } from "@/lib/filters";
-import { PROJECT_TAGS } from "@/lib/types";
+import { PROJECT_TAGS, getTagLabel, asTranslateFn } from "@/lib/types";
 import type { MatchCandidate, MatchingIn } from "@/lib/types";
 import type { ProjectCardOut } from "@/lib/types";
 import { getStatusLabel } from "@/lib/status";
@@ -47,6 +47,7 @@ const UGT_OPTIONS = Array.from({ length: 9 }, (_, i) => i + 1);
 
 export function MatchingMode() {
   const t = useTranslations("matching");
+  const taxT = asTranslateFn(useTranslations("taxonomy"));
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
@@ -135,9 +136,11 @@ export function MatchingMode() {
   const filteredTags = React.useMemo(
     () =>
       PROJECT_TAGS.filter((tag) =>
-        debouncedTagQuery ? tag.toLowerCase().includes(debouncedTagQuery.toLowerCase()) : true,
+        debouncedTagQuery
+          ? getTagLabel(taxT, tag).toLowerCase().includes(debouncedTagQuery.toLowerCase())
+          : true,
       ),
-    [debouncedTagQuery],
+    [debouncedTagQuery, taxT],
   );
 
   const toggleCompetency = (tag: string) => {
@@ -481,7 +484,7 @@ export function MatchingMode() {
                       aria-pressed={active}
                       data-testid={`tag-${tag}`}
                     >
-                      {tag}
+                      {getTagLabel(taxT, tag)}
                     </button>
                   );
                 })}
@@ -493,12 +496,12 @@ export function MatchingMode() {
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {competencies.map((tag) => (
                     <span key={tag} className="tz-badge tz-badge-accent">
-                      {tag}
+                      {getTagLabel(taxT, tag)}
                       <button
                         type="button"
                         onClick={() => toggleCompetency(tag)}
                         className="ml-1"
-                        aria-label={t("removeTagAria", { tag })}
+                        aria-label={t("removeTagAria", { tag: getTagLabel(taxT, tag) })}
                       >
                         <X size={12} />
                       </button>
@@ -550,7 +553,7 @@ export function MatchingMode() {
                 <option value="">{t("sectorPlaceholder")}</option>
                 {PROJECT_TAGS.map((tag) => (
                   <option key={tag} value={tag}>
-                    {tag}
+                    {getTagLabel(taxT, tag)}
                   </option>
                 ))}
               </select>

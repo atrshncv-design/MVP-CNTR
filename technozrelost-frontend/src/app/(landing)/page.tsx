@@ -9,7 +9,9 @@ import {
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 import UGTInteractiveScale from "@/components/landing/ugt-interactive-scale";
-import { SHOWCASE_PROJECTS } from "@/lib/showcase";
+import { getShowcaseProjects, getShowcaseCategoryLabel } from "@/lib/showcase";
+import { getUgtLevel } from "@/lib/ugt-data";
+import { asTranslateFn } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Технозрелость — цифровая платформа трансфера технологий ЦНТР УР",
@@ -19,7 +21,9 @@ export const metadata: Metadata = {
 
 export default async function LandingHome() {
   const t = await getTranslations("landing");
-  const tUgt = await getTranslations("ugtData");
+  const showT = asTranslateFn(await getTranslations("showcase"));
+  const ugtT = asTranslateFn(await getTranslations("ugt"));
+  const showcaseProjects = getShowcaseProjects(showT);
   const STEPS = [
     {
       n: "01",
@@ -156,7 +160,7 @@ export default async function LandingHome() {
           </div>
         </Reveal>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SHOWCASE_PROJECTS.slice(0, 3).map((p, i) => (
+          {showcaseProjects.slice(0, 3).map((p, i) => (
             <Reveal key={p.id} delay={i * 0.06}>
               <div className="tz-card tz-card-hover flex h-full flex-col p-5">
                 <div className="flex items-center justify-between gap-2">
@@ -167,10 +171,10 @@ export default async function LandingHome() {
                       color: `var(--tz-ugt-${p.current_level})`,
                     }}
                   >
-                    {(() => { try { return tUgt(`code${p.current_level}`); } catch { return `УГТ ${p.current_level}`; }})()}
+                    {getUgtLevel(ugtT, p.current_level).code}
                   </span>
                   <span className="font-mono text-[11px] font-medium text-tz-muted">
-                    {p.category}
+                    {getShowcaseCategoryLabel(showT, p.category)}
                   </span>
                 </div>
                 <h3 className="tz-card-title mt-3 leading-snug">{p.name}</h3>
