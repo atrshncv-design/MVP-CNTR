@@ -68,11 +68,6 @@ test("kt 1-4: KtPanel renders 4 KTs each with Checklist + Go/No-Go for auditor, 
   // check via ControlPoint
   assert.match(src, /check via ControlPoint/);
   assert.match(src, /ControlPoint/);
-  // бейдж возврата на каждом КТ
-  assert.match(src, /return-badge/);
-  assert.match(src, /getReturnBadge/);
-  assert.match(src, /Возврат/);
-  assert.match(src, /бейдж возврата/);
   // auditor видимость
   assert.match(src, /auditor/);
   assert.match(src, /isAuditor/);
@@ -84,6 +79,33 @@ test("kt 1-4: KtPanel renders 4 KTs each with Checklist + Go/No-Go for auditor, 
   assert.match(src, /slice\(0,\s*4\)|length.*4|controlPoints.*map/);
   assert.match(src, /data-testid="kt-/);
   assert.match(src, /data-testid="kt-panel"/);
+});
+
+test("kt return badge: резолвер через переводчик обеих локалей, неверный ключ краснеет", async () => {
+  // Шов таска 02: только публичные резолверы зоны, чтений текста исходников нет.
+  // Неверный ключ в коде даёт эхо ключа вместо строки и краснит проверки ниже.
+  const { projectTranslator } = await import("../src/features/project/i18n.ts");
+  const { getReturnBadgeT } = await import("../src/features/project/utils.ts");
+  const prevDocument = globalThis.document;
+  try {
+    globalThis.document = { cookie: "NEXT_LOCALE=ru" };
+    const ru = projectTranslator();
+    assert.equal(getReturnBadgeT(ru, "rejected", null, 5), "Возврат на УГТ 5 — Причина: не указана");
+    assert.equal(getReturnBadgeT(ru, "rejected", " X ", null), "Возврат — Причина: X");
+    assert.equal(getReturnBadgeT(ru, "approved", null, 5), null);
+    assert.equal(ru("ktBadge", { n: 2 }), "КТ-2");
+    globalThis.document = { cookie: "NEXT_LOCALE=en" };
+    const en = projectTranslator();
+    const badge = getReturnBadgeT(en, "rejected", null, 5);
+    assert.equal(badge, "Returned to TRL 5 — Reason: not specified");
+    assert.doesNotMatch(badge, /[А-Яа-яЁё]/);
+    assert.doesNotMatch(badge, /return(With|Without|No)/);
+    assert.equal(en("ktBadge", { n: 2 }), "KT-2");
+    assert.equal(getReturnBadgeT(en, "approved", null, 5), null);
+  } finally {
+    if (prevDocument === undefined) delete globalThis.document;
+    else globalThis.document = prevDocument;
+  }
 });
 
 test("kt 1-4: GostChecklist and ChecklistPanel use template backend fallback", () => {

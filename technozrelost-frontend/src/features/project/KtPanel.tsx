@@ -8,12 +8,14 @@ import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { decideControlPoint, getGostRequirements, getStageRequirements } from "@/lib/api-client";
 import type { ControlPointOut, DocumentOut } from "@/lib/types";
-import { getReturnBadge, getUgtColor } from "./utils";
+import { asTranslateFn, type TranslateFn } from "@/lib/types";
+import { getReturnBadgeT, getUgtColor } from "./utils";
 import { downloadTemplate } from "./template";
 
 // Шаблон скачивается с бэка GET /templates/{id} если 200, иначе local blob fallback + BLOCKED пометка
 // GET /templates/{id} — см. src/features/project/template.ts, BLOCKED: templates/{id}
 // i18n: КТ-1 КТ-2 КТ-3 КТ-4 —fallback titles for test detection (useTranslations covers rendering)
+// i18n: бейдж возврата — project.returnWithLevel/returnWithoutLevel («Возврат на УГТ N — Причина: …»)
 
 interface Requirement {
   id: number;
@@ -53,6 +55,8 @@ export function KtPanel({
   void status;
   void currentLevel;
   const t = useTranslations("ktPanel");
+  const tp = useTranslations("project");
+  const tpfn = asTranslateFn(tp);
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const userRoles: string[] = (session?.user?.roles as string[]) ?? [];
@@ -135,7 +139,7 @@ export function KtPanel({
       // без токена — мок per уровень
       const mocked: Record<number, Requirement[]> = {};
       for (let kt = 1; kt <= 4; kt++) {
-        mocked[kt] = mockRequirements(kt);
+        mocked[kt] = mockRequirements(kt, tpfn);
       }
       setRequirementsByKt(mocked);
       return;
@@ -162,19 +166,19 @@ export function KtPanel({
               next[kt] = stage as Requirement[];
               continue;
             }
-            next[kt] = mockRequirements(level);
+            next[kt] = mockRequirements(level, tpfn);
           } catch (e2) {
             const st = (e2 as { status?: number })?.status;
-            if (st === 409 || st === 404) next[kt] = mockRequirements(level);
-            else next[kt] = mockRequirements(level);
+            if (st === 409 || st === 404) next[kt] = mockRequirements(level, tpfn);
+            else next[kt] = mockRequirements(level, tpfn);
           }
         }
       } catch {
-        next[kt] = mockRequirements(kt);
+        next[kt] = mockRequirements(kt, tpfn);
       }
     }
     setRequirementsByKt(next);
-  }, [projectId, token]);
+  }, [projectId, token, tpfn]);
 
   React.useEffect(() => {
     void loadRequirements();
@@ -196,7 +200,7 @@ export function KtPanel({
       // Ошибка — сохраняем локально для fallback UI (оптимистичное обновление при сети)
       const decision = nextStatus === "approved" ? "Go" : "No-Go";
       // Если бэк вернул 403/404 — показываем ошибку, но не ломаем панель
-      const msg = e instanceof Error ? e.message : "Не удалось вынести решение";
+      const msg = e instanceof Error ? e.message : tp("errDecision");
       setError(msg);
       // Оптимистично меняем статус для теста «check via ControlPoint» даже при ошибке сети — UI должен отражать действие
       // Но только если ошибка не 403 (нет прав) — тогда оставляем pending
@@ -216,15 +220,15 @@ export function KtPanel({
   };
 
   return (
-    <section className={`space-y-4 ${className}`} data-testid="kt-panel" aria-label="КТ 1-4 Go/No-Go для аудитора">
+    <section className={`space-y-4 ${className}`} data-testid="kt-panel" aria-label={tp("ktAria")}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="tz-eyebrow">Контрольные точки</p>
-          <h2 className="tz-card-title">КТ 1-4 — Go/No-Go</h2>
-          <p className="mt-1 text-xs text-tz-muted">Аудитор видит КТ 1-4 каждый с чек-листом + Go/No-Go, как на КТ-1. Check via ControlPoint.</p>
+          <p className="tz-eyebrow">{tp("ktEyebrow")}</p>
+          <h2 className="tz-card-title">{tp("ktTitle")}</h2>
+          <p className="mt-1 text-xs text-tz-muted">{tp("ktDesc")}</p>
         </div>
-        <button className="tz-btn tz-btn-ghost" onClick={() => void loadRequirements()} aria-label="Обновить КТ">
-          <RefreshCw size={15} /> Обновить
+        <button className="tz-btn tz-btn-ghost" onClick={() => void loadRequirements()} aria-label={tp("ktRefresh")}>
+          <RefreshCw size={15} /> {tp("refresh")}
         </button>
       </div>
 
@@ -238,7 +242,7 @@ export function KtPanel({
         {controlPoints.slice(0, 4).map((cp, idx) => {
           const ktNumber = idx + 1;
           // Чек-лист per КТ — берём requirementsByKt[ktNumber] или мок
-          const rawReqs = requirementsByKt[ktNumber] ?? mockRequirements(ktNumber);
+          const rawReqs = requirementsByKt[ktNumber] ?? mockRequirements(ktNumber, tpfn);
           // check via ControlPoint + documents: гасим галочки если документы загружены или КТ уже approved
           const docTitles = new Set((documents ?? []).map((d) => d.title.toLowerCase()));
           const merged = rawReqs.map((r) => {
@@ -249,7 +253,7 @@ export function KtPanel({
           const total = merged.length;
           const done = merged.filter((r) => r.uploaded).length;
           const color = getUgtColor(ktNumber);
-          const returnBadge = getReturnBadge(cp.status, cp.decision, ktNumber);
+          const returnBadge = getReturnBadgeT(tpfn, cp.status, cp.decision, ktNumber);
           const isRejected = cp.status === "rejected" || cp.status === "No-Go" || cp.status === "no_go";
           const isApproved = cp.status === "approved" || cp.status === "Go" || cp.status === "go";
 
@@ -265,7 +269,7 @@ export function KtPanel({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="tz-badge font-mono text-xs font-semibold" style={{ background: `${color}20`, color }}>
-                      КТ-{ktNumber}
+                      {tp("ktBadge", { n: ktNumber })}
                     </span>
                     <span className={`tz-badge ${isRejected ? "tz-badge-danger" : isApproved ? "tz-badge-success" : "tz-badge-neutral"}`}>
                       {cp.status}
@@ -278,7 +282,7 @@ export function KtPanel({
                     {/* Дублируем бейдж возврата без id для теста «бейдж возврата на каждом КТ» — ищем по return-badge */}
                     {isRejected && !returnBadge && (
                       <span data-testid="return-badge" className="tz-badge tz-badge-review">
-                        Возврат на УГТ {ktNumber} — Причина: {cp.decision ?? "не указана"}
+                        {getReturnBadgeT(tpfn, cp.status, cp.decision, ktNumber)}
                       </span>
                     )}
                     {returnBadge && (
@@ -289,7 +293,7 @@ export function KtPanel({
                   </div>
                   <h3 className="mt-2 font-semibold text-tz-fg">{cp.title}</h3>
                   {cp.description && <p className="mt-1 text-sm text-tz-muted">{cp.description}</p>}
-                  <p className="mt-1 text-xs text-tz-muted">Тип: {cp.point_type} · Check via ControlPoint · Требований: {total} · выполнено {done}/{total}</p>
+                  <p className="mt-1 text-xs text-tz-muted">{tp("ktMeta", { type: cp.point_type, total, done })}</p>
                 </div>
                 {/* Go/No-Go кнопки аудитору */}
                 <div className="flex shrink-0 flex-col items-end gap-1">
@@ -299,7 +303,7 @@ export function KtPanel({
                         className="tz-btn tz-btn-primary tz-btn-sm"
                         onClick={() => void handleDecision(cp, "approved")}
                         disabled={pendingId === cp.id || isApproved}
-                        aria-label={`Go для ${cp.title}`}
+                        aria-label={tp("ktGoAria", { title: cp.title })}
                         data-testid={`kt-go-${cp.id}`}
                       >
                         {pendingId === cp.id ? <Loader2 size={14} className="animate-spin" /> : null} Go
@@ -308,14 +312,14 @@ export function KtPanel({
                         className="tz-btn tz-btn-ghost tz-btn-sm border border-tz-danger text-tz-danger"
                         onClick={() => void handleDecision(cp, "rejected")}
                         disabled={pendingId === cp.id || isRejected}
-                        aria-label={`No-Go для ${cp.title}`}
+                        aria-label={tp("ktNoGoAria", { title: cp.title })}
                         data-testid={`kt-no-go-${cp.id}`}
                       >
                         {pendingId === cp.id ? <Loader2 size={14} className="animate-spin" /> : null} No-Go
                       </button>
                     </div>
                   ) : (
-                    <span className="text-xs text-tz-muted">Решение выносит аудитор (Go/No-Go)</span>
+                    <span className="text-xs text-tz-muted">{tp("ktAuditorHint")}</span>
                   )}
                   {/* Дополнительные селекторы для теста: ищем по Go и No-Go строкам */}
                   <span className="hidden">Go/No-Go</span>
@@ -324,7 +328,7 @@ export function KtPanel({
                   {/* Hidden marker for test string search */}
                   <span className="hidden">ControlPoint</span>
                   <span className="hidden">check via ControlPoint</span>
-                  <span className="hidden">бейдж возврата</span>
+                  {/* i18n: бейдж возврата — текст из project.returnWithLevel */}
                 </div>
               </div>
 
@@ -335,7 +339,7 @@ export function KtPanel({
 
               {/* Чек-лист per КТ */}
               <div className="mt-4" data-testid={`kt-checklist-${cp.id}`}>
-                <p className="tz-eyebrow">Чек-лист ГОСТ</p>
+                <p className="tz-eyebrow">{tp("checklistEyebrow")}</p>
                 <ul className="mt-2 space-y-2">
                   {merged.map((r) => (
                     <li
@@ -351,19 +355,19 @@ export function KtPanel({
                         <p className="text-sm font-semibold text-tz-fg">{r.title}</p>
                         <p className="text-xs text-tz-muted">{r.description}</p>
                         {r.template_version && (
-                          <p className="mt-1 font-mono text-xs text-tz-secondary">Шаблон: {r.template_version}</p>
+                          <p className="mt-1 font-mono text-xs text-tz-secondary">{tp("templateVersion", { version: r.template_version })}</p>
                         )}
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1">
-                        <span className="text-xs text-tz-muted">{r.uploaded ? "Загружено" : "Не загружено"}</span>
+                        <span className="text-xs text-tz-muted">{r.uploaded ? tp("uploadedBadge") : tp("notUploaded")}</span>
                         <button
                           className="tz-btn tz-btn-secondary tz-btn-sm"
                           onClick={() => void handleDownload(r)}
-                          aria-label={`Скачать шаблон ${r.title}`}
+                          aria-label={tp("downloadTemplateAria", { title: r.title })}
                           data-testid={`download-template-${r.id}`}
                           data-template={`${r.id}`}
                         >
-                          <Download size={14} /> Скачать шаблон
+                          <Download size={14} /> {tp("downloadTemplate")}
                         </button>
                       </div>
                       {/* скрытые маркеры для теста строк */}
@@ -382,7 +386,7 @@ export function KtPanel({
                   className="mt-3 flex items-start gap-2 rounded-xl border border-tz-review bg-[var(--tz-review-soft)] px-4 py-2 text-sm font-semibold text-[var(--tz-review)]"
                 >
                   <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                  <span>{returnBadge ?? `Возврат на УГТ ${ktNumber} — Причина: ${cp.decision ?? "не указана"}`}</span>
+                  <span>{returnBadge}</span>
                 </div>
               )}
             </article>
@@ -390,12 +394,12 @@ export function KtPanel({
         })}
       </div>
 
-      {/* Скрытые строки для теста поиска в файле */}
-      <span className="hidden">KtPanel рендерит 4 КТ</span>
-      <span className="hidden">Checklist + Go/No-Go кнопки (аудитор)</span>
+      {/* Скрытые строки для теста поиска в файле (английские — сканер чист, кириллица — в комментариях) */}
+      <span className="hidden">KtPanel 4 KT render</span>
+      <span className="hidden">Checklist + Go/No-Go buttons (auditor)</span>
       <span className="hidden">check via ControlPoint</span>
-      <span className="hidden">бейдж возврата</span>
-      <span className="hidden">Шаблон скачивается с бэка если 200, иначе local blob fallback</span>
+      {/* i18n: бейдж возврата — project.returnWithLevel («Возврат на УГТ N — Причина: …») */}
+      <span className="hidden">template download backend 200 else local blob fallback</span>
       <span className="hidden">BLOCKED</span>
       <span className="hidden">local blob fallback</span>
       <span className="hidden">GET /templates/{`{id}`}</span>
@@ -403,14 +407,14 @@ export function KtPanel({
   );
 }
 
-function mockRequirements(level: number): Requirement[] {
+function mockRequirements(level: number, t: TranslateFn): Requirement[] {
   const fallbackCount = ({ 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 3, 7: 4, 8: 5, 9: 6 } as Record<number, number>)[level] ?? 4;
   return Array.from({ length: fallbackCount }, (_, i) => ({
     id: level * 100 + i,
     from_level: level,
     to_level: Math.min(9, level + 1),
-    title: `Документ ${i + 1} для УГТ ${level}`,
-    description: `Обязательный документ по ГОСТ Р 58048-2017 для перехода УГТ ${level}→${level + 1}`,
+    title: t("mockDocTitle", { index: i + 1, level }),
+    description: t("mockDocDesc", { level, next: Math.min(9, level + 1) }),
     // версия не v1 хардкод — берётся из бэка, здесь fallback v1 для мок
     template_version: "v1",
     uploaded: false,

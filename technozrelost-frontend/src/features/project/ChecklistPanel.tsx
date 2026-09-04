@@ -4,7 +4,9 @@
 import * as React from "react";
 import { CheckCircle2, Download, FileUp, RefreshCw } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { getGostRequirements, getStageRequirements } from "@/lib/api-client";
+import { asTranslateFn, type TranslateFn } from "@/lib/types";
 import { getUgtColor } from "./utils";
 import type { DocumentOut } from "@/lib/types";
 import { downloadTemplate as downloadTemplateWithFallback } from "./template";
@@ -44,6 +46,7 @@ export function ChecklistPanel({
 }: ChecklistPanelProps) {
   void status;
   const { data: session } = useSession();
+  const t = useTranslations("project");
   const token = session?.user?.accessToken;
   const [requirements, setRequirements] = React.useState<Requirement[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -56,6 +59,7 @@ export function ChecklistPanel({
     }
     setLoading(true);
     setError(null);
+    const tr = asTranslateFn(t);
     try {
       // основной источник — StageRequirement (GET /projects/{id}/stage-requirements)
       const data = await getStageRequirements(projectId, token);
@@ -67,16 +71,16 @@ export function ChecklistPanel({
           const gost = await getGostRequirements(currentLevel, token);
           setRequirements(gost as Requirement[]);
         } catch {
-          setRequirements(mockRequirements(currentLevel));
+          setRequirements(mockRequirements(currentLevel, tr));
         }
       } else {
-        setError(e instanceof Error ? e.message : "Не удалось загрузить требования.");
-        setRequirements(mockRequirements(currentLevel));
+        setError(e instanceof Error ? e.message : t("errChecklist"));
+        setRequirements(mockRequirements(currentLevel, tr));
       }
     } finally {
       setLoading(false);
     }
-  }, [projectId, currentLevel, token]);
+  }, [projectId, currentLevel, token, t]);
 
   React.useEffect(() => {
     void load();
@@ -106,19 +110,19 @@ export function ChecklistPanel({
   }
 
   return (
-    <section className={`tz-card p-6 ${className}`} data-testid="checklist-panel" aria-label="Чек-лист документов">
+    <section className={`tz-card p-6 ${className}`} data-testid="checklist-panel" aria-label={t("checklistAria")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="tz-eyebrow">Чек-лист ГОСТ</p>
+          <p className="tz-eyebrow">{t("checklistEyebrow")}</p>
           <h2 className="tz-card-title mt-1">
-            Переход УГТ {currentLevel} → {currentLevel + 1}
+            {t("checklistTitle", { from: currentLevel, to: currentLevel + 1 })}
           </h2>
           <p className="mt-1 text-sm text-tz-muted">
-            Секторов в уровне: {total} · выполнено {done}/{total}
+            {t("checklistProgress", { total, done })}
           </p>
         </div>
-        <button className="tz-btn tz-btn-ghost" onClick={() => void load()} aria-label="Обновить чек-лист">
-          <RefreshCw size={15} /> Обновить
+        <button className="tz-btn tz-btn-ghost" onClick={() => void load()} aria-label={t("refreshChecklist")}>
+          <RefreshCw size={15} /> {t("refresh")}
         </button>
       </div>
 
@@ -149,18 +153,18 @@ export function ChecklistPanel({
               <p className="text-sm font-semibold text-tz-fg">{r.title}</p>
               <p className="text-xs text-tz-muted">{r.description}</p>
               {r.template_version && (
-                <p className="mt-1 font-mono text-xs text-tz-secondary">Шаблон: {r.template_version}</p>
+                <p className="mt-1 font-mono text-xs text-tz-secondary">{t("templateVersion", { version: r.template_version })}</p>
               )}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="text-xs text-tz-muted">{r.uploaded ? "Загружено" : "Не загружено"}</span>
+              <span className="text-xs text-tz-muted">{r.uploaded ? t("uploadedBadge") : t("notUploaded")}</span>
               <button
                 className="tz-btn tz-btn-secondary tz-btn-sm"
                 onClick={() => void downloadTemplateWithFallback(r, token)}
-                aria-label={`Скачать шаблон ${r.title}`}
+                aria-label={t("downloadTemplateAria", { title: r.title })}
                 data-testid={`download-template-${r.id}`}
               >
-                <Download size={14} /> Скачать шаблон
+                <Download size={14} /> {t("downloadTemplate")}
               </button>
             </div>
           </li>
@@ -169,21 +173,21 @@ export function ChecklistPanel({
 
       {onRefresh && (
         <button className="tz-btn tz-btn-ghost mt-4" onClick={onRefresh}>
-          Обновить документы
+          {t("refreshDocs")}
         </button>
       )}
     </section>
   );
 }
 
-function mockRequirements(level: number): Requirement[] {
+function mockRequirements(level: number, t: TranslateFn): Requirement[] {
   const fallbackCount = ({ 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 3, 7: 4, 8: 5, 9: 6 } as Record<number, number>)[level] ?? 4;
   return Array.from({ length: fallbackCount }, (_, i) => ({
     id: level * 100 + i,
     from_level: level,
     to_level: Math.min(9, level + 1),
-    title: `Документ ${i + 1} для УГТ ${level}`,
-    description: `Обязательный документ по ГОСТ Р 58048-2017 для перехода УГТ ${level}→${level + 1}`,
+    title: t("mockDocTitle", { index: i + 1, level }),
+    description: t("mockDocDesc", { level, next: Math.min(9, level + 1) }),
     template_version: "v1",
     uploaded: false,
   }));

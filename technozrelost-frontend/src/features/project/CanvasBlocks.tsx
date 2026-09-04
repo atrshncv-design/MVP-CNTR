@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { PROJECT_TAGS, validateTags } from "@/lib/types";
+import { PROJECT_TAGS, asTranslateFn, getProjectTags, getTagLabel, validateTagsT } from "@/lib/types";
 import type { ProjectDetailOut, ProjectCardOut } from "@/lib/types";
 import { useDebouncedValue } from "@/lib/filters";
 
@@ -89,6 +89,8 @@ export interface CanvasValue {
  */
 export function CanvasBlocks({ project, detail, value, onChange, className = "" }: CanvasBlocksProps) {
   const t = useTranslations("project");
+  // Таксономия — новый API таска 01: метки через переводчик, в стейте канонические значения.
+  const tTax = asTranslateFn(useTranslations("taxonomy"));
   const { data: session } = useSession();
   const userRoles: string[] = (session?.user?.roles as string[]) ?? [];
   const userId = session?.user?.id ? Number(session.user.id) : null;
@@ -204,17 +206,22 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
   };
 
   // дебаунс поиска по тегам (lib/filters, G55)
+  // Метки — локализованные (getProjectTags, порядок каноники), значения в стейте — канонические.
   const [tagQuery, setTagQuery] = React.useState("");
   const debouncedQuery = useDebouncedValue(tagQuery, 300);
+  const tagOptions = React.useMemo(() => {
+    const labels = getProjectTags(tTax);
+    return PROJECT_TAGS.map((tagValue, i) => ({ value: tagValue, label: labels[i] ?? tagValue }));
+  }, [tTax]);
   const filteredTags = React.useMemo(() => {
-    if (!debouncedQuery) return PROJECT_TAGS;
+    if (!debouncedQuery) return tagOptions;
     const q = debouncedQuery.toLowerCase();
-    return (PROJECT_TAGS as readonly string[]).filter((tTag) => tTag.toLowerCase().includes(q));
-  }, [debouncedQuery]);
+    return tagOptions.filter((opt) => opt.label.toLowerCase().includes(q));
+  }, [debouncedQuery, tagOptions]);
 
   // подсчёт видимых — для теста 15 блоков (без учёта скрытых на УГТ1)
   // показываем также теги и бюджет как отдельные блоки, но они вне канвы
-  const tagError = validateTags(local.tags);
+  const tagError = validateTagsT(tTax, local.tags);
 
   return (
     <section className={`tz-card p-6 ${className}`} data-testid="canvas-blocks" aria-label={t("ariaLabel")}>
@@ -252,30 +259,30 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
           disabled={!canEdit}
         />
         <div className="flex flex-wrap gap-2">
-          {filteredTags.map((tag) => {
-            const active = local.tags.includes(tag);
+          {filteredTags.map(({ value, label }) => {
+            const active = local.tags.includes(value);
             return (
               <button
-                key={tag}
+                key={value}
                 type="button"
                 disabled={!canEdit}
                 onClick={() => {
                   if (!canEdit) return;
-                  const next = active ? local.tags.filter((tTag) => tTag !== tag) : [...local.tags, tag];
+                  const next = active ? local.tags.filter((tTag) => tTag !== value) : [...local.tags, value];
                   if (next.length > 5) return;
                   handleChange("tags", next);
                 }}
                 className={`tz-chip ${active ? "tz-chip-active" : ""} ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`}
                 aria-pressed={active}
-                aria-label={t("tagAria", { tag })}
+                aria-label={t("tagAria", { tag: label })}
               >
-                {tag}
+                {label}
                 {active && <span aria-hidden="true"> ×</span>}
               </button>
             );
           })}
         </div>
-        {local.tags.length > 0 && <p className="mt-2 text-xs text-tz-muted">{t("selected", { tags: local.tags.join(", ") })}</p>}
+        {local.tags.length > 0 && <p className="mt-2 text-xs text-tz-muted">{t("selected", { tags: local.tags.map((tagValue) => getTagLabel(tTax, tagValue)).join(", ") })}</p>}
         {tagError && <p role="alert" className="mt-2 text-xs text-tz-danger">{tagError}</p>}
         {!canEdit && <p className="mt-1 text-xs text-tz-muted">{disabledHint}</p>}
       </div>

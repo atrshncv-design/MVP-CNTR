@@ -4,6 +4,8 @@
  * для перехода current→next; прогресс красится цветом --tz-ugt-N. Логика
  * используется в UgtLine и Checklist, тестируется юнитом.
  */
+import type { TranslateFn } from "@/lib/types";
+import { projectTranslator } from "./i18n.ts";
 
 // Fallback числа секторов per уровень, если бэк недоступен.
 // Допущение в коде (тикет 03: «если бэка нет — мок 3-7 секторов per level»):
@@ -84,21 +86,33 @@ export function getUgtColor(level: number): string {
 
 /**
  * Хелпер для бейджа возврата G50 — hard-gate.
- * Если control_point или проект в статусе rejected — возвращает текст бейджа
- * «Возврат на УГТ N — Причина: {rejection_reason|decision}» (G50).
+ * Тексты — из словаря project через переводчик (обе локали, подстановки
+ * параметрами, без склейки фрагментов в коде). Причина без значения —
+ * переведённое слово returnNoReason как параметр, а не конкатенация.
  * Используется в карточке проекта и истории AuditTrail (стрелка назад).
+ */
+export function getReturnBadgeT(
+  t: TranslateFn,
+  status: string,
+  rejectionReason?: string | null,
+  fromLevel?: number | null,
+): string | null {
+  if (status !== "rejected" && status !== "rejected_by_manager" && status !== "No-Go" && status !== "no_go") return null;
+  const reason = rejectionReason?.trim() ? rejectionReason.trim() : t("returnNoReason");
+  if (fromLevel != null) return t("returnWithLevel", { level: fromLevel, reason });
+  return t("returnWithoutLevel", { reason });
+}
+
+/**
+ * Совместимость (HardGateBadge вне зоны, старые вызовы): та же семантика,
+ * тексты через зонный переводчик текущей локали. Новых литералов не вводит.
  */
 export function getReturnBadge(
   status: string,
   rejectionReason?: string | null,
   fromLevel?: number | null,
 ): string | null {
-  if (status !== "rejected" && status !== "rejected_by_manager" && status !== "No-Go" && status !== "no_go") return null;
-  const lvl = fromLevel != null ? ` на УГТ ${fromLevel}` : "";
-  const reason = rejectionReason?.trim()
-    ? ` — Причина: ${rejectionReason.trim()}`
-    : " — Причина: не указана";
-  return `Возврат${lvl}${reason}`;
+  return getReturnBadgeT(projectTranslator(), status, rejectionReason, fromLevel);
 }
 
 /** Проверка hard-gate: rejected статус проекта или КТ */

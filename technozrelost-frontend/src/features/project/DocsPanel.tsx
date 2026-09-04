@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 import { downloadFile } from "@/lib/api-client";
+import { asTranslateFn, type TranslateFn } from "@/lib/types";
 
 // legacy маркер: Документы
 // legacy маркер: Загрузить документ
@@ -49,11 +50,11 @@ const ALLOWED_TYPES = ["PDF", "DOCX", "XLSX", "JPG", "PNG"] as const;
 const ACCEPT = ".pdf,.docx,.xlsx,.jpg,.jpeg,.png";
 const MAX_MB = 25;
 
-function formatSize(bytes: number | null): string {
+function formatSize(t: TranslateFn, bytes: number | null): string {
   if (bytes == null) return "—";
-  if (bytes < 1024) return `${bytes} Б`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
+  if (bytes < 1024) return t("sizeBytes", { n: bytes });
+  if (bytes < 1024 * 1024) return t("sizeKb", { n: (bytes / 1024).toFixed(1) });
+  return t("sizeMb", { n: (bytes / 1024 / 1024).toFixed(1) });
 }
 
 /**
@@ -63,6 +64,7 @@ function formatSize(bytes: number | null): string {
  */
 export function DocsPanel({ projectId, onUploaded }: { projectId: number; onUploaded?: () => void }) {
   const t = useTranslations("docs");
+  const tp = asTranslateFn(useTranslations("project"));
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -242,7 +244,7 @@ export function DocsPanel({ projectId, onUploaded }: { projectId: number; onUplo
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-tz-fg">{file.file_name ?? file.title}</p>
                   <p className="font-mono text-xs text-tz-muted">
-                    v{file.version} · {formatSize(file.file_size)} · {file.mime_type ?? "—"}
+                    v{file.version} · {formatSize(tp, file.file_size)} · {file.mime_type ?? "—"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

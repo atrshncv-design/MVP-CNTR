@@ -12,4 +12,6 @@ export { ActionsPanel } from "./ActionsPanel";
 export { HistoryPanel } from "./HistoryPanel";
 export { ProjectCard } from "./ProjectCard";
 export { getSectorsForLevel, getFilledSectors, getUgtColor, FALLBACK_SECTORS } from "./utils";
+export { getReturnBadgeT } from "./utils";
+export { projectTranslator, dateTimeLocale } from "./i18n";
 export { useAutosave } from "./useAutosave";

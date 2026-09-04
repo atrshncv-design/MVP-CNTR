@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { FALLBACK_SECTORS, getSectorsForLevel, getUgtColor } from "./utils";
 import type { StageRequirementLike } from "./utils";
 
@@ -29,6 +30,7 @@ export function UgtLine({
   documents,
   className = "",
 }: UgtLineProps) {
+  const t = useTranslations("project");
   const lvl = Math.max(1, Math.min(9, Math.round(currentLevel || 1)));
 
   // Для текущего уровня считаем total по реальным требованиям, иначе fallback.
@@ -38,7 +40,7 @@ export function UgtLine({
       data-testid="ugt-line"
       data-current={lvl}
       className={`flex flex-col gap-2 ${className}`}
-      aria-label={`Шкала УГТ, текущий уровень ${lvl}`}
+      aria-label={t("ugtScaleAria", { level: lvl })}
     >
       <div className="flex items-stretch gap-1">
         {Array.from({ length: 9 }, (_, idx) => {
@@ -75,22 +77,22 @@ export function UgtLine({
                 isCurrent ? "border-tz-accent bg-tz-accent-soft" : "border-tz-border bg-tz-surface"
               }`}
               style={isCurrent ? { borderColor: color } : undefined}
-              title={isCurrent ? `Текущий УГТ ${level}: ${filled}/${total} документов` : `УГТ ${level}: ${total} документов по ГОСТу`}
+              title={isCurrent ? t("ugtCurrentTitle", { level, filled, total }) : t("ugtLevelTitle", { level, total })}
             >
               <span
                 className={`font-mono text-xs font-bold ${isCurrent ? "text-tz-accent" : "text-tz-muted"}`}
                 style={isCurrent ? { color } : undefined}
               >
-                УГТ {level}
+                {t("ugtShort", { level })}
               </span>
               <div className="flex w-full justify-center gap-px">
                 {Array.from({ length: total }, (_, sIdx) => {
                   const isFilled = sIdx < filled;
                   const req = levelRequirements[sIdx] ?? null;
-                  // тултип как в требовании: «Документ: ПМИ (14 с.) — загружен»
-                  const docTitle = req?.title ?? documents?.[sIdx]?.title ?? `Документ ${sIdx + 1}`;
+                  // тултип как в требовании: документ + число страниц + статус загрузки
+                  const docTitle = req?.title ?? documents?.[sIdx]?.title ?? t("ugtDocFallback", { index: sIdx + 1 });
                   const pages = req ? 14 : 14; // мок pages, в реальности из template_metadata
-                  const statusText = isFilled ? "загружен" : "ожидает";
+                  const statusText = isFilled ? t("ugtLoaded") : t("ugtPending");
                   return (
                     <div
                       key={sIdx}
@@ -101,8 +103,8 @@ export function UgtLine({
                         // подсвечиваем текущий уровень цветом --tz-ugt-5 в тесте
                         // для уровня 5 isFilled использует var(--tz-ugt-5) автоматически
                       }}
-                      title={`Документ: ${docTitle} (${pages} с.) — ${statusText}`}
-                      aria-label={`Сектор ${sIdx + 1}/${total} УГТ ${level}: ${docTitle} — ${statusText}`}
+                      title={t("ugtSectorTitle", { doc: docTitle, pages, status: statusText })}
+                      aria-label={t("ugtSectorAria", { index: sIdx + 1, total, level, doc: docTitle, status: statusText })}
                     />
                   );
                 })}
@@ -112,8 +114,8 @@ export function UgtLine({
         })}
       </div>
       <div className="flex justify-between px-1 font-mono text-[10px] leading-none text-tz-muted">
-        <span>УГТ 1</span>
-        <span>УГТ 9</span>
+        <span>{t("ugtShort", { level: 1 })}</span>
+        <span>{t("ugtShort", { level: 9 })}</span>
       </div>
     </div>
   );

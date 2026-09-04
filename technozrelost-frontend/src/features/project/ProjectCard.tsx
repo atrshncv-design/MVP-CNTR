@@ -15,8 +15,9 @@ import { ActionsPanel } from "./ActionsPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { useAutosave } from "./useAutosave";
 import type { DocumentOut, ProjectDetailOut } from "@/lib/types";
+import { asTranslateFn } from "@/lib/types";
 import { getStatusColor, getStatusLabel } from "@/lib/status";
-import { getReturnBadge } from "./utils";
+import { getReturnBadgeT } from "./utils";
 
 interface ProjectCardProps {
   detail: ProjectDetailOut;
@@ -31,6 +32,7 @@ interface ProjectCardProps {
  */
 export function ProjectCard({ detail, onProjectChange, className = "" }: ProjectCardProps) {
   const t = useTranslations("projects");
+  const tp = useTranslations("project");
   const { project, audit_trail, members, documents: initialDocuments, control_points } = detail;
   const statusColor = getStatusColor(project.status);
   // Бюджет всем виден (G38) — форматирование Intl.NumberFormat ru-RU RUB, без «по запросу»
@@ -57,7 +59,8 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
     (rejectedCp?.decision as string | null) ??
     (projectRejected ? (project as unknown as { rejection_reason?: string | null }).rejection_reason ?? null : null);
   const hardGateStatus = rejectedCp ? "rejected" : projectRejected ? "rejected" : "";
-  const returnBadge = hardGateStatus ? getReturnBadge(hardGateStatus, rejectionReason, project.current_level) : null;
+  // Бейдж через переводчик project (asTranslateFn: next-intl скоуп уже call+raw).
+  const returnBadge = hardGateStatus ? getReturnBadgeT(asTranslateFn(tp), hardGateStatus, rejectionReason, project.current_level) : null;
 
   const [canvasValue, setCanvasValue] = React.useState<CanvasValue | undefined>(undefined);
   const [, setShowEdit] = React.useState(false);
@@ -71,6 +74,7 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
     storageKey,
     intervalMs: 30_000,
     enabled: !!canvasValue,
+    leaveMessage: tp("leaveConfirm"),
     onSave: async (val) => {
       // в реальности — PATCH /projects/{id}/canvas, пока localStorage + лог
       if (val) {
@@ -137,7 +141,7 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
             {(project.tags?.[0] ?? project.category) && (
               <span className="tz-badge tz-badge-neutral">{project.tags?.[0] ?? project.category}</span>
             )}
-            <span className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</span>
+            <span className="font-mono text-xs text-tz-muted">{tp("projectCode", { id: project.id })}</span>
             {/* бюджет всем */}
             <span className="tz-badge tz-badge-neutral" data-testid="budget-badge">
               {t("budgetBadge", { budget: budgetText })}
@@ -159,7 +163,7 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
         <div className="tz-card shrink-0 px-4 py-3">
           <div className="tz-eyebrow">{t("ugtLevel")}</div>
           <div className="mt-1.5 flex items-center gap-1.5">
-            <span className="tz-ugt" style={{ color: getStatusColor(project.status) }}>{`УГТ ${project.current_level}`}</span>
+            <span className="tz-ugt" style={{ color: getStatusColor(project.status) }}>{tp("ugtShort", { level: project.current_level })}</span>
             <span className="text-tz-muted">→</span>
             <span className="tz-ugt tz-ugt-strong">{project.target_level}</span>
           </div>
@@ -236,7 +240,7 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
       {hasUnsaved && (
         <div
           role="dialog"
-          aria-label="Несохранённые изменения"
+          aria-label={tp("unsavedAria")}
           data-testid="unsaved-dialog"
           className="fixed bottom-4 right-4 z-50 rounded-xl border border-tz-warning bg-tz-warning-soft px-4 py-3 text-sm text-tz-warning shadow-lg"
         >

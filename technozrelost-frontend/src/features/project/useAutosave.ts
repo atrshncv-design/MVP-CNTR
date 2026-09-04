@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { projectTranslator } from "./i18n.ts";
 
 /**
  * useAutosave — автосохранение 30с + beforeunload диалог (G40).
@@ -13,12 +14,15 @@ export function useAutosave<T>({
   intervalMs = 30_000,
   storageKey,
   enabled = true,
+  leaveMessage,
 }: {
   value: T;
   onSave?: (val: T) => Promise<void> | void;
   intervalMs?: number;
   storageKey?: string;
   enabled?: boolean;
+  /** Текст beforeunload-диалога; по умолчанию — словарь project текущей локали. */
+  leaveMessage?: string;
 }) {
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = React.useState<string | null>(null);
@@ -29,16 +33,17 @@ export function useAutosave<T>({
   // beforeunload диалог
   React.useEffect(() => {
     if (!enabled) return;
+    const message = leaveMessage ?? projectTranslator()("leaveConfirm");
     const handler = (e: BeforeUnloadEvent) => {
       if (hasUnsaved) {
         e.preventDefault();
-        e.returnValue = "Есть несохранённые изменения. Покинуть страницу?";
+        e.returnValue = message;
         return e.returnValue;
       }
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [hasUnsaved, enabled]);
+  }, [hasUnsaved, enabled, leaveMessage]);
 
   // модалка при уходе: опционально можно слушать route change, но beforeunload покрывает перезагрузку/закрытие
   // автосохранение каждые intervalMs

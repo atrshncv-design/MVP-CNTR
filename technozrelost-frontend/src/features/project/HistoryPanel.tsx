@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { Clock, History, AlertTriangle } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import type { AuditTrailEntryOut } from "@/lib/types";
+import { dateTimeLocale } from "./i18n";
 
 interface HistoryPanelProps {
   entries?: AuditTrailEntryOut[] | null;
@@ -16,6 +18,8 @@ interface HistoryPanelProps {
  * Hard-gate: при No-Go/rejected — стрелка назад timeline + бейдж «Возврат на УГТ N — Причина: …» (G50).
  */
 export function HistoryPanel({ entries, className = "", returnBadge }: HistoryPanelProps) {
+  const t = useTranslations("project");
+  const dateLocale = dateTimeLocale(useLocale());
   const list = entries ?? [];
   const showReturnBadge = !!returnBadge;
 
@@ -28,13 +32,13 @@ export function HistoryPanel({ entries, className = "", returnBadge }: HistoryPa
   };
 
   return (
-    <section className={`tz-card p-6 ${className}`} data-testid="history-panel" aria-label="История изменений">
+    <section className={`tz-card p-6 ${className}`} data-testid="history-panel" aria-label={t("historyAria")}>
       <div className="flex items-center gap-2">
         <History size={18} className="text-tz-muted" />
-        <h2 className="tz-card-title">История изменений</h2>
+        <h2 className="tz-card-title">{t("historyTitle")}</h2>
         <span className="tz-badge tz-badge-neutral">{list.length}</span>
       </div>
-      <p className="mt-1 text-sm text-tz-muted">Лента AuditTrail видна всем участникам (G22).</p>
+      <p className="mt-1 text-sm text-tz-muted">{t("historyDesc")}</p>
 
       {showReturnBadge && (
         <div
@@ -47,7 +51,7 @@ export function HistoryPanel({ entries, className = "", returnBadge }: HistoryPa
       )}
 
       {list.length === 0 ? (
-        <p className="mt-4 text-sm text-tz-muted">История изменений пуста</p>
+        <p className="mt-4 text-sm text-tz-muted">{t("historyEmpty")}</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {list.map((entry) => {
@@ -63,7 +67,7 @@ export function HistoryPanel({ entries, className = "", returnBadge }: HistoryPa
                   <span
                     className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--tz-review)] text-white"
                     aria-hidden="true"
-                    title="Возврат назад — No-Go"
+                    title={t("historyReturnTitle")}
                   >
                     ←
                   </span>
@@ -73,7 +77,7 @@ export function HistoryPanel({ entries, className = "", returnBadge }: HistoryPa
                 <div className="min-w-0 flex-1">
                   <p className={`text-sm font-medium ${rejected ? "text-[var(--tz-review)]" : "text-tz-fg"}`}>
                     {rejected ? `← ${entry.action}` : entry.action}
-                    {rejected && <span className="tz-badge tz-badge-review ml-2">Возврат на УГТ — Причина указана в timeline</span>}
+                    {rejected && <span className="tz-badge tz-badge-review ml-2">{t("historyReturnBadge")}</span>}
                   </p>
                   {entry.details && Object.keys(entry.details).length > 0 && (
                     <p className="mt-0.5 break-all font-mono text-xs text-tz-muted">{JSON.stringify(entry.details)}</p>
@@ -81,7 +85,7 @@ export function HistoryPanel({ entries, className = "", returnBadge }: HistoryPa
                   {entry.created_at && (
                     <p className="mt-1 flex items-center gap-1 text-xs text-tz-muted">
                       <Clock size={12} />
-                      {new Date(entry.created_at).toLocaleString("ru-RU")}
+                      {new Date(entry.created_at).toLocaleString(dateLocale)}
                     </p>
                   )}
                 </div>

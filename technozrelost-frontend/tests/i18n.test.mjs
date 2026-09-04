@@ -118,6 +118,43 @@ test("i18n: next.config — createNextIntlPlugin", () => {
   assert.match(cfg, /src\/i18n\/request\.ts/);
 });
 
+test("i18n: неймспейс project — паритет обеих пар словарей и резолв каждого ключа в ru/en", async () => {
+  // Шов таска 02: ключи обеих локалей и обеих пар (src/messages + messages),
+  // каждый ключ резолвится переводчиком без эха ключа; неверный ключ краснеет.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const pairs = [
+    ["src/messages/ru.json", "src/messages/en.json"],
+    ["messages/ru.json", "messages/en.json"],
+  ];
+  const scopes = {};
+  for (const [ruPath, enPath] of pairs) {
+    const ru = JSON.parse(read(ruPath)).project;
+    const en = JSON.parse(read(enPath)).project;
+    assert.ok(ru && en, `${ruPath}: неймспейс project отсутствует`);
+    assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort(), `${ruPath}: паритет ключей project`);
+    scopes[ruPath] = ru;
+  }
+  assert.deepEqual(
+    Object.keys(scopes["src/messages/ru.json"]).sort(),
+    Object.keys(scopes["messages/ru.json"]).sort(),
+    "пары словарей project расходятся",
+  );
+  const ruT = translatorFor("project", "ru");
+  const enT = translatorFor("project", "en");
+  for (const key of Object.keys(scopes["src/messages/ru.json"])) {
+    const tpl = scopes["src/messages/ru.json"][key];
+    assert.equal(typeof tpl, "string", `project.${key} не строка`);
+    const params = Object.fromEntries([...tpl.matchAll(/\{(\w+)\}/g)].map((m) => [m[1], "1"]));
+    for (const [locale, t] of [["ru", ruT], ["en", enT]]) {
+      const val = t(key, params);
+      assert.equal(typeof val, "string", `project.${key} (${locale}) не резолвится`);
+      assert.ok(val.length > 0, `project.${key} (${locale}) пуст`);
+      assert.notEqual(val, key, `project.${key} (${locale}): эхо ключа — неверный ключ`);
+    }
+    assert.doesNotMatch(enT(key, params), /[А-Яа-яЁё]/, `project.${key} (en) содержит кириллицу`);
+  }
+});
+
 test("i18n: useTranslations используется в UI (300+ ключей via hook)", () => {
   // проверяем что несколько ключевых UI файлов используют next-intl
   const files = [

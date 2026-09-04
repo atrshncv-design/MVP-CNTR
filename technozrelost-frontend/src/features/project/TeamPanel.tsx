@@ -4,6 +4,7 @@
 import * as React from "react";
 import { Users, ShieldCheck, RefreshCw } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 import type { ProjectMemberOut } from "@/lib/types";
 
@@ -19,6 +20,7 @@ interface TeamPanelProps {
  */
 export function TeamPanel({ projectId, members: initialMembers, className = "" }: TeamPanelProps) {
   const { data: session } = useSession();
+  const t = useTranslations("project");
   const token = session?.user?.accessToken;
   const [members, setMembers] = React.useState<ProjectMemberOut[] | null>(initialMembers ?? null);
   const [loading, setLoading] = React.useState(!initialMembers);
@@ -45,11 +47,11 @@ export function TeamPanel({ projectId, members: initialMembers, className = "" }
       setMembers(data.members ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить команду");
+      setError(e instanceof Error ? e.message : t("errTeam"));
     } finally {
       setLoading(false);
     }
-  }, [token, projectId, initialMembers]);
+  }, [token, projectId, initialMembers, t]);
 
   React.useEffect(() => {
     if (!initialMembers) void load();
@@ -68,14 +70,14 @@ export function TeamPanel({ projectId, members: initialMembers, className = "" }
   }
 
   return (
-    <section className={`tz-card p-6 ${className}`} data-testid="team-panel" aria-label="Команда проекта">
+    <section className={`tz-card p-6 ${className}`} data-testid="team-panel" aria-label={t("teamAria")}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Users size={18} className="text-tz-accent" />
-          <h2 className="tz-card-title">Команда</h2>
+          <h2 className="tz-card-title">{t("teamTitle")}</h2>
           {members && <span className="tz-badge tz-badge-neutral">{members.length}</span>}
         </div>
-        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label="Обновить команду">
+        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label={t("teamRefresh")}>
           <RefreshCw size={15} />
         </button>
       </div>
@@ -87,7 +89,7 @@ export function TeamPanel({ projectId, members: initialMembers, className = "" }
       )}
 
       {!members || members.length === 0 ? (
-        <p className="mt-3 text-sm text-tz-muted">Участники не назначены</p>
+        <p className="mt-3 text-sm text-tz-muted">{t("teamEmpty")}</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {members.map((m) => (
@@ -101,10 +103,10 @@ export function TeamPanel({ projectId, members: initialMembers, className = "" }
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-tz-fg">
-                  {m.role_in_project} {m.is_priority && <span className="tz-badge tz-badge-success ml-2">приоритет</span>}
+                  {m.role_in_project} {m.is_priority && <span className="tz-badge tz-badge-success ml-2">{t("teamPriority")}</span>}
                   {m.is_project_admin && <ShieldCheck size={14} className="ml-2 inline text-tz-success" />}
                 </p>
-                <p className="font-mono text-xs text-tz-muted">ID: {m.user_id} · статус: {m.status}</p>
+                <p className="font-mono text-xs text-tz-muted">{t("teamMeta", { id: m.user_id, status: m.status })}</p>
               </div>
             </li>
           ))}
