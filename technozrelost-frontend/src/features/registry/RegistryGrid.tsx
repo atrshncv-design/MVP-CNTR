@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AlertCircle, FilePlus2 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { Empty } from "@/components/ui/empty";
 import { ErrorState } from "@/components/ui/error";
@@ -39,8 +40,8 @@ export function RegistryGrid<T>({
   onLoadMore,
   loadingMore,
   renderCard,
-  emptyTitle = "Пока нет проектов — создайте заявку",
-  emptyDescription = "Проекты появляются в реестре после публикации.",
+  emptyTitle,
+  emptyDescription,
   emptyAction,
 }: {
   items: T[];
@@ -56,6 +57,9 @@ export function RegistryGrid<T>({
   emptyDescription?: string;
   emptyAction?: React.ReactNode;
 }) {
+  const t = useTranslations("registry");
+  const title = emptyTitle ?? t("emptyDefaultTitle");
+  const description = emptyDescription ?? t("emptyDefaultDescription");
   if (loading) {
     return <RegistrySkeleton count={6} />;
   }
@@ -67,8 +71,8 @@ export function RegistryGrid<T>({
           <span className="tz-empty-icon">
             <AlertCircle size={22} aria-hidden="true" />
           </span>
-          <h2 className="tz-empty-title">Доступ запрещён</h2>
-          <p className="tz-empty-text">У вас нет прав для просмотра этого реестра (403).</p>
+          <h2 className="tz-empty-title">{t("forbiddenTitle")}</h2>
+          <p className="tz-empty-text">{t("forbiddenDesc")}</p>
         </div>
       );
     }
@@ -79,12 +83,12 @@ export function RegistryGrid<T>({
     return (
       <Empty
         icon={<FilePlus2 size={22} aria-hidden="true" />}
-        title={emptyTitle}
-        description={emptyDescription}
+        title={title}
+        description={description}
         action={
           emptyAction ?? (
             <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-              Создать заявку
+              {t("createRequest")}
             </Link>
           )
         }
@@ -107,7 +111,7 @@ export function RegistryGrid<T>({
             disabled={!!loadingMore}
             className="tz-btn tz-btn-secondary"
           >
-            {loadingMore ? "Загрузка…" : "Показать ещё"}
+            {loadingMore ? t("loadingMore") : t("loadMore")}
           </button>
         </div>
       ) : null}

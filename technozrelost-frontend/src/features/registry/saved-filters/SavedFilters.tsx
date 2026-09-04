@@ -9,9 +9,12 @@
 
 import * as React from "react";
 import { Bookmark, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import type { RegistryParams } from "@/lib/types";
+import { asTranslateFn } from "@/lib/types";
 
+import { describeFiltersT } from "../i18n.ts";
 import { useSavedFilters } from "./useSavedFilters";
 
 export interface SavedFiltersProps {
@@ -22,6 +25,8 @@ export interface SavedFiltersProps {
 }
 
 export function SavedFilters({ filters, onApply }: SavedFiltersProps) {
+  const t = useTranslations("registry");
+  const tfn = asTranslateFn(t);
   const { items, loading, error, isFallback, blockedReason, save, remove } = useSavedFilters();
   const [name, setName] = React.useState("");
   const [saving, setSaving] = React.useState(false);
@@ -62,7 +67,7 @@ export function SavedFilters({ filters, onApply }: SavedFiltersProps) {
     <div className="tz-card p-4" data-testid="saved-filters">
       <div className="mb-3 flex items-center gap-2">
         <Bookmark size={16} className="text-tz-muted" aria-hidden="true" />
-        <span className="tz-eyebrow">Сохранённые фильтры</span>
+        <span className="tz-eyebrow">{t("savedFiltersTitle")}</span>
         {isFallback ? (
           <span
             className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800"
@@ -83,7 +88,7 @@ export function SavedFilters({ filters, onApply }: SavedFiltersProps) {
       {/* Сохранение — без лимита */}
       <div className="space-y-2">
         <label className="block">
-          <span className="tz-label">Название фильтра</span>
+          <span className="tz-label">{t("savedFilterNameLabel")}</span>
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -95,10 +100,10 @@ export function SavedFilters({ filters, onApply }: SavedFiltersProps) {
                   void handleSave();
                 }
               }}
-              placeholder="Например, УГТ 7+ Москва"
+              placeholder={t("saveFilterPlaceholder")}
               className="tz-input flex-1"
               data-testid="saved-filters-input"
-              aria-label="Имя фильтра"
+              aria-label={t("savedFilterNameAria")}
             />
             <button
               type="button"
@@ -106,29 +111,29 @@ export function SavedFilters({ filters, onApply }: SavedFiltersProps) {
               disabled={!name.trim() || saving}
               className="tz-btn tz-btn-secondary shrink-0 disabled:opacity-50"
               data-testid="saved-filters-save"
-              aria-label="Сохранить фильтр"
+              aria-label={t("saveFilter")}
             >
-              {saving ? "Сохранение…" : "Сохранить фильтр"}
+              {saving ? t("savedSaving") : t("saveFilter")}
             </button>
           </div>
           {!hasFilters ? (
-            <span className="mt-1 block text-xs text-tz-muted">Сохранит текущие фильтры (сейчас фильтры не заданы — сохранится пустой набор).</span>
+            <span className="mt-1 block text-xs text-tz-muted">{t("savedEmptyHint")}</span>
           ) : null}
         </label>
       </div>
 
       {/* Список «Мои фильтры» — без лимита, клик применяет, крестик удаляет */}
       <div className="mt-4">
-        <p className="tz-label mb-2">Мои фильтры {items.length ? `(${items.length})` : ""}</p>
+        <p className="tz-label mb-2">{t("myFilters")}{items.length ? ` (${items.length})` : ""}</p>
 
         {loading ? (
-          <p className="text-sm text-tz-muted" data-testid="saved-filters-loading">Загрузка…</p>
+          <p className="text-sm text-tz-muted" data-testid="saved-filters-loading">{t("savedLoading")}</p>
         ) : error ? (
           <p className="text-sm text-tz-danger" data-testid="saved-filters-error">{error}</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-tz-muted" data-testid="saved-filters-empty">Пока нет сохранённых фильтров — введите имя и нажмите «Сохранить фильтр».</p>
+          <p className="text-sm text-tz-muted" data-testid="saved-filters-empty">{t("noSavedFilters")}</p>
         ) : (
-          <ul className="space-y-1.5" data-testid="saved-filters-list" aria-label="Мои фильтры">
+          <ul className="space-y-1.5" data-testid="saved-filters-list" aria-label={t("myFilters")}>
             {items.map((f) => (
               <li
                 key={String(f.id)}
@@ -139,22 +144,22 @@ export function SavedFilters({ filters, onApply }: SavedFiltersProps) {
                   type="button"
                   onClick={() => handleApply(f.filters)}
                   className="flex-1 truncate text-left text-sm font-medium text-tz-fg hover:text-tz-accent"
-                  title={`Применить фильтр: ${f.name}`}
+                  title={t("savedApplyTitle", { name: f.name })}
                   data-testid="saved-filter-apply"
-                  aria-label={`Применить фильтр ${f.name}`}
+                  aria-label={t("savedApplyAria", { name: f.name })}
                 >
                   <span className="block truncate">{f.name}</span>
                   <span className="block truncate text-xs font-normal text-tz-muted">
-                    {describeFilters(f.filters)}
+                    {describeFiltersT(tfn, f.filters)}
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={(e) => void handleDelete(f.id, e)}
                   className="shrink-0 rounded-md p-1.5 text-tz-muted hover:bg-tz-danger-soft hover:text-tz-danger"
-                  aria-label={`Удалить фильтр ${f.name}`}
+                  aria-label={t("savedDeleteAria", { name: f.name })}
                   data-testid="saved-filter-delete"
-                  title="Удалить"
+                  title={t("savedDeleteTitle")}
                 >
                   <X size={16} aria-hidden="true" />
                 </button>
@@ -164,29 +169,17 @@ export function SavedFilters({ filters, onApply }: SavedFiltersProps) {
         )}
         {/* Подсказка без лимита */}
         {items.length > 0 ? (
-          <p className="mt-2 text-xs text-tz-muted">Без лимита — сохранено {items.length}. Клик по фильтру применяет, крестик удаляет.</p>
+          <p className="mt-2 text-xs text-tz-muted">{t("withoutLimit", { count: items.length })}</p>
         ) : null}
       </div>
 
       {items.length === 0 && !loading ? (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-tz-muted">
-          <Trash2 size={12} aria-hidden="true" /> Удаление — крестик справа от фильтра.
+          <Trash2 size={12} aria-hidden="true" /> {t("savedDeleteHint")}
         </p>
       ) : null}
     </div>
   );
-}
-
-function describeFilters(filters: RegistryParams): string {
-  const parts: string[] = [];
-  if (filters.search) parts.push(`поиск:${filters.search}`);
-  if (filters.tags?.length) parts.push(`теги:${filters.tags.join(",")}`);
-  if (filters.ugt_min != null || filters.ugt_max != null) parts.push(`УГТ ${filters.ugt_min ?? "—"}…${filters.ugt_max ?? "—"}`);
-  if (filters.status) parts.push(`статус:${filters.status}`);
-  if (filters.region) parts.push(`регион:${filters.region}`);
-  if (filters.budget_min != null || filters.budget_max != null) parts.push(`бюджет ${filters.budget_min ?? "—"}…${filters.budget_max ?? "—"}`);
-  if (!parts.length) return "без параметров";
-  return parts.join(" · ");
 }
 
 export default SavedFilters;

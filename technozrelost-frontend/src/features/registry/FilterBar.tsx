@@ -1,6 +1,4 @@
 "use client";
-// test marker: aria-label="Поиск по названию"
-// test marker: Поиск по тегам
 
 import * as React from "react";
 import { Filter, Search, SlidersHorizontal, X } from "lucide-react";
@@ -138,7 +136,7 @@ export function FilterBar({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {selectedTags.map((tTag) => (
               <span key={tTag} className="tz-badge tz-badge-accent">
-                {tTag} <button type="button" onClick={() => toggleTag(tTag)} className="ml-1" aria-label={`Убрать ${tTag}`}><X size={12} /></button>
+                {tTag} <button type="button" onClick={() => toggleTag(tTag)} className="ml-1" aria-label={t("filterRemoveTag", { tag: tTag })}><X size={12} /></button>
               </span>
             ))}
           </div>
@@ -156,7 +154,7 @@ export function FilterBar({
           >
             <option value="all">{t("filterAny")}</option>
             {UGT_LEVELS.map((l) => (
-              <option key={l} value={l}>УГТ {l}</option>
+              <option key={l} value={l}>{t("filterUgtOption", { level: l })}</option>
             ))}
           </select>
         </label>
@@ -169,7 +167,7 @@ export function FilterBar({
           >
             <option value="all">{t("filterAny")}</option>
             {UGT_LEVELS.map((l) => (
-              <option key={l} value={l}>УГТ {l}</option>
+              <option key={l} value={l}>{t("filterUgtOption", { level: l })}</option>
             ))}
           </select>
         </label>
@@ -280,5 +278,3 @@ export function FilterBar({
     </>
   );
 }
-
-// aria-label="Поиск по тегам"

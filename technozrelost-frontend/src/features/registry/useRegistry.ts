@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { ApiError, getRegistry } from "@/lib/api-client";
 import { useDebouncedValue, useRegistryFilters } from "@/lib/filters";
@@ -15,7 +16,7 @@ import { useRealtime } from "./useRealtime";
  * limit=20 after_id, сортировка по дате ↓, избранное localStorage, realtime.
  * Использует lib/api-client getRegistry с RegistryParams и фильтры из 01.
  *
- * TODO(status): бэк `projects/registry` игнорирует `status` — фильтр status
+ * TODO(status): фильтр status пока клиентский — бэк projects/registry его игнорирует.
  * делаем клиентским до бэк-фикса. См. issue #registry-status-filter.
  */
 const LIMIT = 20;
@@ -38,6 +39,7 @@ export function useRegistry(opts?: {
   const realtimeEnabled = opts?.realtime ?? true;
 
   const { data: session } = useSession();
+  const t = useTranslations("registry");
   const token = session?.user?.accessToken;
 
   // Фильтры → URL (источник 01, G55 шаринг)
@@ -109,7 +111,7 @@ export function useRegistry(opts?: {
         setHasMore(data.length >= LIMIT);
       } catch (e) {
         if (reqId !== requestIdRef.current) return;
-        const msg = e instanceof Error ? e.message : "Не удалось загрузить реестр";
+        const msg = e instanceof Error ? e.message : t("registryErrLoad");
         setError(msg);
         if (e instanceof ApiError) setErrorStatus(e.status);
       } finally {
@@ -119,7 +121,7 @@ export function useRegistry(opts?: {
         }
       }
     },
-    [token, effective],
+    [token, effective, t],
   );
 
   // Перезагрузка при смене фильтров (debounced search уже учтён)

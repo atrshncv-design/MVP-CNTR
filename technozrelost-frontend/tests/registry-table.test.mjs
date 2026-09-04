@@ -15,11 +15,21 @@ test("registry table view: core files exist (P3 R02)", () => {
   }
 });
 
-test("registry table: колонки ID/Название/УГТ/Статус/Бюджет/Действия", () => {
+test("registry table: колонки ID/Название/УГТ/Статус/Бюджет/Действия", async () => {
+  // Заголовки колонок — через словарь registry: точные строки обеих локалей
+  // резолвятся переводчиком (не чтением исходников).
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const ru = translatorFor("registry", "ru");
+  const en = translatorFor("registry", "en");
+  assert.deepEqual(
+    [ru("colId"), ru("colName"), ru("colUgt"), ru("colStatus"), ru("colBudget"), ru("colActions")],
+    ["ID", "Название", "УГТ", "Статус", "Бюджет", "Действия"],
+  );
+  assert.deepEqual(
+    [en("colId"), en("colName"), en("colUgt"), en("colStatus"), en("colBudget"), en("colActions")],
+    ["ID", "Name", "TRL", "Status", "Budget", "Actions"],
+  );
   const src = read("src/features/registry/RegistryTable.tsx");
-  for (const col of ["ID", "Название", "УГТ", "Статус", "Бюджет", "Действия"]) {
-    assert.ok(src.includes(col), `колонка ${col} не найдена`);
-  }
   // таблица рендерит те же данные что карточки — принимает items как RegistryGrid
   assert.match(src, /items/);
   assert.match(src, /RegistryProjectOut|getName|getId/);
@@ -56,13 +66,18 @@ test("registry table: сортировка кликом по заголовку"
   assert.match(src, /localeCompare/);
 });
 
-test("registry view toggle: карточки ↔ таблица", () => {
+test("registry view toggle: карточки ↔ таблица", async () => {
+  // Подписи вида — через словарь registry в обеих локалях.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.equal(translatorFor("registry", "ru")("viewCards"), "Карточки");
+  assert.equal(translatorFor("registry", "ru")("viewTable"), "Таблица");
+  assert.equal(translatorFor("registry", "en")("viewCards"), "Cards");
   const toggle = read("src/features/registry/RegistryViewToggle.tsx");
   assert.match(toggle, /RegistryViewToggle/);
   assert.match(toggle, /cards/);
   assert.match(toggle, /table/);
-  assert.match(toggle, /Карточки/);
-  assert.match(toggle, /Таблица/);
+  assert.match(toggle, /viewCards/);
+  assert.match(toggle, /viewTable/);
   assert.match(toggle, /aria-pressed/);
   assert.match(toggle, /LayoutGrid/);
   assert.match(toggle, /Table/);

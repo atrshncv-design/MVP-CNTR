@@ -176,11 +176,16 @@ test("session expired modal: фокус-ловушка + Escape + aria-labelledb
   assert.match(src, /aria-modal/);
 });
 
-test("filter bar: label htmlFor + aria-label для поиска", () => {
+test("filter bar: label htmlFor + aria-label для поиска", async () => {
   const fb = read("src/features/registry/FilterBar.tsx");
   assert.match(fb, /htmlFor=\{searchId\}/);
-  assert.match(fb, /aria-label="Поиск по названию"/);
-  assert.match(fb, /aria-label="Поиск по тегам"/);
+  // aria-подписи поиска — через словарь registry в обеих локалях
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.equal(translatorFor("registry", "ru")("filterSearchPlaceholder"), "Поиск по названию…");
+  assert.equal(translatorFor("registry", "ru")("filterTagsSearchLabel"), "Поиск по тегам");
+  assert.equal(translatorFor("registry", "en")("filterTagsSearchLabel"), "Search by tags");
+  assert.match(fb, /filterSearchPlaceholder/);
+  assert.match(fb, /filterTagsSearchLabel/);
 });
 
 test("registry table: caption, scope, aria-sort (axe table)", () => {

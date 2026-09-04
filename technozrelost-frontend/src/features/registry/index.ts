@@ -2,6 +2,7 @@ export { FavoriteStar } from "./FavoriteStar";
 export { useFavorites, favoritesKey, getFavorites, toggleFavorite } from "./favorites";
 export { useRealtime } from "./useRealtime";
 export { useRegistry } from "./useRegistry";
+export { registryTranslator, describeFiltersT } from "./i18n";
 export { RegistryCard } from "./RegistryCard";
 export { RegistryGrid, RegistrySkeleton } from "./RegistryGrid";
 export { RegistryTable, RegistryTableSkeleton } from "./RegistryTable";

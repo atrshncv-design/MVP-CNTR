@@ -8,6 +8,8 @@
 import type { RegistryParams } from "@/lib/types";
 import type { SavedFilterOut } from "@/lib/api-client";
 
+import { registryTranslator } from "../i18n.ts";
+
 export const SAVED_FILTERS_KEY = "tz:saved-filters";
 
 // Помогает пометить BLOCKED в отчёте — константа причины
@@ -52,7 +54,7 @@ export function addLocalSavedFilter(name: string, filters: RegistryParams): Save
   const now = new Date().toISOString();
   const entry: SavedFilter = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    name: name.trim() || `Фильтр ${list.length + 1}`,
+    name: name.trim() || registryTranslator()("savedDefaultName", { n: list.length + 1 }),
     filters: { ...filters },
     created_at: now,
   };

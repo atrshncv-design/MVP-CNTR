@@ -155,6 +155,42 @@ test("i18n: неймспейс project — паритет обеих пар сл
   }
 });
 
+test("i18n: неймспейс registry — паритет обеих пар словарей и резолв каждого ключа в ru/en", async () => {
+  // Шов таска 03: зеркало project-паритета для registry; неверный ключ краснеет.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const pairs = [
+    ["src/messages/ru.json", "src/messages/en.json"],
+    ["messages/ru.json", "messages/en.json"],
+  ];
+  const scopes = {};
+  for (const [ruPath, enPath] of pairs) {
+    const ru = JSON.parse(read(ruPath)).registry;
+    const en = JSON.parse(read(enPath)).registry;
+    assert.ok(ru && en, `${ruPath}: неймспейс registry отсутствует`);
+    assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort(), `${ruPath}: паритет ключей registry`);
+    scopes[ruPath] = ru;
+  }
+  assert.deepEqual(
+    Object.keys(scopes["src/messages/ru.json"]).sort(),
+    Object.keys(scopes["messages/ru.json"]).sort(),
+    "пары словарей registry расходятся",
+  );
+  const ruT = translatorFor("registry", "ru");
+  const enT = translatorFor("registry", "en");
+  for (const key of Object.keys(scopes["src/messages/ru.json"])) {
+    const tpl = scopes["src/messages/ru.json"][key];
+    assert.equal(typeof tpl, "string", `registry.${key} не строка`);
+    const params = Object.fromEntries([...tpl.matchAll(/\{(\w+)\}/g)].map((m) => [m[1], "1"]));
+    for (const [locale, t] of [["ru", ruT], ["en", enT]]) {
+      const val = t(key, params);
+      assert.equal(typeof val, "string", `registry.${key} (${locale}) не резолвится`);
+      assert.ok(val.length > 0, `registry.${key} (${locale}) пуст`);
+      assert.notEqual(val, key, `registry.${key} (${locale}): эхо ключа — неверный ключ`);
+    }
+    assert.doesNotMatch(enT(key, params), /[А-Яа-яЁё]/, `registry.${key} (en) содержит кириллицу`);
+  }
+});
+
 test("i18n: useTranslations используется в UI (300+ ключей via hook)", () => {
   // проверяем что несколько ключевых UI файлов используют next-intl
   const files = [

@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { ApiError, deleteFilter, getSavedFilters, saveFilter } from "@/lib/api-client";
 import type { SavedFilterIn, SavedFilterOut } from "@/lib/api-client";
@@ -45,6 +46,7 @@ function isNotFoundError(e: unknown): boolean {
 
 export function useSavedFilters(): UseSavedFiltersReturn {
   const { data: session } = useSession();
+  const t = useTranslations("registry");
   const token = session?.user?.accessToken;
 
   const [items, setItems] = useState<SavedFilterOut[]>([]);
@@ -98,7 +100,7 @@ export function useSavedFilters(): UseSavedFiltersReturn {
         // 404 → fallback localStorage + пометка BLOCKED
         loadFromLocal();
       } else {
-        const msg = e instanceof Error ? e.message : "Не удалось загрузить фильтры";
+        const msg = e instanceof Error ? e.message : t("savedErrLoad");
         setError(msg);
         // При других ошибках тоже пробуем показать локальные, но не помечаем fallback как основной
         // Сохраняем локальные как дополнение к ошибке
@@ -112,7 +114,7 @@ export function useSavedFilters(): UseSavedFiltersReturn {
     } finally {
       setLoading(false);
     }
-  }, [token, loadFromLocal]);
+  }, [token, loadFromLocal, t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- загрузка при монтировании вызывает setState
@@ -151,7 +153,7 @@ export function useSavedFilters(): UseSavedFiltersReturn {
             setBlockedReason(BLOCKED_REASON);
             return entry;
           }
-          const msg = e instanceof Error ? e.message : "Не удалось сохранить";
+          const msg = e instanceof Error ? e.message : t("savedErrSave");
           setError(msg);
           return null;
         }
@@ -176,7 +178,7 @@ export function useSavedFilters(): UseSavedFiltersReturn {
       }
       return entry;
     },
-    [token, isFallback],
+    [token, isFallback, t],
   );
 
   const remove = useCallback(
@@ -194,7 +196,7 @@ export function useSavedFilters(): UseSavedFiltersReturn {
             setBlockedReason(BLOCKED_REASON);
             return;
           }
-          const msg = e instanceof Error ? e.message : "Не удалось удалить";
+          const msg = e instanceof Error ? e.message : t("savedErrDelete");
           setError(msg);
           return;
         }
@@ -204,7 +206,7 @@ export function useSavedFilters(): UseSavedFiltersReturn {
       // Также синхронизируем запись в storage — writeLocal...
       writeLocalSavedFilters(next);
     },
-    [token, isFallback],
+    [token, isFallback, t],
   );
 
   return { items, loading, error, isFallback, blockedReason, refresh, save, remove };

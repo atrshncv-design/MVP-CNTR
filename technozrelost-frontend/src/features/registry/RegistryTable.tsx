@@ -83,18 +83,19 @@ function statusOrder(status: string): number {
 
 // ——— Skeleton таблицы ——————————————————————————————————————————
 export function RegistryTableSkeleton({ rows = 6 }: { rows?: number }) {
+  const t = useTranslations("registry");
   return (
     <div className="tz-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-tz-border bg-tz-soft">
-              <th className="px-4 py-3 text-left font-semibold">ID</th>
-              <th className="px-4 py-3 text-left font-semibold">Название</th>
-              <th className="px-4 py-3 text-left font-semibold">УГТ</th>
-              <th className="px-4 py-3 text-left font-semibold">Статус</th>
-              <th className="px-4 py-3 text-left font-semibold">Бюджет</th>
-              <th className="px-4 py-3 text-left font-semibold">Действия</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("colId")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("colName")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("colUgt")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("colStatus")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("colBudget")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("colActions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -140,8 +141,8 @@ export function RegistryTable<T extends object>({
   isFavorite,
   onToggleFavorite,
   getHref,
-  emptyTitle = "Пока нет проектов — создайте заявку",
-  emptyDescription = "Проекты появляются в реестре после публикации.",
+  emptyTitle,
+  emptyDescription,
   emptyAction,
 }: {
   items: T[];
@@ -159,7 +160,7 @@ export function RegistryTable<T extends object>({
   emptyDescription?: string;
   emptyAction?: React.ReactNode;
 }) {
-  // i18n: используем переводы для a11y/тултипов, видимые заголовки остаются как в тесте (ID/Название/УГТ/Статус/Бюджет/Действия)
+  // i18n: все видимые подписи и a11y — через неймспейс registry
   const t = useTranslations("registry");
   const [sortKey, setSortKey] = React.useState<RegistryTableSortKey>("id");
   const [sortDir, setSortDir] = React.useState<RegistryTableSortDir>("asc");
@@ -219,8 +220,8 @@ export function RegistryTable<T extends object>({
           <span className="tz-empty-icon">
             <AlertCircle size={22} aria-hidden="true" />
           </span>
-          <h2 className="tz-empty-title">Доступ запрещён</h2>
-          <p className="tz-empty-text">У вас нет прав для просмотра этого реестра (403).</p>
+          <h2 className="tz-empty-title">{t("forbiddenTitle")}</h2>
+          <p className="tz-empty-text">{t("forbiddenDesc")}</p>
         </div>
       );
     }
@@ -231,12 +232,12 @@ export function RegistryTable<T extends object>({
     return (
       <Empty
         icon={<FilePlus2 size={22} aria-hidden="true" />}
-        title={emptyTitle}
-        description={emptyDescription}
+        title={emptyTitle ?? t("emptyDefaultTitle")}
+        description={emptyDescription ?? t("emptyDefaultDescription")}
         action={
           emptyAction ?? (
             <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-              Создать заявку
+              {t("createRequest")}
             </Link>
           )
         }
@@ -259,7 +260,7 @@ export function RegistryTable<T extends object>({
       <button
         type="button"
         onClick={() => handleSort(key)}
-        aria-label={`Сортировка по ${label}`}
+        aria-label={t("tableSortBy", { label })}
         className="inline-flex items-center gap-1.5 font-semibold hover:text-tz-accent"
       >
         {label}
@@ -276,7 +277,7 @@ export function RegistryTable<T extends object>({
       <div className="tz-card overflow-hidden" data-registry-table>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <caption className="sr-only">Реестр в табличном виде</caption>
+            <caption className="sr-only">{t("tableCaption")}</caption>
             <thead>
               <tr className="border-b border-tz-border bg-tz-soft text-left">
                 <th
@@ -284,38 +285,38 @@ export function RegistryTable<T extends object>({
                   className="whitespace-nowrap px-4 py-3"
                   aria-sort={sortKey === "id" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  {headerButton("id", "ID")}
+                  {headerButton("id", t("colId"))}
                 </th>
                 <th
                   scope="col"
                   className="px-4 py-3"
                   aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  {headerButton("name", "Название")}
+                  {headerButton("name", t("colName"))}
                 </th>
                 <th
                   scope="col"
                   className="whitespace-nowrap px-4 py-3"
                   aria-sort={sortKey === "ugt" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  {headerButton("ugt", "УГТ")}
+                  {headerButton("ugt", t("colUgt"))}
                 </th>
                 <th
                   scope="col"
                   className="whitespace-nowrap px-4 py-3"
                   aria-sort={sortKey === "status" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  {headerButton("status", "Статус")}
+                  {headerButton("status", t("colStatus"))}
                 </th>
                 <th
                   scope="col"
                   className="whitespace-nowrap px-4 py-3"
                   aria-sort={sortKey === "budget" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  {headerButton("budget", "Бюджет")}
+                  {headerButton("budget", t("colBudget"))}
                 </th>
                 <th scope="col" className="whitespace-nowrap px-4 py-3">
-                  Действия
+                  {t("colActions")}
                 </th>
               </tr>
             </thead>
@@ -337,7 +338,7 @@ export function RegistryTable<T extends object>({
                 // УГТ ячейка: «3 → 7» или «—»
                 const ugtLabel =
                   ugtCur != null || ugtTar != null
-                    ? `${ugtCur != null ? `УГТ ${ugtCur}` : "—"} → ${ugtTar ?? "—"}`
+                    ? `${ugtCur != null ? t("ugtShort", { level: ugtCur }) : "—"} → ${ugtTar ?? "—"}`
                     : "—";
 
                 const statusLabel = status ? getStatusLabel(status) : "—";
@@ -358,7 +359,7 @@ export function RegistryTable<T extends object>({
                     className="border-b border-tz-border last:border-0 hover:bg-tz-soft/50"
                   >
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-tz-muted">
-                      ЦНТР-{id}
+                      {t("cntrId", { id })}
                     </td>
                     <td className="max-w-[360px] px-4 py-3">
                       <div className="line-clamp-2">{titleNode}</div>
@@ -388,7 +389,7 @@ export function RegistryTable<T extends object>({
                             href={href}
                             className="tz-btn tz-btn-secondary tz-btn-sm inline-flex items-center gap-1"
                           >
-                            Открыть
+                            {t("openAction")}
                           </Link>
                         ) : (
                           <span className="text-xs text-tz-muted">—</span>
@@ -418,7 +419,7 @@ export function RegistryTable<T extends object>({
             disabled={!!loadingMore}
             className="tz-btn tz-btn-secondary"
           >
-            {loadingMore ? "Загрузка…" : "Показать ещё"}
+            {loadingMore ? t("loadingMore") : t("loadMore")}
           </button>
         </div>
       ) : null}

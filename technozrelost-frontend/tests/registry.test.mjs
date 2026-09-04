@@ -45,7 +45,12 @@ test("registry filters: 30+ tags справочник, 1-5 выбор", async ()
   const filterBar = read("src/features/registry/FilterBar.tsx");
   assert.match(filterBar, /PROJECT_TAGS/);
   assert.match(filterBar, /1-5|5/);
-  assert.match(filterBar, /Поиск по тегам/);
+  // Подпись поиска по тегам — через словарь registry (точные строки — в registry-i18n)
+  const tRegRu = translatorFor("registry", "ru");
+  const tRegEn = translatorFor("registry", "en");
+  assert.equal(tRegRu("filterTagsSearchLabel"), "Поиск по тегам");
+  assert.equal(tRegEn("filterTagsSearchLabel"), "Search by tags");
+  assert.match(filterBar, /filterTagsSearchLabel/);
 });
 
 test("registry filters serialization: search+tags+ugt+status+region+budget in URL", () => {
@@ -92,18 +97,24 @@ test("registry favorites: localStorage tz:favorites:{registry} + FavoriteStar", 
   assert.match(card, /isFavorite/);
 });
 
-test("registry grid: skeleton 6, empty tz-empty CTA, error Retry, 403, drawer, 1 колонка", () => {
+test("registry grid: skeleton 6, empty tz-empty CTA, error Retry, 403, drawer, 1 колонка", async () => {
   const grid = read("src/features/registry/RegistryGrid.tsx");
   assert.match(grid, /RegistrySkeleton/);
   assert.match(grid, /count = 6/);
   assert.match(grid, /tz-empty/);
-  assert.match(grid, /Пока нет проектов — создайте заявку/);
+  // Тексты пустого состояния и пагинации — через словарь registry
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const tRu = translatorFor("registry", "ru");
+  const tEn = translatorFor("registry", "en");
+  assert.equal(tRu("emptyDefaultTitle"), "Пока нет проектов — создайте заявку");
+  assert.equal(tEn("loadMore"), "Show more");
+  assert.match(grid, /emptyDefaultTitle/);
   assert.match(grid, /ErrorState/);
   assert.match(grid, /onRetry/);
   assert.match(grid, /403/);
   assert.match(grid, /grid-cols-1/);
   assert.match(grid, /md:grid-cols-2/);
-  assert.match(grid, /Показать ещё/);
+  assert.match(grid, /loadMore/);
 
   const errorComp = read("src/components/ui/error.tsx");
   assert.match(errorComp, /Повторить/);
@@ -111,7 +122,7 @@ test("registry grid: skeleton 6, empty tz-empty CTA, error Retry, 403, drawer, 1
   const fb = read("src/features/registry/FilterBar.tsx");
   assert.match(fb, /Drawer/);
   assert.match(fb, /lg:hidden/);
-  assert.match(fb, /Фильтры/);
+  assert.match(fb, /filterTitle/);
 });
 
 test("registry realtime: SSE /notifications/stream + fallback polling 5s", () => {

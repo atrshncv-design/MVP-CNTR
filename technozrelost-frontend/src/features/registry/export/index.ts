@@ -6,9 +6,9 @@
 
 export { escapeExcelValue, escapeRow } from "./escape";
 export {
-  PROJECT_HEADERS,
-  ORG_HEADERS,
-  NIOKTR_HEADERS,
+  getProjectHeaders,
+  getOrganizationHeaders,
+  getNioktrHeaders,
   isNioktrRow,
   isOrganizationRow,
   buildProjectWorkbook,

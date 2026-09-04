@@ -23,7 +23,7 @@ export function RegistryViewToggle({
   return (
     <div
       role="group"
-      aria-label="Переключатель вида реестра"
+      aria-label={t("viewToggleLabel")}
       data-i18n-label={t("viewCards")}
       className="inline-flex items-center rounded-xl border border-tz-border bg-tz-surface p-1"
       title={t("viewTable")}
@@ -32,8 +32,8 @@ export function RegistryViewToggle({
         type="button"
         onClick={() => onChange("cards")}
         aria-pressed={view === "cards"}
-        aria-label="Вид: карточки"
-        title="Карточки"
+        aria-label={t("viewCardsLabel")}
+        title={t("viewCards")}
         className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
           view === "cards"
             ? "bg-tz-accent text-white shadow-sm"
@@ -41,14 +41,14 @@ export function RegistryViewToggle({
         }`}
       >
         <LayoutGrid size={16} aria-hidden="true" />
-        Карточки
+        {t("viewCards")}
       </button>
       <button
         type="button"
         onClick={() => onChange("table")}
         aria-pressed={view === "table"}
-        aria-label="Вид: таблица"
-        title="Таблица"
+        aria-label={t("viewTableLabel")}
+        title={t("viewTable")}
         className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
           view === "table"
             ? "bg-tz-accent text-white shadow-sm"
@@ -56,7 +56,7 @@ export function RegistryViewToggle({
         }`}
       >
         <Table size={16} aria-hidden="true" />
-        Таблица
+        {t("viewTable")}
       </button>
     </div>
   );

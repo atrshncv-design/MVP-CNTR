@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Activity, Building2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { formatRelative, formatShortDate } from "@/lib/format-date";
 import { getStatusBadge, getStatusLabel } from "@/lib/status";
@@ -35,6 +36,7 @@ export function RegistryCard({
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
 }) {
+  const t = useTranslations("registry");
   const badge = getStatusBadge(project.status ?? "draft");
   const label = getStatusLabel(project.status ?? "draft");
   const shortDate = formatShortDate(project.updated_at ?? project.created_at ?? null);
@@ -45,7 +47,7 @@ export function RegistryCard({
     <div className="tz-card tz-card-hover flex h-full flex-col p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</span>
+          <span className="font-mono text-xs text-tz-muted">{t("cntrId", { id: project.id })}</span>
           <span className={`tz-badge ${badge}`}>{label}</span>
           {tags[0] ? <span className="tz-badge tz-badge-neutral">{tags[0]}</span> : null}
         </div>
@@ -74,7 +76,7 @@ export function RegistryCard({
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-tz-muted">
         <span className="flex items-center gap-1.5">
           <Activity size={14} className="text-tz-accent" aria-hidden="true" />
-          <span className="font-mono text-xs font-bold text-tz-accent">УГТ {project.current_level ?? "—"}</span>
+          <span className="font-mono text-xs font-bold text-tz-accent">{project.current_level != null ? t("ugtShort", { level: project.current_level }) : "—"}</span>
           <span aria-hidden="true">→</span>
           <span className="font-mono text-xs">{project.target_level ?? "—"}</span>
         </span>

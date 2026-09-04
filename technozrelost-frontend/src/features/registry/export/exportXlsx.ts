@@ -6,50 +6,62 @@
  * Экранирование =+-@ через escapeExcelValue, заголовки + строки текущей выборки.
  */
 
-import { escapeRow } from "./escape";
+import { escapeRow } from "./escape.ts";
 // escapeExcelValue используется внутри escapeRow — защита от =+-@ (см. escape.ts)
 import type { NioktrCardOut, OrganizationOut, RegistryProjectOut } from "@/lib/types";
+import type { TranslateFn } from "@/lib/types";
+import { registryTranslator } from "../i18n.ts";
 
-// Заголовки для проектов — порядок фиксирован для теста «содержит заголовки»
-export const PROJECT_HEADERS = [
-  "ID",
-  "Название",
-  "Описание",
-  "Теги",
-  "УГТ текущий",
-  "УГТ целевой",
-  "Бюджет, ₽",
-  "Организация",
-  "Статус",
-  "Создан",
-  "Обновлён",
-] as const;
+/**
+ * Заголовки выгрузки — только через перевод (R03.1): каждый столбец резолвится
+ * из неймспейса registry под локаль вызова. Порядок колонок фиксирован.
+ * Почему функции, а не константы: заголовок зависит от локали.
+ */
+export function getProjectHeaders(t: TranslateFn): string[] {
+  return [
+    t("exportId"),
+    t("exportName"),
+    t("exportDescription"),
+    t("exportTags"),
+    t("exportUgtCurrent"),
+    t("exportUgtTarget"),
+    t("exportBudget"),
+    t("exportOrganization"),
+    t("exportStatus"),
+    t("exportCreated"),
+    t("exportUpdated"),
+  ];
+}
 
-export const ORG_HEADERS = [
-  "ID",
-  "Название",
-  "Краткое название",
-  "ОГРН",
-  "Тип",
-  "Регион",
-  "Проектов",
-  "Компетенции",
-] as const;
+export function getOrganizationHeaders(t: TranslateFn): string[] {
+  return [
+    t("exportId"),
+    t("exportName"),
+    t("exportShortName"),
+    t("exportOgrn"),
+    t("exportOrgType"),
+    t("exportRegion"),
+    t("exportProjectsCount"),
+    t("exportCompetencies"),
+  ];
+}
 
-export const NIOKTR_HEADERS = [
-  "ID",
-  "Рег. номер",
-  "Название",
-  "Аннотация",
-  "Ключевые слова",
-  "Типы НИОКТР",
-  "Исполнитель",
-  "Заказчик",
-  "Дата создания",
-  "ИИ-направление",
-] as const;
+export function getNioktrHeaders(t: TranslateFn): string[] {
+  return [
+    t("exportId"),
+    t("exportRegNumber"),
+    t("exportName"),
+    t("exportAnnotation"),
+    t("exportKeywords"),
+    t("exportNioktrTypes"),
+    t("exportExecutor"),
+    t("exportCustomer"),
+    t("exportCreatedDate"),
+    t("exportAiArea"),
+  ];
+}
 
-type BuildOptions = { sheetName?: string };
+type BuildOptions = { sheetName?: string; t?: TranslateFn };
 
 /**
  * Проверка типа ряда — определяет, какой воркбук строить.
@@ -98,18 +110,18 @@ function applyColumnWidths(
   }));
 }
 
-// Маркеры для статуса — человекочитаемые лейблы вместо slug
-function formatStatus(status: unknown): string {
+// Статусы в файле — человекочитаемые лейблы из словаря вместо slug.
+// Неизвестный slug отдаём как есть (данные бэкенда, не словарь).
+function formatStatusT(t: TranslateFn, status: unknown): string {
   if (!status || typeof status !== "string") return "—";
-  // Минимальный маппинг без импорта lib/status, чтобы не тянуть лишнее в client-бандл
   const map: Record<string, string> = {
-    draft: "Черновик",
-    pending: "На рассмотрении",
-    active: "Активен",
-    archived: "Архив",
-    completed: "Завершён",
-    rejected: "Отклонён",
-    verified: "Верифицирован",
+    draft: t("exportStatusDraft"),
+    pending: t("exportStatusPending"),
+    active: t("exportStatusActive"),
+    archived: t("exportStatusArchived"),
+    completed: t("exportStatusCompleted"),
+    rejected: t("exportStatusRejected"),
+    verified: t("exportStatusVerified"),
   };
   return map[status] ?? status;
 }
@@ -122,12 +134,14 @@ export async function buildProjectWorkbook(
   rows: RegistryProjectOut[],
   opts?: BuildOptions,
 ): Promise<import("exceljs").Workbook> {
+  const tr = opts?.t ?? registryTranslator();
+  const headers = getProjectHeaders(tr);
   const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   wb.creator = "Технозрелость";
   wb.created = new Date();
-  const ws = wb.addWorksheet(opts?.sheetName ?? "Реестр проектов");
-  applyColumnWidths(ws, PROJECT_HEADERS, [10, 36, 48, 28, 12, 12, 18, 24, 14, 16, 16]);
+  const ws = wb.addWorksheet(opts?.sheetName ?? tr("exportSheetProjects"));
+  applyColumnWidths(ws, headers, [10, 36, 48, 28, 12, 12, 18, 24, 14, 16, 16]);
   styleHeaderRow(ws.getRow(1));
 
   for (const r of rows) {
@@ -141,7 +155,7 @@ export async function buildProjectWorkbook(
       r.target_level ?? "—",
       r.budget ?? "—",
       r.organization ?? "—",
-      formatStatus(r.status),
+      formatStatusT(tr, r.status),
       r.created_at ?? "—",
       r.updated_at ?? "—",
     ];
@@ -152,7 +166,7 @@ export async function buildProjectWorkbook(
   if (rows.length > 0) {
     ws.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: 1, column: PROJECT_HEADERS.length },
+      to: { row: 1, column: headers.length },
     };
   }
   ws.views = [{ state: "frozen", ySplit: 1 }];
@@ -163,12 +177,14 @@ export async function buildOrganizationWorkbook(
   rows: OrganizationOut[],
   opts?: BuildOptions,
 ): Promise<import("exceljs").Workbook> {
+  const tr = opts?.t ?? registryTranslator();
+  const headers = getOrganizationHeaders(tr);
   const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   wb.creator = "Технозрелость";
   wb.created = new Date();
-  const ws = wb.addWorksheet(opts?.sheetName ?? "Организации");
-  applyColumnWidths(ws, ORG_HEADERS, [10, 34, 20, 18, 14, 14, 10, 30]);
+  const ws = wb.addWorksheet(opts?.sheetName ?? tr("exportSheetOrganizations"));
+  applyColumnWidths(ws, headers, [10, 34, 20, 18, 14, 14, 10, 30]);
   styleHeaderRow(ws.getRow(1));
 
   for (const r of rows) {
@@ -187,7 +203,7 @@ export async function buildOrganizationWorkbook(
   }
 
   if (rows.length > 0) {
-    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: ORG_HEADERS.length } };
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
   }
   ws.views = [{ state: "frozen", ySplit: 1 }];
   return wb;
@@ -197,12 +213,14 @@ export async function buildNioktrWorkbook(
   rows: NioktrCardOut[],
   opts?: BuildOptions,
 ): Promise<import("exceljs").Workbook> {
+  const tr = opts?.t ?? registryTranslator();
+  const headers = getNioktrHeaders(tr);
   const ExcelJS = await getExcelJS();
   const wb = new ExcelJS.Workbook();
   wb.creator = "Технозрелость";
   wb.created = new Date();
-  const ws = wb.addWorksheet(opts?.sheetName ?? "НИОКТР");
-  applyColumnWidths(ws, NIOKTR_HEADERS, [10, 18, 36, 40, 24, 18, 20, 20, 14, 12]);
+  const ws = wb.addWorksheet(opts?.sheetName ?? tr("exportSheetNioktr"));
+  applyColumnWidths(ws, headers, [10, 18, 36, 40, 24, 18, 20, 20, 14, 12]);
   styleHeaderRow(ws.getRow(1));
 
   for (const r of rows) {
@@ -218,13 +236,13 @@ export async function buildNioktrWorkbook(
       r.executor_name ?? "—",
       r.customer_name ?? "—",
       r.created_date ?? "—",
-      r.is_ai_area ? "Да" : "Нет",
+      r.is_ai_area ? tr("exportYes") : tr("exportNo"),
     ];
     ws.addRow(escapeRow(values));
   }
 
   if (rows.length > 0) {
-    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: NIOKTR_HEADERS.length } };
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
   }
   ws.views = [{ state: "frozen", ySplit: 1 }];
   return wb;
@@ -276,9 +294,9 @@ async function downloadWorkbook(
  */
 export async function exportRegistryXlsx(
   rows: RegistryProjectOut[],
-  opts?: { filename?: string; sheetName?: string },
+  opts?: { filename?: string; sheetName?: string; t?: TranslateFn },
 ): Promise<void> {
-  const wb = await buildProjectWorkbook(rows, { sheetName: opts?.sheetName });
+  const wb = await buildProjectWorkbook(rows, { sheetName: opts?.sheetName, t: opts?.t });
   const filename = opts?.filename ?? `registry-projects-${new Date().toISOString().slice(0, 10)}.xlsx`;
   await downloadWorkbook(wb, filename);
 }
@@ -293,9 +311,9 @@ export const exportXlsx = exportRegistryXlsx;
  */
 export async function exportOrganizationsXlsx(
   rows: OrganizationOut[],
-  opts?: { filename?: string; sheetName?: string },
+  opts?: { filename?: string; sheetName?: string; t?: TranslateFn },
 ): Promise<void> {
-  const wb = await buildOrganizationWorkbook(rows, { sheetName: opts?.sheetName });
+  const wb = await buildOrganizationWorkbook(rows, { sheetName: opts?.sheetName, t: opts?.t });
   const filename = opts?.filename ?? `registry-organizations-${new Date().toISOString().slice(0, 10)}.xlsx`;
   await downloadWorkbook(wb, filename);
 }
@@ -305,9 +323,9 @@ export async function exportOrganizationsXlsx(
  */
 export async function exportNioktrXlsx(
   rows: NioktrCardOut[],
-  opts?: { filename?: string; sheetName?: string },
+  opts?: { filename?: string; sheetName?: string; t?: TranslateFn },
 ): Promise<void> {
-  const wb = await buildNioktrWorkbook(rows, { sheetName: opts?.sheetName });
+  const wb = await buildNioktrWorkbook(rows, { sheetName: opts?.sheetName, t: opts?.t });
   const filename = opts?.filename ?? `registry-nioktr-${new Date().toISOString().slice(0, 10)}.xlsx`;
   await downloadWorkbook(wb, filename);
 }
@@ -318,9 +336,9 @@ export async function exportNioktrXlsx(
  */
 export async function exportGenericXlsx(
   rows: unknown[],
-  opts?: { filename?: string; sheetName?: string; registryKey?: string },
+  opts?: { filename?: string; sheetName?: string; registryKey?: string; t?: TranslateFn },
 ): Promise<void> {
-  const wb = await buildWorkbook(rows as unknown[], { sheetName: opts?.sheetName });
+  const wb = await buildWorkbook(rows as unknown[], { sheetName: opts?.sheetName, t: opts?.t });
   const key = opts?.registryKey ?? "registry";
   const filename = opts?.filename ?? `${key}-${new Date().toISOString().slice(0, 10)}.xlsx`;
   await downloadWorkbook(wb, filename);

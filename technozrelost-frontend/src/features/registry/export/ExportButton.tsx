@@ -2,7 +2,10 @@
 
 import { Download } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import * as React from "react";
+
+import { asTranslateFn } from "@/lib/types";
 
 /**
  * Кнопка «Экспорт XLSX» — видна только cntr_admin (тикет 01, R01).
@@ -25,6 +28,7 @@ interface ExportButtonProps {
 
 export function ExportButton({ rows, filename, registryKey, sheetName }: ExportButtonProps) {
   const { data: session } = useSession();
+  const t = useTranslations("registry");
   const roles = (session?.user?.roles ?? []) as string[];
   // Экспорт только cntr_admin (R01, история 1) — менеджеру скрыт
   const isAdmin = roles.includes("cntr_admin");
@@ -45,6 +49,7 @@ export function ExportButton({ rows, filename, registryKey, sheetName }: ExportB
           filename: filename ?? `${registryKey ?? "registry"}-${new Date().toISOString().slice(0, 10)}.xlsx`,
           sheetName,
           registryKey,
+          t: asTranslateFn(t),
         });
       } else if (mod.exportXlsx) {
         // fallback — проекты (совместимость)
@@ -66,11 +71,11 @@ export function ExportButton({ rows, filename, registryKey, sheetName }: ExportB
       type="button"
       onClick={handleExport}
       disabled={disabled}
-      aria-label="Экспорт XLSX"
+      aria-label={t("exportLabel")}
       className="tz-btn tz-btn-secondary inline-flex items-center gap-2 disabled:opacity-60"
     >
       <Download size={16} aria-hidden="true" />
-      {loading ? "Экспорт…" : "Экспорт XLSX"}
+      {loading ? t("exporting") : t("exportLabel")}
     </button>
   );
 }

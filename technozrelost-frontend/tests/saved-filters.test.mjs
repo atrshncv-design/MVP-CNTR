@@ -79,12 +79,26 @@ test("saved-filters: useSavedFilters tries api-client then fallback on 404 with 
   assert.match(hook, /ApiError/);
 });
 
-test("saved-filters: UI — кнопка Сохранить фильтр → ввод имени → список Мои фильтры → клик применяет, крестик удаляет, без лимита", () => {
+test("saved-filters: UI — кнопка Сохранить фильтр → ввод имени → список Мои фильтры → клик применяет, крестик удаляет, без лимита", async () => {
+  // Подписи — через словарь registry: точные строки обеих локалей резолвятся
+  // переводчиком, EN без кириллицы.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const ru = translatorFor("registry", "ru");
+  const en = translatorFor("registry", "en");
+  assert.equal(ru("saveFilter"), "Сохранить фильтр");
+  assert.equal(ru("myFilters"), "Мои фильтры");
+  assert.equal(
+    ru("noSavedFilters"),
+    "Пока нет сохранённых фильтров — введите имя и нажмите «Сохранить фильтр».",
+  );
+  assert.equal(en("saveFilter"), "Save filter");
+  assert.equal(en("myFilters"), "My filters");
+  assert.doesNotMatch(en("withoutLimit", { count: 3 }), /[А-Яа-яЁё]/);
   const ui = read("src/features/registry/saved-filters/SavedFilters.tsx");
-  assert.match(ui, /Сохранить фильтр/);
+  assert.match(ui, /saveFilter/);
   assert.match(ui, /saved-filters-input/);
-  assert.match(ui, /Имя фильтра|Название фильтра/);
-  assert.match(ui, /Мои фильтры/);
+  assert.match(ui, /savedFilterNameLabel|savedFilterNameAria/);
+  assert.match(ui, /myFilters/);
   assert.match(ui, /saved-filters-list/);
   assert.match(ui, /saved-filter-apply/);
   assert.match(ui, /saved-filter-delete/);

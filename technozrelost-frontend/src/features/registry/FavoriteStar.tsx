@@ -1,6 +1,7 @@
 "use client";
 
 import { Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /**
  * Звёздочка избранного — localStorage per-реестр (тикет 04, R24.1).
@@ -12,13 +13,15 @@ export function FavoriteStar({
   active,
   onToggle,
   size = 18,
-  label = "Избранное",
+  label,
 }: {
   active: boolean;
   onToggle: () => void;
   size?: number;
   label?: string;
 }) {
+  const t = useTranslations("registry");
+  const name = label ?? t("favDefaultLabel");
   return (
     <button
       type="button"
@@ -28,8 +31,8 @@ export function FavoriteStar({
         onToggle();
       }}
       aria-pressed={active}
-      aria-label={active ? `Убрать из избранного: ${label}` : `В избранное: ${label}`}
-      title={active ? "Убрать из избранного" : "В избранное"}
+      aria-label={active ? t("favRemove", { label: name }) : t("favAdd", { label: name })}
+      title={active ? t("favRemoveTitle") : t("favAddTitle")}
       className={`grid h-8 w-8 place-items-center rounded-full border transition ${
         active
           ? "border-tz-accent bg-tz-accent-soft text-tz-accent"
