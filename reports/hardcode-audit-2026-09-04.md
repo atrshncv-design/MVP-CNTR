@@ -22,7 +22,7 @@
 ### P0-1. Строки экрана вне словарей: 84 файла вообще без `useTranslations`
 - 210 tsx-файлов, кириллица — в 188, словарь используется только в 49.
 - 84 файла с находками не содержат `useTranslations`/`getTranslations` вообще — перевод там невозможен архитектурно, а не «не доперевели пару ключей».
-- Гнезда: `features/project/ActionsPanel.tsx:38`, `features/project/KtPanel.tsx:26`, `features/project/HistoryPanel.tsx`, `features/project/TeamPanel.tsx`, `features/docs/AiDocConsultant.tsx:21`, `features/registry/RegistryTable.tsx:21`, `components/dashboard/project-radar.tsx:28`, `app/dashboard/*` (почти все страницы дашборда), `app/(landing)/*`.
+- Гнезда (числа — находок на файл): `features/project/ActionsPanel.tsx` (38), `features/project/KtPanel.tsx` (26), `features/project/HistoryPanel.tsx`, `features/project/TeamPanel.tsx`, `features/docs/AiDocConsultant.tsx` (21), `features/registry/RegistryTable.tsx` (21), `components/dashboard/project-radar.tsx` (28), `app/dashboard/*` (почти все страницы дашборда), `app/(landing)/*`.
 - Масштабирование: каждый новый экран копирует паттерн «строка прямо в JSX» — долг растёт линейно с разработкой. Это и есть «будет копиться дальше».
 - Вынос: обернуть в `useTranslations`, ключи — в оба словаря; линт-гейт (см. §Гейт).
 

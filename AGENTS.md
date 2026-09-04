@@ -100,4 +100,13 @@ Tier T2, slug `reestr-kompetencii-udgu`, 25 требований (R01-R25), 4 т
 ## Как здесь работает Autopilot
 - Проект — платформа «Технозрелость» (ГОСТ Р 58048-2017) + выгрузка УдГУ (реестр потенциала УР). Сборка навыком `/autopilot` (требования→spec→tickets в `.autopilot/2026-09-03-reestr-kompetencii-udgu/`, прогресс `dashboard.html` + `state.js`). Требование из `manifest.md` снимает только пользователь.
 - Текущий прогон: tier T2, 25 требований, 4 таска 3 волны (01 каркас+схема → 02 шаблон+ТЗ + 03 ingest параллельно → 04 отчёты/валидация/маппинг). Все 4 `done` (коммиты `20d04b7` `ec4979c` `0401d83` `9d1f822`), review passed, `final active`. Следующий агент — читает `.autopilot/state.js` и `.autopilot/2026-09-03-reestr-kompetencii-udgu/interfaces.md` (модули/швы/правила), затем код; запустить «продолжи автопилот» — состояние поднимется без расспросов.
+
+## Аудит хардкода (tier T0, 2026-09-04, только отчёт — продуктовый код не правился)
+- Сканер: `.autopilot/2026-09-04-hardcode-audit/scan.py` — только stdlib (`json/pathlib/re/sys`), детерминирован (сортировка находок, двукратный прогон → идентичный `summary.json`, повтор 2026-09-04 дал тот же sha).
+- Отчёт: `reports/hardcode-audit-2026-09-04.md` (копия `.autopilot/2026-09-04-hardcode-audit/report.md`); сырые данные: `.autopilot/2026-09-04-hardcode-audit/evidence/findings.json` (2219 находок) + `evidence/summary.json` (counts для гейта).
+- Итог: фронт 1420 находок / 115 файлов, бэк 799 / 51 файл; словари ru/en в паритете 1767/1767 (расхождений 0); 84 файла с находками без `useTranslations` — перевод заблокирован архитектурно (P0-1).
+- P0: экраны вне словарей + контент `src/lib/ugt-data.ts` (451) + заголовки экспорта `exportXlsx.ts:41` + серверные тексты 122 (`detail=/message=/raise`); P1: base URL (`llm.ts`, `public-api.ts`), стемы `sanitize.ts`/сиды (не переводить, покрыть тестом); P2: hex 79, русские логи, дубль `messages/`+`src/messages/`.
+- Повтор из корня: `python3 .autopilot/2026-09-04-hardcode-audit/scan.py .autopilot/2026-09-04-hardcode-audit/evidence` (верифицировано 2026-09-04, exit 0, summary идентичен).
+- Gotcha: каталог `out/` в gitignore (`.gitignore:28`) — артефакты лежат в `evidence/`; `reports/*.json` в gitignore (`.gitignore:63`, коммитится только `.md`); сканер ловит кириллические литералы/JSX — английские строки и склейки через переменные частично вне покрытия.
+- Шов/правила: интерфейс — Next.js+next-intl / FastAPI; правки продуктового кода запрещены; память — из `interfaces.md`, не из spec/tickets.
 <!-- autopilot:end -->
