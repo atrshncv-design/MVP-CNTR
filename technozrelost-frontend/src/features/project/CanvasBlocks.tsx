@@ -4,7 +4,7 @@
 import * as React from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { PROJECT_TAGS, validateTags, getTagLabel, asTranslateFn } from "@/lib/types";
+import { PROJECT_TAGS, validateTags } from "@/lib/types";
 import type { ProjectDetailOut, ProjectCardOut } from "@/lib/types";
 import { useDebouncedValue } from "@/lib/filters";
 
@@ -89,7 +89,6 @@ export interface CanvasValue {
  */
 export function CanvasBlocks({ project, detail, value, onChange, className = "" }: CanvasBlocksProps) {
   const t = useTranslations("project");
-  const taxT = asTranslateFn(useTranslations("taxonomy"));
   const { data: session } = useSession();
   const userRoles: string[] = (session?.user?.roles as string[]) ?? [];
   const userId = session?.user?.id ? Number(session.user.id) : null;
@@ -210,14 +209,12 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
   const filteredTags = React.useMemo(() => {
     if (!debouncedQuery) return PROJECT_TAGS;
     const q = debouncedQuery.toLowerCase();
-    return (PROJECT_TAGS as readonly string[]).filter((tTag) =>
-      getTagLabel(taxT, tTag).toLowerCase().includes(q),
-    );
-  }, [debouncedQuery, taxT]);
+    return (PROJECT_TAGS as readonly string[]).filter((tTag) => tTag.toLowerCase().includes(q));
+  }, [debouncedQuery]);
 
   // подсчёт видимых — для теста 15 блоков (без учёта скрытых на УГТ1)
   // показываем также теги и бюджет как отдельные блоки, но они вне канвы
-  const tagError = validateTags(taxT, local.tags);
+  const tagError = validateTags(local.tags);
 
   return (
     <section className={`tz-card p-6 ${className}`} data-testid="canvas-blocks" aria-label={t("ariaLabel")}>
@@ -270,15 +267,15 @@ export function CanvasBlocks({ project, detail, value, onChange, className = "" 
                 }}
                 className={`tz-chip ${active ? "tz-chip-active" : ""} ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`}
                 aria-pressed={active}
-                aria-label={t("tagAria", { tag: getTagLabel(taxT, tag) })}
+                aria-label={t("tagAria", { tag })}
               >
-                {getTagLabel(taxT, tag)}
+                {tag}
                 {active && <span aria-hidden="true"> ×</span>}
               </button>
             );
           })}
         </div>
-        {local.tags.length > 0 && <p className="mt-2 text-xs text-tz-muted">{t("selected", { tags: local.tags.map((tTag) => getTagLabel(taxT, tTag)).join(", ") })}</p>}
+        {local.tags.length > 0 && <p className="mt-2 text-xs text-tz-muted">{t("selected", { tags: local.tags.join(", ") })}</p>}
         {tagError && <p role="alert" className="mt-2 text-xs text-tz-danger">{tagError}</p>}
         {!canEdit && <p className="mt-1 text-xs text-tz-muted">{disabledHint}</p>}
       </div>

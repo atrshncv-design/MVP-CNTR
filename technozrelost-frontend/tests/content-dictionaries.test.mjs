@@ -56,8 +56,8 @@ test("content-dictionaries: витрина и таксономия резолв�
   const en = show.getShowcaseProjects(tShowEn);
   assert.equal(ru.length, 9);
   assert.equal(en.length, 9);
-  assert.equal(ru[2].category, "manufacturing");
-  assert.equal(en[2].category, "manufacturing");
+  assert.equal(ru[2].category, "Производство");
+  assert.equal(en[2].category, "Manufacturing");
   assert.equal(en[2].name, "Robotic system for agriculture");
   assert.equal(ru[2].region, "Воткинск");
   assert.deepEqual(show.getShowcaseCategories(tShowEn), ["AI/ML", "R&D", "Manufacturing", "Medicine"]);
@@ -71,13 +71,83 @@ test("content-dictionaries: витрина и таксономия резолв�
   assert.equal(tax.getTagLabel(tTaxRu, "Медицина"), "Медицина");
   assert.equal(tax.getTagLabel(tTaxEn, "Медицина"), "Medicine");
   assert.equal(tax.getTagLabel(tTaxEn, "unknown-value"), "unknown-value");
-  assert.equal(tax.validateTags(tTaxEn, []), "Select at least 1 tag");
-  assert.equal(tax.validateTags(tTaxRu, ["AI/ML", "oops"]), "Неизвестные теги: oops");
-  assert.equal(tax.validateTags(tTaxRu, ["AI/ML"]), null);
+  assert.equal(tax.validateTagsT(tTaxEn, []), "Select at least 1 tag");
+  assert.equal(tax.validateTagsT(tTaxRu, ["AI/ML", "oops"]), "Неизвестные теги: oops");
+  assert.equal(tax.validateTagsT(tTaxRu, ["AI/ML"]), null);
   assert.deepEqual(tax.categoryToTags("НИОКТР"), ["Промышленные технологии"]);
 });
 
 test("content-dictionaries: в EN-словаре нет кириллицы нигде", () => {
   const enText = JSON.stringify(contentMessages("en"));
   assert.doesNotMatch(enText, /[А-Яа-яЁё]/);
+});
+
+test("content-dictionaries: ПОЛНЫЙ protocol.json соответствует словарю", () => {
+  // protocol.json — проверяемый артефакт; словарь — только через резолверы.
+  return import("../src/lib/protocol.json", { with: { type: "json" } }).then(({ default: protocol }) => {
+    const dictTagsRu = tTaxRu.raw("tags");
+    const dictTagsEn = tTaxEn.raw("tags");
+    // теги: полное множество слагов и полный порядок значений
+    assert.deepEqual(Object.keys(protocol.tags), Object.keys(dictTagsRu));
+    assert.deepEqual(Object.keys(protocol.tags), Object.keys(dictTagsEn));
+    assert.deepEqual(tax.getProjectTags(tTaxRu), Object.values(protocol.tags));
+    assert.equal(tax.getProjectTags(tTaxEn).length, 32);
+    for (const label of tax.getProjectTags(tTaxEn)) {
+      assert.ok(label.length > 0 && !/[А-Яа-яЁё]/.test(label), `плохая EN-метка: ${label}`);
+    }
+    // legacy: каждая запись целиком через резолвер
+    const legacyKeys = Object.keys(protocol.legacy);
+    assert.ok(legacyKeys.length > 0);
+    for (const slug of legacyKeys) {
+      const { match, tag } = protocol.legacy[slug];
+      assert.deepEqual(tax.categoryToTags(match), [protocol.tags[tag]], `legacy ${slug}`);
+    }
+    // шаблоны: каждый уровень и каждый переход целиком
+    const levels = ugt.getUgtLevels(tUgtRu);
+    assert.equal(levels.length, Object.keys(protocol.levelDocTemplates).length);
+    levels.forEach((lvl, i) => {
+      const key = `l${i + 1}`;
+      const dictDocs = tUgtRu.raw(`levels.${key}.docs`);
+      assert.equal(lvl.deliverableDocs.length, protocol.levelDocTemplates[key].length, key);
+      assert.equal(lvl.deliverableDocs.length, dictDocs.length, key);
+      lvl.deliverableDocs.forEach((doc, j) => {
+        assert.equal(doc.template, protocol.levelDocTemplates[key][j], `${key} doc ${j}`);
+        assert.match(doc.template, /\.(docx|xlsx)$/);
+      });
+    });
+    const transitions = ugt.getRoadmapTransitions(tUgtRu);
+    assert.equal(transitions.length, Object.keys(protocol.transitionDocTemplates).length);
+    transitions.forEach((tr) => {
+      const key = `from${tr.from}to${tr.to}`;
+      const dictDocs = tUgtRu.raw(`transitions.${key}.docs`);
+      assert.equal(tr.documents.length, protocol.transitionDocTemplates[key].length, key);
+      assert.equal(tr.documents.length, dictDocs.length, key);
+      tr.documents.forEach((doc, j) => {
+        assert.equal(doc.template, protocol.transitionDocTemplates[key][j], `${key} doc ${j}`);
+      });
+    });
+  });
+});
+
+test("content-dictionaries: шимы идут через текущую локаль без RU-default", () => {
+  // node без document: локаль приложения по умолчанию
+  assert.equal(ugt.UGT_LEVELS[0].code, "УГТ 1");
+  assert.equal(ugt.UGT_LEVELS.length, 9);
+  assert.equal(show.SHOWCASE_PROJECTS[2].category, "Производство");
+  assert.ok(show.SHOWCASE_CATEGORIES.includes("НИОКТР"));
+  assert.equal(tax.validateTags([]), "Выберите хотя бы 1 тег");
+  const prevDocument = globalThis.document;
+  globalThis.document = { cookie: "NEXT_LOCALE=en" };
+  try {
+    assert.equal(ugt.UGT_LEVELS[0].code, "TRL 1");
+    assert.equal(ugt.UGP_LEVELS.length, 10);
+    assert.equal(ugt.ROADMAP_TRANSITIONS[7].estimatedTime, "2-4 months");
+    assert.equal(show.SHOWCASE_PROJECTS[2].category, "Manufacturing");
+    assert.ok(show.SHOWCASE_CATEGORIES.includes("R&D"));
+    assert.equal(tax.validateTags([]), "Select at least 1 tag");
+  } finally {
+    if (prevDocument === undefined) delete globalThis.document;
+    else globalThis.document = prevDocument;
+  }
+  assert.equal(ugt.UGT_LEVELS[0].code, "УГТ 1");
 });

@@ -7,11 +7,12 @@
  */
 
 import type { TranslateFn } from "./types";
+import { shimList } from "./translators.ts";
 
 export interface ShowcaseProject {
   id: number;
   name: string;
-  category: ShowcaseCategorySlug;
+  category: string;
   description: string;
   current_level: number;
   status: "draft" | "active" | "review" | "completed";
@@ -49,7 +50,7 @@ export function getShowcaseProjects(t: TranslateFn): ShowcaseProject[] {
   return SHOWCASE_META.map((meta) => ({
     id: meta.id,
     name: t(`projects.p${meta.id}.name`),
-    category: meta.category,
+    category: t(`categories.${meta.category}`),
     description: t(`projects.p${meta.id}.description`),
     current_level: meta.current_level,
     status: meta.status,
@@ -68,3 +69,15 @@ export function getShowcaseCategories(t: TranslateFn): string[] {
 export function getShowcaseCategoryLabel(t: TranslateFn, slug: ShowcaseCategorySlug): string {
   return t(`categories.${slug}`);
 }
+
+// ─── Deprecated compat shims (tasks 02–05 remove as screens migrate) ───────
+// Same names and shapes as before; every access resolves through the CURRENT
+// locale translator (no RU default). Prefer the get* resolvers above.
+
+/** @deprecated use getShowcaseProjects(t) with a current-locale translator. */
+export const SHOWCASE_PROJECTS: ShowcaseProject[] = shimList("showcase", (t) =>
+  getShowcaseProjects(t),
+);
+
+/** @deprecated use getShowcaseCategories(t) with a current-locale translator. */
+export const SHOWCASE_CATEGORIES: string[] = shimList("showcase", (t) => getShowcaseCategories(t));

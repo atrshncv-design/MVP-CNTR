@@ -17,29 +17,23 @@ import {
   Zap,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getUgtLevels, type UGTLevel, type RiskItem } from "@/lib/ugt-data";
-import { asTranslateFn } from "@/lib/types";
+import { UGT_LEVELS, type UGTLevel, type RiskItem } from "@/lib/ugt-data";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
+function getKpiIcon(label: string) {
+  if (label.includes("Публикации") || label.toLowerCase().includes("publication")) return FileText;
+  if (label.includes("Патенты") || label.toLowerCase().includes("patent")) return Gauge;
+  return Target;
+}
+
 export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
   const t = useTranslations("levelDetail");
-  const tUgtDict = useTranslations("ugt");
-  const levels = getUgtLevels(asTranslateFn(tUgtDict));
+  const tUgt = useTranslations("ugtData");
   const color = ugtColor(level.id);
-  const nextLevel = levels.find((l) => l.id === level.id + 1) ?? null;
-
-  const kpiPublications = tUgtDict("kpiLabels.publications");
-  const kpiPatents = tUgtDict("kpiLabels.patents");
-  const kpiPrototype = tUgtDict("kpiLabels.prototype");
-
-  const getKpiIcon = (label: string) => {
-    if (label === kpiPublications) return FileText;
-    if (label === kpiPatents) return Gauge;
-    return Target;
-  };
+  const nextLevel = UGT_LEVELS.find((l) => l.id === level.id + 1) ?? null;
 
   const getProbabilityConfig = (probability: RiskItem["probability"]) => {
     switch (probability) {
@@ -69,9 +63,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
     setExpandedRisks((prev) => ({ ...prev, [index]: !prev[index] }));
 
   const translateKpiLabel = (raw: string) => {
-    if (raw === kpiPublications) return t("publications");
-    if (raw === kpiPatents) return t("patents");
-    if (raw === kpiPrototype) return t("prototype");
+    if (raw.includes("Публикации")) return t("publications");
+    if (raw.includes("Патенты")) return t("patents");
+    if (raw.includes("Прототип")) return t("prototype");
     return raw;
   };
 
@@ -93,10 +87,11 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
             }}
           />
           {/* Ноды */}
-          {levels.map((l) => {
+          {UGT_LEVELS.map((l) => {
             const isCurrent = l.id === level.id;
             const isCompleted = l.id < level.id;
-            const code = l.code;
+            let code = l.code;
+            try { code = tUgt(`code${l.id}`); } catch {}
             return (
               <Link
                 key={l.id}
@@ -257,7 +252,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                 transition={{ duration: 0.6, ease: easeOutExpo }}
               >
                 <h2 className="tz-section-title">{t("transitionTitle")}</h2>
-                <p className="tz-lead mt-3 max-w-2xl">{t("transitionDesc", { nextCode: nextLevel.code })}</p>
+                <p className="tz-lead mt-3 max-w-2xl">{t("transitionDesc", { nextCode: (() => { try { return tUgt(`code${nextLevel.id}`); } catch { return nextLevel.code; } })() })}</p>
               </motion.div>
 
               <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -275,9 +270,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                       className="rounded-full px-3 py-1 font-mono text-sm font-semibold"
                       style={{ background: `${color}18`, color }}
                     >
-                      {level.code}
+                      {(() => { try { return tUgt(`code${level.id}`); } catch { return level.code; }})()}
                     </span>
-                    <span className="font-semibold text-tz-fg">{level.name}</span>
+                    <span className="font-semibold text-tz-fg">{(() => { try { return tUgt(`level${level.id}Name`); } catch { return level.name; }})()}</span>
                   </div>
                   <div className="my-4 h-px bg-tz-border/60" />
                   <ul className="flex flex-col gap-2.5">
@@ -307,9 +302,9 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
                         color: ugtColor(nextLevel.id),
                       }}
                     >
-                      {nextLevel.code}
+                      {(() => { try { return tUgt(`code${nextLevel.id}`); } catch { return nextLevel.code; }})()}
                     </span>
-                    <span className="font-semibold text-tz-fg">{nextLevel.name}</span>
+                    <span className="font-semibold text-tz-fg">{(() => { try { return tUgt(`level${nextLevel.id}Name`); } catch { return nextLevel.name; }})()}</span>
                   </div>
                   <div className="my-4 h-px bg-tz-border/60" />
                   <ul className="flex flex-col gap-2.5">
@@ -479,7 +474,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
           <div className="mt-16">
             <h3 className="tz-card-title">{t("resultsTitle")}</h3>
             <p className="mt-3 text-base text-tz-secondary">
-              {t("resultsDesc", { code: level.code })}
+              {t("resultsDesc", { code: (() => { try { return tUgt(`code${level.id}`); } catch { return level.code; }})() })}
             </p>
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {level.deliverables.map((item, i) => (

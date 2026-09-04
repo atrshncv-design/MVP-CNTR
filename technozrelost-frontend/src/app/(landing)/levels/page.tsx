@@ -3,8 +3,7 @@ import Link from "next/link";
 import { ArrowRight, FileText, ListChecks } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
-import { getUgtLevels } from "@/lib/ugt-data";
-import { asTranslateFn } from "@/lib/types";
+import { UGT_LEVELS } from "@/lib/ugt-data";
 
 export const metadata: Metadata = {
   title: "Уровни УГТ 1–9 — Технозрелость",
@@ -17,7 +16,7 @@ const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
 export default async function LevelsPage() {
   const t = await getTranslations("levels");
-  const levels = getUgtLevels(asTranslateFn(await getTranslations("ugt")));
+  const tUgt = await getTranslations("ugtData");
   const plural = (n: number, one: string, few: string, many: string): string => {
     // Use translated words from t where possible, but keep logic for RU/EN
     const m10 = n % 10;
@@ -38,10 +37,13 @@ export default async function LevelsPage() {
       </Reveal>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {levels.map((lvl, i) => {
-          const displayName = lvl.name;
-          const displayShort = lvl.short;
-          const displayCode = lvl.code;
+        {UGT_LEVELS.map((lvl, i) => {
+          let displayName = lvl.name;
+          let displayShort = lvl.short;
+          let displayCode = lvl.code;
+          try { displayName = tUgt(`level${lvl.id}Name`); } catch {}
+          try { displayShort = tUgt(`level${lvl.id}Short`); } catch {}
+          try { displayCode = tUgt(`code${lvl.id}`); } catch {}
           return (
           <Reveal key={lvl.id} delay={(i % 3) * 0.06}>
             <Link

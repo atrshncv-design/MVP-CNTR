@@ -5,8 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getUgtLevels } from "@/lib/ugt-data";
-import { asTranslateFn } from "@/lib/types";
+import { UGT_LEVELS } from "@/lib/ugt-data";
 
 /**
  * UGTInteractiveScale — интерактивная шкала УГТ 1–9 (главная страница).
@@ -22,9 +21,9 @@ const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
 export default function UGTInteractiveScale() {
   const t = useTranslations("ugtScale");
-  const levels = getUgtLevels(asTranslateFn(useTranslations("ugt")));
+  const tUgt = useTranslations("ugtData");
   const [activeId, setActiveId] = useState<number | null>(null);
-  const selected = levels.find((l) => l.id === activeId) ?? null;
+  const selected = UGT_LEVELS.find((l) => l.id === activeId) ?? null;
 
   const PHASES = [
     { label: t("research"), range: [1, 2, 3] as number[] },
@@ -53,10 +52,12 @@ export default function UGTInteractiveScale() {
 
         {/* Ноды */}
         <div className="flex justify-between">
-          {levels.map((level, i) => {
+          {UGT_LEVELS.map((level, i) => {
             const isActive = activeId === level.id;
-            const name = level.name;
-            const short = level.short;
+            let name = level.name;
+            try { name = tUgt(`level${level.id}Name`); } catch {}
+            let short = level.short;
+            try { short = tUgt(`level${level.id}Short`); } catch {}
             return (
               <motion.div
                 key={level.id}
@@ -90,8 +91,9 @@ export default function UGTInteractiveScale() {
 
       {/* ── Подписи нод ────────────────────────────────────────────── */}
       <div className="mx-auto mt-1 flex max-w-[900px] justify-between">
-        {levels.map((level) => {
-          const code = level.code;
+        {UGT_LEVELS.map((level) => {
+          let code = `УГТ ${level.id}`;
+          try { code = tUgt(`code${level.id}`); } catch {}
           return (
           <span
             key={level.id}
@@ -145,11 +147,11 @@ export default function UGTInteractiveScale() {
                     className="rounded-full px-3 py-0.5 font-mono text-xs font-semibold"
                     style={{ background: `${ugtColor(selected.id)}22`, color: ugtColor(selected.id) }}
                   >
-                    {selected.code}
+                    {(() => { try { return tUgt(`code${selected.id}`); } catch { return selected.code; }})()}
                   </span>
                 </div>
-                <h4 className="mt-2 text-lg font-semibold text-tz-fg">{selected.name}</h4>
-                <p className="mt-1 text-sm text-tz-secondary">{selected.short}</p>
+                <h4 className="mt-2 text-lg font-semibold text-tz-fg">{(() => { try { return tUgt(`level${selected.id}Name`); } catch { return selected.name; }})()}</h4>
+                <p className="mt-1 text-sm text-tz-secondary">{(() => { try { return tUgt(`level${selected.id}Short`); } catch { return selected.short; }})()}</p>
                 <ul className="mt-3 space-y-1">
                   {selected.requirements.slice(0, 3).map((r) => (
                     <li key={r} className="flex items-start gap-2 text-sm text-tz-secondary">

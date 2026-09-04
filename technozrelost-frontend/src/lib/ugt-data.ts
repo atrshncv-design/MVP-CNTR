@@ -7,6 +7,7 @@
  */
 
 import type { TranslateFn } from "./types";
+import { shimList } from "./translators.ts";
 import protocolData from "./protocol.json" with { type: "json" };
 
 export interface DeliverableDoc {
@@ -289,3 +290,24 @@ export function getTransitionMonths(from: number, to: number): { min: number; ma
   const meta = TRANSITION_META.find((m) => m.from === from && m.to === to);
   return meta ? { min: meta.monthsMin, max: meta.monthsMax } : null;
 }
+
+// ─── Deprecated compat shims (tasks 02–05 remove as screens migrate) ───────
+// Same names and shapes as before; every access resolves through the CURRENT
+// locale translator (no RU default). Prefer the get* resolvers above.
+
+/** @deprecated use getUgtLevels(t) with a current-locale translator. */
+export const UGT_LEVELS: UGTLevel[] = shimList("ugt", (t) => getUgtLevels(t));
+
+/** @deprecated use getUgpLevels(t) with a current-locale translator. */
+export const UGP_LEVELS: UGPLevel[] = shimList("ugt", (t) => getUgpLevels(t));
+
+/** @deprecated use getUgiLevels(t) with a current-locale translator. */
+export const UGI_LEVELS: UGILevel[] = shimList("ugt", (t) => getUgiLevels(t));
+
+/** @deprecated use getUgsLevels(t) with a current-locale translator. */
+export const UGS_LEVELS: UGSLevel[] = shimList("ugt", (t) => getUgsLevels(t));
+
+/** @deprecated use getRoadmapTransitions(t) with a current-locale translator. */
+export const ROADMAP_TRANSITIONS: RoadmapTransition[] = shimList("ugt", (t) =>
+  getRoadmapTransitions(t),
+);

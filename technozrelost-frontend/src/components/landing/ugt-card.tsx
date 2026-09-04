@@ -1,26 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getUgtLevel, getUgtLevels, type UGTLevel } from "@/lib/ugt-data";
-import { asTranslateFn } from "@/lib/types";
-
-/** Правильное склонение слова «критерий» по числу. */
-export function pluralCriteria(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "критерий";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "критерия";
-  return "критериев";
-}
-
-/** Правильное склонение слова «документ» по числу. */
-export function pluralDocs(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "документ";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "документа";
-  return "документов";
-}
+import { UGT_LEVELS, type UGTLevel } from "@/lib/ugt-data";
 
 /** Тёплая УГТ-шкала дизайн-системы 2.0: 1–3 низкие, 4–6 средние, 7–9 высокие. */
 export function ugtTone(level: number): string {
@@ -36,8 +17,11 @@ export function ugtToneClass(level: number): string {
 }
 
 export function UGTBadge({ level, size = "md" }: { level: number; size?: "md" | "lg" }) {
-  const tUgtDict = useTranslations("ugt");
-  const code = getUgtLevel(asTranslateFn(tUgtDict), level).code;
+  const tUgt = useTranslations("ugtData");
+  let code = `УГТ ${level}`;
+  try {
+    code = tUgt(`code${level}`);
+  } catch {}
   return (
     <span
       className={`inline-flex items-center rounded-full font-mono font-bold ${size === "lg" ? "px-3 py-1 text-sm" : "px-2 py-0.5 text-xs"}`}
@@ -55,8 +39,11 @@ export function UGTBadge({ level, size = "md" }: { level: number; size?: "md" | 
 /** Компактная карточка уровня (сетка /levels, блок шкалы на главной). */
 export function UGTLevelCard({ level }: { level: UGTLevel }) {
   const t = useTranslations("ugtCard");
-  const displayName = level.name;
-  const displayShort = level.short;
+  const tUgt = useTranslations("ugtData");
+  let displayName = level.name;
+  let displayShort = level.short;
+  try { displayName = tUgt(`level${level.id}Name`); } catch {}
+  try { displayShort = tUgt(`level${level.id}Short`); } catch {}
   const count = level.requirements.length;
   const mod10 = count % 10;
   const mod100 = count % 100;
@@ -92,7 +79,7 @@ export function UGTLevelCard({ level }: { level: UGTLevel }) {
 /** Короткие названия уровней для полосы-градиента (секция на главной). */
 export function UGTScaleStrip() {
   const t = useTranslations("ugtCard");
-  const levels = getUgtLevels(asTranslateFn(useTranslations("ugt")));
+  const tUgt = useTranslations("ugtData");
   const keys: Record<number, string> = {
     1: t("strip1"),
     2: t("strip2"),
@@ -106,9 +93,11 @@ export function UGTScaleStrip() {
   };
   return (
     <div className="grid grid-cols-9 gap-1.5 sm:gap-2">
-      {levels.map((lvl) => {
-        const name = lvl.name;
-        const short = lvl.short;
+      {UGT_LEVELS.map((lvl) => {
+        let name = lvl.name;
+        let short = lvl.short;
+        try { name = tUgt(`level${lvl.id}Name`); } catch {}
+        try { short = tUgt(`level${lvl.id}Short`); } catch {}
         return (
         <Link
           key={lvl.id}
@@ -144,7 +133,7 @@ export function UGTScaleStrip() {
 /** Фазы УГТ для группировки */
 export function UGTPhasedScale() {
   const t = useTranslations("ugtCard");
-  const levels = getUgtLevels(asTranslateFn(useTranslations("ugt")));
+  const tUgt = useTranslations("ugtData");
   const UGT_PHASES = [
     {
       title: t("lowTitle"),
@@ -168,7 +157,7 @@ export function UGTPhasedScale() {
   return (
     <div className="space-y-8">
       {UGT_PHASES.map((phase) => {
-        const phaseLevels = levels.filter((lvl) => phase.range.includes(lvl.id));
+        const levels = UGT_LEVELS.filter((lvl) => phase.range.includes(lvl.id));
         return (
           <div key={phase.title}>
             <div className="mb-4">
@@ -176,9 +165,11 @@ export function UGTPhasedScale() {
               <p className="mt-1 text-sm text-tz-secondary">{phase.description}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              {phaseLevels.map((lvl) => {
-                const name = lvl.name;
-                const short = lvl.short;
+              {levels.map((lvl) => {
+                let name = lvl.name;
+                let short = lvl.short;
+                try { name = tUgt(`level${lvl.id}Name`); } catch {}
+                try { short = tUgt(`level${lvl.id}Short`); } catch {}
                 return (
                 <Link
                   key={lvl.id}

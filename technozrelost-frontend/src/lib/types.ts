@@ -7,6 +7,7 @@
  */
 
 import type { ProjectStatus } from "./status";
+import { shimLocale, translatorFor } from "./translators.ts";
 import protocolData from "./protocol.json" with { type: "json" };
 
 /**
@@ -72,12 +73,20 @@ export function isValidTags(tags: string[]): boolean {
  * Localised tag validation; substitutions are ICU params of the standard
  * translator (no custom substitution engine).
  */
-export function validateTags(t: TranslateFn, tags: string[]): string | null {
+export function validateTagsT(t: TranslateFn, tags: string[]): string | null {
   if (tags.length < TAGS_MIN) return t("validation.minTags", { min: TAGS_MIN });
   if (tags.length > TAGS_MAX) return t("validation.maxTags", { max: TAGS_MAX });
   const invalid = tags.filter((tag) => !TAG_SLUG_BY_VALUE.has(tag));
   if (invalid.length) return t("validation.unknownTags", { list: invalid.join(", ") });
   return null;
+}
+
+/**
+ * @deprecated shim (tasks 02–05): use validateTagsT(t, tags) with a
+ * current-locale translator. Resolves through the current locale, no default.
+ */
+export function validateTags(tags: string[]): string | null {
+  return validateTagsT(translatorFor("taxonomy", shimLocale()), tags);
 }
 
 /** Localised labels for the whole catalogue, in canonical order. */

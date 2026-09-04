@@ -13,13 +13,10 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  getShowcaseProjects,
-  getShowcaseCategoryLabel,
-  SHOWCASE_CATEGORY_SLUGS,
+  SHOWCASE_PROJECTS,
+  SHOWCASE_CATEGORIES,
   type ShowcaseProject,
 } from "@/lib/showcase";
-import { getUgtLevel } from "@/lib/ugt-data";
-import { asTranslateFn } from "@/lib/types";
 import { getStatusLabel, getStatusColor } from "@/lib/status";
 import ProjectRadar from "@/components/dashboard/project-radar";
 
@@ -38,11 +35,21 @@ function ProjectCard({
   index: number;
   onOpen: (p: ShowcaseProject) => void;
 }) {
-  const showT = asTranslateFn(useTranslations("showcase"));
-  const ugtT = asTranslateFn(useTranslations("ugt"));
+  const t = useTranslations("projectsLanding");
+  const tUgt = useTranslations("ugtData");
   const color = ugtColor(project.current_level);
-  const codeLabel = getUgtLevel(ugtT, project.current_level).code;
-  const categoryLabel = getShowcaseCategoryLabel(showT, project.category);
+  const codeLabel = (() => {
+    try { return tUgt(`code${project.current_level}`); } catch { return `УГТ ${project.current_level}`; }
+  })();
+  const categoryLabel = (() => {
+    const map: Record<string, string> = {
+      "AI/ML": t("catAI"),
+      "НИОКТР": t("catNIOKTR"),
+      "Производство": t("catManufacturing"),
+      "Медицина": t("catMedicine"),
+    };
+    return map[project.category] ?? project.category;
+  })();
   return (
     <motion.button
       type="button"
@@ -99,8 +106,7 @@ function ProjectModal({
   onClose: () => void;
 }) {
   const t = useTranslations("projectsLanding");
-  const showT = asTranslateFn(useTranslations("showcase"));
-  const ugtT = asTranslateFn(useTranslations("ugt"));
+  const tUgt = useTranslations("ugtData");
   // Esc — закрыть
   useEffect(() => {
     if (!project) return;
@@ -164,10 +170,18 @@ function ProjectModal({
                 className="rounded-full px-3 py-1 font-mono text-xs font-semibold"
                 style={{ backgroundColor: `${color}18`, color }}
               >
-                {getUgtLevel(ugtT, project.current_level).code}
+                {(() => { try { return tUgt(`code${project.current_level}`); } catch { return `УГТ ${project.current_level}`; }})()}
               </span>
               <span className="rounded-full bg-tz-soft/70 px-3 py-1 font-mono text-xs font-medium text-tz-muted">
-                {getShowcaseCategoryLabel(showT, project.category)}
+                {(() => {
+                  const map: Record<string, string> = {
+                    "AI/ML": t("catAI"),
+                    "НИОКТР": t("catNIOKTR"),
+                    "Производство": t("catManufacturing"),
+                    "Медицина": t("catMedicine"),
+                  };
+                  return map[project.category] ?? project.category;
+                })()}
               </span>
               <span
                 className="rounded-full px-3 py-1 text-[11px] font-medium"
@@ -231,7 +245,7 @@ function ProjectModal({
                     <p className="font-mono text-[10px] uppercase tracking-widest text-tz-muted">
                       {t("category")}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-tz-fg">{getShowcaseCategoryLabel(showT, project.category)}</p>
+                    <p className="mt-1 text-sm font-semibold text-tz-fg">{project.category}</p>
                   </div>
                   <div className="rounded-xl border border-tz-border/60 bg-tz-soft/40 p-4">
                     <p className="font-mono text-[10px] uppercase tracking-widest text-tz-muted">
@@ -261,16 +275,14 @@ function ProjectModal({
 
 export default function ProjectsShowcase() {
   const t = useTranslations("projectsLanding");
-  const showT = asTranslateFn(useTranslations("showcase"));
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [minLevel, setMinLevel] = useState("all");
   const [maxLevel, setMaxLevel] = useState("all");
   const [selected, setSelected] = useState<ShowcaseProject | null>(null);
-  const projects = useMemo(() => getShowcaseProjects(showT), [showT]);
 
   const filtered = useMemo(() => {
-    return projects.filter((p) => {
+    return SHOWCASE_PROJECTS.filter((p) => {
       if (category !== "all" && p.category !== category) return false;
       if (minLevel !== "all" && p.current_level < Number(minLevel)) return false;
       if (maxLevel !== "all" && p.current_level > Number(maxLevel)) return false;
@@ -282,11 +294,19 @@ export default function ProjectsShowcase() {
       }
       return true;
     });
-  }, [search, category, minLevel, maxLevel, projects]);
+  }, [search, category, minLevel, maxLevel]);
 
   const levelOptions = ["all", ...Array.from({ length: 9 }, (_, i) => String(i + 1))];
 
-  const formatCategory = (slug: ShowcaseProject["category"]) => getShowcaseCategoryLabel(showT, slug);
+  const formatCategory = (c: string) => {
+    const map: Record<string, string> = {
+      "AI/ML": t("catAI"),
+      "НИОКТР": t("catNIOKTR"),
+      "Производство": t("catManufacturing"),
+      "Медицина": t("catMedicine"),
+    };
+    return map[c] ?? c;
+  };
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
@@ -323,9 +343,9 @@ export default function ProjectsShowcase() {
           aria-label={t("ariaSearch")}
         >
           <option value="all">{t("allCategories")}</option>
-          {SHOWCASE_CATEGORY_SLUGS.map((slug) => (
-            <option key={slug} value={slug}>
-              {formatCategory(slug)}
+          {SHOWCASE_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {formatCategory(c)}
             </option>
           ))}
         </select>
@@ -361,7 +381,7 @@ export default function ProjectsShowcase() {
 
       {/* Счётчик */}
       <p className="mt-6 text-[12.5px] text-tz-muted">
-        {t("shown", { filtered: filtered.length, total: projects.length })}
+        {t("shown", { filtered: filtered.length, total: SHOWCASE_PROJECTS.length })}
       </p>
 
       {/* Сетка маленьких карточек */}

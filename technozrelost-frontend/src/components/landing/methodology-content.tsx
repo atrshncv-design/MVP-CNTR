@@ -12,13 +12,11 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  getUgtLevels,
-  getUgpLevels,
-  getUgiLevels,
-  getUgsLevels,
-  type UGTLevel,
+  UGT_LEVELS,
+  UGP_LEVELS,
+  UGI_LEVELS,
+  UGS_LEVELS,
 } from "@/lib/ugt-data";
-import { asTranslateFn } from "@/lib/types";
 
 /* ================================================================== */
 /*  Хелперы                                                           */
@@ -236,15 +234,34 @@ function UGTAccordionItem({
   level,
   index,
 }: {
-  level: UGTLevel;
+  level: (typeof UGT_LEVELS)[number];
   index: number;
 }) {
   const [open, setOpen] = useState(index === 0);
   const t = useTranslations("methodology");
+  const tUgt = useTranslations("ugtData");
   const color = ugtColor(level.id);
-  const displayCode = level.code;
-  const displayName = level.name;
-  const displayDesc = level.description;
+  const displayCode = (() => {
+    try {
+      return tUgt(`code${level.id}`);
+    } catch {
+      return level.code;
+    }
+  })();
+  const displayName = (() => {
+    try {
+      return tUgt(`level${level.id}Name`);
+    } catch {
+      return level.name;
+    }
+  })();
+  const displayDesc = (() => {
+    try {
+      return tUgt(`level${level.id}Desc`);
+    } catch {
+      return level.description;
+    }
+  })();
 
   return (
     <motion.div
@@ -333,7 +350,7 @@ function UGTAccordionItem({
 
 function UGTLevelsSection() {
   const t = useTranslations("methodology");
-  const levels = getUgtLevels(asTranslateFn(useTranslations("ugt")));
+  const tUgt = useTranslations("ugtData");
   return (
     <section id="ugt-levels" className="bg-tz-surface/40">
       <div className="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 lg:px-8">
@@ -354,9 +371,9 @@ function UGTLevelsSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          {levels.map((level, i) => {
-            const code = level.code;
-            const name = level.name;
+          {UGT_LEVELS.map((level, i) => {
+            const code = (() => { try { return tUgt(`code${level.id}`); } catch { return level.code; }})();
+            const name = (() => { try { return tUgt(`level${level.id}Name`); } catch { return level.name; }})();
             return (
             <motion.div
               key={level.id}
@@ -384,7 +401,7 @@ function UGTLevelsSection() {
 
         {/* Аккордеон */}
         <div className="space-y-3">
-          {levels.map((level, i) => (
+          {UGT_LEVELS.map((level, i) => (
             <UGTAccordionItem key={level.id} level={level} index={i} />
           ))}
         </div>
@@ -672,10 +689,36 @@ function CorrespondenceSection() {
 
 export default function MethodologyContent() {
   const t = useTranslations("methodology");
-  const dictT = asTranslateFn(useTranslations("ugt"));
-  const ugpLevels = getUgpLevels(dictT);
-  const ugiLevels = getUgiLevels(dictT);
-  const ugsLevels = getUgsLevels(dictT);
+  // Translate UGP/UGI/UGS level names via t if available, fallback to raw
+  const tAny = t as unknown as (key: string) => string;
+  const ugpLevels = UGP_LEVELS.map((lvl) => {
+    try {
+      const key = `ugp${lvl.id}`;
+      const translated = tAny(key);
+      return { ...lvl, name: translated !== key ? translated : lvl.name };
+    } catch {
+      return lvl;
+    }
+  });
+  const ugiLevels = UGI_LEVELS.map((lvl) => {
+    try {
+      const key = `ugi${lvl.id}`;
+      const translated = tAny(key);
+      return { ...lvl, name: translated !== key ? translated : lvl.name };
+    } catch {
+      return lvl;
+    }
+  });
+  const ugsLevels = UGS_LEVELS.map((lvl) => {
+    try {
+      const key = `ugs${lvl.id}`;
+      const translated = tAny(key);
+      return { ...lvl, name: translated !== key ? translated : lvl.name };
+    } catch {
+      return lvl;
+    }
+  });
+  // Translate code columns for UGS? Keep code as is but UGS codes are like "УГС 1" — translate via methodology? For EN, codes should be SRL 1 etc but we keep UGS codes; the data's code remains Russian, but we could map via tUgtData? Keep as is for now.
   return (
     <>
       <MethodologyHero />

@@ -31,9 +31,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
-import { UGT_COLORS, getUgtLevels } from '@/lib/ugt-data';
+import { UGT_LEVELS } from '@/lib/ugt-data';
 import { useTranslations } from 'next-intl';
-import { asTranslateFn } from '@/lib/types';
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
@@ -114,7 +113,7 @@ const EVIDENCE_SCORE: Record<EvidenceStatus, number> = {
 };
 
 function getLevelColor(level: number): string {
-  return UGT_COLORS[level - 1] ?? 'var(--tz-accent)';
+  return UGT_LEVELS[level - 1]?.color ?? 'var(--tz-accent)';
 }
 
 function emptyAnswer(checkpoint: Checkpoint): AnswerState {
@@ -199,8 +198,6 @@ function MetricCard({ label, value, hint, color }: { label: string; value: strin
 
 export default function QuestionnaireWizardClient() {
   const t = useTranslations("questionnaire");
-  const ugtT = useTranslations("ugt");
-  const levels = useMemo(() => getUgtLevels(asTranslateFn(ugtT)), [ugtT]);
   const router = useRouter();
   const { data: session } = useSession();
   const [template, setTemplate] = useState<AssessmentTemplate | null>(null);
@@ -348,7 +345,7 @@ export default function QuestionnaireWizardClient() {
     return <div className="flex min-h-[60vh] items-center justify-center gap-3 text-tz-muted"><Loader2 className="animate-spin" />{t("loading")}</div>;
   }
 
-  const level = typeof step === 'number' ? levels[step - 1] ?? null : null;
+  const level = typeof step === 'number' ? UGT_LEVELS[step - 1] : null;
   const totalSteps = 9;
   const progress = step === 'info' ? 0 : step === 'results' ? 100 : Math.round((step / totalSteps) * 100);
 
@@ -371,7 +368,7 @@ export default function QuestionnaireWizardClient() {
             <div className="space-y-5">
               <label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">{t("step1.nameLabel")}</span><input value={projectInfo.name} onChange={(event) => setProjectInfo((current) => ({ ...current, name: event.target.value }))} className="w-full rounded-xl border border-tz-border px-4 py-3 outline-none focus:border-tz-accent focus:ring-2 focus:ring-tz-accent-soft" placeholder={t("step1.namePlaceholder")} /></label>
               <label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">{t("step1.descriptionLabel")}</span><textarea value={projectInfo.description} onChange={(event) => setProjectInfo((current) => ({ ...current, description: event.target.value }))} rows={4} className="w-full resize-none rounded-xl border border-tz-border px-4 py-3 outline-none focus:border-tz-accent focus:ring-2 focus:ring-tz-accent-soft" placeholder={t("step1.descriptionPlaceholder")} /></label>
-              <div className="grid gap-5 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">{t("step1.techTypeLabel")}</span><select value={projectInfo.category} onChange={(event) => setProjectInfo((current) => ({ ...current, category: event.target.value }))} className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-3 outline-none focus:border-tz-accent"><option value="">{t("step1.techTypePlaceholder")}</option>{TECH_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></label><label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">{t("step1.targetUgtLabel")}</span><select value={projectInfo.targetLevel} onChange={(event) => setProjectInfo((current) => ({ ...current, targetLevel: Number(event.target.value) }))} className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-3 outline-none focus:border-tz-accent">{levels.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select></label></div>
+              <div className="grid gap-5 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">{t("step1.techTypeLabel")}</span><select value={projectInfo.category} onChange={(event) => setProjectInfo((current) => ({ ...current, category: event.target.value }))} className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-3 outline-none focus:border-tz-accent"><option value="">{t("step1.techTypePlaceholder")}</option>{TECH_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></label><label className="block"><span className="mb-2 block text-sm font-semibold text-tz-secondary">{t("step1.targetUgtLabel")}</span><select value={projectInfo.targetLevel} onChange={(event) => setProjectInfo((current) => ({ ...current, targetLevel: Number(event.target.value) }))} className="w-full rounded-xl border border-tz-border bg-tz-surface px-4 py-3 outline-none focus:border-tz-accent">{UGT_LEVELS.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</select></label></div>
             </div>
             <div className="mt-8 flex justify-end"><button onClick={() => setStep(1)} className="inline-flex items-center gap-2 rounded-xl bg-tz-accent px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-tz-accent-hover">{t("step1.startButton")} <ArrowRight size={17} /></button></div>
           </section>
