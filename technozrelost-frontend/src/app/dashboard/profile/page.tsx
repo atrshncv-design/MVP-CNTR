@@ -3,10 +3,10 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Building2, CheckCircle2, Clock, FileX2, PlusCircle, Send, UserRound } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import AchievementsShowcase from "@/components/dashboard/achievements-showcase";
 import { CLIENT_API_BASE } from "@/lib/public-api";
-
 
 interface Profile {
   id: number;
@@ -32,25 +32,33 @@ interface Organization {
   is_primary: boolean;
 }
 
-const STATE_LABELS: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
-  draft: { label: "Черновик", cls: "bg-tz-surface-2 text-tz-secondary", icon: FileX2 },
-  pending: { label: "На проверке", cls: "bg-tz-warning-soft text-tz-warning-fg", icon: Clock },
-  verified: { label: "Подтверждён", cls: "bg-tz-success-soft text-tz-success-fg", icon: CheckCircle2 },
-  rejected: { label: "Отклонён", cls: "bg-tz-danger-soft text-tz-danger-fg", icon: FileX2 },
+const STATE_CONFIG: Record<string, { cls: string; icon: typeof Clock }> = {
+  draft: { cls: "bg-tz-surface-2 text-tz-secondary", icon: FileX2 },
+  pending: { cls: "bg-tz-warning-soft text-tz-warning-fg", icon: Clock },
+  verified: { cls: "bg-tz-success-soft text-tz-success-fg", icon: CheckCircle2 },
+  rejected: { cls: "bg-tz-danger-soft text-tz-danger-fg", icon: FileX2 },
 };
 
 function StateBadge({ state }: { state: string }) {
-  const meta = STATE_LABELS[state] ?? STATE_LABELS.draft;
+  const t = useTranslations("profile");
+  const meta = STATE_CONFIG[state] ?? STATE_CONFIG.draft;
   const Icon = meta.icon;
+  const labelMap: Record<string, string> = {
+    draft: t("draft"),
+    pending: t("pending"),
+    verified: t("verified"),
+    rejected: t("rejected"),
+  };
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${meta.cls}`}>
       <Icon size={13} />
-      {meta.label}
+      {labelMap[state] ?? labelMap.draft}
     </span>
   );
 }
 
 export default function ProfilePage() {
+  const t = useTranslations("profile");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
@@ -88,7 +96,7 @@ export default function ProfilePage() {
       setRegion(data.profile.region ?? "");
       setSkills((data.profile.skills ?? []).join(", "));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить профиль");
+      setError(e instanceof Error ? e.message : t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -127,9 +135,9 @@ export default function ProfilePage() {
         skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
       });
       setProfile(saved);
-      setNotice("Профиль сохранён");
+      setNotice(t("profileSaved"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка сохранения");
+      setError(e instanceof Error ? e.message : t("saveFailed"));
     }
   };
 
@@ -138,9 +146,9 @@ export default function ProfilePage() {
     try {
       const saved = await patchProfile({}, "POST", "/profile/submit");
       setProfile(saved);
-      setNotice("Профиль отправлен на проверку менеджеру центра");
+      setNotice(t("profileSubmitted"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка отправки");
+      setError(e instanceof Error ? e.message : t("submitFailed"));
     }
   };
 
@@ -158,9 +166,9 @@ export default function ProfilePage() {
       setOrgType("");
       setOrgRegion("");
       setOrgDesc("");
-      setNotice("Организация создана");
+      setNotice(t("orgCreated"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка создания организации");
+      setError(e instanceof Error ? e.message : t("createOrgFailed"));
     }
   };
 
@@ -170,9 +178,9 @@ export default function ProfilePage() {
       const org = await patchProfile({}, "POST", `/orgs/${joinOrgId}/join`);
       setOrgs((prev) => [...prev, org]);
       setJoinOrgId("");
-      setNotice("Вы вступили в организацию");
+      setNotice(t("orgJoined"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка вступления");
+      setError(e instanceof Error ? e.message : t("joinFailed"));
     }
   };
 
@@ -188,12 +196,9 @@ export default function ProfilePage() {
   return (
     <section className="mx-auto max-w-3xl">
       <div className="border-b border-tz-border pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">Профиль специалиста</p>
-        <h1 className="tz-page-title mt-2 text-tz-fg">Мой профиль</h1>
-        <p className="mt-2 max-w-2xl text-tz-secondary">
-          Основная роль аккаунта определяет профильный реестр, но не проектные полномочия. После проверки
-          менеджером центра профиль попадает в публичный реестр специалистов.
-        </p>
+        <p className="font-mono text-xs uppercase tracking-[0.08em] text-tz-muted">{t("eyebrow")}</p>
+        <h1 className="tz-page-title mt-2 text-tz-fg">{t("title")}</h1>
+        <p className="mt-2 max-w-2xl text-tz-secondary">{t("description")}</p>
       </div>
 
       {error && (
@@ -224,44 +229,44 @@ export default function ProfilePage() {
 
           {profile.review_comment && (
             <div className="mt-4 rounded-xl border border-tz-border bg-tz-bg px-4 py-3 text-sm text-tz-secondary">
-              <span className="font-semibold text-tz-fg">Комментарий проверки: </span>
+              <span className="font-semibold text-tz-fg">{t("reviewComment")} </span>
               {profile.review_comment}
             </div>
           )}
 
           <div className="mt-6 grid gap-4">
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">Должность (обязательно для отправки)</span>
+              <span className="text-sm font-medium text-tz-secondary">{t("headlineLabel")}</span>
               <input
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 disabled={!editable}
                 className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
-                placeholder="Например: ведущий инженер-исследователь"
+                placeholder={t("headlinePlaceholder")}
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">Регион</span>
+              <span className="text-sm font-medium text-tz-secondary">{t("regionLabel")}</span>
               <input
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
                 disabled={!editable}
                 className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
-                placeholder="Удмуртская Республика"
+                placeholder={t("regionPlaceholder")}
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">Компетенции (через запятую)</span>
+              <span className="text-sm font-medium text-tz-secondary">{t("skillsLabel")}</span>
               <input
                 value={skills}
                 onChange={(e) => setSkills(e.target.value)}
                 disabled={!editable}
                 className="mt-1 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg disabled:opacity-60"
-                placeholder="машинное обучение, компьютерное зрение"
+                placeholder={t("skillsPlaceholder")}
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-tz-secondary">О себе</span>
+              <span className="text-sm font-medium text-tz-secondary">{t("bioLabel")}</span>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
@@ -278,14 +283,14 @@ export default function ProfilePage() {
               disabled={!editable}
               className="inline-flex items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
             >
-              <CheckCircle2 size={16} /> Сохранить
+              <CheckCircle2 size={16} /> {t("save")}
             </button>
             <button
               onClick={submitProfile}
               disabled={!editable}
               className="inline-flex items-center gap-2 rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
             >
-              <Send size={16} /> Отправить на проверку
+              <Send size={16} /> {t("submit")}
             </button>
           </div>
         </div>
@@ -297,13 +302,13 @@ export default function ProfilePage() {
             <Building2 size={20} />
           </span>
           <div>
-            <h2 className="tz-section-title text-tz-fg">Мои организации</h2>
-            <p className="text-sm text-tz-muted">Можно состоять в нескольких организациях</p>
+            <h2 className="tz-section-title text-tz-fg">{t("orgsTitle")}</h2>
+            <p className="text-sm text-tz-muted">{t("orgsSubtitle")}</p>
           </div>
         </div>
 
         {orgs.length === 0 ? (
-          <p className="mt-4 text-sm text-tz-secondary">Пока нет организаций.</p>
+          <p className="mt-4 text-sm text-tz-secondary">{t("noOrgs")}</p>
         ) : (
           <ul className="mt-4 grid gap-3">
             {orgs.map((org) => (
@@ -311,7 +316,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="font-semibold text-tz-fg">{org.name}</p>
                   <p className="text-xs text-tz-muted">
-                    {[org.ogrn, org.region, org.member_role === "admin" ? "администратор" : "участник"].filter(Boolean).join(" · ")}
+                    {[org.ogrn, org.region, org.member_role === "admin" ? t("memberRoleAdmin") : t("memberRoleMember")].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <StateBadge state={org.state} />
@@ -321,28 +326,28 @@ export default function ProfilePage() {
         )}
 
         <div className="mt-6 grid gap-3 border-t border-tz-border pt-5">
-          <p className="text-sm font-semibold text-tz-fg">Создать организацию</p>
+          <p className="text-sm font-semibold text-tz-fg">{t("createOrg")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Название *" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgOgrn} onChange={(e) => setOrgOgrn(e.target.value)} placeholder="ОГРН" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgType} onChange={(e) => setOrgType(e.target.value)} placeholder="Тип (НИИ, ООО…)" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
-            <input value={orgRegion} onChange={(e) => setOrgRegion(e.target.value)} placeholder="Регион" className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder={t("orgNamePlaceholder")} className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgOgrn} onChange={(e) => setOrgOgrn(e.target.value)} placeholder={t("ogrnPlaceholder")} className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgType} onChange={(e) => setOrgType(e.target.value)} placeholder={t("orgTypePlaceholder")} className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+            <input value={orgRegion} onChange={(e) => setOrgRegion(e.target.value)} placeholder={t("orgRegionPlaceholder")} className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
           </div>
-          <textarea value={orgDesc} onChange={(e) => setOrgDesc(e.target.value)} rows={2} placeholder="Описание" className="w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
+          <textarea value={orgDesc} onChange={(e) => setOrgDesc(e.target.value)} rows={2} placeholder={t("orgDescPlaceholder")} className="w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg" />
           <button
             onClick={createOrg}
             disabled={!orgName.trim()}
             className="inline-flex w-fit items-center gap-2 rounded-lg bg-tz-accent px-4 py-2 font-semibold text-white transition hover:bg-tz-accent-hover disabled:opacity-50"
           >
-            <PlusCircle size={16} /> Создать
+            <PlusCircle size={16} /> {t("createBtn")}
           </button>
 
-          <p className="mt-2 text-sm font-semibold text-tz-fg">Вступить по номеру</p>
+          <p className="mt-2 text-sm font-semibold text-tz-fg">{t("joinOrg")}</p>
           <div className="flex gap-3">
             <input
               value={joinOrgId}
               onChange={(e) => setJoinOrgId(e.target.value)}
-              placeholder="id организации"
+              placeholder={t("joinPlaceholder")}
               inputMode="numeric"
               className="w-48 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-tz-fg"
             />
@@ -351,7 +356,7 @@ export default function ProfilePage() {
               disabled={!joinOrgId.trim()}
               className="rounded-lg border border-tz-border px-4 py-2 font-semibold text-tz-fg transition hover:border-tz-accent hover:text-tz-accent disabled:opacity-50"
             >
-              Вступить
+              {t("joinBtn")}
             </button>
           </div>
         </div>

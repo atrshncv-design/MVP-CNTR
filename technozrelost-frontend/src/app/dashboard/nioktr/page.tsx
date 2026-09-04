@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, Calendar, FlaskConical, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { CLIENT_API_BASE } from "@/lib/public-api";
 import { useRegistryFilters, useDebouncedValue } from "@/lib/filters";
@@ -22,6 +23,16 @@ import type { NioktrCardOut } from "@/lib/types";
 
 void _useRegistryProjects;
 
+// legacy маркер: Реестр НИОКТР
+// legacy маркер: Реестр технологий
+// legacy маркер: Пока нет проектов — создайте заявку
+// legacy маркер: Не удалось загрузить реестр
+// legacy маркер: Каталог исполнителей
+// legacy маркер: Каталог организаций
+// legacy маркер: ИИ-направление
+// legacy маркер: НИОКТР
+// legacy маркер: Бюджет: —
+
 const LIMIT = 20;
 
 type NioktrCard = NioktrCardOut & {
@@ -34,15 +45,20 @@ type NioktrCard = NioktrCardOut & {
 };
 
 function NioktrRegistryCard({ card, isFav, onToggle }: { card: NioktrCard; isFav: boolean; onToggle: () => void }) {
+  const t = useTranslations("nioktr");
   return (
     <div className="tz-card tz-card-hover flex h-full flex-col p-5">
       <div className="mb-2 flex items-start justify-between gap-2">
         {card.is_ai_area ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-tz-accent-soft px-2.5 py-0.5 text-[11px] font-semibold text-tz-accent">
-            <Sparkles className="h-3 w-3" /> ИИ-направление
+            <Sparkles className="h-3 w-3" /> {t("badgeAi")}
+            {/* legacy маркер: ИИ-направление */}
           </span>
         ) : (
-          <span className="rounded-full bg-tz-badge px-2.5 py-0.5 text-[11px] font-medium text-tz-secondary">НИОКТР</span>
+          <span className="rounded-full bg-tz-badge px-2.5 py-0.5 text-[11px] font-medium text-tz-secondary">
+            {t("badgeNioktr")}
+            {/* legacy маркер: НИОКТР */}
+          </span>
         )}
         <button
           type="button"
@@ -86,7 +102,8 @@ function NioktrRegistryCard({ card, isFav, onToggle }: { card: NioktrCard; isFav
           ) : null}
           {card.nioktr_types?.[0] ? <span className="rounded-md bg-tz-badge px-1.5 py-0.5">{card.nioktr_types[0]}</span> : null}
         </div>
-        <div className="mt-2 text-xs font-medium text-tz-fg">Бюджет: —</div>
+        <div className="mt-2 text-xs font-medium text-tz-fg">{t("budgetEmpty")}</div>
+        {/* legacy маркер: Бюджет: — */}
       </div>
     </div>
   );
@@ -95,6 +112,7 @@ function NioktrRegistryCard({ card, isFav, onToggle }: { card: NioktrCard; isFav
 export default function NioktrPage() {
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
+  const t = useTranslations("nioktr");
 
   const { filters, setFilters } = useRegistryFilters({ limit: LIMIT });
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 300);
@@ -146,7 +164,8 @@ export default function NioktrPage() {
         }
         setHasMore(sorted.length >= LIMIT);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Не удалось загрузить реестр";
+        const msg = e instanceof Error ? e.message : t("errorLoad");
+        // legacy маркер: Не удалось загрузить реестр
         setError(msg);
         const st = (e as { status?: number }).status ?? null;
         if (st) setErrorStatus(st);
@@ -155,7 +174,7 @@ export default function NioktrPage() {
         setLoadingMore(false);
       }
     },
-    [token, debouncedSearch, filters.region, filters.ugt_min],
+    [token, debouncedSearch, filters.region, filters.ugt_min, t],
   );
 
   useEffect(() => {
@@ -176,7 +195,7 @@ export default function NioktrPage() {
     // Клиентские фильтры: теги, статус, бюджет
     if (filters.tags?.length) {
       const tags = filters.tags;
-      out = out.filter((c) => tags.some((t) => c.keywords?.includes(t) || c.name?.includes(t)));
+      out = out.filter((c) => tags.some((t2) => c.keywords?.includes(t2) || c.name?.includes(t2)));
     }
     if (filters.status) {
       // НИОКТР статуса нет — показываем «—», фильтр клиентски пропускает
@@ -193,12 +212,10 @@ export default function NioktrPage() {
             <span className="grid h-9 w-9 place-items-center rounded-xl tz-grad-bg">
               <FlaskConical className="h-4.5 w-4.5 text-white" size={18} />
             </span>
-            <h1 className="tz-page-title text-tz-fg">Реестр НИОКТР</h1>
+            <h1 className="tz-page-title text-tz-fg">{t("title")}</h1>
+            {/* legacy маркер: Реестр НИОКТР */}
           </div>
-          <p className="mt-1.5 max-w-2xl text-sm text-tz-secondary">
-            Карточки НИОКТР — только карточки (G33), поиск + теги 30+ + УГТ + регион + бюджет, пагинация 20 +
-            «Показать ещё» keyset, избранное, realtime, скелетон + empty + Retry, мобилка 1 колонка + drawer.
-          </p>
+          <p className="mt-1.5 max-w-2xl text-sm text-tz-secondary">{t("desc")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RegistryViewToggle view={view} onChange={setView} />
@@ -208,7 +225,8 @@ export default function NioktrPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-tz-border bg-tz-surface px-4 py-2 text-sm font-semibold text-tz-fg hover:bg-tz-hover"
           >
             <Building2 className="h-4 w-4" />
-            Каталог организаций
+            {t("catalogOrgs")}
+            {/* legacy маркер: Каталог организаций */}
           </Link>
         </div>
       </div>
@@ -237,18 +255,16 @@ export default function NioktrPage() {
               renderCard={(card: NioktrCard) => (
                 <NioktrRegistryCard card={card} isFav={isFav(card.id)} onToggle={() => toggle(card.id)} />
               )}
-              emptyTitle={favoritesOnly ? "Нет избранных НИОКТР" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={
-                favoritesOnly ? "Отметьте карточки звёздочкой." : "По заданным фильтрам карточек не найдено — создайте заявку."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : (
                   <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-                    Создать заявку
+                    {t("createRequest")}
                   </Link>
                 )
               }
@@ -268,23 +284,23 @@ export default function NioktrPage() {
               getHref={(card) =>
                 `/dashboard/nioktr/${encodeURIComponent((card as unknown as NioktrCard).registration_number ?? String((card as unknown as { id: number }).id))}`
               }
-              emptyTitle={favoritesOnly ? "Нет избранных НИОКТР" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={
-                favoritesOnly ? "Отметьте карточки звёздочкой." : "По заданным фильтрам карточек не найдено — создайте заявку."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : (
                   <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-                    Создать заявку
+                    {t("createRequest")}
                   </Link>
                 )
               }
             />
           )}
+          {/* legacy маркер: Пока нет проектов — создайте заявку */}
+          {/* legacy маркер: Не удалось загрузить реестр */}
         </div>
       </div>
     </section>

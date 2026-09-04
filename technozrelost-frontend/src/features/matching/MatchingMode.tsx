@@ -413,7 +413,7 @@ export function MatchingMode() {
                   <option value="">{t("selectPlaceholder")}</option>
                   {projects.map((p) => (
                     <option key={p.id} value={String(p.id)}>
-                      ЦНТР-{p.id} · {p.name} (УГТ {p.current_level})
+                      {t("projectOption", { id: String(p.id), name: p.name, level: String(p.current_level) })}
                     </option>
                   ))}
                 </select>
@@ -498,7 +498,7 @@ export function MatchingMode() {
                         type="button"
                         onClick={() => toggleCompetency(tag)}
                         className="ml-1"
-                        aria-label={`Убрать ${tag}`}
+                        aria-label={t("removeTagAria", { tag })}
                       >
                         <X size={12} />
                       </button>
@@ -532,7 +532,7 @@ export function MatchingMode() {
                   <option value="">{t("any")}</option>
                   {UGT_OPTIONS.map((l) => (
                     <option key={l} value={String(l)}>
-                      УГТ {l}
+                      {t("ugtOption", { level: String(l) })}
                     </option>
                   ))}
                 </select>
@@ -642,8 +642,8 @@ export function MatchingMode() {
                 <span className="tz-badge tz-badge-accent" data-testid="llm-badge">
                   LLM
                 </span>
-                <span className="text-xs font-semibold text-tz-accent">llm бейдж</span>
-                <span className="text-xs text-tz-muted">контур {CONTOUR_TUNO} · причины LLM</span>
+                <span className="text-xs font-semibold text-tz-accent">{t("llmBadge")}</span>
+                <span className="text-xs text-tz-muted">{t("llmBadgeHint", { contour: CONTOUR_TUNO })}</span>
               </div>
               {llmReasons.length ? (
                 <ul className="mt-2 list-disc pl-5 text-sm text-tz-fg">
@@ -652,7 +652,7 @@ export function MatchingMode() {
                   ))}
                 </ul>
               ) : null}
-              <p className="mt-1 text-xs text-tz-muted">rerankWithLlm шлёт только чистые поля без ПДн</p>
+              <p className="mt-1 text-xs text-tz-muted">{t("llmOnlyFields")}</p>
             </div>
           ) : null}
 
@@ -668,12 +668,12 @@ export function MatchingMode() {
                     <span className="tz-badge tz-badge-neutral" data-testid="fallback-badge">
                       fallback
                     </span>
-                    <span className="text-xs font-semibold text-amber-800">бейдж fallback</span>
+                    <span className="text-xs font-semibold text-amber-800">{t("fallbackBadge")}</span>
                   </div>
                   <p className="mt-1 text-sm font-medium text-amber-800" data-testid="fallback-message">
                     {rerankError || LLM_UNAVAILABLE_MSG}
                   </p>
-                  <p className="text-xs text-amber-700">Показан script результат</p>
+                  <p className="text-xs text-amber-700">{t("fallbackShown")}</p>
                   {/* Текст для теста: LLM недоступен — script результат — Повторить + Retry */}
                   <span className="hidden">LLM недоступен — script результат — Повторить</span>
                   <span className="hidden">Retry</span>
@@ -698,7 +698,7 @@ export function MatchingMode() {
                   <p className="font-semibold text-amber-800">{t("staleTitle")}</p>
                   <p className="text-sm text-amber-700">{t("staleDesc")}</p>
                   {lastQueryAt ? (
-                    <p className="text-xs text-amber-600">Обновлено: {new Date(lastQueryAt).toLocaleString("ru-RU")}</p>
+                    <p className="text-xs text-amber-600">{t("updatedAt", { date: new Date(lastQueryAt).toLocaleString("ru-RU") })}</p>
                   ) : null}
                 </div>
                 <button type="button" onClick={runMatching} className="tz-btn tz-btn-secondary shrink-0">

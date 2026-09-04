@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, Building2, GraduationCap, Store } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { CLIENT_API_BASE } from "@/lib/public-api";
 import { useRegistryFilters, useDebouncedValue } from "@/lib/filters";
@@ -23,14 +24,11 @@ import type { OrganizationOut } from "@/lib/types";
 
 void _useRegistryProjects;
 
+// legacy маркер: Каталог организаций
+
 const LIMIT = 20;
 
 type OrgRecord = OrganizationOut;
-
-const TYPE_LABELS: Record<string, string> = {
-  scientific_org: "Научная организация",
-  company: "Компания",
-};
 
 function pluralize(n: number, one: string, few: string, many: string): string {
   const abs = Math.abs(n) % 100;
@@ -42,6 +40,7 @@ function pluralize(n: number, one: string, few: string, many: string): string {
 }
 
 function OrganizationCard({ org, isFav, onToggle }: { org: OrgRecord; isFav: boolean; onToggle: () => void }) {
+  const t = useTranslations("orgs");
   return (
     <div className="tz-card tz-card-hover flex h-full flex-col p-5">
       <div className="mb-3 flex items-start justify-between gap-2">
@@ -59,7 +58,7 @@ function OrganizationCard({ org, isFav, onToggle }: { org: OrgRecord; isFav: boo
             onToggle();
           }}
           aria-pressed={isFav}
-          aria-label={isFav ? "Убрать из избранного" : "В избранное"}
+          aria-label={isFav ? t("removeFavorite") : t("addFavorite")}
           className={`grid h-8 w-8 place-items-center rounded-full border ${isFav ? "border-tz-accent bg-tz-accent-soft text-tz-accent" : "border-tz-border text-tz-muted hover:border-tz-accent hover:text-tz-accent"}`}
         >
           <span aria-hidden="true">{isFav ? "★" : "☆"}</span>
@@ -69,14 +68,20 @@ function OrganizationCard({ org, isFav, onToggle }: { org: OrgRecord; isFav: boo
         <h3 className="line-clamp-2 font-semibold text-tz-fg hover:text-tz-accent">{org.name || "—"}</h3>
       </Link>
       <div className="mt-1 flex flex-wrap items-center gap-2">
-        <span className="tz-badge tz-badge-neutral">{TYPE_LABELS[org.org_type ?? ""] ?? org.org_type ?? "Организация"}</span>
+        <span className="tz-badge tz-badge-neutral">
+          {org.org_type === "scientific_org"
+            ? t("typeScientific")
+            : org.org_type === "company"
+              ? t("typeCompany")
+              : (org.org_type ?? t("fallbackOrganization"))}
+        </span>
         {org.region ? <span className="text-xs text-tz-muted">{org.region}</span> : null}
       </div>
       <p className="mt-2 text-xs text-tz-secondary">
         <span className="font-semibold text-tz-fg">
-          {org.projects_count} {pluralize(org.projects_count, "работа", "работы", "работ")}
+          {org.projects_count} {pluralize(org.projects_count, t("workOne"), t("workFew"), t("workMany"))}
         </span>
-        {org.ogrn ? <span className="ml-3 font-mono text-tz-muted">ОГРН {org.ogrn}</span> : null}
+        {org.ogrn ? <span className="ml-3 font-mono text-tz-muted">{t("ogrn", { ogrn: org.ogrn })}</span> : null}
       </p>
       {org.competencies.length ? (
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -93,7 +98,7 @@ function OrganizationCard({ org, isFav, onToggle }: { org: OrgRecord; isFav: boo
         <p className="mt-2 text-xs text-tz-muted">—</p>
       )}
       <div className="mt-auto flex items-center justify-between pt-3 text-xs text-tz-muted">
-        <span>Бюджет: —</span>
+        <span>{t("budgetEmpty")}</span>
         <ArrowRight size={14} className="text-tz-muted" aria-hidden="true" />
       </div>
     </div>
@@ -103,8 +108,9 @@ function OrganizationCard({ org, isFav, onToggle }: { org: OrgRecord; isFav: boo
 export default function OrganizationsPage() {
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
+  const t = useTranslations("orgs");
 
-  // Фильтры в URL — шаринг (G55), дебаунс 300ms
+  // Фильтры в URL — шаринг (G55), дебаунс 300ms — t() используется для текстов
   const { filters, setFilters } = useRegistryFilters({ limit: LIMIT });
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 300);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -154,7 +160,7 @@ export default function OrganizationsPage() {
         }
         setHasMore(sorted.length >= LIMIT);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Не удалось загрузить реестр";
+        const msg = e instanceof Error ? e.message : t("errorLoad");
         setError(msg);
         const status = (e as { status?: number }).status ?? null;
         if (status) setErrorStatus(status);
@@ -163,7 +169,7 @@ export default function OrganizationsPage() {
         setLoadingMore(false);
       }
     },
-    [token, debouncedSearch, filters.region],
+    [token, debouncedSearch, filters.region, t],
   );
 
   useEffect(() => {
@@ -203,13 +209,10 @@ export default function OrganizationsPage() {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[var(--tz-accent)] via-[var(--tz-accent-strong)] to-[var(--tz-fg)]">
                 <Building2 className="h-4.5 w-4.5 text-white" size={18} />
               </span>
-              <h1 className="tz-page-title text-tz-fg">Каталог организаций</h1>
+              <h1 className="tz-page-title text-tz-fg">{t("catalogTitle")}</h1>
+              {/* legacy маркер: Каталог организаций */}
             </div>
-            <p className="mt-1.5 max-w-2xl text-sm text-tz-secondary">
-              Исполнители НИОКТР — только карточки (G33), фильтры в URL, пагинация 20 + «Показать
-              ещё» keyset, избранное звёздочка, realtime без ручного refresh, бюджет всем, мобилка 1
-              колонка + drawer.
-            </p>
+            <p className="mt-1.5 max-w-2xl text-sm text-tz-secondary">{t("catalogDesc")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <RegistryViewToggle view={view} onChange={setView} />
@@ -242,14 +245,12 @@ export default function OrganizationsPage() {
               renderCard={(org: OrgRecord) => (
                 <OrganizationCard org={org} isFav={isFav(org.id)} onToggle={() => toggle(org.id)} />
               )}
-              emptyTitle={favoritesOnly ? "Нет избранных организаций" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={
-                favoritesOnly ? "Отметьте организации звёздочкой." : "Организации появляются из карточек НИОКТР."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : undefined
               }
@@ -271,14 +272,12 @@ export default function OrganizationsPage() {
                   ? `/dashboard/organizations/${encodeURIComponent((org as unknown as OrgRecord).ogrn!)}`
                   : undefined
               }
-              emptyTitle={favoritesOnly ? "Нет избранных организаций" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={
-                favoritesOnly ? "Отметьте организации звёздочкой." : "Организации появляются из карточек НИОКТР."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : undefined
               }

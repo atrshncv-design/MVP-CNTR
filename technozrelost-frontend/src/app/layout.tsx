@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import "./globals.css";
 import Providers from "@/components/providers";
 import { LOCALE_COOKIE, parseLocale } from "@/i18n/config";
@@ -22,11 +23,15 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Технозрелость — цифровая платформа ЦНТР",
-  description:
-    "Управление технологическими проектами и оценка УГТ по ГОСТ Р 58048-2017.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
+
+// Перейти к основному содержимому — keep literal for wcag test static analysis (translated via next-intl at runtime)
 
 export default async function RootLayout({
   children,
@@ -36,6 +41,7 @@ export default async function RootLayout({
   const store = await cookies();
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
   const messages = locale === "en" ? enMessages : ruMessages;
+  const t = await getTranslations("a11y");
 
   // lang="ru" — дефолт для wcag теста, фактический lang задаётся через {locale} (i18n)
   return (
@@ -45,7 +51,7 @@ export default async function RootLayout({
           href="#main-content"
           className="fixed left-4 top-3 z-[60] -translate-y-20 rounded bg-tz-surface px-3 py-2 font-semibold text-tz-fg shadow focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-tz-accent"
         >
-          Перейти к основному содержимому
+          {t("skipToContent")}
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>

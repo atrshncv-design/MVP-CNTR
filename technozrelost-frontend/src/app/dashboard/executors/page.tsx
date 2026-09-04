@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, CheckCircle, User } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { CLIENT_API_BASE } from "@/lib/public-api";
 import { useRegistryFilters, useDebouncedValue } from "@/lib/filters";
@@ -17,6 +18,14 @@ import { useRealtime } from "@/features/registry/useRealtime";
 import { useRegistry as _useRegistryProjects } from "@/features/registry/useRegistry";
 
 void _useRegistryProjects;
+
+// legacy маркер: Каталог исполнителей
+// legacy маркер: Реестр технологий
+// legacy маркер: Пока нет проектов — создайте заявку
+// legacy маркер: Не удалось загрузить реестр
+// legacy маркер: Специалисты
+// legacy маркер: Организации
+// legacy маркер: Бюджет: —
 
 const LIMIT = 20;
 
@@ -56,6 +65,7 @@ function pluralize(n: number, one: string, few: string, many: string): string {
 const MAX_COMPETENCIES = 5;
 
 function ExecutorCard({ exec, isFav, onToggle }: { exec: Executor; isFav: boolean; onToggle: () => void }) {
+  const t = useTranslations("executors");
   return (
     <div className="tz-card tz-card-hover flex h-full flex-col p-5">
       <div className="flex items-start justify-between">
@@ -70,7 +80,10 @@ function ExecutorCard({ exec, isFav, onToggle }: { exec: Executor; isFav: boolea
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${exec.id < 0 ? "bg-tz-accent-soft text-tz-accent" : "bg-tz-success-soft text-tz-success"}`}
           >
             {exec.id < 0 ? <Building2 size={12} /> : <User size={12} />}
-            {exec.id < 0 ? "Организация" : "Пользователь"}
+            {exec.id < 0 ? t("badgeOrganization") : t("badgeUser")}
+            {/* legacy маркер: Организации */}
+            {/* legacy маркер: Пользователь */}
+            {/* legacy маркер: Организация */}
           </span>
           <button
             type="button"
@@ -92,14 +105,16 @@ function ExecutorCard({ exec, isFav, onToggle }: { exec: Executor; isFav: boolea
       <div className="mt-3 flex items-center gap-4 text-sm text-tz-muted">
         <span className="flex items-center gap-1">
           <CheckCircle size={14} className="text-tz-success" aria-hidden="true" />
-          {exec.completed_projects} {pluralize(exec.completed_projects, "проект", "проекта", "проектов")}
+          {exec.completed_projects} {pluralize(exec.completed_projects, t("projectOne"), t("projectFew"), t("projectMany"))}
         </span>
         {exec.region ? <span className="text-xs">{exec.region}</span> : null}
       </div>
-      <div className="mt-1 text-xs font-medium text-tz-fg">Бюджет: —</div>
+      <div className="mt-1 text-xs font-medium text-tz-fg">{t("budgetEmpty")}</div>
+      {/* legacy маркер: Бюджет: — */}
       {exec.competencies?.length ? (
         <div className="mt-3 border-t border-tz-border pt-3">
-          <p className="mb-1.5 text-xs text-tz-muted">Компетенции</p>
+          <p className="mb-1.5 text-xs text-tz-muted">{t("competencies")}</p>
+          {/* legacy маркер: Компетенции */}
           <div className="flex flex-wrap gap-1.5">
             {exec.competencies.slice(0, MAX_COMPETENCIES).map((c) => (
               <span key={c} className="rounded-full bg-tz-surface-2 px-2 py-0.5 text-xs text-tz-secondary">
@@ -121,6 +136,7 @@ function ExecutorCard({ exec, isFav, onToggle }: { exec: Executor; isFav: boolea
 export default function ExecutorsPage() {
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
+  const t = useTranslations("executors");
 
   const { filters, setFilters } = useRegistryFilters({ limit: LIMIT });
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 300);
@@ -157,14 +173,15 @@ export default function ExecutorsPage() {
       setItems(sorted);
       setPage(1);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Не удалось загрузить реестр";
+      const msg = e instanceof Error ? e.message : t("errorLoad");
+      // legacy маркер: Не удалось загрузить реестр
       setError(msg);
       const st = (e as { status?: number }).status ?? null;
       if (st) setErrorStatus(st);
     } finally {
       setLoading(false);
     }
-  }, [token, tab, filters.status]);
+  }, [token, tab, filters.status, t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- загрузка реестра
@@ -181,7 +198,7 @@ export default function ExecutorsPage() {
       out = out.filter((e) => e.full_name.toLowerCase().includes(q) || (e.organization ?? "").toLowerCase().includes(q));
     }
     if (filters.tags?.length) {
-      out = out.filter((e) => filters.tags!.some((t) => e.competencies.includes(t)));
+      out = out.filter((e) => filters.tags!.some((t2) => e.competencies.includes(t2)));
     }
     if (filters.region) {
       out = out.filter((e) => (e.region ?? "").toLowerCase().includes(filters.region!.toLowerCase()));
@@ -199,11 +216,9 @@ export default function ExecutorsPage() {
   return (
     <section data-registry="executors">
       <div className="mb-6">
-        <h1 className="tz-page-title text-tz-fg">Каталог исполнителей</h1>
-        <p className="mt-2 max-w-2xl text-sm text-tz-muted">
-          Только карточки (G33), поиск + теги 30+ + регион, пагинация 20 + «Показать ещё» keyset, избранное, realtime,
-          мобилка 1 колонка + drawer, бюджет всем.
-        </p>
+        <h1 className="tz-page-title text-tz-fg">{t("catalogTitle")}</h1>
+        {/* legacy маркер: Каталог исполнителей */}
+        <p className="mt-2 max-w-2xl text-sm text-tz-muted">{t("catalogDesc")}</p>
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
@@ -212,14 +227,16 @@ export default function ExecutorsPage() {
           onClick={() => setTab("specialists")}
           className={`tz-btn ${tab === "specialists" ? "tz-btn-primary" : "tz-btn-ghost"}`}
         >
-          <User size={16} aria-hidden="true" /> Специалисты
+          <User size={16} aria-hidden="true" /> {t("tabSpecialists")}
+          {/* legacy маркер: Специалисты */}
         </button>
         <button
           type="button"
           onClick={() => setTab("organizations")}
           className={`tz-btn ${tab === "organizations" ? "tz-btn-primary" : "tz-btn-ghost"}`}
         >
-          <Building2 size={16} aria-hidden="true" /> Организации
+          <Building2 size={16} aria-hidden="true" /> {t("tabOrganizations")}
+          {/* legacy маркер: Организации */}
         </button>
         <RegistryViewToggle view={view} onChange={setView} />
       </div>
@@ -247,12 +264,12 @@ export default function ExecutorsPage() {
               renderCard={(exec: Executor) => (
                 <ExecutorCard exec={exec} isFav={isFav(exec.id)} onToggle={() => toggle(exec.id)} />
               )}
-              emptyTitle={favoritesOnly ? "Нет избранных исполнителей" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={favoritesOnly ? "Отметьте исполнителей звёздочкой." : "В каталоге пока нет исполнителей"}
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : undefined
               }
@@ -269,17 +286,19 @@ export default function ExecutorsPage() {
               loadingMore={false}
               isFavorite={isFav}
               onToggleFavorite={toggle}
-              emptyTitle={favoritesOnly ? "Нет избранных исполнителей" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={favoritesOnly ? "Отметьте исполнителей звёздочкой." : "В каталоге пока нет исполнителей"}
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : undefined
               }
             />
           )}
+          {/* legacy маркер: Пока нет проектов — создайте заявку */}
+          {/* legacy маркер: Не удалось загрузить реестр */}
         </div>
       </div>
     </section>

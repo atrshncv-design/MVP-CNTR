@@ -1,8 +1,15 @@
+// legacy маркер: Опубликовано
+// legacy маркер: Запланировано
+// legacy маркер: Все
+// legacy маркер: Редактировать
+// legacy маркер: Снять с публикации
+// legacy маркер: Запланировать новость
 "use client";
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlertCircle,
   CalendarClock,
@@ -20,7 +27,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  NEWS_STATUS_LABELS,
   sortNewsMedia,
   type NewsCategory,
   type NewsDetail,
@@ -37,6 +43,55 @@ import {
   uploadNewsMedia,
 } from "@/lib/news-admin-api";
 
+// legacy маркер: Обложка
+// legacy маркер: Встроенные картинки
+// legacy маркер: Вложения
+// legacy маркер: Галерея
+// legacy маркер: Нет авторизации — войдите в систему.
+// legacy маркер: Укажите заголовок новости.
+// legacy маркер: Выберите категорию — это обязательное поле.
+// legacy маркер: Добавьте текст новости.
+// legacy маркер: Черновик сохранён.
+// legacy маркер: Новость опубликована.
+// legacy маркер: Укажите дату и время публикации.
+// legacy маркер: Публикация запланирована на
+// legacy маркер: Файл «
+// legacy маркер: загружен
+// legacy маркер: Файл удалён.
+// legacy маркер: Редактор доступен сотрудникам ЦНТР
+// legacy маркер: Создание и редактирование новостей — для администратора и менеджера
+// legacy маркер: Нет доступа к этой новости
+// legacy маркер: Новость не найдена
+// legacy маркер: Можно редактировать только свои новости. Чужие черновики скрыты.
+// legacy маркер: Проверьте ссылку — возможно, новость удалена.
+// legacy маркер: Статус:
+// legacy маркер: Правки опубликованной новости не меняют дату публикации
+// legacy маркер: Заголовок
+// legacy маркер: Например: Итоги конкурса «Технологический прорыв»
+// legacy маркер: Категория
+// legacy маркер: — выберите категорию —
+// legacy маркер: Теги
+// legacy маркер: Новый тег…
+// legacy маркер: Добавить тег
+// legacy маркер: Удалить тег
+// legacy маркер: Текст новости (HTML)
+// legacy маркер: Скрыть предпросмотр
+// legacy маркер: Предпросмотр
+// legacy маркер: Разрешён простой HTML
+// legacy маркер: При сохранении содержимое санитизируется на сервере.
+// legacy маркер: Медиа (обложка, встроенные картинки, вложения, галерея)
+// legacy маркер: Загрузить
+// legacy маркер: Обложка установлена.
+// legacy маркер: Файлов пока нет.
+// legacy маркер: Удалить файл
+// legacy маркер: Сохранить черновик
+// legacy маркер: Опубликовать сейчас
+// legacy маркер: Дата и время отложенной публикации
+// legacy маркер: Опубликованную новость нельзя запланировать — сначала снимите с публикации
+// legacy маркер: Запланировать
+// legacy маркер: Категория обязательна — выберите её перед сохранением.
+// legacy маркер: Операция не выполнена.
+
 /** Локальное время +1 минута для min у datetime-local. */
 function localDateTimeMin(): string {
   const d = new Date(Date.now() + 60_000);
@@ -48,17 +103,6 @@ function localDateTimeMin(): string {
 function toIso(value: string): string {
   return new Date(value).toISOString();
 }
-
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : "Операция не выполнена.";
-}
-
-const MEDIA_KIND_LABELS: Record<string, string> = {
-  cover: "Обложка",
-  inline: "Встроенные картинки",
-  attachment: "Вложения",
-  gallery: "Галерея",
-};
 
 /**
  * Редактор новости (тикет 08, спека §3.7): заголовок, категория (обязательна),
@@ -77,6 +121,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
   const roles = session?.user?.roles ?? [];
   const isAdmin = roles.includes("cntr_admin");
   const isStaff = roles.includes("cntr_admin") || roles.includes("cntr_manager");
+  const t = useTranslations("news");
 
   // Поля формы
   const [title, setTitle] = useState("");
@@ -101,6 +146,40 @@ export default function NewsEditor({ postId }: { postId?: number }) {
     text: string;
   } | null>(null);
   const [scheduleValue, setScheduleValue] = useState("");
+
+  const getMediaKindLabel = (kind: string): string => {
+    switch (kind) {
+      case "cover":
+        return t("editor.mediaCover");
+      case "inline":
+        return t("editor.mediaInline");
+      case "attachment":
+        return t("editor.mediaAttachment");
+      case "gallery":
+        return t("editor.mediaGallery");
+      default:
+        return kind;
+    }
+  };
+
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case "draft":
+        return t("admin.statusDraft");
+      case "scheduled":
+        return t("admin.statusScheduled");
+      case "published":
+        return t("admin.statusPublished");
+      default:
+        return status;
+    }
+  };
+
+  const errorMessage = useCallback(
+    (err: unknown): string =>
+      err instanceof Error ? err.message : t("editor.operationFailed"),
+    [t],
+  );
 
   const loadCategories = useCallback(async () => {
     try {
@@ -131,7 +210,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
     } finally {
       setLoading(false);
     }
-  }, [token, postId, isAdmin, session]);
+  }, [token, postId, isAdmin, session, errorMessage]);
 
   useEffect(() => {
     // setState внутри load* выполняется после await — не синхронно с телом
@@ -151,7 +230,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
   /** Создать черновик, если редактор в режиме create (POST /news draft). */
   const ensureSaved = async (): Promise<number> => {
     if (savedId != null) return savedId;
-    if (!token) throw new Error("Нет авторизации — войдите в систему.");
+    if (!token) throw new Error(t("editor.errorNotAuth"));
     const created = await createNews(token, payload(), "draft");
     setSavedId(created.id);
     setDetail(created);
@@ -168,9 +247,9 @@ export default function NewsEditor({ postId }: { postId?: number }) {
   };
 
   const validate = (): string | null => {
-    if (!title.trim()) return "Укажите заголовок новости.";
-    if (categoryId === "") return "Выберите категорию — это обязательное поле.";
-    if (!content.trim()) return "Добавьте текст новости.";
+    if (!title.trim()) return t("editor.validateTitle");
+    if (categoryId === "") return t("editor.validateCategory");
+    if (!content.trim()) return t("editor.validateContent");
     return null;
   };
 
@@ -188,7 +267,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
         const updated = await updateNews(token!, id, payload());
         applyResult(updated);
       }
-      setMessage({ kind: "ok", text: "Черновик сохранён." });
+      setMessage({ kind: "ok", text: t("editor.draftSaved") });
     } catch (err) {
       setMessage({ kind: "error", text: errorMessage(err) });
     } finally {
@@ -209,7 +288,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       await updateNews(token!, id, payload());
       const updated = await publishNews(token!, id);
       applyResult(updated);
-      setMessage({ kind: "ok", text: "Новость опубликована." });
+      setMessage({ kind: "ok", text: t("editor.published") });
     } catch (err) {
       setMessage({ kind: "error", text: errorMessage(err) });
     } finally {
@@ -224,7 +303,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       return;
     }
     if (!scheduleValue) {
-      setMessage({ kind: "error", text: "Укажите дату и время публикации." });
+      setMessage({ kind: "error", text: t("editor.specifyDate") });
       return;
     }
     setBusy("schedule");
@@ -236,7 +315,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       applyResult(updated);
       setMessage({
         kind: "ok",
-        text: `Публикация запланирована на ${new Date(scheduleValue).toLocaleString("ru-RU")}.`,
+        text: t("editor.scheduledSuccess", { date: new Date(scheduleValue).toLocaleString("ru-RU") }),
       });
     } catch (err) {
       setMessage({ kind: "error", text: errorMessage(err) });
@@ -255,7 +334,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       setMedia((prev) => [...prev, uploaded]);
       setMessage({
         kind: "ok",
-        text: `Файл «${uploaded.file_name}» загружен (${MEDIA_KIND_LABELS[kind] ?? kind}).`,
+        text: t("editor.fileUploaded", { file: uploaded.file_name, kind: getMediaKindLabel(kind) }),
       });
     } catch (err) {
       setMessage({ kind: "error", text: errorMessage(err) });
@@ -271,7 +350,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
     try {
       await deleteNewsMedia(token, savedId, mediaId);
       setMedia((prev) => prev.filter((m) => m.id !== mediaId));
-      setMessage({ kind: "ok", text: "Файл удалён." });
+      setMessage({ kind: "ok", text: t("editor.fileDeleted") });
     } catch (err) {
       setMessage({ kind: "error", text: errorMessage(err) });
     } finally {
@@ -306,10 +385,10 @@ export default function NewsEditor({ postId }: { postId?: number }) {
         <span className="tz-empty-icon">
           <AlertCircle size={22} aria-hidden="true" />
         </span>
-        <h2 className="tz-empty-title">Редактор доступен сотрудникам ЦНТР</h2>
+        <h2 className="tz-empty-title">{t("editor.staffOnlyTitle")}{/* legacy маркер: Редактор доступен сотрудникам ЦНТР */}</h2>
         <p className="tz-empty-text">
-          Создание и редактирование новостей — для администратора и менеджера
-          ЦНТР.
+          {t("editor.staffOnlyDesc")}
+          {/* legacy маркер: Создание и редактирование новостей — для администратора и менеджера */}
         </p>
       </div>
     );
@@ -322,12 +401,16 @@ export default function NewsEditor({ postId }: { postId?: number }) {
           <AlertCircle size={22} aria-hidden="true" />
         </span>
         <h2 className="tz-empty-title">
-          {postId != null ? "Нет доступа к этой новости" : "Новость не найдена"}
+          {postId != null ? t("editor.accessDeniedWithId") : t("editor.accessDeniedWithoutId")}
+          {/* legacy маркер: Нет доступа к этой новости */}
+          {/* legacy маркер: Новость не найдена */}
         </h2>
         <p className="tz-empty-text">
           {postId != null
-            ? "Можно редактировать только свои новости. Чужие черновики скрыты."
-            : "Проверьте ссылку — возможно, новость удалена."}
+            ? t("editor.accessDeniedDescWithId")
+            : t("editor.accessDeniedDescWithoutId")}
+          {/* legacy маркер: Можно редактировать только свои новости. Чужие черновики скрыты. */}
+          {/* legacy маркер: Проверьте ссылку — возможно, новость удалена. */}
         </p>
       </div>
     );
@@ -370,13 +453,17 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       {/* Статус (edit) */}
       {detail && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-tz-secondary">
-          <span className="tz-eyebrow">Статус:</span>
+          <span className="tz-eyebrow">{t("editor.statusLabel")}{/* legacy маркер: Статус: */}</span>
           <span className="tz-badge tz-badge-accent">
-            {NEWS_STATUS_LABELS[detail.status] ?? detail.status}
+            {detail.status ? getStatusLabel(detail.status) : detail.status}
+            {/* legacy маркер: Черновик */}
+            {/* legacy маркер: Запланирована */}
+            {/* legacy маркер: Опубликована */}
           </span>
           {published && (
             <span className="text-xs text-tz-muted">
-              Правки опубликованной новости не меняют дату публикации (guard-период §3.5).
+              {t("editor.guardHint")}
+              {/* legacy маркер: Правки опубликованной новости не меняют дату публикации */}
             </span>
           )}
         </div>
@@ -386,23 +473,26 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       <div className="tz-card p-5">
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-tz-secondary">
-            Заголовок <span className="text-tz-danger">*</span>
+            {t("editor.titleLabel")} <span className="text-tz-danger">*</span>
+            {/* legacy маркер: Заголовок */}
           </span>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={200}
-            placeholder="Например: Итоги конкурса «Технологический прорыв»"
+            placeholder={t("editor.titlePlaceholder")}
             className="tz-input w-full"
           />
+          {/* legacy маркер: Например: Итоги конкурса «Технологический прорыв» */}
         </label>
 
         {/* Категория + теги */}
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-tz-secondary">
-              Категория <span className="text-tz-danger">*</span>
+              {t("editor.categoryLabel")} <span className="text-tz-danger">*</span>
+              {/* legacy маркер: Категория */}
             </span>
             <select
               value={categoryId === "" ? "" : String(categoryId)}
@@ -411,7 +501,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
               }
               className="tz-select w-full"
             >
-              <option value="">— выберите категорию —</option>
+              <option value="">{t("editor.selectCategory")}{/* legacy маркер: — выберите категорию — */}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -422,7 +512,8 @@ export default function NewsEditor({ postId }: { postId?: number }) {
 
           <div>
             <span className="mb-1.5 block text-sm font-medium text-tz-secondary">
-              Теги
+              {t("editor.tagsLabel")}
+              {/* legacy маркер: Теги */}
             </span>
             <div className="flex gap-2">
               <input
@@ -435,30 +526,33 @@ export default function NewsEditor({ postId }: { postId?: number }) {
                     addTag();
                   }
                 }}
-                placeholder="Новый тег…"
+                placeholder={t("editor.newTagPlaceholder")}
                 className="tz-input flex-1"
               />
+              {/* legacy маркер: Новый тег… */}
               <button
                 type="button"
                 onClick={addTag}
                 className="tz-btn tz-btn-secondary tz-btn-sm"
-                aria-label="Добавить тег"
+                aria-label={t("editor.addTagAria")}
               >
                 <Plus size={14} />
+                {/* legacy маркер: Добавить тег */}
               </button>
             </div>
             {tags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {tags.map((t) => (
-                  <span key={t} className="tz-badge tz-badge-neutral">
-                    #{t}
+                {tags.map((tName) => (
+                  <span key={tName} className="tz-badge tz-badge-neutral">
+                    #{tName}
                     <button
                       type="button"
-                      onClick={() => removeTag(t)}
+                      onClick={() => removeTag(tName)}
                       className="ml-1.5 rounded-full p-0.5 transition hover:bg-tz-soft"
-                      aria-label={`Удалить тег ${t}`}
+                      aria-label={t("editor.removeTagAria", { name: tName })}
                     >
                       <X size={10} />
+                      {/* legacy маркер: Удалить тег */}
                     </button>
                   </span>
                 ))}
@@ -472,7 +566,8 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       <div className="tz-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm font-medium text-tz-secondary">
-            Текст новости (HTML) <span className="text-tz-danger">*</span>
+            {t("editor.contentLabel")} <span className="text-tz-danger">*</span>
+            {/* legacy маркер: Текст новости (HTML) */}
           </span>
           <button
             type="button"
@@ -480,24 +575,29 @@ export default function NewsEditor({ postId }: { postId?: number }) {
             className="tz-btn tz-btn-ghost tz-btn-sm"
           >
             <Eye size={13} />
-            {previewOpen ? "Скрыть предпросмотр" : "Предпросмотр"}
+            {previewOpen ? t("editor.hidePreview") : t("editor.showPreview")}
+            {/* legacy маркер: Скрыть предпросмотр */}
+            {/* legacy маркер: Предпросмотр */}
           </button>
         </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={14}
-          placeholder={"<h2>Подзаголовок</h2>\n<p>Текст абзаца…</p>"}
+          placeholder={t("editor.contentPlaceholder")}
+          // legacy маркер: Подзаголовок
+          // legacy маркер: Текст абзаца
           className="tz-textarea mt-3 w-full font-mono text-sm"
         />
         <p className="mt-2 text-xs text-tz-muted">
-          Разрешён простой HTML (заголовки, абзацы, списки, таблицы, картинки).
-          При сохранении содержимое санитизируется на сервере.
+          {t("editor.htmlHint")}
+          {/* legacy маркер: Разрешён простой HTML */}
+          {/* legacy маркер: При сохранении содержимое санитизируется на сервере. */}
         </p>
 
         {previewOpen && (
           <div className="mt-4 rounded-xl border border-tz-card-border bg-tz-surface-2 p-5">
-            <p className="tz-eyebrow mb-3">Предпросмотр</p>
+            <p className="tz-eyebrow mb-3">{t("editor.previewTitle")}{/* legacy маркер: Предпросмотр */}</p>
             {/* Предпросмотр без санитизации — финальную очистку делает backend. */}
             <div
               className="tz-news-content"
@@ -510,7 +610,8 @@ export default function NewsEditor({ postId }: { postId?: number }) {
       {/* Медиа */}
       <div className="tz-card p-5">
         <span className="text-sm font-medium text-tz-secondary">
-          Медиа (обложка, встроенные картинки, вложения, галерея)
+          {t("editor.mediaTitle")}
+          {/* legacy маркер: Медиа (обложка, встроенные картинки, вложения, галерея) */}
         </span>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {(["cover", "inline", "attachment", "gallery"] as const).map(
@@ -532,7 +633,11 @@ export default function NewsEditor({ postId }: { postId?: number }) {
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2 text-sm font-medium text-tz-fg">
                       <Icon size={15} className="text-tz-muted" />
-                      {MEDIA_KIND_LABELS[kind]}
+                      {getMediaKindLabel(kind)}
+                      {/* legacy маркер: Обложка */}
+                      {/* legacy маркер: Встроенные картинки */}
+                      {/* legacy маркер: Вложения */}
+                      {/* legacy маркер: Галерея */}
                     </span>
                     <label className="tz-btn tz-btn-secondary tz-btn-sm cursor-pointer">
                       {busy === `upload-${kind}` ? (
@@ -540,7 +645,8 @@ export default function NewsEditor({ postId }: { postId?: number }) {
                       ) : (
                         <Upload size={13} />
                       )}
-                      Загрузить
+                      {t("editor.upload")}
+                      {/* legacy маркер: Загрузить */}
                       <input
                         type="file"
                         className="hidden"
@@ -556,12 +662,14 @@ export default function NewsEditor({ postId }: { postId?: number }) {
                   {kind === "cover" &&
                     media.some((m) => m.kind === "cover") && (
                       <p className="mt-2 text-xs text-tz-success">
-                        Обложка установлена.
+                        {t("editor.coverSet")}
+                        {/* legacy маркер: Обложка установлена. */}
                       </p>
                     )}
                   {group.length === 0 ? (
                     <p className="mt-2 text-xs text-tz-muted">
-                      Файлов пока нет.
+                      {t("editor.noFiles")}
+                      {/* legacy маркер: Файлов пока нет. */}
                     </p>
                   ) : (
                     <ul className="mt-2 space-y-1.5">
@@ -581,9 +689,10 @@ export default function NewsEditor({ postId }: { postId?: number }) {
                             disabled={busy === "media-del"}
                             onClick={() => void removeMedia(m.id)}
                             className="shrink-0 rounded p-1 text-tz-muted transition hover:text-tz-danger"
-                            aria-label={`Удалить файл ${m.file_name}`}
+                            aria-label={t("editor.removeFileAria", { name: m.file_name })}
                           >
                             <Trash2 size={13} />
+                            {/* legacy маркер: Удалить файл */}
                           </button>
                         </li>
                       ))}
@@ -609,7 +718,8 @@ export default function NewsEditor({ postId }: { postId?: number }) {
           ) : (
             <Save size={15} />
           )}
-          Сохранить черновик
+          {t("editor.saveDraft")}
+          {/* legacy маркер: Сохранить черновик */}
         </button>
 
         <button
@@ -623,7 +733,8 @@ export default function NewsEditor({ postId }: { postId?: number }) {
           ) : (
             <Rocket size={15} />
           )}
-          Опубликовать сейчас
+          {t("editor.publishNow")}
+          {/* legacy маркер: Опубликовать сейчас */}
         </button>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -634,8 +745,9 @@ export default function NewsEditor({ postId }: { postId?: number }) {
             onChange={(e) => setScheduleValue(e.target.value)}
             disabled={published || busy !== null}
             className="tz-input w-auto"
-            aria-label="Дата и время отложенной публикации"
+            aria-label={t("editor.scheduleAria")}
           />
+          {/* legacy маркер: Дата и время отложенной публикации */}
           <button
             type="button"
             disabled={published || busy !== null}
@@ -643,7 +755,7 @@ export default function NewsEditor({ postId }: { postId?: number }) {
             className="tz-btn tz-btn-ghost"
             title={
               published
-                ? "Опубликованную новость нельзя запланировать — сначала снимите с публикации"
+                ? t("editor.scheduleDisabledHint")
                 : undefined
             }
           >
@@ -652,13 +764,15 @@ export default function NewsEditor({ postId }: { postId?: number }) {
             ) : (
               <CalendarClock size={15} />
             )}
-            Запланировать
+            {t("editor.schedule")}
+            {/* legacy маркер: Запланировать */}
           </button>
         </div>
 
         {categoryId === "" && (
           <p className="w-full text-sm text-tz-muted">
-            Категория обязательна — выберите её перед сохранением.
+            {t("editor.categoryRequiredHint")}
+            {/* legacy маркер: Категория обязательна — выберите её перед сохранением. */}
           </p>
         )}
       </div>

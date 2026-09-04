@@ -1,7 +1,8 @@
 'use client';
 
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useSession } from 'next-auth/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Send,
@@ -12,6 +13,7 @@ import {
   ExternalLink,
   Trash2,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
@@ -29,15 +31,14 @@ interface Message {
   sources?: Source[];
 }
 
-/** Приветственное сообщение — точка отсчёта для кнопки «Очистить чат» */
-const INITIAL_ASSISTANT_MESSAGE: Message = {
-  role: 'assistant',
-  content: 'Здравствуйте! Я AI-ассистент платформы «Технозрелость». Задайте мне вопрос по методологии ГОСТ Р 58048-2017, уровням УГТ или документации проектов.',
-};
-
 export default function AiAssistantPage() {
+  const t = useTranslations("aiAssistant");
   const { data: session } = useSession();
-  const [messages, setMessages] = useState<Message[]>([INITIAL_ASSISTANT_MESSAGE]);
+  const initialAssistantMessage: Message = useMemo(() => ({
+    role: 'assistant',
+    content: t("welcome"),
+  }), [t]);
+  const [messages, setMessages] = useState<Message[]>([initialAssistantMessage]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -45,6 +46,16 @@ export default function AiAssistantPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Синхронизируем приветственное сообщение при смене языка
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].role === 'assistant') {
+        return [initialAssistantMessage];
+      }
+      return prev;
+    });
+  }, [initialAssistantMessage]);
 
   const sendMessage = async () => {
     if (!input.trim() || sending || !session?.user?.accessToken) return;
@@ -82,7 +93,7 @@ export default function AiAssistantPage() {
     } catch {
       setMessages((prev) => [...prev, {
         role: 'assistant',
-        content: 'Произошла ошибка при обращении к серверу. Попробуйте ещё раз.',
+        content: t("apiError"),
       }]);
     } finally {
       setSending(false);
@@ -91,26 +102,26 @@ export default function AiAssistantPage() {
 
   /** Очистить чат — вернуть приветственное сообщение */
   const clearChat = () => {
-    setMessages([INITIAL_ASSISTANT_MESSAGE]);
+    setMessages([initialAssistantMessage]);
   };
 
   return (
     <div className="flex h-[calc(100vh-100px)] flex-col">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h1 className="tz-page-title text-tz-fg">AI-ассистент</h1>
+          <h1 className="tz-page-title text-tz-fg">{t("title")}</h1>
           <p className="text-sm text-tz-muted">
-            Задавайте вопросы по ГОСТ Р 58048-2017, уровням УГТ и документации
+            {t("subtitle")}
           </p>
         </div>
         <button
           onClick={clearChat}
           disabled={messages.length <= 1 || sending}
           className="flex shrink-0 items-center gap-1.5 rounded-xl border border-tz-border bg-tz-surface px-3 py-2 text-xs font-medium text-tz-muted transition-colors hover:border-tz-danger hover:bg-tz-danger-soft hover:text-tz-danger disabled:opacity-50 disabled:hover:border-tz-border disabled:hover:bg-tz-surface disabled:hover:text-tz-muted"
-          title="Удалить все сообщения"
+          title={t("clearChatTitle")}
         >
           <Trash2 size={14} />
-          Очистить чат
+          {t("clearChat")}
         </button>
       </div>
 
@@ -145,7 +156,7 @@ export default function AiAssistantPage() {
               {msg.sources && msg.sources.length > 0 && (
                 <div className="mt-2 space-y-2 border-t border-tz-border pt-2">
                   <p className="flex items-center gap-1 text-xs text-tz-muted">
-                    <FileText size={12} /> Источники:
+                    <FileText size={12} /> {t("sources")}
                   </p>
                   {msg.sources.map((s) => (
                     <div key={s.id} className="flex items-start gap-2">
@@ -155,7 +166,7 @@ export default function AiAssistantPage() {
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           {typeof s.ugt_level === 'number' && s.ugt_level > 0 && (
                             <span className="rounded bg-[var(--tz-accent)]/10 px-1.5 py-px text-[10px] font-medium text-[var(--tz-accent)]">
-                              УГТ {s.ugt_level}
+                              {t("ugt", { level: s.ugt_level })}
                             </span>
                           )}
                           {s.source_uri && (
@@ -165,7 +176,7 @@ export default function AiAssistantPage() {
                               rel="noreferrer"
                               className="inline-flex items-center gap-0.5 text-[10px] text-tz-muted underline decoration-gray-300 underline-offset-2 hover:text-[var(--tz-accent)]"
                             >
-                              раздел ГОСТа <ExternalLink size={10} />
+                              {t("gostSection")} <ExternalLink size={10} />
                             </a>
                           )}
                           {s.doc_type && (
@@ -193,10 +204,7 @@ export default function AiAssistantPage() {
         <div ref={bottomRef} />
       </div>
       <div className="mx-4 mb-3 rounded-lg border border-tz-warning/30 bg-tz-warning-soft px-4 py-2.5 text-sm text-tz-fg">
-        <strong>Поиск по ГОСТам временно недоступен.</strong> Ассистент отвечает
-        на основе общих знаний модели, без цитирования разделов ГОСТов из базы
-        платформы. Цитирование будет восстановлено после подключения
-        эмбеддинг-модели.
+        <strong>{t("bannerStrong")}</strong> {t("bannerText")}
       </div>
 
       <div className="mt-4 flex gap-2">
@@ -205,7 +213,7 @@ export default function AiAssistantPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Введите вопрос по ГОСТ Р 58048-2017..."
+          placeholder={t("inputPlaceholder")}
           className="flex-1 rounded-xl border border-tz-border bg-tz-surface px-4 py-3 text-sm outline-none focus:border-[var(--tz-accent)]"
         />
         <button
@@ -214,7 +222,7 @@ export default function AiAssistantPage() {
           className="flex items-center gap-2 rounded-xl bg-[var(--tz-accent)] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--tz-accent-hover)] disabled:opacity-50"
         >
           {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-          Отправить
+          {t("send")}
         </button>
       </div>
     </div>

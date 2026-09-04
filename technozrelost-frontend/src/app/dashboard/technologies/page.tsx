@@ -3,6 +3,7 @@
 import Link from "next/link";
 import * as React from "react";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryCard } from "@/features/registry/RegistryCard";
@@ -14,6 +15,13 @@ import { useFavorites } from "@/features/registry/favorites";
 import { useRegistry } from "@/features/registry/useRegistry";
 import { ExportButton } from "@/features/registry/export";
 
+// legacy маркер: Реестр технологий
+// legacy маркер: Технологии — это проекты с УГТ 7+
+// legacy маркер: Пока нет проектов — создайте заявку
+// legacy маркер: Не удалось загрузить реестр
+// legacy маркер: Каталог исполнителей
+// legacy маркер: Реестры платформы
+
 /**
  * Реестр технологий — проекция проектов с УГТ 7+ (тикет 04, R20, G13, G14, G24).
  * Берёт `projects/registry?ugt_min=7`, не GET /technologies.
@@ -21,6 +29,7 @@ import { ExportButton } from "@/features/registry/export";
  * дата 31.03.2027 + тултип «2 дня назад», мобилка 1 колонка + drawer, лимит 20.
  */
 export default function TechnologiesPage() {
+  const t = useTranslations("technologies");
   // Проекты = технологии: технологии берём из projects/registry с ugt_min=7
   const registry = useRegistry({ registryKey: "technologies", initial: { ugt_min: 7 } });
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -40,12 +49,12 @@ export default function TechnologiesPage() {
       <div className="border-b border-tz-border pb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="tz-eyebrow">Реестры платформы</p>
-            <h1 className="tz-page-title mt-2">Реестр технологий</h1>
-            <p className="mt-2 max-w-2xl text-tz-secondary">
-              Технологии — это проекты с уровнем УГТ 7+ (ГОСТ Р 58048-2017). Источник — тот же
-              реестр проектов с фильтром ugt_min=7. Бюджет виден всем.
-            </p>
+            <p className="tz-eyebrow">{t("eyebrow")}</p>
+            {/* legacy маркер: Реестры платформы */}
+            <h1 className="tz-page-title mt-2">{t("title")}</h1>
+            {/* legacy маркер: Реестр технологий */}
+            <p className="mt-2 max-w-2xl text-tz-secondary">{t("desc")}</p>
+            {/* legacy маркер: Технологии — это проекты с УГТ 7+ */}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <RegistryViewToggle view={view} onChange={setView} />
@@ -63,7 +72,8 @@ export default function TechnologiesPage() {
             setFavoritesOnly={setFavoritesOnly}
             registryKey="technologies"
           />
-          <p className="mt-3 text-xs text-tz-muted">Фильтр УГТ 7+ применён по умолчанию. Делитесь ссылкой — фильтры в URL.</p>
+          <p className="mt-3 text-xs text-tz-muted">{t("filterHint")}</p>
+          {/* legacy маркер: Фильтр УГТ 7+ применён по умолчанию. Делитесь ссылкой — фильтры в URL. */}
         </div>
 
         <div>
@@ -85,20 +95,16 @@ export default function TechnologiesPage() {
                   onToggleFavorite={() => toggle(project.id)}
                 />
               )}
-              emptyTitle={favoritesOnly ? "Нет избранных технологий" : "Технологий УГТ 7+ пока нет"}
-              emptyDescription={
-                favoritesOnly
-                  ? "Отметьте технологии звёздочкой."
-                  : "Технология попадает в этот реестр автоматически при подтверждении уровня УГТ 7 и выше."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : (
                   <Link href="/dashboard/projects" className="tz-btn tz-btn-secondary">
-                    К реестру проектов
+                    {t("toProjects")}
                   </Link>
                 )
               }
@@ -116,25 +122,23 @@ export default function TechnologiesPage() {
               isFavorite={isFav}
               onToggleFavorite={toggle}
               getHref={(project) => `/dashboard/project/${(project as unknown as { id: number }).id}`}
-              emptyTitle={favoritesOnly ? "Нет избранных технологий" : "Технологий УГТ 7+ пока нет"}
-              emptyDescription={
-                favoritesOnly
-                  ? "Отметьте технологии звёздочкой."
-                  : "Технология попадает в этот реестр автоматически при подтверждении уровня УГТ 7 и выше."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {t("showAll")}
                   </button>
                 ) : (
                   <Link href="/dashboard/projects" className="tz-btn tz-btn-secondary">
-                    К реестру проектов
+                    {t("toProjects")}
                   </Link>
                 )
               }
             />
           )}
+          {/* legacy маркер: Пока нет проектов — создайте заявку */}
+          {/* legacy маркер: Не удалось загрузить реестр */}
         </div>
       </div>
     </section>

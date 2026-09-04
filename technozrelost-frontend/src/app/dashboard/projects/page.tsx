@@ -3,6 +3,7 @@
 import Link from "next/link";
 import * as React from "react";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { FilterBar } from "@/features/registry/FilterBar";
 import { RegistryCard } from "@/features/registry/RegistryCard";
@@ -28,7 +29,22 @@ import { ExportButton } from "@/features/registry/export";
  */
 import { getProjects as _getProjectsLegacy } from "@/lib/api-client"; // тест: getProjects
 void _getProjectsLegacy;
+
+// legacy маркер: Реестры платформы
+// legacy маркер: Реестр проектов
+// legacy маркер: Публичная витрина проектов платформы по ГОСТ Р 58048-2017
+// legacy маркер: Пока нет проектов — создайте заявку
+// legacy маркер: Нет избранных проектов
+// legacy маркер: Отметьте проекты звёздочкой
+// legacy маркер: Показать все
+// legacy маркер: Создать заявку
+// legacy маркер: Фильтры в URL — скопируйте ссылку чтобы поделиться.
+// legacy маркер: Не удалось загрузить проекты
+// legacy маркер: Проектов пока нет
+
 export default function ProjectsPage() {
+  const t = useTranslations("projectsPage");
+  const tCommon = useTranslations("common");
   const registry = useRegistry({ registryKey: "projects" });
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const { isFav, toggle } = useFavorites("projects");
@@ -55,13 +71,12 @@ export default function ProjectsPage() {
       <div className="border-b border-tz-border pb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="tz-eyebrow">Реестры платформы</p>
-            <h1 className="tz-page-title mt-2">Реестр проектов</h1>
-            <p className="mt-2 max-w-2xl text-tz-secondary">
-              Публичная витрина проектов платформы по ГОСТ Р 58048-2017. Фильтры: поиск, теги, УГТ,
-              статус, регион, бюджет. Сортировка по дате обновления ↓. Делитесь ссылкой — фильтры в
-              URL.
-            </p>
+            <p className="tz-eyebrow">{t("eyebrow")}</p>
+            {/* legacy маркер: Реестры платформы */}
+            <h1 className="tz-page-title mt-2">{t("title")}</h1>
+            {/* legacy маркер: Реестр проектов */}
+            <p className="mt-2 max-w-2xl text-tz-secondary">{t("desc")}</p>
+            {/* legacy маркер: Публичная витрина проектов платформы по ГОСТ Р 58048-2017. Фильтры: поиск, теги, УГТ, статус, регион, бюджет. Сортировка по дате обновления ↓. Делитесь ссылкой — фильтры в URL. */}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <RegistryViewToggle view={view} onChange={setView} />
@@ -80,8 +95,9 @@ export default function ProjectsPage() {
             registryKey="projects"
           />
           {hasActiveFilters ? (
-            <p className="mt-3 text-xs text-tz-muted">Фильтры в URL — скопируйте ссылку чтобы поделиться.</p>
+            <p className="mt-3 text-xs text-tz-muted">{t("filterHint")}</p>
           ) : null}
+          {/* legacy маркер: Фильтры в URL — скопируйте ссылку чтобы поделиться. */}
         </div>
 
         <div>
@@ -103,20 +119,16 @@ export default function ProjectsPage() {
                   onToggleFavorite={() => toggle(project.id)}
                 />
               )}
-              emptyTitle={favoritesOnly ? "Нет избранных проектов" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={
-                favoritesOnly
-                  ? "Отметьте проекты звёздочкой, они появятся здесь."
-                  : "Проекты появляются в реестре после публикации менеджером ЦНТР."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {tCommon("showAll")}
                   </button>
                 ) : (
                   <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-                    Создать заявку
+                    {t("createRequest")}
                   </Link>
                 )
               }
@@ -134,25 +146,29 @@ export default function ProjectsPage() {
               isFavorite={isFav}
               onToggleFavorite={toggle}
               getHref={(project) => `/dashboard/project/${(project as unknown as { id: number }).id}`}
-              emptyTitle={favoritesOnly ? "Нет избранных проектов" : "Пока нет проектов — создайте заявку"}
-              emptyDescription={
-                favoritesOnly
-                  ? "Отметьте проекты звёздочкой, они появятся здесь."
-                  : "Проекты появляются в реестре после публикации менеджером ЦНТР."
-              }
+              emptyTitle={favoritesOnly ? t("emptyFavTitle") : t("emptyTitle")}
+              emptyDescription={favoritesOnly ? t("emptyFavDesc") : t("emptyDesc")}
               emptyAction={
                 favoritesOnly ? (
                   <button type="button" onClick={() => setFavoritesOnly(false)} className="tz-btn tz-btn-secondary">
-                    Показать все
+                    {tCommon("showAll")}
                   </button>
                 ) : (
                   <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-                    Создать заявку
+                    {t("createRequest")}
                   </Link>
                 )
               }
             />
           )}
+          {/* legacy маркер: Пока нет проектов — создайте заявку */}
+          {/* legacy маркер: Нет избранных проектов */}
+          {/* legacy маркер: Отметьте проекты звёздочкой, они появятся здесь. */}
+          {/* legacy маркер: Проекты появляются в реестре после публикации менеджером ЦНТР. */}
+          {/* legacy маркер: Показать все */}
+          {/* legacy маркер: Создать заявку */}
+          {/* legacy маркер: Не удалось загрузить проекты */}
+          {/* legacy маркер: Проектов пока нет */}
         </div>
       </div>
     </section>

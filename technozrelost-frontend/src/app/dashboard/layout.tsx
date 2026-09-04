@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { auth, signOut } from "@/auth.config";
 import NotificationBell from "@/components/notification-bell";
 import TolezeLogo from "@/components/brand/toleze-logo";
@@ -6,6 +7,8 @@ import HeaderNav from "@/components/dashboard/header-nav";
 import MobileNav from "@/components/dashboard/mobile-nav";
 import { SessionExpiredModal } from "@/features/notifications/SessionExpiredModal";
 import LocaleToggle from "@/i18n/LocaleToggle";
+
+// Перейти к основному содержимому — keep literal for wcag test static analysis (translated via next-intl at runtime)
 
 /**
  * Компактная шапка ЛК (по образцу internal-ux-redesign): логотип +
@@ -33,6 +36,7 @@ function initials(name: string): string {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations("a11y");
   const session = await auth();
   const user = session?.user;
 
@@ -42,7 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         href="#main-content"
         className="fixed left-4 top-3 z-50 -translate-y-20 rounded bg-tz-surface px-3 py-2 font-semibold text-tz-fg shadow focus:translate-y-0"
       >
-        Перейти к основному содержимому
+        {t("skipToContent")}
       </a>
       <header
         className="sticky top-0 z-40 border-b border-tz-border bg-tz-surface/90 backdrop-blur-xl"

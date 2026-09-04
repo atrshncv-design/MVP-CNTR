@@ -45,112 +45,103 @@ const FAVORITE_KEY = 'tz:favorites';
 // Тестовые маркеры: Рабочий стол заказчика, Мои проекты, Активные проекты, На согласовании, Создать заявку, Вступить по TZ-XXXXXX, Пока нет проектов, Добро пожаловать
 const ROLE_META: Record<
   RoleSlug,
-  { eyebrow: string; description: string; icon: typeof Building2; tabs: Array<{ label: string; href: string }> }
+  { eyebrowKey: string; descriptionKey: string; icon: typeof Building2; tabs: Array<{ key: string; href: string }> }
 > = {
   gk_customer: {
-    eyebrow: 'Рабочий стол заказчика',
-    description:
-      'Здесь появятся проекты вашей организации и их путь от заявки до внедрения технологии.',
+    eyebrowKey: "eyebrowCustomer",
+    descriptionKey: "descCustomer",
     icon: Building2,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/gk_customer' },
-      { label: 'Новая заявка', href: '/dashboard/gk_customer/projects/new' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/gk_customer" },
+      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   rd_executor: {
-    eyebrow: 'Рабочий стол R&D-исполнителя',
-    description:
-      'Здесь отображаются проекты вашей организации: от вступления по токену до верификации контрольных точек и передачи технологии в серию.',
+    eyebrowKey: "eyebrowExecutor",
+    descriptionKey: "descExecutor",
     icon: FlaskConical,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/rd_executor' },
-      { label: 'Новая заявка', href: '/dashboard/gk_customer/projects/new' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/rd_executor" },
+      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   scientific_org: {
-    eyebrow: 'Рабочий стол научной организации',
-    description:
-      'Научные организации участвуют в проектах как партнёры НИОКР: ведут исследования, подтверждают уровни УГТ и готовят отчётную документацию.',
+    eyebrowKey: "eyebrowScientific",
+    descriptionKey: "descScientific",
     icon: GraduationCap,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/scientific_org' },
-      { label: 'Новая заявка', href: '/dashboard/gk_customer/projects/new' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/scientific_org" },
+      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   serial_manufacturer: {
-    eyebrow: 'Рабочий стол серийного производителя',
-    description:
-      'Здесь представлены технологии уровня УГТ 7 и выше, готовые к опытному образцу, квалификации и серийному выпуску.',
+    eyebrowKey: "eyebrowManufacturer",
+    descriptionKey: "descManufacturer",
     icon: Factory,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/serial_manufacturer' },
-      { label: 'Новая заявка', href: '/dashboard/gk_customer/projects/new' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/serial_manufacturer" },
+      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   regulating_organization: {
-    eyebrow: 'Рабочий стол регулирующей организации',
-    description:
-      'Присоединяйтесь к карточке проекта по токену TZ-XXXXXX и добавляйте документы подтверждения УГТ — они станут основанием для решения менеджера ЦНТР.',
+    eyebrowKey: "eyebrowRegulating",
+    descriptionKey: "descRegulating",
     icon: ShieldCheck,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/regulating_organization' },
-      { label: 'Новая заявка', href: '/dashboard/gk_customer/projects/new' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/regulating_organization" },
+      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   auditor: {
-    eyebrow: 'Рабочий стол аудитора',
-    description:
-      'Оценивайте контрольные точки проектов (в первую очередь КТ-1) и принимайте решение Go/No-Go по технико-экономическому обоснованию.',
+    eyebrowKey: "eyebrowAuditor",
+    descriptionKey: "descAuditor",
     icon: ClipboardList,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/auditor' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/auditor" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   investor: {
-    eyebrow: 'Рабочий стол инвестора',
-    description:
-      'Изучайте реестр технологий платформы: уровень зрелости УГТ, организация-разработчик и перспективы внедрения. Реестр доступен только для чтения.',
+    eyebrowKey: "eyebrowInvestor",
+    descriptionKey: "descInvestor",
     icon: TrendingUp,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/investor' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/investor" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   cntr_admin: {
-    eyebrow: 'Рабочий стол администратора ЦНТР',
-    description:
-      'Управляйте учётными записями и ролями пользователей платформы. Изменения применяются после нажатия «Сохранить» в строке пользователя.',
+    eyebrowKey: "eyebrowAdmin",
+    descriptionKey: "descAdmin",
     icon: ShieldCheck,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/cntr_admin' },
-      { label: 'Новая заявка', href: '/dashboard/gk_customer/projects/new' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/cntr_admin" },
+      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
   cntr_manager: {
-    eyebrow: 'Рабочий стол менеджера ЦНТР',
-    description:
-      'Проверяйте карточки проектов и заявки на повышение УГТ. Финальное решение по уровню остаётся за менеджером ЦНТР.',
+    eyebrowKey: "eyebrowManager",
+    descriptionKey: "descManager",
     icon: Inbox,
     tabs: [
-      { label: 'Проекты', href: '/dashboard/cntr_manager' },
-      { label: 'Новая заявка', href: '/dashboard/gk_customer/projects/new' },
-      { label: 'Реестр технологий', href: '/dashboard/technologies' },
-      { label: 'Каталог исполнителей', href: '/dashboard/executors' },
+      { key: "tabProjects", href: "/dashboard/cntr_manager" },
+      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabTechRegistry", href: "/dashboard/technologies" },
+      { key: "tabExecutors", href: "/dashboard/executors" },
     ],
   },
 };
@@ -291,7 +282,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
 
   const meta = ROLE_META[role];
   const Icon = meta.icon;
-  const displayName = session?.user?.name ?? session?.user?.email ?? 'Пользователь';
+  const displayName = session?.user?.name ?? session?.user?.email ?? t("defaultUser");
   const { toggle, isFavorite } = useFavorites();
 
   const loadProjects = useCallback(async () => {
@@ -322,35 +313,8 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
     completed: projects.filter((p) => p.status === 'completed').length,
   };
 
-  const tEyebrow = (() => {
-    switch (role) {
-      case "gk_customer": return t("eyebrowCustomer");
-      case "rd_executor": return t("eyebrowExecutor");
-      case "scientific_org": return t("eyebrowScientific");
-      case "serial_manufacturer": return t("eyebrowManufacturer");
-      case "regulating_organization": return t("eyebrowRegulating");
-      case "auditor": return t("eyebrowAuditor");
-      case "investor": return t("eyebrowInvestor");
-      case "cntr_admin": return t("eyebrowAdmin");
-      case "cntr_manager": return t("eyebrowManager");
-      default: return meta.eyebrow;
-    }
-  })();
-
-  const tDescription = (() => {
-    switch (role) {
-      case "gk_customer": return t("descCustomer");
-      case "rd_executor": return t("descExecutor");
-      case "scientific_org": return t("descScientific");
-      case "serial_manufacturer": return t("descManufacturer");
-      case "regulating_organization": return t("descRegulating");
-      case "auditor": return t("descAuditor");
-      case "investor": return t("descInvestor");
-      case "cntr_admin": return t("descAdmin");
-      case "cntr_manager": return t("descManager");
-      default: return meta.description;
-    }
-  })();
+  const tEyebrow = t(meta.eyebrowKey);
+  const tDescription = t(meta.descriptionKey);
 
   const statCards = [
     { label: t("statMyProjects"), value: stats.total, icon: FolderKanban, color: 'var(--tz-accent)' },
@@ -457,7 +421,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
       </div>
 
       {/* Табы — G32, по роли */}
-      <nav aria-label="Разделы рабочего стола" className="flex gap-6 overflow-x-auto border-b border-tz-border">
+      <nav aria-label={t("workspaceSectionsAria")} className="flex gap-6 overflow-x-auto border-b border-tz-border">
         {meta.tabs.map((tab, idx) => {
           const isActive = idx === 0;
           const label = getTabLabel(tab.href);
@@ -610,7 +574,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-tz-muted">ЦНТР-{project.id}</span>
+                        <span className="font-mono text-xs text-tz-muted">{t("projectCode", { id: project.id })}</span>
                         <span
                           className="rounded-full px-2 py-0.5 text-[11px] font-medium"
                           style={{ background: `${color}15`, color }}
@@ -639,7 +603,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                       </Link>
                       <p className="mt-1 text-sm text-tz-secondary">
                         {(project.tags?.[0] ?? project.category ?? categoryToTags(project.category)[0]) ??
-                          'Категория не указана'}
+                          t("categoryNotSpecified")}
                       </p>
                     </div>
                     <div className="md:text-right">

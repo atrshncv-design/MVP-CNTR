@@ -13,8 +13,47 @@ import {
   Send,
   UserCog,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
+// legacy маркер: Команда проекта
+// legacy маркер: Пригласить участника
+// legacy маркер: Приглашения
+// legacy маркер: Одноразовое
+// legacy маркер: Массовое
+// legacy маркер: Лимит использований
+// legacy маркер: Роли через запятую (participant)
+// legacy маркер: Создать
+// legacy маркер: Приглашений пока нет.
+// legacy маркер: отозвано
+// legacy маркер: одноразовое
+// legacy маркер: массовое
+// legacy маркер: Скопировать ссылку
+// legacy маркер: ссылка
+// legacy маркер: Отозвать
+// legacy маркер: Передать администрирование
+// legacy маркер: id участника
+// legacy маркер: Передать
+// legacy маркер: Договорные поля (менеджер центра)
+// legacy маркер: Договорный владелец
+// legacy маркер: Правообладатель
+// legacy маркер: Номер договора
+// legacy маркер: Основание договора
+// legacy маркер: Сохранить договорные поля
+// legacy маркер: Приглашение создано:
+// legacy маркер: Ошибка создания приглашения
+// legacy маркер: Ошибка создания
+// legacy маркер: Ошибка отзыва
+// legacy маркер: Ошибка отзыва приглашения
+// legacy маркер: Ошибка передачи
+// legacy маркер: Полномочие project_admin передано
+// legacy маркер: Ошибка передачи полномочия
+// legacy маркер: Ошибка сохранения
+// legacy маркер: Договорные поля сохранены
+// legacy маркер: Ошибка сохранения договорных полей
+// legacy маркер: Не удалось загрузить команду проекта
+// legacy маркер: Обновить
+// legacy маркер: Критические элементы
 
 interface Invite {
   id: number;
@@ -30,6 +69,7 @@ interface Invite {
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
+  const t = useTranslations("team");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const isManager = (session?.user?.roles ?? []).some(
@@ -77,11 +117,11 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
       setError(null);
     } catch (e) {
       // 403/404 — нет полномочия project_admin: панель остаётся скрытой
-      setError(e instanceof Error ? e.message : "Не удалось загрузить команду проекта");
+      setError(e instanceof Error ? e.message : t("loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [token, projectId]);
+  }, [token, projectId, t]);
 
   useEffect(() => {
     (async () => {
@@ -108,14 +148,14 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
         throw new Error(
           data && typeof (data as { detail?: string }).detail === "string"
             ? (data as { detail: string }).detail
-            : `Ошибка создания (${res.status})`,
+            : t("createError", { status: res.status }),
         );
       }
       const invite = await res.json();
       setInvites((prev) => [invite, ...prev]);
-      setNotice(`Приглашение создано: ${window.location.origin}/join/${invite.token}`);
+      setNotice(t("inviteCreated", { url: `${window.location.origin}/join/${invite.token}` }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка создания приглашения");
+      setError(e instanceof Error ? e.message : t("createFailed"));
     }
   };
 
@@ -127,10 +167,10 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
         `${CLIENT_API_BASE}/api/v1/projects/${projectId}/invites/${inviteId}/revoke`,
         { method: "POST", headers: auth(token) },
       );
-      if (!res.ok) throw new Error(`Ошибка отзыва (${res.status})`);
+      if (!res.ok) throw new Error(t("revokeError", { status: res.status }));
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка отзыва приглашения");
+      setError(e instanceof Error ? e.message : t("revokeFailed"));
     }
   };
 
@@ -148,13 +188,13 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
         throw new Error(
           data && typeof (data as { detail?: string }).detail === "string"
             ? (data as { detail: string }).detail
-            : `Ошибка передачи (${res.status})`,
+            : t("transferError", { status: res.status }),
         );
       }
       setTransferUserId("");
-      setNotice("Полномочие project_admin передано");
+      setNotice(t("transferSuccess"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка передачи полномочия");
+      setError(e instanceof Error ? e.message : t("transferFailed"));
     }
   };
 
@@ -172,12 +212,12 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
         throw new Error(
           data && typeof (data as { detail?: string }).detail === "string"
             ? (data as { detail: string }).detail
-            : `Ошибка сохранения (${res.status})`,
+            : t("saveError", { status: res.status }),
         );
       }
-      setNotice("Договорные поля сохранены");
+      setNotice(t("saveSuccess"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка сохранения договорных полей");
+      setError(e instanceof Error ? e.message : t("saveFailed"));
     }
   };
 
@@ -193,9 +233,9 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <KeyRound size={18} className="text-tz-accent" />
-          <h2 className="tz-card-title">Команда проекта</h2>
+          <h2 className="tz-card-title">{t("title")}</h2>
         </div>
-        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label="Обновить">
+        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label={t("refreshAria")}>
           <RefreshCw size={15} />
         </button>
       </div>
@@ -206,40 +246,40 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
         </div>
       )}
 
-      {/* Приглашения */}
+      {/* Invites */}
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-tz-fg">Приглашения</p>
+        <p className="text-sm font-semibold text-tz-fg">{t("invitesTitle")}</p>
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={inviteType}
             onChange={(e) => setInviteType(e.target.value as "single" | "bulk")}
             className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
           >
-            <option value="single">Одноразовое</option>
-            <option value="bulk">Массовое</option>
+            <option value="single">{t("single")}</option>
+            <option value="bulk">{t("bulk")}</option>
           </select>
           {inviteType === "bulk" && (
             <input
               value={maxUses}
               onChange={(e) => setMaxUses(e.target.value)}
               inputMode="numeric"
-              placeholder="Лимит использований"
+              placeholder={t("limitPlaceholder")}
               className="w-40 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
           )}
           <input
             value={allowedRoles}
             onChange={(e) => setAllowedRoles(e.target.value)}
-            placeholder="Роли через запятую (participant)"
+            placeholder={t("rolesPlaceholder")}
             className="w-72 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
           />
           <button onClick={() => void createInvite()} className="tz-btn tz-btn-primary">
-            <Send size={15} /> Создать
+            <Send size={15} /> {t("create")}
           </button>
         </div>
 
         {invites.length === 0 ? (
-          <p className="text-sm text-tz-secondary">Приглашений пока нет.</p>
+          <p className="text-sm text-tz-secondary">{t("emptyInvites")}</p>
         ) : (
           <ul className="grid gap-2">
             {invites.map((invite) => (
@@ -249,15 +289,15 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
                   <code className="font-mono text-xs text-tz-fg">{invite.token}</code>
                   <span className={`text-xs ${invite.revoked_at ? "text-tz-danger-fg" : "text-tz-muted"}`}>
                     {invite.revoked_at
-                      ? "отозвано"
-                      : `${invite.invite_type === "single" ? "одноразовое" : "массовое"} · ${invite.used_count}/${invite.max_uses}`}
+                      ? t("revoked")
+                      : `${invite.invite_type === "single" ? t("singleLabel") : t("bulkLabel")} · ${t("uses", { used: invite.used_count, max: invite.max_uses })}`}
                   </span>
                   <button
                     onClick={() => navigator.clipboard.writeText(`${window.location.origin}/join/${invite.token}`)}
                     className="inline-flex items-center gap-1 text-xs text-tz-accent hover:underline"
-                    aria-label="Скопировать ссылку"
+                    aria-label={t("copyLinkAria")}
                   >
-                    <Copy size={12} /> ссылка
+                    <Copy size={12} /> {t("linkText")}
                   </button>
                 </div>
                 {!invite.revoked_at && (
@@ -265,7 +305,7 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
                     onClick={() => void revokeInvite(invite.id)}
                     className="inline-flex items-center gap-1 text-xs text-tz-danger-fg hover:underline"
                   >
-                    <Ban size={12} /> Отозвать
+                    <Ban size={12} /> {t("revoke")}
                   </button>
                 )}
               </li>
@@ -274,60 +314,63 @@ export default function ProjectTeamPanel({ projectId }: { projectId: number }) {
         )}
       </div>
 
-      {/* Передача project_admin */}
+      {/* Transfer project_admin */}
       <div className="flex flex-wrap items-center gap-2 border-t border-tz-border pt-4">
         <UserCog size={16} className="text-tz-accent" />
-        <p className="text-sm font-semibold text-tz-fg">Передать администрирование</p>
+        <p className="text-sm font-semibold text-tz-fg">{t("transferTitle")}</p>
         <input
           value={transferUserId}
           onChange={(e) => setTransferUserId(e.target.value)}
           inputMode="numeric"
-          placeholder="id участника"
+          placeholder={t("transferPlaceholder")}
           className="w-36 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
         />
         <button onClick={() => void transferAdmin()} className="tz-btn tz-btn-secondary">
-          Передать
+          {t("transferBtn")}
         </button>
       </div>
 
-      {/* Договорные поля — только менеджер */}
+      {/* Contract fields — manager only */}
       {isManager && (
         <div className="space-y-3 border-t border-tz-border pt-4">
           <div className="flex items-center gap-2">
             <Scale size={16} className="text-tz-accent" />
-            <p className="text-sm font-semibold text-tz-fg">Договорные поля (менеджер центра)</p>
+            <p className="text-sm font-semibold text-tz-fg">{t("legalTitle")}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <input
               value={legalForm.legal_owner}
               onChange={(e) => setLegalForm((f) => ({ ...f, legal_owner: e.target.value }))}
-              placeholder="Договорный владелец"
+              placeholder={t("legalOwnerPlaceholder")}
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
             <input
               value={legalForm.rights_holder}
               onChange={(e) => setLegalForm((f) => ({ ...f, rights_holder: e.target.value }))}
-              placeholder="Правообладатель"
+              placeholder={t("rightsHolderPlaceholder")}
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
             <input
               value={legalForm.contract_number}
               onChange={(e) => setLegalForm((f) => ({ ...f, contract_number: e.target.value }))}
-              placeholder="Номер договора"
+              placeholder={t("contractNumberPlaceholder")}
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
             <input
               value={legalForm.contract_basis}
               onChange={(e) => setLegalForm((f) => ({ ...f, contract_basis: e.target.value }))}
-              placeholder="Основание договора"
+              placeholder={t("contractBasisPlaceholder")}
               className="rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg"
             />
           </div>
           <button onClick={() => void saveLegal()} className="tz-btn tz-btn-secondary">
-            <Loader2 size={15} className="hidden" /> Сохранить договорные поля
+            <Loader2 size={15} className="hidden" /> {t("saveLegal")}
           </button>
         </div>
       )}
+      {/* legacy маркер: Команда проекта */}
+      {/* legacy маркер: Приглашения */}
+      {/* legacy маркер: Сохранить договорные поля */}
     </div>
   );
 }

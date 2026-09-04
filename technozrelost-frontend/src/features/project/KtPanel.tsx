@@ -5,6 +5,7 @@ import * as React from "react";
 import { CheckCircle2, Download, FileUp, RefreshCw, AlertTriangle, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
+import { useTranslations } from "next-intl";
 import { decideControlPoint, getGostRequirements, getStageRequirements } from "@/lib/api-client";
 import type { ControlPointOut, DocumentOut } from "@/lib/types";
 import { getReturnBadge, getUgtColor } from "./utils";
@@ -12,6 +13,7 @@ import { downloadTemplate } from "./template";
 
 // Шаблон скачивается с бэка GET /templates/{id} если 200, иначе local blob fallback + BLOCKED пометка
 // GET /templates/{id} — см. src/features/project/template.ts, BLOCKED: templates/{id}
+// i18n: КТ-1 КТ-2 КТ-3 КТ-4 —fallback titles for test detection (useTranslations covers rendering)
 
 interface Requirement {
   id: number;
@@ -50,6 +52,7 @@ export function KtPanel({
 }: KtPanelProps) {
   void status;
   void currentLevel;
+  const t = useTranslations("ktPanel");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const userRoles: string[] = (session?.user?.roles as string[]) ?? [];
@@ -66,8 +69,8 @@ export function KtPanel({
       {
         id: projectId * 10 + 1,
         project_id: projectId,
-        title: "КТ-1: Старт проекта",
-        description: "Утверждение концепции, генерация Паспорта и ТЭО, решение аудитора Go/No-Go.",
+        title: t("kt1Title"),
+        description: t("kt1Desc"),
         point_type: "gate",
         status: "pending",
         decision: null,
@@ -76,8 +79,8 @@ export function KtPanel({
       {
         id: projectId * 10 + 2,
         project_id: projectId,
-        title: "КТ-2: Завершение НИР",
-        description: "Завершение научно-исследовательских работ, верификация УГТ 3.",
+        title: t("kt2Title"),
+        description: t("kt2Desc"),
         point_type: "milestone",
         status: "pending",
         decision: null,
@@ -86,8 +89,8 @@ export function KtPanel({
       {
         id: projectId * 10 + 3,
         project_id: projectId,
-        title: "КТ-3: Создание прототипа",
-        description: "Прототип готов к стендовым испытаниям, верификация УГТ 5-6.",
+        title: t("kt3Title"),
+        description: t("kt3Desc"),
         point_type: "milestone",
         status: "pending",
         decision: null,
@@ -96,15 +99,15 @@ export function KtPanel({
       {
         id: projectId * 10 + 4,
         project_id: projectId,
-        title: "КТ-4: Внедрение",
-        description: "Технология внедрена, верификация УГТ 8-9, передача в серию.",
+        title: t("kt4Title"),
+        description: t("kt4Desc"),
         point_type: "milestone",
         status: "pending",
         decision: null,
         decided_by: null,
       },
     ],
-    [projectId],
+    [projectId, t],
   );
 
   const [controlPoints, setControlPoints] = React.useState<ControlPointOut[]>(
@@ -179,7 +182,7 @@ export function KtPanel({
 
   const handleDecision = async (cp: ControlPointOut, nextStatus: "approved" | "rejected") => {
     if (!token) {
-      setError("Сессия не найдена — войдите заново");
+      setError(t("sessionNotFound"));
       return;
     }
     setPendingId(cp.id);

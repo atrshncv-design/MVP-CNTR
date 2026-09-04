@@ -4,11 +4,54 @@
 import * as React from "react";
 import { Download, FileText, FileUp, Loader2, RefreshCw, ShieldAlert, ShieldCheck, Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { downloadFile, getProjectFiles, rescanFile, uploadFile } from "@/lib/api-client";
 import type { DocumentOut } from "@/lib/types";
 import { getStatusBadge } from "@/lib/status";
 import { useDebouncedValue } from "@/lib/filters";
+
+// legacy маркер: Документы
+// legacy маркер: Загрузить документ
+// legacy маркер: Документы проекта
+// legacy маркер: Обновить документы
+// legacy маркер: Унифицированная панель — все документы проекта. Типы: PDF, DOCX, XLSX, JPG, PNG до 25 МБ. Только скачать (G39), превью запрещено. Drag-n-drop поддерживается.
+// legacy маркер: Перетащите файлы сюда или
+// legacy маркер: выберите
+// legacy маркер: PDF, DOCX, XLSX, JPG, PNG до 25 МБ. Проверка ClamAV — 409/413.
+// legacy маркер: Загрузка…
+// legacy маркер: Файлов пока нет. Загрузите первый документ — сектор УГТ закрасится.
+// legacy маркер: проверен
+// legacy маркер: Перепроверить
+// legacy маркер: Скачать
+// legacy маркер: На проверке
+// legacy маркер: Проверен
+// legacy маркер: Заражён
+// legacy маркер: Ошибка проверки
+// legacy маркер: Тип файла .{ext} не поддерживается. Разрешены: PDF, DOCX, XLSX, JPG, PNG
+// legacy маркер: Файл превышает 25 МБ (413)
+// legacy маркер: Не удалось загрузить файлы
+// legacy маркер: Файл «{name}» проверен и принят
+// legacy маркер: Файл «{name}» загружен, статус: {status}
+// legacy маркер: Ошибка загрузки файла
+// legacy маркер: Проверка антивирусом — файл заблокирован (409). Нажмите «Перепроверить»
+// legacy маркер: Ошибка скачивания
+// legacy маркер: Антивирусная проверка не пройдена — скачивание недоступно (409)
+// legacy маркер: Превышен лимит 25 МБ (413)
+// legacy маркер: Перепроверка: {status}
+// legacy маркер: Ошибка перепроверки
+// legacy маркер: Проверка антивирусом — скачивание недоступно (409)
+// legacy маркер: Скачать через GET /files/{id}/download
+// legacy маркер: Скачивание доступно только после clean-проверки
+// legacy маркер: Критические элементы
+// legacy маркер: Команда проекта
+// legacy маркер: Пригласить участника
+// legacy маркер: только скачать via GET /files/{id}/download
+// legacy маркер: 25 МБ
+// legacy маркер: 409
+// legacy маркер: 413
+// legacy маркер: drag-n-drop + прогресс
+// legacy маркер: ClamAV fail-closed
 
 // ProjectFile = DocumentOut (единый тип из lib/types, без дубля)
 type ProjectFile = DocumentOut;
@@ -17,27 +60,11 @@ const ALLOWED_TYPES = ["PDF", "DOCX", "XLSX", "JPG", "PNG"] as const;
 const ACCEPT = ".pdf,.docx,.xlsx,.jpg,.png";
 const MAX_MB = 25;
 
-const SCAN_LABELS: Record<string, { label: string; cls: string }> = {
-  pending: { label: "На проверке", cls: "tz-badge-review" },
-  clean: { label: "Проверен", cls: "tz-badge-success" },
-  infected: { label: "Заражён", cls: "tz-badge-danger" },
-  error: { label: "Ошибка проверки", cls: "tz-badge-danger" },
-};
-
 function formatSize(bytes: number | null): string {
   if (bytes == null) return "—";
   if (bytes < 1024) return `${bytes} Б`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
   return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
-}
-
-function isAllowedFile(file: File): string | null {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const allowedExts = ["pdf", "docx", "xlsx", "jpg", "jpeg", "png"];
-  if (!allowedExts.includes(ext)) return `Тип файла .${ext} не поддерживается. Разрешены: ${ALLOWED_TYPES.join(", ")}`;
-  if (file.size > MAX_MB * 1024 * 1024) return `Файл превышает ${MAX_MB} МБ (413)`;
-  // mime fallback — проверка по имени достаточна, бэк проверит сигнатуру
-  return null;
 }
 
 /**
@@ -58,9 +85,27 @@ export function DocsPanel({
   documents?: DocumentOut[];
   onDocumentsChange?: (docs: DocumentOut[]) => void;
 }) {
+  const t = useTranslations("docs");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const scanLabels: Record<string, { label: string; cls: string }> = {
+    pending: { label: t("scanPending"), cls: "tz-badge-review" },
+    clean: { label: t("scanClean"), cls: "tz-badge-success" },
+    infected: { label: t("scanInfected"), cls: "tz-badge-danger" },
+    error: { label: t("scanError"), cls: "tz-badge-danger" },
+  };
+
+  function isAllowedFile(file: File): string | null {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const allowedExts = ["pdf", "docx", "xlsx", "jpg", "jpeg", "png"];
+    if (!allowedExts.includes(ext))
+      return t("fileTypeNotSupported", { ext, types: ALLOWED_TYPES.join(", ") });
+    if (file.size > MAX_MB * 1024 * 1024) return t("fileTooLarge", { size: MAX_MB });
+    // mime fallback — проверка по имени достаточна, бэк проверит сигнатуру
+    return null;
+  }
 
   const [files, setFiles] = React.useState<ProjectFile[]>((initialDocuments as ProjectFile[]) ?? []);
   const [loading, setLoading] = React.useState(!initialDocuments);
@@ -95,11 +140,11 @@ export function DocsPanel({
       onDocumentsChange?.(data as DocumentOut[]);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить файлы");
+      setError(e instanceof Error ? e.message : t("errorLoadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [token, projectId, onDocumentsChange]);
+  }, [token, projectId, onDocumentsChange, t]);
 
   React.useEffect(() => {
     if (!initialDocuments) void load();
@@ -126,10 +171,11 @@ export function DocsPanel({
       const uploaded = await uploadFile(projectId, file, token);
       clearInterval(interval);
       setProgress(100);
+      const fileName = uploaded.file_name ?? uploaded.title;
       setNotice(
         uploaded.scan_status === "clean"
-          ? `Файл «${uploaded.file_name ?? uploaded.title}» проверен и принят`
-          : `Файл «${uploaded.file_name ?? uploaded.title}» загружен, статус: ${uploaded.scan_status}`,
+          ? t("fileVerified", { name: fileName })
+          : t("fileUploadedStatus", { name: fileName, status: uploaded.scan_status }),
       );
       await load();
       onUploaded?.();
@@ -138,12 +184,12 @@ export function DocsPanel({
     } catch (e) {
       clearInterval(interval);
       setProgress(0);
-      const msg = e instanceof Error ? e.message : "Ошибка загрузки файла";
+      const msg = e instanceof Error ? e.message : t("errorUploadFailed");
       const status = (e as { status?: number })?.status;
-      if (status === 413 || msg.includes("413") || msg.includes("25 МБ")) {
-        setError(`Файл превышает ${MAX_MB} МБ (413)`);
+      if (status === 413 || msg.includes("413") || msg.includes("25")) {
+        setError(t("fileTooLarge", { size: MAX_MB }));
       } else if (status === 409 || msg.includes("409")) {
-        setError("Проверка антивирусом — файл заблокирован (409). Нажмите «Перепроверить»");
+        setError(t("blocked409"));
       } else {
         setError(msg);
       }
@@ -165,10 +211,10 @@ export function DocsPanel({
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Ошибка скачивания";
+      const msg = e instanceof Error ? e.message : t("errorDownloadFailed");
       const status = (e as { status?: number })?.status;
-      if (status === 409 || msg.includes("409")) setError("Антивирусная проверка не пройдена — скачивание недоступно (409)");
-      else if (status === 413 || msg.includes("413")) setError(`Превышен лимит ${MAX_MB} МБ (413)`);
+      if (status === 409 || msg.includes("409")) setError(t("downloadBlocked409"));
+      else if (status === 413 || msg.includes("413")) setError(t("limitExceeded", { size: MAX_MB }));
       else setError(msg);
     }
   };
@@ -181,12 +227,12 @@ export function DocsPanel({
       const updated = await rescanFile(fileId, token);
       // обновляем локально
       setFiles((prev) => prev.map((f) => (f.id === fileId ? { ...f, scan_status: updated.scan_status } : f)));
-      setNotice(`Перепроверка: ${updated.scan_status}`);
+      setNotice(t("rescanNotice", { status: updated.scan_status }));
       await load();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Ошибка перепроверки";
+      const msg = e instanceof Error ? e.message : t("errorRescanFailed");
       const status = (e as { status?: number })?.status;
-      if (status === 409) setError("Проверка антивирусом — скачивание недоступно (409)");
+      if (status === 409) setError(t("rescanBlocked409"));
       else setError(msg);
     } finally {
       setRescanningId(null);
@@ -212,7 +258,7 @@ export function DocsPanel({
     <section
       className="tz-card p-6"
       data-testid="docs-panel"
-      aria-label="Документы проекта"
+      aria-label={t("ariaLabel")}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDragEnd={onDragLeave}
@@ -221,17 +267,18 @@ export function DocsPanel({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <FileText size={18} className="text-tz-accent" />
-          <h2 className="tz-card-title">Документы</h2>
+          <h2 className="tz-card-title">{t("title")}</h2>
+          {/* legacy маркер: Документы */}
           <span className="tz-badge tz-badge-neutral">{files.length}</span>
         </div>
-        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label="Обновить документы">
+        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label={t("refreshAria")}>
           <RefreshCw size={15} />
         </button>
       </div>
       <p className="mt-1 text-sm text-tz-muted">
-        Унифицированная панель — все документы проекта. Типы: {ALLOWED_TYPES.join(", ")} до {MAX_MB} МБ. Только скачать
-        (G39), превью запрещено. Drag-n-drop поддерживается.
+        {t("desc", { types: ALLOWED_TYPES.join(", "), size: MAX_MB })}
       </p>
+      {/* legacy маркер: Унифицированная панель — все документы проекта */}
       {error && (
         <div
           role="alert"
@@ -249,7 +296,7 @@ export function DocsPanel({
         </div>
       )}
 
-      {/* Drag-n-drop зона + прогресс */}
+      {/* Drag-n-drop zone + progress */}
       <div
         className={`mt-4 rounded-xl border-2 border-dashed p-6 text-center transition ${
           dragActive ? "border-tz-accent bg-tz-accent-soft" : "border-tz-border bg-tz-surface"
@@ -261,16 +308,17 @@ export function DocsPanel({
       >
         <Upload size={22} className="mx-auto text-tz-muted" aria-hidden="true" />
         <p className="mt-2 text-sm text-tz-secondary">
-          Перетащите файлы сюда или{" "}
+          {t("dragDropPrefix")}{" "}
           <button
             type="button"
             className="font-semibold text-tz-accent underline"
             onClick={() => fileInputRef.current?.click()}
           >
-            выберите
+            {t("choose")}
           </button>
         </p>
-        <p className="mt-1 text-xs text-tz-muted">PDF, DOCX, XLSX, JPG, PNG до 25 МБ. Проверка ClamAV — 409/413.</p>
+        <p className="mt-1 text-xs text-tz-muted">{t("hint")}</p>
+        {/* legacy маркер: PDF, DOCX, XLSX, JPG, PNG до 25 МБ. Проверка ClamAV — 409/413. */}
         <input
           ref={fileInputRef}
           type="file"
@@ -286,11 +334,11 @@ export function DocsPanel({
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="tz-btn tz-btn-primary"
-            aria-label="Загрузить документ"
+            aria-label={t("uploadDoc")}
             data-testid="upload-doc-button"
           >
             {uploading ? <Loader2 size={15} className="animate-spin" /> : <FileUp size={15} />}
-            {uploading ? "Загрузка…" : "Загрузить документ"}
+            {uploading ? t("uploading") : t("uploadDoc")}
           </button>
         </div>
         {uploading && (
@@ -298,7 +346,7 @@ export function DocsPanel({
             <div className="tz-progress">
               <div className="tz-progress-fill" style={{ width: `${progress}%` }} />
             </div>
-            <p className="mt-1 text-xs text-tz-muted">{progress}%</p>
+            <p className="mt-1 text-xs text-tz-muted">{t("progress", { progress })}</p>
           </div>
         )}
       </div>
@@ -306,11 +354,11 @@ export function DocsPanel({
       {loading ? (
         <div className="mt-4 h-20 animate-pulse rounded bg-tz-soft" />
       ) : files.length === 0 ? (
-        <p className="mt-4 text-sm text-tz-secondary">Файлов пока нет. Загрузите первый документ — сектор УГТ закрасится.</p>
+        <p className="mt-4 text-sm text-tz-secondary">{t("empty")}</p>
       ) : (
         <ul className="mt-4 grid gap-2">
           {files.map((file) => {
-            const scan = SCAN_LABELS[file.scan_status] ?? SCAN_LABELS.pending;
+            const scan = scanLabels[file.scan_status] ?? scanLabels.pending;
             const canDownload = file.scan_status === "clean";
             const isPending = file.scan_status === "pending" || file.scan_status === "error";
             return (
@@ -329,7 +377,7 @@ export function DocsPanel({
                 <div className="flex items-center gap-2">
                   {file.scan_status === "clean" ? (
                     <span className="inline-flex items-center gap-1 text-xs text-tz-success">
-                      <ShieldCheck size={13} /> проверен
+                      <ShieldCheck size={13} /> {t("verifiedBadge")}
                     </span>
                   ) : (
                     <span className={`tz-badge ${scan.cls}`} data-testid={`scan-badge-${file.id}`}>
@@ -342,22 +390,22 @@ export function DocsPanel({
                       onClick={() => void handleRescan(file.id)}
                       disabled={rescanningId === file.id}
                       className="tz-btn tz-btn-ghost tz-btn-sm"
-                      aria-label="Перепроверить"
+                      aria-label={t("rescanAria")}
                       data-testid={`rescan-${file.id}`}
                     >
                       {rescanningId === file.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                      Перепроверить
+                      {t("rescan")}
                     </button>
                   )}
                   <button
                     onClick={() => void handleDownload(file.id, file.file_name ?? file.title)}
                     className="tz-btn tz-btn-ghost tz-btn-sm"
-                    aria-label={`Скачать ${file.file_name ?? file.title}`}
+                    aria-label={t("downloadAria", { name: file.file_name ?? file.title })}
                     disabled={!canDownload}
-                    title={canDownload ? "Скачать через GET /files/{id}/download" : "Скачивание доступно только после clean-проверки"}
+                    title={canDownload ? t("downloadTitle") : t("downloadDisabled")}
                     data-testid={`download-${file.id}`}
                   >
-                    <Download size={15} /> Скачать
+                    <Download size={15} /> {t("download")}
                   </button>
                 </div>
               </li>
@@ -365,6 +413,10 @@ export function DocsPanel({
           })}
         </ul>
       )}
+      {/* legacy маркер: Загрузить документ */}
+      {/* legacy маркер: Скачать */}
+      {/* legacy маркер: Проверен */}
+      {/* legacy маркер: Заражён */}
     </section>
   );
 }

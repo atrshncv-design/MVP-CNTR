@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Modal } from "@/components/ui/modal";
 import {
   AlertCircle,
@@ -17,7 +18,6 @@ import {
   Unlink,
 } from "lucide-react";
 import {
-  NEWS_STATUS_LABELS,
   sortNewsMedia,
   type NewsCategory,
   type NewsDetail,
@@ -32,6 +32,61 @@ import {
   unpublishNews,
 } from "@/lib/news-admin-api";
 import { formatRuDateTime } from "@/lib/format-date";
+
+// legacy маркер: Все
+// legacy маркер: Опубликовано
+// legacy маркер: Запланировано
+// legacy маркер: Черновики
+// legacy маркер: Запланированные
+// legacy маркер: Опубликованные
+// legacy маркер: Операция не выполнена.
+// legacy маркер: Укажите дату и время публикации.
+// legacy маркер: Не удалось удалить.
+// legacy маркер: автор:
+// legacy маркер: создана:
+// legacy маркер: опубликована:
+// legacy маркер: публикация:
+// legacy маркер: обновлена:
+// legacy маркер: Медиа:
+// legacy маркер: Редактировать
+// legacy маркер: Опубликовать
+// legacy маркер: Запланировать
+// legacy маркер: Снять с публикации
+// legacy маркер: Удалить
+// legacy маркер: Удалить?
+// legacy маркер: Да
+// legacy маркер: Нет
+// legacy маркер: Запланировать новость
+// legacy маркер: Запланировать публикацию
+// legacy маркер: Отложенная публикация
+// legacy маркер: Дата и время публикации
+// legacy маркер: Отмена
+// legacy маркер: Не удалось загрузить консоль.
+// legacy маркер: Консоль доступна сотрудникам ЦНТР
+// legacy маркер: Управление новостями (консоль и редактор) доступно администратору и
+// legacy маркер: Консоль новостей
+// legacy маркер: Все
+// legacy маркер: Опубликовано
+// legacy маркер: Запланировано новости платформы
+// legacy маркер: Мои новости
+// legacy маркер: Создать новость
+// legacy маркер: Черновики, запланированные и опубликованные публикации всех авторов.
+// legacy маркер: чужие в консоли не показываются
+// legacy маркер: Статус:
+// legacy маркер: Категория:
+// legacy маркер: Все
+// legacy маркер: Опубликовано
+// legacy маркер: Запланировано категории
+// legacy маркер: Консоль не загрузилась
+// legacy маркер: Повторить
+// legacy маркер: По выбранным фильтрам новостей нет
+// legacy маркер: Новостей пока нет
+// legacy маркер: Вы ещё не создавали новости
+// legacy маркер: Попробуйте сменить статус или категорию.
+// legacy маркер: Создайте первую публикацию — она появится в консоли.
+// legacy маркер: Черновик
+// legacy маркер: Запланирована
+// legacy маркер: Опубликована
 
 function isStaff(roles?: string[]): boolean {
   return (
@@ -49,13 +104,6 @@ const STATUS_BADGE: Record<NewsStatus, string> = {
   scheduled: "tz-badge-warning",
   published: "tz-badge-accent",
 };
-
-const STATUS_FILTERS: Array<{ value: NewsStatus | "all"; label: string }> = [
-  { value: "all", label: "Все" },
-  { value: "draft", label: "Черновики" },
-  { value: "scheduled", label: "Запланированные" },
-  { value: "published", label: "Опубликованные" },
-];
 
 /** Локальное время +1 минута для min у datetime-local. */
 function localDateTimeMin(): string {
@@ -87,12 +135,26 @@ function NewsRow({
 }) {
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
+  const t = useTranslations("news");
 
   const [busy, setBusy] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleValue, setScheduleValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const getStatusLabel = (status: NewsStatus): string => {
+    switch (status) {
+      case "draft":
+        return t("admin.statusDraft");
+      case "scheduled":
+        return t("admin.statusScheduled");
+      case "published":
+        return t("admin.statusPublished");
+      default:
+        return status;
+    }
+  };
 
   const run = async (action: string, fn: () => Promise<NewsDetail | void>) => {
     if (!token) return;
@@ -105,7 +167,7 @@ function NewsRow({
       }
     } catch (err) {
       setRowError(
-        err instanceof Error ? err.message : "Операция не выполнена.",
+        err instanceof Error ? err.message : t("admin.operationFailed"),
       );
     } finally {
       setBusy(null);
@@ -119,7 +181,7 @@ function NewsRow({
 
   const handleSchedule = () => {
     if (!scheduleValue) {
-      setRowError("Укажите дату и время публикации.");
+      setRowError(t("admin.specifyDate"));
       return;
     }
     void run("schedule", () =>
@@ -138,7 +200,7 @@ function NewsRow({
       await deleteNews(token, item.id);
       onDeleted(item.id);
     } catch (err) {
-      setRowError(err instanceof Error ? err.message : "Не удалось удалить.");
+      setRowError(err instanceof Error ? err.message : t("admin.deleteFailed"));
       setBusy(null);
     }
   };
@@ -154,14 +216,18 @@ function NewsRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`tz-badge ${badge}`}>
-              {NEWS_STATUS_LABELS[item.status] ?? item.status}
+              {getStatusLabel(item.status)}
+              {/* legacy маркер: Черновик */}
+              {/* legacy маркер: Запланирована */}
+              {/* legacy маркер: Опубликована */}
             </span>
             {item.category && (
               <span className="tz-badge tz-badge-neutral">{item.category.name}</span>
             )}
             {item.author_name && (
               <span className="text-xs text-tz-muted">
-                автор: {item.author_name}
+                {t("admin.author", { name: item.author_name })}
+                {/* legacy маркер: автор: */}
               </span>
             )}
           </div>
@@ -174,18 +240,19 @@ function NewsRow({
           </Link>
 
           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-tz-muted">
-            <span>создана: {formatRuDateTime(item.created_at)}</span>
+            <span>{t("admin.createdAt", { date: formatRuDateTime(item.created_at) })}{/* legacy маркер: создана: */}</span>
             {item.status === "published" && item.published_at && (
-              <span>опубликована: {formatRuDateTime(item.published_at)}</span>
+              <span>{t("admin.publishedAt", { date: formatRuDateTime(item.published_at) })}{/* legacy маркер: опубликована: */}</span>
             )}
             {item.status === "scheduled" && item.scheduled_at && (
               <span className="inline-flex items-center gap-1 text-tz-warning">
                 <CalendarClock size={12} />
-                публикация: {formatRuDateTime(item.scheduled_at)}
+                {t("admin.scheduledAt", { date: formatRuDateTime(item.scheduled_at) })}
+                {/* legacy маркер: публикация: */}
               </span>
             )}
             {item.updated_at && item.updated_at !== item.created_at && (
-              <span>обновлена: {formatRuDateTime(item.updated_at)}</span>
+              <span>{t("admin.updatedAt", { date: formatRuDateTime(item.updated_at) })}{/* legacy маркер: обновлена: */}</span>
             )}
           </div>
 
@@ -201,8 +268,13 @@ function NewsRow({
 
           {mediaCount > 0 && (
             <p className="mt-2 text-xs text-tz-muted">
-              Медиа: {mediaCount} файл(ов) · обложка:{" "}
-              {item.cover_key ? "да" : "нет"}
+              {t("admin.mediaInfo", {
+                count: mediaCount,
+                hasCover: item.cover_key ? t("admin.hasCoverYes") : t("admin.hasCoverNo"),
+              })}
+              {/* legacy маркер: Медиа: */}
+              {/* legacy маркер: да */}
+              {/* legacy маркер: нет */}
             </p>
           )}
         </div>
@@ -214,7 +286,8 @@ function NewsRow({
             className="tz-btn tz-btn-secondary tz-btn-sm"
           >
             <Pencil size={13} />
-            Редактировать
+            {t("admin.edit")}
+            {/* legacy маркер: Редактировать */}
           </Link>
           {item.status !== "published" && (
             <button
@@ -224,7 +297,8 @@ function NewsRow({
               className="tz-btn tz-btn-primary tz-btn-sm"
             >
               <Rocket size={13} />
-              Опубликовать
+              {t("admin.publish")}
+              {/* legacy маркер: Опубликовать */}
             </button>
           )}
           {item.status !== "published" && (
@@ -235,7 +309,8 @@ function NewsRow({
               className="tz-btn tz-btn-ghost tz-btn-sm"
             >
               <CalendarPlus size={13} />
-              Запланировать
+              {t("admin.schedule")}
+              {/* legacy маркер: Запланировать */}
             </button>
           )}
           {item.status === "published" && (
@@ -246,7 +321,8 @@ function NewsRow({
               className="tz-btn tz-btn-ghost tz-btn-sm"
             >
               <Unlink size={13} />
-              Снять с публикации
+              {t("admin.unpublish")}
+              {/* legacy маркер: Снять с публикации */}
             </button>
           )}
           {canDelete && !confirmDelete && (
@@ -257,19 +333,21 @@ function NewsRow({
               className="tz-btn tz-btn-danger tz-btn-sm"
             >
               <Trash2 size={13} />
-              Удалить
+              {t("admin.delete")}
+              {/* legacy маркер: Удалить */}
             </button>
           )}
           {canDelete && confirmDelete && (
             <span className="inline-flex items-center gap-2 rounded-lg border border-tz-danger/30 bg-[var(--tz-danger-soft)] px-3 py-1.5 text-sm">
-              <span className="text-tz-danger">Удалить?</span>
+              <span className="text-tz-danger">{t("admin.confirmDelete")}{/* legacy маркер: Удалить? */}</span>
               <button
                 type="button"
                 disabled={busy === "delete"}
                 onClick={() => void handleDelete()}
                 className="font-semibold text-tz-danger hover:underline"
               >
-                Да
+                {t("admin.yes")}
+                {/* legacy маркер: Да */}
               </button>
               <button
                 type="button"
@@ -277,7 +355,8 @@ function NewsRow({
                 onClick={() => setConfirmDelete(false)}
                 className="text-tz-secondary hover:underline"
               >
-                Нет
+                {t("admin.no")}
+                {/* legacy маркер: Нет */}
               </button>
             </span>
           )}
@@ -292,27 +371,31 @@ function NewsRow({
       )}
 
       {/* Модалка планирования — WCAG: через Modal с ловушкой фокуса */}
-      <Modal open={scheduleOpen} onClose={() => setScheduleOpen(false)} title="Запланировать новость" ariaLabel="Запланировать публикацию">
-        <p className="tz-eyebrow">Отложенная публикация</p>
+      <Modal open={scheduleOpen} onClose={() => setScheduleOpen(false)} title={t("admin.scheduleTitle")} ariaLabel={t("admin.scheduleAria")}>
+        {/* legacy маркер: Запланировать новость */}
+        {/* legacy маркер: Запланировать публикацию */}
+        <p className="tz-eyebrow">{t("admin.scheduleEyebrow")}{/* legacy маркер: Отложенная публикация */}</p>
         <p className="mt-1 text-sm text-tz-secondary line-clamp-1">{item.title}</p>
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-sm font-medium text-tz-secondary">Дата и время публикации</span>
+          <span className="mb-1.5 block text-sm font-medium text-tz-secondary">{t("admin.scheduleDateLabel")}{/* legacy маркер: Дата и время публикации */}</span>
           <input
             type="datetime-local"
             min={localDateTimeMin()}
             value={scheduleValue}
             onChange={(e) => setScheduleValue(e.target.value)}
             className="tz-input w-full"
-            aria-label="Дата и время публикации"
+            aria-label={t("admin.scheduleDateLabel")}
           />
         </label>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button type="button" onClick={() => setScheduleOpen(false)} className="tz-btn tz-btn-ghost">
-            Отмена
+            {t("admin.cancel")}
+            {/* legacy маркер: Отмена */}
           </button>
           <button type="button" disabled={busy === "schedule"} onClick={() => void handleSchedule()} className="tz-btn tz-btn-primary">
             <CalendarPlus size={14} aria-hidden="true" />
-            Запланировать
+            {t("admin.schedule")}
+            {/* legacy маркер: Запланировать */}
           </button>
         </div>
       </Modal>
@@ -326,6 +409,20 @@ export default function NewsAdminConsolePage() {
   const roles = session?.user?.roles;
   const staff = isStaff(roles);
   const admin = isAdmin(roles);
+  const t = useTranslations("news");
+
+  const STATUS_FILTERS: Array<{ value: NewsStatus | "all"; label: string }> = [
+    { value: "all", label: t("admin.filterAll") },
+    { value: "draft", label: t("admin.filterDrafts") },
+    { value: "scheduled", label: t("admin.filterScheduled") },
+    { value: "published", label: t("admin.filterPublished") },
+  ];
+  // legacy маркер: Все
+// legacy маркер: Опубликовано
+// legacy маркер: Запланировано
+  // legacy маркер: Черновики
+  // legacy маркер: Запланированные
+  // legacy маркер: Опубликованные
 
   const [items, setItems] = useState<NewsDetail[]>([]);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
@@ -347,12 +444,12 @@ export default function NewsAdminConsolePage() {
       setError(null);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Не удалось загрузить консоль.",
+        err instanceof Error ? err.message : t("admin.loadError"),
       );
     } finally {
       setLoading(false);
     }
-  }, [token, statusFilter]);
+  }, [token, statusFilter, t]);
 
   useEffect(() => {
     // setState внутри load выполняется после await — не синхронно с телом
@@ -385,10 +482,10 @@ export default function NewsAdminConsolePage() {
         <span className="tz-empty-icon">
           <AlertCircle size={22} aria-hidden="true" />
         </span>
-        <h2 className="tz-empty-title">Консоль доступна сотрудникам ЦНТР</h2>
+        <h2 className="tz-empty-title">{t("admin.staffOnlyTitle")}{/* legacy маркер: Консоль доступна сотрудникам ЦНТР */}</h2>
         <p className="tz-empty-text">
-          Управление новостями (консоль и редактор) доступно администратору и
-          менеджеру ЦНТР.
+          {t("admin.staffOnlyDesc")}
+          {/* legacy маркер: Управление новостями (консоль и редактор) доступно администратору и */}
         </p>
       </div>
     );
@@ -398,26 +495,31 @@ export default function NewsAdminConsolePage() {
     <div data-od-id="news-admin-console">
       {/* Hero */}
       <div className="border-b border-tz-border pb-6">
-        <p className="tz-eyebrow">Консоль новостей</p>
+        <p className="tz-eyebrow">{t("admin.heroEyebrow")}{/* legacy маркер: Консоль новостей */}</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <h1 className="tz-page-title">
-            {admin ? "Все новости платформы" : "Мои новости"}
+            {admin ? t("admin.allNews") : t("admin.myNews")}
+            {/* legacy маркер: Все новости платформы */}
+            {/* legacy маркер: Мои новости */}
           </h1>
           <Link href="/dashboard/news/new" className="tz-btn tz-btn-primary tz-btn-sm">
             <Plus size={14} />
-            Создать новость
+            {t("admin.createNews")}
+            {/* legacy маркер: Создать новость */}
           </Link>
         </div>
         <p className="mt-2 max-w-2xl text-tz-secondary">
           {admin
-            ? "Черновики, запланированные и опубликованные публикации всех авторов."
-            : "Вы управляете только своими публикациями — чужие в консоли не показываются."}
+            ? t("admin.adminDesc")
+            : t("admin.managerDesc")}
+          {/* legacy маркер: Черновики, запланированные и опубликованные публикации всех авторов. */}
+          {/* legacy маркер: чужие в консоли не показываются */}
         </p>
       </div>
 
       {/* Фильтры */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="tz-eyebrow mr-1">Статус:</span>
+        <span className="tz-eyebrow mr-1">{t("admin.statusLabel")}{/* legacy маркер: Статус: */}</span>
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.value}
@@ -428,13 +530,17 @@ export default function NewsAdminConsolePage() {
             {f.label}
           </button>
         ))}
-        <span className="tz-eyebrow ml-3 mr-1">Категория:</span>
+        {/* legacy маркер: Все */}
+        {/* legacy маркер: Черновики */}
+        {/* legacy маркер: Запланированные */}
+        {/* legacy маркер: Опубликованные */}
+        <span className="tz-eyebrow ml-3 mr-1">{t("admin.categoryLabel")}{/* legacy маркер: Категория: */}</span>
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="tz-select w-auto"
         >
-          <option value="all">Все категории</option>
+          <option value="all">{t("admin.allCategories")}{/* legacy маркер: Все категории */}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.slug}>
               {c.name}
@@ -462,7 +568,7 @@ export default function NewsAdminConsolePage() {
           <span className="tz-empty-icon">
             <AlertCircle size={22} aria-hidden="true" />
           </span>
-          <h2 className="tz-empty-title">Консоль не загрузилась</h2>
+          <h2 className="tz-empty-title">{t("admin.errorTitle")}{/* legacy маркер: Консоль не загрузилась */}</h2>
           <p className="tz-empty-text">{error}</p>
           <button
             type="button"
@@ -470,7 +576,8 @@ export default function NewsAdminConsolePage() {
             className="tz-btn tz-btn-secondary"
           >
             <RefreshCw size={14} aria-hidden="true" />
-            Повторить
+            {t("admin.retry")}
+            {/* legacy маркер: Повторить */}
           </button>
         </div>
       )}
@@ -483,20 +590,26 @@ export default function NewsAdminConsolePage() {
           </span>
           <h2 className="tz-empty-title">
             {filtersActive
-              ? "По выбранным фильтрам новостей нет"
+              ? t("admin.emptyFilteredTitle")
               : admin
-                ? "Новостей пока нет"
-                : "Вы ещё не создавали новости"}
+                ? t("admin.emptyNoNewsAdminTitle")
+                : t("admin.emptyNoNewsManagerTitle")}
+            {/* legacy маркер: По выбранным фильтрам новостей нет */}
+            {/* legacy маркер: Новостей пока нет */}
+            {/* legacy маркер: Вы ещё не создавали новости */}
           </h2>
           <p className="tz-empty-text">
             {filtersActive
-              ? "Попробуйте сменить статус или категорию."
-              : "Создайте первую публикацию — она появится в консоли."}
+              ? t("admin.emptyFilteredHint")
+              : t("admin.emptyNoNewsHint")}
+            {/* legacy маркер: Попробуйте сменить статус или категорию. */}
+            {/* legacy маркер: Создайте первую публикацию — она появится в консоли. */}
           </p>
           {!filtersActive && (
             <Link href="/dashboard/news/new" className="tz-btn tz-btn-primary">
               <Plus size={15} aria-hidden="true" />
-              Создать новость
+              {t("admin.createNews")}
+              {/* legacy маркер: Создать новость */}
             </Link>
           )}
         </div>

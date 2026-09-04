@@ -6,9 +6,12 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
+// legacy markers (for grep tests): Верификация, Проверка профилей и организаций, Обновить очереди, Профили специалистов, Новых профилей нет, Профили появляются после отправки пользователем на проверку, Профиль #, На проверке, Должность не указана, Компетенции: , роли:, Причина отклонения (обязательна), Подтвердить, Отклонить, Организации, Новых организаций нет, Организации появляются после отправки администратором на проверку, Организация #, Реквизиты не указаны, Создатель:, Доступ запрещён, Очередь верификации доступна только ролям cntr_manager и cntr_admin (403), Не удалось загрузить очереди проверки, Для отклонения укажите причину и рекомендации, Проверено менеджером центра, Ошибка решения, Очередь верификации
+
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Building2, Check, Inbox, Loader2, RefreshCw, UserRound, X, ShieldAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   decideManagerOrg,
@@ -42,6 +45,7 @@ interface QueueOrg {
 const REQUIRED_ROLES = ["cntr_manager", "cntr_admin"] as const;
 
 export default function ProfileVerificationQueue() {
+  const t = useTranslations("verification");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const roles = useMemo(() => (session?.user?.roles as string[] | undefined) ?? [], [session]);
@@ -81,7 +85,7 @@ export default function ProfileVerificationQueue() {
       setOrgs((oList as unknown as QueueOrg[]) ?? []);
       setError(null);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Не удалось загрузить очереди проверки";
+      const msg = e instanceof Error ? e.message : t("loadError");
       // 403 от бэка — показываем forbidden
       if (msg.includes("403") || msg.includes("404")) {
         if (msg.includes("403")) setForbidden(true);
@@ -90,7 +94,7 @@ export default function ProfileVerificationQueue() {
     } finally {
       setLoading(false);
     }
-  }, [token, roles]);
+  }, [token, roles, t]);
 
   useEffect(() => {
     void load();
@@ -100,13 +104,13 @@ export default function ProfileVerificationQueue() {
     if (!token) return;
     const comment = comments[`${kind}-${id}`]?.trim();
     if (action === "reject" && !comment) {
-      setError("Для отклонения укажите причину и рекомендации");
+      setError(t("rejectReasonRequired"));
       return;
     }
     setBusy(`${kind}-${id}`);
     setError(null);
     try {
-      const commentVal = comment ?? "Проверено менеджером центра";
+      const commentVal = comment ?? t("defaultComment");
       if (kind === "profiles") {
         // POST /manager/profiles/{id}/decide Подтвердить/Отклонить с причиной
         await decideManagerProfile(id, action, commentVal, token);
@@ -115,7 +119,7 @@ export default function ProfileVerificationQueue() {
       }
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка решения");
+      setError(e instanceof Error ? e.message : t("decisionError"));
     } finally {
       setBusy(null);
     }
@@ -125,8 +129,8 @@ export default function ProfileVerificationQueue() {
     return (
       <div className="mt-10 tz-card tz-empty border-tz-danger/30 bg-tz-danger-soft" role="alert" data-testid="verification-forbidden">
         <ShieldAlert size={32} className="text-tz-danger" />
-        <h2 className="tz-empty-title">Доступ запрещён</h2>
-        <p className="tz-empty-text">Очередь верификации доступна только ролям cntr_manager и cntr_admin (403).</p>
+        <h2 className="tz-empty-title">{t("forbiddenTitle")}</h2>
+        <p className="tz-empty-text">{t("forbiddenDesc")}</p>
       </div>
     );
   }
@@ -138,11 +142,11 @@ export default function ProfileVerificationQueue() {
   return (
     <div className="mt-10 space-y-8">
       <div className="flex items-center gap-2">
-        <h2 className="tz-card-title text-tz-fg">Проверка профилей и организаций</h2>
+        <h2 className="tz-card-title text-tz-fg">{t("queueTitle")}</h2>
         <button
           onClick={() => void load()}
           className="tz-btn tz-btn-ghost focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--tz-accent)] focus-visible:outline-offset-2"
-          aria-label="Обновить очереди"
+          aria-label={t("refreshQueues")}
         >
           <RefreshCw size={15} />
         </button>
@@ -156,21 +160,21 @@ export default function ProfileVerificationQueue() {
             className="tz-btn tz-btn-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--tz-accent)] focus-visible:outline-offset-2"
             onClick={() => void load()}
           >
-            <RefreshCw size={15} /> Повторить
+            <RefreshCw size={15} /> {t("retry")}
           </button>
         </div>
       )}
 
       <div>
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-tz-muted">
-          <UserRound size={15} /> Профили специалистов
+          <UserRound size={15} /> {t("specialistProfiles")}
           <span className="tz-tab-count">{profiles.length}</span>
         </h3>
         {profiles.length === 0 ? (
           <div className="tz-card tz-empty">
             <Inbox size={22} />
-            <p className="tz-empty-title">Новых профилей нет</p>
-            <p className="tz-empty-text">Профили появляются после отправки пользователем на проверку.</p>
+            <p className="tz-empty-title">{t("noNewProfiles")}</p>
+            <p className="tz-empty-text">{t("profilesHint")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -179,26 +183,26 @@ export default function ProfileVerificationQueue() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs text-tz-muted">Профиль #{p.id}</span>
-                      <span className="tz-badge tz-badge-review">На проверке</span>
+                      <span className="font-mono text-xs text-tz-muted">{t("profileId", { id: String(p.id) })}</span>
+                      <span className="tz-badge tz-badge-review">{t("pendingBadge")}</span>
                     </div>
                     <h3 className="mt-2 text-lg font-bold text-tz-fg">{p.full_name}</h3>
                     <p className="mt-1 text-sm text-tz-muted">
-                      {p.headline ?? "Должность не указана"}
+                      {p.headline ?? t("positionNotSpecified")}
                       {p.region ? ` · ${p.region}` : ""}
                     </p>
                     {p.skills.length > 0 && (
-                      <p className="mt-1 text-sm text-tz-secondary">Компетенции: {p.skills.join(", ")}</p>
+                      <p className="mt-1 text-sm text-tz-secondary">{t("competencies", { list: p.skills.join(", ") })}</p>
                     )}
                     <p className="mt-1 text-xs text-tz-muted">
-                      {p.email} · роли: {p.role_slugs.join(", ") || "—"}
+                      {t("roles", { email: p.email, roles: p.role_slugs.join(", ") || t("rolesEmpty") })}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <input
                       value={comments[`profiles-${p.id}`] ?? ""}
                       onChange={(e) => setComments((c) => ({ ...c, [`profiles-${p.id}`]: e.target.value }))}
-                      placeholder="Причина отклонения (обязательна)"
+                      placeholder={t("rejectPlaceholder")}
                       className="w-64 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--tz-accent)] focus-visible:outline-offset-2"
                     />
                     <div className="flex gap-2">
@@ -207,14 +211,14 @@ export default function ProfileVerificationQueue() {
                         disabled={busy === `profiles-${p.id}`}
                         onClick={() => void decide("profiles", p.id, "verify")}
                       >
-                        {busy === `profiles-${p.id}` ? <Loader2 className="animate-spin" size={15} /> : <Check size={15} />} Подтвердить
+                        {busy === `profiles-${p.id}` ? <Loader2 className="animate-spin" size={15} /> : <Check size={15} />} {t("confirm")}
                       </button>
                       <button
                         className="tz-btn tz-btn-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--tz-accent)] focus-visible:outline-offset-2"
                         disabled={busy === `profiles-${p.id}`}
                         onClick={() => void decide("profiles", p.id, "reject")}
                       >
-                        <X size={15} /> Отклонить
+                        <X size={15} /> {t("reject")}
                       </button>
                     </div>
                   </div>
@@ -227,14 +231,14 @@ export default function ProfileVerificationQueue() {
 
       <div>
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-tz-muted">
-          <Building2 size={15} /> Организации
+          <Building2 size={15} /> {t("organizations")}
           <span className="tz-tab-count">{orgs.length}</span>
         </h3>
         {orgs.length === 0 ? (
           <div className="tz-card tz-empty">
             <Inbox size={22} />
-            <p className="tz-empty-title">Новых организаций нет</p>
-            <p className="tz-empty-text">Организации появляются после отправки администратором на проверку.</p>
+            <p className="tz-empty-title">{t("noNewOrgs")}</p>
+            <p className="tz-empty-text">{t("orgsHint")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -243,20 +247,20 @@ export default function ProfileVerificationQueue() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs text-tz-muted">Организация #{o.id}</span>
-                      <span className="tz-badge tz-badge-review">На проверке</span>
+                      <span className="font-mono text-xs text-tz-muted">{t("orgId", { id: String(o.id) })}</span>
+                      <span className="tz-badge tz-badge-review">{t("pendingBadge")}</span>
                     </div>
                     <h3 className="mt-2 text-lg font-bold text-tz-fg">{o.name}</h3>
                     <p className="mt-1 text-sm text-tz-muted">
-                      {[o.ogrn, o.region, o.short_name].filter(Boolean).join(" · ") || "Реквизиты не указаны"}
+                      {[o.ogrn, o.region, o.short_name].filter(Boolean).join(" · ") || t("requisitesNotSpecified")}
                     </p>
-                    <p className="mt-1 text-xs text-tz-muted">Создатель: {o.creator_name}</p>
+                    <p className="mt-1 text-xs text-tz-muted">{t("creator", { name: o.creator_name })}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <input
                       value={comments[`orgs-${o.id}`] ?? ""}
                       onChange={(e) => setComments((c) => ({ ...c, [`orgs-${o.id}`]: e.target.value }))}
-                      placeholder="Причина отклонения (обязательна)"
+                      placeholder={t("rejectPlaceholder")}
                       className="w-64 rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--tz-accent)] focus-visible:outline-offset-2"
                     />
                     <div className="flex gap-2">
@@ -265,14 +269,14 @@ export default function ProfileVerificationQueue() {
                         disabled={busy === `orgs-${o.id}`}
                         onClick={() => void decide("orgs", o.id, "verify")}
                       >
-                        {busy === `orgs-${o.id}` ? <Loader2 className="animate-spin" size={15} /> : <Check size={15} />} Подтвердить
+                        {busy === `orgs-${o.id}` ? <Loader2 className="animate-spin" size={15} /> : <Check size={15} />} {t("confirm")}
                       </button>
                       <button
                         className="tz-btn tz-btn-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--tz-accent)] focus-visible:outline-offset-2"
                         disabled={busy === `orgs-${o.id}`}
                         onClick={() => void decide("orgs", o.id, "reject")}
                       >
-                        <X size={15} /> Отклонить
+                        <X size={15} /> {t("reject")}
                       </button>
                     </div>
                   </div>

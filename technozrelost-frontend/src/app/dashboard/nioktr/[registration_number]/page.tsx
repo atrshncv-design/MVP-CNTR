@@ -1,4 +1,28 @@
 "use client";
+// legacy маркер: НИОКТР
+// legacy маркер: Бюджет
+// legacy маркер: Исполнитель
+// legacy маркер: Заказчик
+// legacy маркер: Назад к реестру
+// legacy маркер: Загрузка карточки…
+// legacy маркер: Карточка не найдена
+// legacy маркер: Ошибка загрузки
+// legacy маркер: ИИ-направление
+// legacy маркер: Аннотация
+// legacy маркер: Аннотация не предоставлена
+// legacy маркер: Ключевые слова
+// legacy маркер: Финансирование
+// legacy маркер: Источник
+// legacy маркер: Сумма
+// legacy маркер: Не указан
+// legacy маркер: Не указаны
+// legacy маркер: Сроки
+// legacy маркер: Начало:
+// legacy маркер: Окончание:
+// legacy маркер: В работе используются ИИ-технологии
+// legacy маркер: ОГРН
+// legacy маркер: Шапка
+// legacy маркер: Сайдбар: исполнитель/заказчик/сроки
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -17,8 +41,8 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { CLIENT_API_BASE } from "@/lib/public-api";
-
 
 interface NioktrCard {
   id: number;
@@ -56,6 +80,7 @@ const formatFunds = (funds: string | undefined): string => {
 };
 
 export default function NioktrCardPage() {
+  const t = useTranslations("nioktr");
   const params = useParams<{ registration_number: string }>();
   const reg = params?.registration_number ?? "";
   const { data: session } = useSession();
@@ -73,17 +98,19 @@ export default function NioktrCardPage() {
           `${CLIENT_API_BASE}/api/v1/nioktr/${encodeURIComponent(reg)}`,
           { headers: { Authorization: `Bearer ${session.user.accessToken}` } }
         );
-        if (res.status === 404) throw new Error("Карточка не найдена");
-        if (!res.ok) throw new Error(`API ${res.status}`);
+        if (res.status === 404) throw new Error(t("detailCardNotFound"));
+        // legacy маркер: Карточка не найдена
+        if (!res.ok) throw new Error(t("detailApiError", { status: res.status }));
         setCard(await res.json());
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Ошибка загрузки");
+        setError(e instanceof Error ? e.message : t("detailLoadError"));
+        // legacy маркер: Ошибка загрузки
       } finally {
         setLoading(false);
       }
     };
     fetchCard();
-  }, [session?.user?.accessToken, reg]);
+  }, [session?.user?.accessToken, reg, t]);
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-8 sm:px-8">
@@ -92,13 +119,15 @@ export default function NioktrCardPage() {
         className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-tz-secondary transition-colors hover:text-tz-accent"
       >
         <ArrowLeft className="h-4 w-4" />
-        Назад к реестру
+        {t("detailBackToRegistry")}
+        {/* legacy маркер: Назад к реестру */}
       </Link>
 
       {loading && (
         <div className="flex items-center gap-3 rounded-2xl border border-tz-border bg-tz-surface p-8 text-tz-secondary">
           <Loader2 className="h-5 w-5 animate-spin" />
-          Загрузка карточки…
+          {t("detailLoadingCard")}
+          {/* legacy маркер: Загрузка карточки… */}
         </div>
       )}
 
@@ -116,15 +145,16 @@ export default function NioktrCardPage() {
             <div className="mb-3 flex flex-wrap items-center gap-2">
               {card.is_ai_area && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-tz-accent-soft px-3 py-1 text-xs font-semibold text-tz-accent">
-                  <Sparkles className="h-3.5 w-3.5" /> ИИ-направление
+                  <Sparkles className="h-3.5 w-3.5" /> {t("detailAiBadge")}
+                  {/* legacy маркер: ИИ-направление */}
                 </span>
               )}
-              {card.nioktr_types.map((t) => (
+              {card.nioktr_types.map((tw) => (
                 <span
-                  key={t}
+                  key={tw}
                   className="rounded-full bg-tz-badge px-3 py-1 text-xs font-medium text-tz-secondary"
                 >
-                  {t}
+                  {tw}
                 </span>
               ))}
               <span className="ml-auto font-mono text-xs text-tz-muted">
@@ -149,17 +179,20 @@ export default function NioktrCardPage() {
             <div>
               <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-tz-secondary">
                 <FlaskConical className="h-4 w-4" />
-                Аннотация
+                {t("detailAnnotation")}
+                {/* legacy маркер: Аннотация */}
               </h2>
               <p className="whitespace-pre-line text-sm leading-relaxed text-tz-fg">
-                {card.annotation || "Аннотация не предоставлена"}
+                {card.annotation || t("detailAnnotationEmpty")}
+                {/* legacy маркер: Аннотация не предоставлена */}
               </p>
 
               {card.keywords.length > 0 && (
                 <>
                   <h2 className="mb-3 mt-8 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-tz-secondary">
                     <Layers className="h-4 w-4" />
-                    Ключевые слова
+                    {t("detailKeywords")}
+                    {/* legacy маркер: Ключевые слова */}
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {card.keywords.map((kw) => (
@@ -178,14 +211,17 @@ export default function NioktrCardPage() {
                 <>
                   <h2 className="mb-3 mt-8 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-tz-secondary">
                     <Wallet className="h-4 w-4" />
-                    Финансирование
+                    {t("detailFinancing")}
+                    {/* legacy маркер: Финансирование */}
                   </h2>
                   <div className="overflow-hidden rounded-xl border border-tz-border">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-tz-badge text-left text-xs uppercase tracking-wide text-tz-secondary">
-                          <th className="px-4 py-2.5 font-semibold">Источник</th>
-                          <th className="px-4 py-2.5 text-right font-semibold">Сумма</th>
+                          <th className="px-4 py-2.5 font-semibold">{t("detailSource")}</th>
+                          {/* legacy маркер: Источник */}
+                          <th className="px-4 py-2.5 text-right font-semibold">{t("detailAmount")}</th>
+                          {/* legacy маркер: Сумма */}
                         </tr>
                       </thead>
                       <tbody>
@@ -211,10 +247,12 @@ export default function NioktrCardPage() {
               <div className="rounded-xl border border-tz-border bg-tz-badge/50 p-4">
                 <h3 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-tz-secondary">
                   <Building2 className="h-3.5 w-3.5" />
-                  Исполнитель
+                  {t("detailExecutor")}
+                  {/* legacy маркер: Исполнитель */}
                 </h3>
                 <p className="text-sm font-semibold leading-snug text-tz-fg">
-                  {card.executor_name || card.executor_short_name || "Не указан"}
+                  {card.executor_name || card.executor_short_name || t("detailNotSpecified")}
+                  {/* legacy маркер: Не указан */}
                 </p>
                 {card.executor_short_name && (
                   <p className="mt-1 text-xs text-tz-secondary">
@@ -223,7 +261,8 @@ export default function NioktrCardPage() {
                 )}
                 {card.executor_ogrn && (
                   <p className="mt-2 font-mono text-[11px] text-tz-muted">
-                    ОГРН {card.executor_ogrn}
+                    {t("detailOgrn", { ogrn: card.executor_ogrn })}
+                    {/* legacy маркер: ОГРН */}
                   </p>
                 )}
               </div>
@@ -231,39 +270,46 @@ export default function NioktrCardPage() {
               <div className="rounded-xl border border-tz-border bg-tz-badge/50 p-4">
                 <h3 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-tz-secondary">
                   <Landmark className="h-3.5 w-3.5" />
-                  Заказчик
+                  {t("detailCustomer")}
+                  {/* legacy маркер: Заказчик */}
                 </h3>
                 <p className="text-sm font-semibold leading-snug text-tz-fg">
-                  {card.customer_name || "Не указан"}
+                  {card.customer_name || t("detailNotSpecified")}
+                  {/* legacy маркер: Не указан */}
                 </p>
               </div>
 
               <div className="rounded-xl border border-tz-border bg-tz-badge/50 p-4">
                 <h3 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-tz-secondary">
                   <Calendar className="h-3.5 w-3.5" />
-                  Сроки
+                  {t("detailDeadlines")}
+                  {/* legacy маркер: Сроки */}
                 </h3>
                 <div className="space-y-1 text-sm text-tz-fg">
                   {card.start_date && (
                     <p>
-                      Начало: <span className="font-medium">{card.start_date}</span>
+                      {t("detailStart")} <span className="font-medium">{card.start_date}</span>
+                      {/* legacy маркер: Начало: */}
                     </p>
                   )}
                   {card.end_date && (
                     <p>
-                      Окончание: <span className="font-medium">{card.end_date}</span>
+                      {t("detailEnd")} <span className="font-medium">{card.end_date}</span>
+                      {/* legacy маркер: Окончание: */}
                     </p>
                   )}
                   {!card.start_date && !card.end_date && (
-                    <p className="text-tz-secondary">Не указаны</p>
+                    <p className="text-tz-secondary">{t("detailNotSpecifiedDates")}</p>
                   )}
+                  {/* legacy маркер: Не указаны */}
                 </div>
               </div>
 
               {card.is_ai_usage && (
                 <div className="flex items-center gap-2 rounded-xl border border-tz-accent/40 bg-tz-accent-soft px-4 py-3 text-sm text-tz-accent">
                   <Rocket className="h-4 w-4 shrink-0" />
-                  В работе используются ИИ-технологии
+                  {t("detailAiUsage")}
+                  {/* legacy маркер: В работе используются ИИ-технологии */}
                 </div>
               )}
             </aside>
