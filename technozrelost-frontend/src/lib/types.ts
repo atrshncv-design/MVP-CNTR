@@ -1,78 +1,114 @@
 /**
- * Единая модель продукта (тикет 01, R17, G14, G30).
- * Почему единый файл: 7 дублей Project в разных папках расходились по полям
- * (category vs tags, бюджет number vs string) и ломали реестры. Теперь схема
- * синхронизируется одним местом — все таски 02-08 импортируют отсюда.
+ * Single product model (ticket 01, R17, G14, G30).
+ * One place keeps the schema in sync: tasks 02-08 import from here.
+ * Display strings live in the taxonomy dictionary (next-intl); this module
+ * holds only key metadata plus resolvers taking a translator function.
  */
 
 import type { ProjectStatus } from "./status";
+import ruMessages from "../messages/ru.json" with { type: "json" };
 
-// ─── Справочник тегов — 32 стандартизированные темы (G14, R20) ─────────────
+/** Translator function shape (next-intl scoped translator is compatible via adapter, see below). */
+export type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
 
 /**
- * 32 стандартизированных тега проектов (мультитег 1-5).
- * Почему 32: интервью 4.2 требует «большой набор, но стандартизированных
- * тем — 30+» для удобной работы с реестрами. Один проект может иметь
- * одновременно AI и медицину — теги выбираются чипами.
+ * Adapter for a next-intl scoped translator, e.g.:
+ *   const t = useTranslations("taxonomy");
+ *   getProjectTags((key, params) => t(key as never, params as never));
+ * The cast is needed because next-intl types keys as a closed union.
  */
-export const PROJECT_TAGS: readonly string[] = [
-  "AI/ML",
-  "Машинное зрение",
-  "Обработка языка",
-  "Робототехника",
-  "Биотех",
-  "Медицина",
-  "Фарма",
-  "Энергетика",
-  "Нефтегаз",
-  "Материаловедение",
-  "Композиты",
-  "Промышленные технологии",
-  "Аддитивные технологии",
-  "Электроника",
-  "Микроэлектроника",
-  "Квантовые технологии",
-  "Фотоника",
-  "Водородные технологии",
-  "Аккумуляторы",
-  "IT-системы",
-  "Кибербезопасность",
-  "Транспорт",
-  "АПК",
-  "Аэрокосмос",
-  "Машиностроение",
-  "Химия",
-  "Строительство",
-  "Охрана окружения",
-  "Логистика",
-  "Образование",
-  "Финансовые технологии",
-  "Телеком",
-] as const;
+export function asTranslateFn(
+  t: (key: never, params?: Record<string, string | number>) => string,
+): TranslateFn {
+  return (key, params) => t(key as never, params);
+}
+
+interface TaxonomyDict {
+  tags: string[];
+  validation: { minTags: string; maxTags: string; unknownTags: string };
+  legacy: { nioktr: string; software: string; hardware: string; infosystems: string };
+}
+
+function taxonomyDict(): TaxonomyDict {
+  return (ruMessages as unknown as { taxonomy: TaxonomyDict }).taxonomy;
+}
+
+/** Fill {param} placeholders of a dictionary template (no string glue in callers). */
+function fill(template: string, params: Record<string, string | number>): string {
+  let out = template;
+  for (const [k, v] of Object.entries(params)) out = out.split(`{${k}}`).join(String(v));
+  return out;
+}
+
+// ─── Tag catalogue — 32 standardised topics (G14, R20) ──────────────────────
+
+/**
+ * 32 standardised project tags (multi-tag 1-5).
+ * Canonical values come from taxonomy.tags (RU dictionary); English labels
+ * resolve through getProjectTags / getTagLabel with a taxonomy translator.
+ */
+export const PROJECT_TAGS: readonly string[] = taxonomyDict().tags;
 
 export type ProjectTag = (typeof PROJECT_TAGS)[number];
 
 export const TAGS_MIN = 1;
 export const TAGS_MAX = 5;
 
+/** Tag index by canonical RU value (stable positions in taxonomy.tags). */
+const TAG_INDEX_BY_VALUE: ReadonlyMap<string, number> = new Map(
+  PROJECT_TAGS.map((tag, index) => [tag, index] as [string, number]),
+);
+
+/** Legacy backend category value -> canonical tag index (no literals in code). */
+const LEGACY_TAG_SLUGS: ReadonlyArray<readonly [keyof TaxonomyDict["legacy"], number]> = [
+  ["nioktr", 11],
+  ["software", 19],
+  ["hardware", 13],
+  ["infosystems", 19],
+];
+const LEGACY_TAG_INDEX: ReadonlyMap<string, number> = new Map(
+  LEGACY_TAG_SLUGS.map(([slug, index]) => [taxonomyDict().legacy[slug], index]),
+);
+
 export function isValidTags(tags: string[]): boolean {
   if (tags.length < TAGS_MIN || tags.length > TAGS_MAX) return false;
-  // все теги должны быть из справочника
+  // every tag must come from the catalogue
   return tags.every((t) => (PROJECT_TAGS as readonly string[]).includes(t));
 }
 
 export function validateTags(tags: string[]): string | null {
-  if (tags.length < TAGS_MIN) return `Выберите хотя бы ${TAGS_MIN} тег`;
-  if (tags.length > TAGS_MAX) return `Можно выбрать не более ${TAGS_MAX} тегов`;
+  const v = taxonomyDict().validation;
+  if (tags.length < TAGS_MIN) return fill(v.minTags, { min: TAGS_MIN });
+  if (tags.length > TAGS_MAX) return fill(v.maxTags, { max: TAGS_MAX });
   const invalid = tags.filter((t) => !(PROJECT_TAGS as readonly string[]).includes(t));
-  if (invalid.length) return `Неизвестные теги: ${invalid.join(", ")}`;
+  if (invalid.length) return fill(v.unknownTags, { list: invalid.join(", ") });
   return null;
 }
 
+/** Localised tag validation via dictionary params (preferred in screens). */
+export function validateTagsT(t: TranslateFn, tags: string[]): string | null {
+  if (tags.length < TAGS_MIN) return t("validation.minTags", { min: TAGS_MIN });
+  if (tags.length > TAGS_MAX) return t("validation.maxTags", { max: TAGS_MAX });
+  const invalid = tags.filter((tag) => !TAG_INDEX_BY_VALUE.has(tag));
+  if (invalid.length) return t("validation.unknownTags", { list: invalid.join(", ") });
+  return null;
+}
+
+/** Localised labels for the whole catalogue, in canonical order. */
+export function getProjectTags(t: TranslateFn): string[] {
+  return PROJECT_TAGS.map((_, index) => t(`tags.${index}`));
+}
+
+/** Localised label for one canonical tag value; unknown values pass through. */
+export function getTagLabel(t: TranslateFn, tag: string): string {
+  const index = TAG_INDEX_BY_VALUE.get(tag);
+  return index === undefined ? tag : t(`tags.${index}`);
+}
+
 /**
- * Маппинг tags ↔ category для совместимости с бэком.
- * Бэк пока хранит category: string | null (одна категория), фронт —
- * tags: string[] (1-5). При отправке берём tags[0] как category.
+ * tags <-> category mapping for backend compatibility.
+ * Backend stores category: string | null (single), front uses tags 1-5.
+ * On submit tags[0] becomes category.
  */
 export function tagsToCategory(tags: string[]): string | null {
   if (!tags.length) return null;
@@ -81,32 +117,27 @@ export function tagsToCategory(tags: string[]): string | null {
 
 export function categoryToTags(category: string | null | undefined): string[] {
   if (!category) return [];
-  // если категория совпадает со справочником — один тег, иначе всё равно возвращаем как тег-фолбэк
+  // a catalogue value maps to a single tag, otherwise keep as fallback tag
   if ((PROJECT_TAGS as readonly string[]).includes(category)) return [category];
-  // для легаси категорий вроде "НИОКТР" / "Программное обеспечение" маппим на ближайший тег
-  const legacyMap: Record<string, string> = {
-    НИОКТР: "Промышленные технологии",
-    "Программное обеспечение": "IT-системы",
-    "Аппаратные средства": "Электроника",
-    "Информационные системы": "IT-системы",
-  };
-  if (legacyMap[category]) return [legacyMap[category]];
+  // legacy categories map to the closest catalogue tag (by index, see above)
+  const legacyIndex = LEGACY_TAG_INDEX.get(category);
+  if (legacyIndex !== undefined) return [PROJECT_TAGS[legacyIndex]];
   return [category];
 }
 
-// ─── Проект ────────────────────────────────────────────────────────────────
+// ─── Project ────────────────────────────────────────────────────────────────
 
 /**
- * Полная карточка проекта (единый тип для всех ЛК, карточки УГТ 15 блоков, истории 8-14).
- * Поля совместимы с backend ProjectOut + frontend-расширение tags.
+ * Full project card (single type for all dashboards).
+ * Compatible with backend ProjectOut plus front tags extension.
  */
 export interface ProjectCardOut {
   id: number;
   name: string;
   description: string | null;
-  /** Legacy поле backend — фронт использует tags, но держим для совместимости */
+  /** Backend legacy field — front uses tags, kept for compatibility */
   category: string | null;
-  /** 1-5 тегов из справочника PROJECT_TAGS */
+  /** 1-5 catalogue tags */
   tags: string[];
   target_level: number;
   current_level: number;
@@ -121,7 +152,7 @@ export interface ProjectCardOut {
   created_at: string | null;
   updated_at: string | null;
   join_token: string | null;
-  // юридические поля (тикет 04)
+  // legal fields (ticket 04)
   legal_owner?: string | null;
   rights_holder?: string | null;
   contract_number?: string | null;
@@ -129,8 +160,8 @@ export interface ProjectCardOut {
 }
 
 /**
- * Лёгкая запись реестра (публичная витрина, истории 18, 20-26).
- * Совместима с backend RegistryProjectOut.
+ * Lightweight registry entry (public showcase).
+ * Compatible with backend RegistryProjectOut.
  */
 export interface RegistryProjectOut {
   id: number;
@@ -165,7 +196,7 @@ export interface RegistryParams {
   limit?: number;
 }
 
-// ─── Организации ──────────────────────────────────────────────────────────
+// ─── Organizations ──────────────────────────────────────────────────────────
 
 export interface OrganizationOut {
   id: number;
@@ -179,7 +210,7 @@ export interface OrganizationOut {
   created_at?: string | null;
 }
 
-// Совместимость со старым типом OrganizationDetailOut
+// Compatibility with the legacy OrganizationDetailOut type
 export interface OrganizationDetailOut extends OrganizationOut {
   nioktr_cards?: NioktrCardOut[];
 }
@@ -197,7 +228,7 @@ export interface NioktrCardOut {
   is_ai_area: boolean;
 }
 
-// ─── Документы ────────────────────────────────────────────────────────────
+// ─── Documents ──────────────────────────────────────────────────────────────
 
 export interface DocumentOut {
   id: number;
@@ -214,7 +245,7 @@ export interface DocumentOut {
   uploaded_by: number | null;
   created_at: string | null;
   file_url?: string | null;
-  // Для совместимости с ProjectDocumentOut (title/doc_type/status)
+  // Compatibility with ProjectDocumentOut (title/doc_type/status)
   status?: string;
 }
 
@@ -229,7 +260,7 @@ export interface VerificationDocumentOut {
   created_at: string | null;
 }
 
-// ─── Участники / команды ─────────────────────────────────────────────────
+// ─── Members / teams ────────────────────────────────────────────────────────
 
 export interface ProjectMemberOut {
   id: number;
@@ -282,7 +313,7 @@ export interface ProjectDetailOut {
   audit_trail: AuditTrailEntryOut[];
 }
 
-// ─── Уведомления ──────────────────────────────────────────────────────────
+// ─── Notifications ──────────────────────────────────────────────────────────
 
 export interface NotificationOut {
   id: number;
@@ -293,7 +324,7 @@ export interface NotificationOut {
   created_at: string | null;
 }
 
-// ─── Мэтчинг ──────────────────────────────────────────────────────────────
+// ─── Matching ───────────────────────────────────────────────────────────────
 
 export interface MatchingIn {
   title: string;
@@ -321,9 +352,9 @@ export interface MatchOut {
   queue: string;
 }
 
-// ─── Хелперы совместимости ───────────────────────────────────────────────
+// ─── Compatibility helpers ──────────────────────────────────────────────────
 
-/** Преобразование backend ProjectOut → frontend ProjectCardOut (добавляет tags из category) */
+/** Backend ProjectOut -> frontend ProjectCardOut (adds tags from category) */
 export function normalizeProjectCard(raw: Record<string, unknown>): ProjectCardOut {
   const category = (raw["category"] as string | null) ?? null;
   const tagsRaw = raw["tags"] as string[] | undefined;
@@ -378,7 +409,7 @@ export function normalizeRegistryProject(raw: Record<string, unknown>): Registry
   };
 }
 
-/** Подготовка payload для создания/обновления проекта (tags[0] → category) */
+/** Payload for project create/update (tags[0] -> category) */
 export function denormalizeProjectInput(input: Partial<ProjectCardOut> & { tags?: string[] }): Record<string, unknown> {
   const tags = input.tags;
   const category = tags && tags.length ? tagsToCategory(tags) : input.category ?? null;

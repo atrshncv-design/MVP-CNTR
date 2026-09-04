@@ -661,7 +661,856 @@
     "docs": "Documents",
     "consultant": "AI consultant",
     "requirements": "Requirements",
-    "evidence": "Evidence"
+    "evidence": "Evidence",
+    "levels": {
+      "l1": {
+        "code": "TRL 1",
+        "name": "Basic principles",
+        "short": "Basic principles of the technology have been studied and published",
+        "description": "Fundamental principles have been identified and published. An idea for solving a physical or engineering problem has been formulated, with theoretical and/or experimental justification.",
+        "requirements": [
+          "An idea for developing a new technology has been formulated",
+          "The physical laws and assumptions in use have been defined",
+          "A concept for software implementation exists",
+          "Preliminary calculations confirm the basic principles",
+          "Basic scientific principles have been published"
+        ],
+        "deliverables": [
+          "Scientific publications",
+          "Theoretical justification",
+          "Patent research"
+        ],
+        "docs": [
+          {
+            "name": "Scientific publications",
+            "description": "Sample layout of a research paper for publishing study results",
+            "template": "Шаблон_научной_статьи.docx"
+          },
+          {
+            "name": "Theoretical justification",
+            "description": "Template for the technology theoretical justification document",
+            "template": "Шаблон_теоретического_обоснования.docx"
+          },
+          {
+            "name": "Patent research",
+            "description": "Form for conducting patent research and prior-art analysis",
+            "template": "Шаблон_патентных_исследований.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "1+",
+          "patents": "0-1",
+          "prototype": "None"
+        },
+        "risks": [
+          {
+            "risk": "The scientific idea may be unsuitable for practical application",
+            "solution": "Run an additional applicability analysis, bring in industry experts for review"
+          },
+          {
+            "risk": "No funding for further research",
+            "solution": "Prepare a grant application, find an industrial partner"
+          }
+        ]
+      },
+      "l2": {
+        "code": "TRL 2",
+        "name": "Technology concept",
+        "short": "The technology concept and/or its application have been formulated",
+        "description": "The technology concept and/or the application of candidate concepts have been formulated. The need and feasibility of creating a new technology have been justified. The concept validity has been confirmed.",
+        "requirements": [
+          "The concept specification has been defined",
+          "The need to create a new technology has been justified",
+          "Computational studies and modelling have been performed",
+          "The effectiveness of using the idea has been proven"
+        ],
+        "deliverables": [
+          "Conceptual design",
+          "Technical specification",
+          "Models and calculations"
+        ],
+        "docs": [
+          {
+            "name": "Conceptual design",
+            "description": "Structure and contents of a technology conceptual design",
+            "template": "Шаблон_концептуального_проекта.docx"
+          },
+          {
+            "name": "Technical specification",
+            "description": "GOST-style technical specification for technology development",
+            "template": "Шаблон_технического_задания.docx"
+          },
+          {
+            "name": "Models and calculations",
+            "description": "Template for documenting computational models and simulation results",
+            "template": "Шаблон_расчетных_моделей.xlsx"
+          }
+        ],
+        "kpi": {
+          "publications": "2+",
+          "patents": "1",
+          "prototype": "None"
+        },
+        "risks": [
+          {
+            "risk": "The concept may turn out to be technically infeasible",
+            "solution": "Run preliminary modelling, build a proof-of-concept on a simplified model"
+          },
+          {
+            "risk": "Customer requirements are insufficiently elaborated",
+            "solution": "Hold working meetings with the customer, record requirements in minutes"
+          }
+        ]
+      },
+      "l3": {
+        "code": "TRL 3",
+        "name": "Critical functions",
+        "short": "Critical functions and/or characteristics have been confirmed",
+        "description": "Analytical and experimental proof has been provided for the most important functional capabilities. Computational and/or experimental justification of the technology effectiveness has been carried out.",
+        "requirements": [
+          "Key functional characteristics have been confirmed",
+          "Laboratory experiments on small-scale models have been performed",
+          "Detailed comprehensive computational studies",
+          "Work for further development has been selected"
+        ],
+        "deliverables": [
+          "Laboratory results",
+          "Small-scale models",
+          "Research report"
+        ],
+        "docs": [
+          {
+            "name": "Laboratory results",
+            "description": "Form for documenting laboratory experiment results",
+            "template": "Шаблон_лабораторных_результатов.xlsx"
+          },
+          {
+            "name": "Small-scale models",
+            "description": "Description of a small-scale model and its test results",
+            "template": "Шаблон_описания_модели.docx"
+          },
+          {
+            "name": "Research report",
+            "description": "Structure of a research work report",
+            "template": "Шаблон_отчета_НИР.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "3+",
+          "patents": "1-2",
+          "prototype": "Laboratory"
+        },
+        "risks": [
+          {
+            "risk": "Experiment results do not confirm theoretical calculations",
+            "solution": "Repeat the experiments, revise the model, bring in independent experts"
+          },
+          {
+            "risk": "Scaling results from small models to full scale is difficult",
+            "solution": "Develop a scaling plan with intermediate stages, run additional studies"
+          }
+        ]
+      },
+      "l4": {
+        "code": "TRL 4",
+        "name": "Laboratory validation",
+        "short": "Components and/or breadboard validated in a laboratory environment",
+        "description": "The performance and compatibility of the technologies have been demonstrated on fairly detailed breadboards of the devices under development in laboratory conditions.",
+        "requirements": [
+          "Breadboards have been verified in laboratory conditions",
+          "Component performance has been demonstrated",
+          "Technology compatibility has been verified",
+          "Key design parameters have been defined"
+        ],
+        "deliverables": [
+          "Laboratory breadboard",
+          "Test protocols",
+          "Technical documentation"
+        ],
+        "docs": [
+          {
+            "name": "Laboratory breadboard",
+            "description": "Description of the laboratory breadboard, its characteristics and configuration",
+            "template": "Шаблон_описания_макета.docx"
+          },
+          {
+            "name": "Test protocols",
+            "description": "Unified laboratory test protocol form",
+            "template": "Шаблон_протокола_испытаний.docx"
+          },
+          {
+            "name": "Technical documentation",
+            "description": "Breadboard technical documentation structure",
+            "template": "Шаблон_техдокументации.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "3+",
+          "patents": "2-3",
+          "prototype": "Laboratory"
+        },
+        "risks": [
+          {
+            "risk": "Components may fail to work together when assembled due to incompatibility",
+            "solution": "Develop an integration testing plan, build test benches for interface verification"
+          },
+          {
+            "risk": "Laboratory conditions differ significantly from real ones",
+            "solution": "Identify critical environment parameters, develop a plan to gradually approximate conditions"
+          }
+        ]
+      },
+      "l5": {
+        "code": "TRL 5",
+        "name": "Validation in a relevant environment",
+        "short": "Components and/or breadboard tested in a near-real environment",
+        "description": "Key technology components have been integrated with supporting elements. The technology has been tested in simulated conditions close to operational ones.",
+        "requirements": [
+          "Components have been integrated with supporting elements",
+          "Tests in simulated conditions",
+          "Intermediate/full scale level has been reached",
+          "Studies on test-bench equipment"
+        ],
+        "deliverables": [
+          "Detailed breadboards",
+          "Test-bench trials",
+          "Integration report"
+        ],
+        "docs": [
+          {
+            "name": "Detailed breadboards",
+            "description": "Detailed breadboard specification for test-bench trials",
+            "template": "Шаблон_детального_макета.docx"
+          },
+          {
+            "name": "Test-bench trials",
+            "description": "Test-bench trial programme and methodology",
+            "template": "Шаблон_стендовых_испытаний.docx"
+          },
+          {
+            "name": "Integration report",
+            "description": "System component integration report form",
+            "template": "Шаблон_отчета_интеграции.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "4+",
+          "patents": "3-4",
+          "prototype": "Test-bench"
+        },
+        "risks": [
+          {
+            "risk": "Test-bench equipment cannot reproduce all operational conditions",
+            "solution": "Procure/develop additional equipment, sign a test-range agreement"
+          },
+          {
+            "risk": "Component integration reveals hidden defects",
+            "solution": "Allocate a dedicated integration testing phase, develop regression tests"
+          }
+        ]
+      },
+      "l6": {
+        "code": "TRL 6",
+        "name": "System prototype",
+        "short": "System/subsystem model demonstrated in a relevant environment",
+        "description": "The system/subsystem prototype contains all details of the devices under development. Performance has been demonstrated in near-real conditions.",
+        "requirements": [
+          "The prototype contains all system details",
+          "Demonstration in a relevant environment",
+          "Performance has been demonstrated",
+          "Key system functions have been confirmed"
+        ],
+        "deliverables": [
+          "System prototype",
+          "Demonstration report",
+          "Prototype documentation"
+        ],
+        "docs": [
+          {
+            "name": "System prototype",
+            "description": "System prototype technical specification",
+            "template": "Шаблон_спецификации_прототипа.docx"
+          },
+          {
+            "name": "Demonstration report",
+            "description": "Prototype demonstration report form",
+            "template": "Шаблон_демо_отчета.docx"
+          },
+          {
+            "name": "Prototype documentation",
+            "description": "Prototype technical documentation package",
+            "template": "Шаблон_документации_прототипа.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "4+",
+          "patents": "4-5",
+          "prototype": "System"
+        },
+        "risks": [
+          {
+            "risk": "The prototype may not survive the full test cycle",
+            "solution": "Develop a staged demonstration plan, keep spare components"
+          },
+          {
+            "risk": "The prototype cost exceeds the budget",
+            "solution": "Apply lean manufacturing, use 3D printing and mock-up materials"
+          }
+        ]
+      },
+      "l7": {
+        "code": "TRL 7",
+        "name": "Field trials",
+        "short": "System prototype demonstrated in an operational environment",
+        "description": "The system prototype has been successfully tested in field conditions. Performance in a real operational environment has been demonstrated.",
+        "requirements": [
+          "The prototype has been tested in field conditions",
+          "Demonstration in the operational environment",
+          "Successful field trials",
+          "Ready for low-rate production"
+        ],
+        "deliverables": [
+          "Field-trial prototype",
+          "Field test protocols",
+          "Readiness statement"
+        ],
+        "docs": [
+          {
+            "name": "Field-trial prototype",
+            "description": "Prototype acceptance statement for field trials",
+            "template": "Шаблон_акта_приемки_прототипа.docx"
+          },
+          {
+            "name": "Field test protocols",
+            "description": "Field (operational) test protocol form",
+            "template": "Шаблон_полевых_протоколов.docx"
+          },
+          {
+            "name": "Readiness statement",
+            "description": "Technology readiness statement for low-rate production",
+            "template": "Шаблон_акта_готовности.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "5+",
+          "patents": "5+",
+          "prototype": "Field"
+        },
+        "risks": [
+          {
+            "risk": "Field conditions are unpredictable and may damage the prototype",
+            "solution": "Develop an emergency response plan, insure the equipment"
+          },
+          {
+            "risk": "Personnel are insufficiently trained for field trials",
+            "solution": "Provide advance personnel training, prepare an operating manual"
+          }
+        ]
+      },
+      "l8": {
+        "code": "TRL 8",
+        "name": "Completion and qualification",
+        "short": "Actual system completed and qualified",
+        "description": "The system has been found fit for service. Development, test and evaluation (DT&E) are complete. The system meets its specification. Ready for full-rate production.",
+        "requirements": [
+          "The system has been qualified after testing",
+          "Specification compliance has been confirmed",
+          "DT&E are complete",
+          "Manufacturing processes on the pilot line",
+          "Documentation under configuration control"
+        ],
+        "deliverables": [
+          "Qualified system",
+          "Software certification",
+          "Pilot line"
+        ],
+        "docs": [
+          {
+            "name": "Qualified system",
+            "description": "Certificate of technical characteristics compliance",
+            "template": "Шаблон_сертификата_соответствия.docx"
+          },
+          {
+            "name": "Software certification",
+            "description": "Software certification paperwork",
+            "template": "Шаблон_сертификации_ПО.docx"
+          },
+          {
+            "name": "Pilot line",
+            "description": "Pilot production line readiness statement",
+            "template": "Шаблон_акта_пилотной_линии.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "5+",
+          "patents": "5+",
+          "prototype": "Qualified"
+        },
+        "risks": [
+          {
+            "risk": "Certification tests reveal non-conformances",
+            "solution": "Run a preliminary readiness assessment, keep a corrective-action plan"
+          },
+          {
+            "risk": "Suppliers are not ready for serial deliveries",
+            "solution": "Audit the supply chain, sign long-term contracts, find backup suppliers"
+          }
+        ]
+      },
+      "l9": {
+        "code": "TRL 9",
+        "name": "Successful operation",
+        "short": "Actual system proven through successful operation",
+        "description": "The system employment concept has been successfully implemented. The system has been installed and commissioned. OT&E are complete. All manufacturing processes are controlled at six-sigma level.",
+        "requirements": [
+          "The system is in successful operation",
+          "OT&E are complete",
+          "The employment concept has been implemented",
+          "Stable production (six sigma)",
+          "Target cost has been reached"
+        ],
+        "deliverables": [
+          "Operational system",
+          "Training plan",
+          "Support plan",
+          "Programme protection plan"
+        ],
+        "docs": [
+          {
+            "name": "Operational system",
+            "description": "System commissioning statement",
+            "template": "Шаблон_акта_ввода_в_эксплуатацию.docx"
+          },
+          {
+            "name": "Training plan",
+            "description": "Operating personnel training plan",
+            "template": "Шаблон_плана_обучения.docx"
+          },
+          {
+            "name": "Support plan",
+            "description": "In-service technical support plan",
+            "template": "Шаблон_плана_поддержки.docx"
+          },
+          {
+            "name": "Programme protection plan",
+            "description": "Configuration management and programme protection plan",
+            "template": "Шаблон_плана_защиты.docx"
+          }
+        ],
+        "kpi": {
+          "publications": "5+",
+          "patents": "5+",
+          "prototype": "Operational"
+        },
+        "risks": [
+          {
+            "risk": "Operational issues require costly rework",
+            "solution": "Set up a technical support service, stock spare components"
+          },
+          {
+            "risk": "Production metrics fall short of targets",
+            "solution": "Apply Lean/Six Sigma methodology, analyse the processes"
+          }
+        ]
+      }
+    },
+    "kpiLabels": {
+      "publications": "Publications",
+      "patents": "Patents",
+      "prototype": "Prototype"
+    },
+    "ugp": {
+      "l1": {
+        "code": "MRL 1",
+        "name": "Key factors"
+      },
+      "l2": {
+        "code": "MRL 2",
+        "name": "Manufacturing concept"
+      },
+      "l3": {
+        "code": "MRL 3",
+        "name": "Concept validation"
+      },
+      "l4": {
+        "code": "MRL 4",
+        "name": "Laboratory fabrication"
+      },
+      "l5": {
+        "code": "MRL 5",
+        "name": "Component prototypes"
+      },
+      "l6": {
+        "code": "MRL 6",
+        "name": "System prototypes"
+      },
+      "l7": {
+        "code": "MRL 7",
+        "name": "Near-real conditions"
+      },
+      "l8": {
+        "code": "MRL 8",
+        "name": "Pilot line"
+      },
+      "l9": {
+        "code": "MRL 9",
+        "name": "Low-rate production"
+      },
+      "l10": {
+        "code": "MRL 10",
+        "name": "Full-rate production"
+      }
+    },
+    "ugi": {
+      "l1": {
+        "code": "IRL 1",
+        "name": "Interface definition"
+      },
+      "l2": {
+        "code": "IRL 2",
+        "name": "Interaction specification"
+      },
+      "l3": {
+        "code": "IRL 3",
+        "name": "Technology compatibility"
+      },
+      "l4": {
+        "code": "IRL 4",
+        "name": "Interaction quality"
+      },
+      "l5": {
+        "code": "IRL 5",
+        "name": "Interaction management"
+      },
+      "l6": {
+        "code": "IRL 6",
+        "name": "Information processing"
+      },
+      "l7": {
+        "code": "IRL 7",
+        "name": "Integration verification"
+      },
+      "l8": {
+        "code": "IRL 8",
+        "name": "Integration completion"
+      },
+      "l9": {
+        "code": "IRL 9",
+        "name": "Integration in use"
+      }
+    },
+    "ugs": {
+      "l1": {
+        "code": "SRL 1",
+        "name": "Concept refinement"
+      },
+      "l2": {
+        "code": "SRL 2",
+        "name": "Technology development"
+      },
+      "l3": {
+        "code": "SRL 3",
+        "name": "Development and demonstration"
+      },
+      "l4": {
+        "code": "SRL 4",
+        "name": "System production"
+      },
+      "l5": {
+        "code": "SRL 5",
+        "name": "Deployment and support"
+      }
+    },
+    "transitions": {
+      "from1to2": {
+        "title": "From idea to concept",
+        "actions": [
+          "Formalisation of scientific principles",
+          "Conceptual model development",
+          "Patent research"
+        ],
+        "docs": [
+          {
+            "name": "Research paper",
+            "description": "Sample layout of a research publication",
+            "template": "Шаблон_научной_статьи.docx"
+          },
+          {
+            "name": "Concept proposal",
+            "description": "Technology concept proposal form",
+            "template": "Шаблон_концептуального_предложения.docx"
+          },
+          {
+            "name": "Patent research report",
+            "description": "Patent research report",
+            "template": "Шаблон_патентных_исследований.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "The scientific idea is unsuitable for practical application",
+            "solution": "Applicability review, proof-of-concept"
+          },
+          {
+            "risk": "No funding",
+            "solution": "Grant applications, industrial partners"
+          }
+        ],
+        "estimatedTime": "1-2 months"
+      },
+      "from2to3": {
+        "title": "Critical function proof",
+        "actions": [
+          "Laboratory experiments",
+          "Small-scale modelling",
+          "Detailed calculations"
+        ],
+        "docs": [
+          {
+            "name": "Technical specification",
+            "description": "Specification for running experiments",
+            "template": "Шаблон_технического_задания.docx"
+          },
+          {
+            "name": "Laboratory test protocol",
+            "description": "Laboratory test protocol form",
+            "template": "Шаблон_протокола_лаб_испытаний.docx"
+          },
+          {
+            "name": "Computational study report",
+            "description": "Computational study report",
+            "template": "Шаблон_отчета_расчетов.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Experiments do not confirm the theory",
+            "solution": "Repeated reviews, model revision"
+          },
+          {
+            "risk": "Scaling is difficult",
+            "solution": "Intermediate stages, additional studies"
+          }
+        ],
+        "estimatedTime": "1-2 months"
+      },
+      "from3to4": {
+        "title": "Laboratory verification",
+        "actions": [
+          "Laboratory breadboard build",
+          "Component testing",
+          "Test protocols"
+        ],
+        "docs": [
+          {
+            "name": "Breadboard specification",
+            "description": "Laboratory breadboard technical specification",
+            "template": "Шаблон_спецификации_макета.docx"
+          },
+          {
+            "name": "Test programme",
+            "description": "Test programme and methodology",
+            "template": "Шаблон_программы_испытаний.docx"
+          },
+          {
+            "name": "Technical report",
+            "description": "Laboratory test report",
+            "template": "Шаблон_технического_отчета.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Component incompatibility when assembled",
+            "solution": "Integration testing, test benches"
+          },
+          {
+            "risk": "Laboratory conditions differ from real ones",
+            "solution": "Critical parameter analysis, staged approximation"
+          }
+        ],
+        "estimatedTime": "1-2 months"
+      },
+      "from4to5": {
+        "title": "Move to real-world conditions",
+        "actions": [
+          "Component integration",
+          "Test-bench trials",
+          "Breadboard detailing"
+        ],
+        "docs": [
+          {
+            "name": "Integration plan",
+            "description": "System component integration plan",
+            "template": "Шаблон_плана_интеграции.docx"
+          },
+          {
+            "name": "Test-bench trial programme",
+            "description": "Test-bench trial programme",
+            "template": "Шаблон_стендовых_испытаний.docx"
+          },
+          {
+            "name": "Integration report",
+            "description": "Integration results report",
+            "template": "Шаблон_отчета_интеграции.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "The test bench does not reproduce all conditions",
+            "solution": "Additional equipment, test-range agreement"
+          },
+          {
+            "risk": "Hidden integration defects",
+            "solution": "Integration testing phase, regression tests"
+          }
+        ],
+        "estimatedTime": "1-3 months"
+      },
+      "from5to6": {
+        "title": "System integration",
+        "actions": [
+          "System prototype assembly",
+          "Relevant-environment testing",
+          "Performance demonstration"
+        ],
+        "docs": [
+          {
+            "name": "Prototype specification",
+            "description": "System prototype technical specification",
+            "template": "Шаблон_спецификации_прототипа.docx"
+          },
+          {
+            "name": "Demonstration programme",
+            "description": "Prototype demonstration programme",
+            "template": "Шаблон_программы_демо.docx"
+          },
+          {
+            "name": "Demonstration statement",
+            "description": "Demonstration record",
+            "template": "Шаблон_акта_демонстрации.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "The prototype does not survive the full cycle",
+            "solution": "Staged demonstration, spare components"
+          },
+          {
+            "risk": "The prototype cost exceeds the budget",
+            "solution": "Lean manufacturing, 3D printing"
+          }
+        ],
+        "estimatedTime": "2-3 months"
+      },
+      "from6to7": {
+        "title": "Field trials",
+        "actions": [
+          "Field trial preparation",
+          "Field test execution",
+          "Results analysis"
+        ],
+        "docs": [
+          {
+            "name": "Field trial programme",
+            "description": "Field trial programme",
+            "template": "Шаблон_программы_полевых.docx"
+          },
+          {
+            "name": "Operating manual",
+            "description": "Operating manual for field trials",
+            "template": "Шаблон_руководства_эксплуатации.docx"
+          },
+          {
+            "name": "Field test protocol",
+            "description": "Field test protocol",
+            "template": "Шаблон_протокола_полевых.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Unpredictable field conditions",
+            "solution": "Emergency response plan, insurance"
+          },
+          {
+            "risk": "Insufficient personnel training",
+            "solution": "Personnel training, operating manual"
+          }
+        ],
+        "estimatedTime": "2-3 months"
+      },
+      "from7to8": {
+        "title": "System qualification",
+        "actions": [
+          "DT&E completion",
+          "Certification",
+          "Pilot line launch"
+        ],
+        "docs": [
+          {
+            "name": "Certification application",
+            "description": "Certification application",
+            "template": "Шаблон_заявки_сертификация.docx"
+          },
+          {
+            "name": "DT&E report",
+            "description": "Development, test and evaluation report",
+            "template": "Шаблон_отчета_DTE.docx"
+          },
+          {
+            "name": "Pilot line statement",
+            "description": "Pilot production line readiness statement",
+            "template": "Шаблон_акта_пилотной_линии.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Non-conformances found at certification",
+            "solution": "Preliminary assessment, corrective-action plan"
+          },
+          {
+            "risk": "Suppliers not ready for serial deliveries",
+            "solution": "Supply chain audit, long-term contracts"
+          }
+        ],
+        "estimatedTime": "2-3 months"
+      },
+      "from8to9": {
+        "title": "Commissioning",
+        "actions": [
+          "OT&E completion",
+          "Production launch",
+          "Handover to service"
+        ],
+        "docs": [
+          {
+            "name": "OT&E report",
+            "description": "Operational test and evaluation report",
+            "template": "Шаблон_отчета_OTE.docx"
+          },
+          {
+            "name": "Commissioning statement",
+            "description": "System commissioning statement",
+            "template": "Шаблон_акта_ввода_эксплуатацию.docx"
+          },
+          {
+            "name": "Support plan",
+            "description": "In-service technical support plan",
+            "template": "Шаблон_плана_поддержки.docx"
+          }
+        ],
+        "risks": [
+          {
+            "risk": "Costly rework in service",
+            "solution": "Support service, spare component stock"
+          },
+          {
+            "risk": "Production metrics below targets",
+            "solution": "Lean/Six Sigma, process analysis"
+          }
+        ],
+        "estimatedTime": "2-4 months"
+      }
+    }
   },
   "offline": {
     "bannerOffline": "No connection — you are offline. Actions will be queued.",
@@ -1899,5 +2748,125 @@
     "creator": "Creator: {name}",
     "rolesEmpty": "—",
     "competenciesEmpty": ""
+  },
+  "showcase": {
+    "projects": {
+      "p1": {
+        "name": "Composite materials for aircraft manufacturing",
+        "category": "R&D",
+        "description": "Development of carbon-fibre interior panels with a fire-resistant coating: from laboratory samples to test-bench trials.",
+        "org": "Research and production association",
+        "region": "Izhevsk"
+      },
+      "p2": {
+        "name": "AI-based diagnostics assistant",
+        "category": "AI/ML",
+        "description": "A computer-vision model for detecting weld defects: trained on the plant dataset, 96% accuracy on validation.",
+        "org": "IT company",
+        "region": "Sarapul"
+      },
+      "p3": {
+        "name": "Robotic system for agriculture",
+        "category": "Manufacturing",
+        "description": "An autonomous precision fertilisation system: the prototype passed field trials at two farms of the republic.",
+        "org": "Machine-building plant",
+        "region": "Votkinsk"
+      },
+      "p4": {
+        "name": "Biodegradable packaging films",
+        "category": "R&D",
+        "description": "Starch- and PVA-based films: laboratory property checks complete, scale-up on the pilot line under way.",
+        "org": "University laboratory",
+        "region": "Izhevsk"
+      },
+      "p5": {
+        "name": "Energy-efficient pump drive",
+        "category": "Manufacturing",
+        "description": "A regenerative variable-frequency drive: the mock-up confirmed 18% energy savings, with serial production in preparation.",
+        "org": "Electric machine-building plant",
+        "region": "Izhevsk"
+      },
+      "p6": {
+        "name": "Soil monitoring sensor platform",
+        "category": "AI/ML",
+        "description": "A soil-sensor network with AI data aggregation: 40 devices in the pilot zone, LPWAN data links.",
+        "org": "Agrotech startup",
+        "region": "Glazov"
+      },
+      "p7": {
+        "name": "High-temperature ceramics",
+        "category": "R&D",
+        "description": "Silicon-nitride-based ceramics for burner devices: basic principles confirmed, industrial partner sought.",
+        "org": "Materials institute",
+        "region": "Izhevsk"
+      },
+      "p8": {
+        "name": "Assembly shop digital twin",
+        "category": "AI/ML",
+        "description": "A shop simulation model with logistics optimisation: verified on the live flow, +9% productivity effect.",
+        "org": "Engineering company",
+        "region": "Izhevsk"
+      },
+      "p9": {
+        "name": "Medical training simulator",
+        "category": "Medicine",
+        "description": "A surgical training simulator with haptic feedback: the prototype was tested at the medical university.",
+        "org": "Medtech resident",
+        "region": "Izhevsk"
+      }
+    },
+    "categories": [
+      "AI/ML",
+      "R&D",
+      "Manufacturing",
+      "Medicine"
+    ]
+  },
+  "taxonomy": {
+    "tags": [
+      "AI/ML",
+      "Computer vision",
+      "Natural language processing",
+      "Robotics",
+      "Biotech",
+      "Medicine",
+      "Pharma",
+      "Energy",
+      "Oil & gas",
+      "Materials science",
+      "Composites",
+      "Industrial technologies",
+      "Additive manufacturing",
+      "Electronics",
+      "Microelectronics",
+      "Quantum technologies",
+      "Photonics",
+      "Hydrogen technologies",
+      "Batteries",
+      "IT systems",
+      "Cybersecurity",
+      "Transport",
+      "Agriculture",
+      "Aerospace",
+      "Mechanical engineering",
+      "Chemistry",
+      "Construction",
+      "Environmental protection",
+      "Logistics",
+      "Education",
+      "Fintech",
+      "Telecom"
+    ],
+    "validation": {
+      "minTags": "Select at least {min} tag",
+      "maxTags": "Select at most {max} tags",
+      "unknownTags": "Unknown tags: {list}"
+    },
+    "legacy": {
+      "nioktr": "НИОКТР",
+      "software": "Программное обеспечение",
+      "hardware": "Аппаратные средства",
+      "infosystems": "Информационные системы"
+    }
   }
 }

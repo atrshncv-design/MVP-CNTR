@@ -1,8 +1,13 @@
 /**
- * Демо-данные публичной витрины проектов.
- * Заглушка до подключения публичного API реестра: карточки показывают
- * типовые проекты платформы. Поля совместимы с ProjectSummary из ЛК.
+ * Public project showcase demo data.
+ * Placeholder until the public registry API is connected: cards show
+ * typical platform projects. Fields match ProjectSummary from dashboards.
+ * Display strings live in the showcase dictionary (next-intl); this module
+ * holds only key metadata plus resolvers taking a translator function.
  */
+
+import type { TranslateFn } from "./types";
+import ruMessages from "../messages/ru.json" with { type: "json" };
 
 export interface ShowcaseProject {
   id: number;
@@ -16,120 +21,93 @@ export interface ShowcaseProject {
   region: string;
 }
 
-export const SHOWCASE_PROJECTS: ShowcaseProject[] = [
-  {
-    id: 1,
-    name: "Композитные материалы для авиастроения",
-    category: "НИОКТР",
-    description:
-      "Разработка углепластиковых панелей интерьера с огнестойким покрытием: от лабораторных образцов до испытаний на стенде.",
-    current_level: 6,
-    status: "active",
-    budget: 48_000_000,
-    org: "Научно-производственное объединение",
-    region: "Ижевск",
-  },
-  {
-    id: 2,
-    name: "Ассистент диагностики на основе ИИ",
-    category: "AI/ML",
-    description:
-      "Модель компьютерного зрения для выявления дефектов сварных швов: обучение на датасете предприятия, точность 96% на валидации.",
-    current_level: 4,
-    status: "active",
-    budget: 12_500_000,
-    org: "ИТ-компания",
-    region: "Сарапул",
-  },
-  {
-    id: 3,
-    name: "Роботизированный комплекс для АПК",
-    category: "Производство",
-    description:
-      "Автономный комплекс точечного внесения удобрений: прототип прошёл полевые испытания на двух хозяйствах республики.",
-    current_level: 7,
-    status: "review",
-    budget: 76_000_000,
-    org: "Машиностроительный завод",
-    region: "Воткинск",
-  },
-  {
-    id: 4,
-    name: "Биодеградируемые упаковочные плёнки",
-    category: "НИОКТР",
-    description:
-      "Плёнки на основе крахмала и ПВА: лабораторная проверка свойств завершена, идёт масштабирование на пилотной линии.",
-    current_level: 5,
-    status: "active",
-    budget: 21_000_000,
-    org: "Университетская лаборатория",
-    region: "Ижевск",
-  },
-  {
-    id: 5,
-    name: "Энергоэффективный привод насосов",
-    category: "Производство",
-    description:
-      "Частотно-регулируемый привод с рекуперацией: макет подтвердил 18% экономии энергии, подготовка к серийному выпуску.",
-    current_level: 8,
-    status: "completed",
-    budget: 94_000_000,
-    org: "Электромашиностроительный завод",
-    region: "Ижевск",
-  },
-  {
-    id: 6,
-    name: "Сенсорная платформа мониторинга почв",
-    category: "AI/ML",
-    description:
-      "Сеть почвенных датчиков с ИИ-агрегацией данных: 40 устройств в пилотной зоне, передача данных по LPWAN.",
-    current_level: 3,
-    status: "draft",
-    budget: 8_400_000,
-    org: "Агротех-стартап",
-    region: "Глазов",
-  },
-  {
-    id: 7,
-    name: "Высокотемпературная керамика",
-    category: "НИОКТР",
-    description:
-      "Керамика на основе нитрида кремния для горелочных устройств: базовые принципы подтверждены, поиск индустриального партнёра.",
-    current_level: 2,
-    status: "draft",
-    budget: 6_000_000,
-    org: "Институт материалов",
-    region: "Ижевск",
-  },
-  {
-    id: 8,
-    name: "Цифровой двойник сборочного цеха",
-    category: "AI/ML",
-    description:
-      "Имитационная модель цеха с оптимизацией логистики: верификация на реальном потоке, эффект 9% к производительности.",
-    current_level: 6,
-    status: "review",
-    budget: 34_000_000,
-    org: "Инжиниринговая компания",
-    region: "Ижевск",
-  },
-  {
-    id: 9,
-    name: "Медицинский тренажёр-симулятор",
-    category: "Медицина",
-    description:
-      "Симулятор хирургических вмешательств с тактильной обратной связью: прототип испытан в медуниверситете.",
-    current_level: 5,
-    status: "active",
-    budget: 18_000_000,
-    org: "Медтех-резидент",
-    region: "Ижевск",
-  },
+interface ShowcaseDictProject {
+  name: string;
+  category: string;
+  description: string;
+  org: string;
+  region: string;
+}
+
+interface ShowcaseDict {
+  projects: Record<string, ShowcaseDictProject>;
+  categories: string[];
+}
+
+function showcaseDict(): ShowcaseDict {
+  return (ruMessages as unknown as { showcase: ShowcaseDict }).showcase;
+}
+
+/** Non-textual card metadata (ids, levels, statuses, budgets). */
+const SHOWCASE_META: ReadonlyArray<{
+  id: number;
+  current_level: number;
+  status: ShowcaseProject["status"];
+  budget: number | null;
+}> = [
+  { id: 1, current_level: 6, status: "active", budget: 48_000_000 },
+  { id: 2, current_level: 4, status: "active", budget: 12_500_000 },
+  { id: 3, current_level: 7, status: "review", budget: 76_000_000 },
+  { id: 4, current_level: 5, status: "active", budget: 21_000_000 },
+  { id: 5, current_level: 8, status: "completed", budget: 94_000_000 },
+  { id: 6, current_level: 3, status: "draft", budget: 8_400_000 },
+  { id: 7, current_level: 2, status: "draft", budget: 6_000_000 },
+  { id: 8, current_level: 6, status: "review", budget: 34_000_000 },
+  { id: 9, current_level: 5, status: "active", budget: 18_000_000 },
 ];
 
-export const SHOWCASE_CATEGORIES = [
-  "AI/ML",
-  "НИОКТР",
-  "Производство",
-  "Медицина",
-];
+/** Stable category slugs in canonical order (parallel to dictionary categories). */
+export const SHOWCASE_CATEGORY_SLUGS = ["ai", "nioktr", "manufacturing", "medicine"] as const;
+
+export type ShowcaseCategorySlug = (typeof SHOWCASE_CATEGORY_SLUGS)[number];
+
+function projectText(id: number): ShowcaseDictProject {
+  return showcaseDict().projects[`p${id}`];
+}
+
+function toProject(
+  meta: (typeof SHOWCASE_META)[number],
+  text: ShowcaseDictProject,
+): ShowcaseProject {
+  return {
+    id: meta.id,
+    name: text.name,
+    category: text.category,
+    description: text.description,
+    current_level: meta.current_level,
+    status: meta.status,
+    budget: meta.budget,
+    org: text.org,
+    region: text.region,
+  };
+}
+
+export const SHOWCASE_PROJECTS: ShowcaseProject[] = SHOWCASE_META.map((meta) =>
+  toProject(meta, projectText(meta.id)),
+);
+
+export const SHOWCASE_CATEGORIES: string[] = showcaseDict().categories;
+
+/** Localised showcase cards (translator scoped to the showcase namespace). */
+export function getShowcaseProjects(t: TranslateFn): ShowcaseProject[] {
+  return SHOWCASE_META.map((meta) =>
+    toProject(meta, {
+      name: t(`projects.p${meta.id}.name`),
+      category: t(`projects.p${meta.id}.category`),
+      description: t(`projects.p${meta.id}.description`),
+      org: t(`projects.p${meta.id}.org`),
+      region: t(`projects.p${meta.id}.region`),
+    }),
+  );
+}
+
+/** Localised category labels in canonical order. */
+export function getShowcaseCategories(t: TranslateFn): string[] {
+  return SHOWCASE_CATEGORY_SLUGS.map((_, index) => t(`categories.${index}`));
+}
+
+/** Localised label for one category slug. */
+export function getShowcaseCategoryLabel(t: TranslateFn, slug: ShowcaseCategorySlug): string {
+  const index = (SHOWCASE_CATEGORY_SLUGS as readonly string[]).indexOf(slug);
+  return t(`categories.${index}`);
+}
