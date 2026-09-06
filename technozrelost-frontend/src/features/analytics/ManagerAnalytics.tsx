@@ -7,8 +7,8 @@ import { AlertCircle, Inbox, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { getProjects } from "@/lib/api-client";
-import { formatRelative, formatShortDate } from "@/lib/format-date";
-import { getStatusLabel } from "@/lib/status";
+import { formatRelativeT, formatShortDate } from "@/lib/format-date";
+import { getStatusLabelT } from "@/lib/status";
 import type { ProjectCardOut } from "@/lib/types";
 
 import { Funnel } from "./Funnel";
@@ -113,13 +113,13 @@ export function ManagerAnalytics() {
           ) : (
             paginated.slice.map((p) => {
               const shortDate = formatShortDate(p.updated_at ?? p.created_at);
-              const relative = formatRelative(p.updated_at ?? p.created_at);
+              const relative = formatRelativeT(t, p.updated_at ?? p.created_at);
               return (
                 <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-tz-border py-2 text-sm">
                   <div className="min-w-0">
                     <span className="font-mono text-xs text-tz-muted">{t("mgrProjectCode", { id: p.id })}</span>{" "}
                     <span className="font-medium text-tz-fg">{p.name}</span>{" "}
-                    <span className="tz-badge tz-badge-neutral">{getStatusLabel(String(p.status))}</span>
+                    <span className="tz-badge tz-badge-neutral">{getStatusLabelT(t, String(p.status))}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-tz-fg" data-testid={`budget-${p.id}`}>

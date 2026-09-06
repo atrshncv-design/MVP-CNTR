@@ -25,4 +25,4 @@ export {
   ANALYTICS_LIMIT,
   LIGHT_PALETTE_ONLY,
 } from "./utils";
-export { formatShortDate, formatRelative } from "./utils";
+export { formatShortDate } from "./utils";

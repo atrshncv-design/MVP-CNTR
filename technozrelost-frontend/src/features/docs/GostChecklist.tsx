@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 
 import { getGostRequirements, getStageRequirements } from "@/lib/api-client";
 import type { DocumentOut, TranslateFn } from "@/lib/types";
-import { getStatusLabel } from "@/lib/status";
+import { getStatusLabelT } from "@/lib/status";
 import { getUgtColor } from "@/features/project/utils";
 import { downloadTemplate as downloadTemplateWithFallback } from "@/features/project/template";
 
@@ -134,8 +134,8 @@ export function GostChecklist({
   const total = merged.length;
   const done = merged.filter((r) => r.uploaded).length;
   const color = getUgtColor(currentLevel);
-  // Использование lib/status из 01 (дедуп STATUS_LABELS) — показываем статус карточки
-  void getStatusLabel(status);
+  // Использование lib/status из 01 (дедуп подписей) — показываем статус карточки
+  void getStatusLabelT(t, status);
 
   if (loading) {
     return (

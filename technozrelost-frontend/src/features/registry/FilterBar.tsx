@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { Drawer } from "@/components/ui/drawer";
 import { PROJECT_TAGS } from "@/lib/types";
-import { STATUS_LABELS } from "@/lib/status";
+import { PROJECT_STATUSES, getStatusLabelT } from "@/lib/status";
 import type { RegistryParams } from "@/lib/types";
 import { SavedFilters } from "./saved-filters";
 
@@ -31,6 +31,7 @@ export function FilterBar({
   registryKey?: string;
 }) {
   const t = useTranslations("registry");
+  const tCommon = useTranslations("common");
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [tagQuery, setTagQuery] = React.useState("");
   const searchId = React.useId();
@@ -182,8 +183,8 @@ export function FilterBar({
           className="tz-select"
         >
           <option value="all">{t("filterAny")}</option>
-          {Object.entries(STATUS_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
+          {PROJECT_STATUSES.map((v) => (
+            <option key={v} value={v}>{getStatusLabelT(tCommon, v)}</option>
           ))}
         </select>
       </label>

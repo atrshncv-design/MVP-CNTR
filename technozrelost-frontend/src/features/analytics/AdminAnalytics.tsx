@@ -9,9 +9,9 @@ import { AlertCircle, BarChart3, RefreshCw, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { getAdminAchievementsStats, getOrganizations, getProjects } from "@/lib/api-client";
-import { formatRelative, formatShortDate } from "@/lib/format-date";
+import { formatRelativeT, formatShortDate } from "@/lib/format-date";
 import { useDebouncedValue } from "@/lib/filters";
-import { getStatusLabel } from "@/lib/status";
+import { getStatusLabelT } from "@/lib/status";
 import type { ProjectCardOut } from "@/lib/types";
 
 import type { AdminStats } from "./types";
@@ -30,6 +30,7 @@ import { ANALYTICS_LIMIT, buildFunnel, buildRegionRowsFromOrgs, buildRegionRowsF
  */
 export function AdminAnalytics() {
   const t = useTranslations("analytics");
+  const tCommon = useTranslations("common");
   const { data: session } = useSession();
   const token = session?.user?.accessToken as string | undefined;
 
@@ -197,14 +198,14 @@ export function AdminAnalytics() {
         <div className="mt-4 space-y-2">
           {paginated.slice.map((p) => {
             const shortDate = formatShortDate(p.updated_at ?? p.created_at);
-            const relative = formatRelative(p.updated_at ?? p.created_at);
+            const relative = formatRelativeT(tCommon, p.updated_at ?? p.created_at);
             const tags = p.tags?.length ? p.tags : p.category ? [p.category] : [];
             return (
               <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-tz-border py-2 text-sm">
                 <div className="min-w-0">
                   <span className="font-mono text-xs text-tz-muted">{t("projectCode", { id: String(p.id) })}</span>{" "}
                   <span className="font-medium text-tz-fg">{p.name}</span>{" "}
-                  <span className="tz-badge tz-badge-neutral">{getStatusLabel(String(p.status))}</span>{" "}
+                  <span className="tz-badge tz-badge-neutral">{getStatusLabelT(tCommon, String(p.status))}</span>{" "}
                   {tags[0] ? <span className="tz-badge tz-badge-neutral">{tags[0]}</span> : null}
                 </div>
                 <div className="flex items-center gap-3">

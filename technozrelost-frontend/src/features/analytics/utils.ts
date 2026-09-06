@@ -170,4 +170,4 @@ export const LIGHT_PALETTE_ONLY = true;
 
 // ─── Дата 31.03.2027 + тултип «2 дня назад» (G47) ───────────────────────────
 // Реэкспорт из lib/format-date для единообразия
-export { formatShortDate, formatRelative } from "@/lib/format-date";
+export { formatShortDate } from "@/lib/format-date";

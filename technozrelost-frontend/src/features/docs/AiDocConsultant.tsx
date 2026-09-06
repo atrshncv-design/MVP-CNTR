@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 
 import { Drawer } from "@/components/ui/drawer";
 import { chatDocs, searchDocsRag } from "@/lib/api-client";
-import { getStatusLabel } from "@/lib/status";
+import { getStatusLabelT } from "@/lib/status";
 import { useDebouncedValue } from "@/lib/filters";
 import {
   DOCS_ONLY_REPLY,
@@ -43,7 +43,7 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
   const [question, setQuestion] = React.useState("");
   const debouncedQuestion = useDebouncedValue(question, 300);
   void debouncedQuestion;
-  void getStatusLabel("published");
+  void getStatusLabelT(t, "published");
   const [answer, setAnswer] = React.useState<string | null>(null);
   const [sources, setSources] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(false);

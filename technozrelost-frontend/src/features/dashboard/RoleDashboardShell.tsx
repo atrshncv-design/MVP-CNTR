@@ -27,10 +27,10 @@ import {
 
 import { AssessUgTCard } from '@/components/assess-ugt-card';
 import { getProjects, joinProject } from '@/lib/api-client';
-import { formatRelative, formatShortDate } from '@/lib/format-date';
+import { formatRelativeT, formatShortDate } from '@/lib/format-date';
 import { useTranslations } from 'next-intl';
 import type { RoleSlug } from '@/lib/roles';
-import { getStatusColor, getStatusLabel } from '@/lib/status';
+import { getStatusColor, getStatusLabelT } from '@/lib/status';
 import { categoryToTags, type ProjectCardOut } from '@/lib/types';
 import ProfileVerificationQueue from '@/components/profile-verification-queue';
 
@@ -517,8 +517,8 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
             {!loading && !error && projects.length > 0 && (
               <span className="text-xs text-tz-muted">
                 {t("updated")} {formatShortDate(projects[0]?.updated_at ?? projects[0]?.created_at ?? null)}{' '}
-                <span title={formatRelative(projects[0]?.updated_at ?? projects[0]?.created_at ?? null)}>
-                  ({formatRelative(projects[0]?.updated_at ?? projects[0]?.created_at ?? null)})
+                <span title={formatRelativeT(tCommon, projects[0]?.updated_at ?? projects[0]?.created_at ?? null)}>
+                  ({formatRelativeT(tCommon, projects[0]?.updated_at ?? projects[0]?.created_at ?? null)})
                 </span>
               </span>
             )}
@@ -565,7 +565,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
               {filteredProjects.map((project) => {
                 const color = getStatusColor(String(project.status));
                 const shortDate = formatShortDate(project.updated_at ?? project.created_at);
-                const relative = formatRelative(project.updated_at ?? project.created_at);
+                const relative = formatRelativeT(tCommon, project.updated_at ?? project.created_at);
                 const fav = isFavorite(project.id);
                 return (
                   <div
@@ -579,7 +579,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                           className="rounded-full px-2 py-0.5 text-[11px] font-medium"
                           style={{ background: `${color}15`, color }}
                         >
-                          {getStatusLabel(String(project.status))}
+                          {getStatusLabelT(tCommon, String(project.status))}
                         </span>
                         {shortDate && (
                           <span
@@ -612,7 +612,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
                     </div>
                     <div className="md:min-w-28 md:text-right">
                       <div className="text-xs text-tz-muted">{t("statusLabel")}</div>
-                      <div className="mt-1 font-semibold text-tz-fg">{getStatusLabel(String(project.status))}</div>
+                      <div className="mt-1 font-semibold text-tz-fg">{getStatusLabelT(tCommon, String(project.status))}</div>
                     </div>
                     <div className="flex items-center gap-2 md:justify-end">
                       <Link

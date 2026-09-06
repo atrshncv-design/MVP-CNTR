@@ -7,7 +7,7 @@ import { AlertCircle, ArrowUpDown, ChevronDown, ChevronUp, FilePlus2 } from "luc
 import { Empty } from "@/components/ui/empty";
 import { ErrorState } from "@/components/ui/error";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getStatusBadge, getStatusLabel, PROJECT_STATUSES } from "@/lib/status";
+import { getStatusBadge, getStatusLabelT, PROJECT_STATUSES } from "@/lib/status";
 import type { RegistryProjectOut } from "@/lib/types";
 
 import { FavoriteStar } from "./FavoriteStar";
@@ -162,6 +162,7 @@ export function RegistryTable<T extends object>({
 }) {
   // i18n: все видимые подписи и a11y — через неймспейс registry
   const t = useTranslations("registry");
+  const tCommon = useTranslations("common");
   const [sortKey, setSortKey] = React.useState<RegistryTableSortKey>("id");
   const [sortDir, setSortDir] = React.useState<RegistryTableSortDir>("asc");
 
@@ -341,7 +342,7 @@ export function RegistryTable<T extends object>({
                     ? `${ugtCur != null ? t("ugtShort", { level: ugtCur }) : "—"} → ${ugtTar ?? "—"}`
                     : "—";
 
-                const statusLabel = status ? getStatusLabel(status) : "—";
+                const statusLabel = status ? getStatusLabelT(tCommon, status) : "—";
                 const badge = status ? getStatusBadge(status) : "tz-badge-neutral";
 
                 // Название: линк если href, иначе span

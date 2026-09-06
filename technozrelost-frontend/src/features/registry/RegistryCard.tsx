@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Activity, Building2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { formatRelative, formatShortDate } from "@/lib/format-date";
-import { getStatusBadge, getStatusLabel } from "@/lib/status";
+import { formatRelativeT, formatShortDate } from "@/lib/format-date";
+import { getStatusBadge, getStatusLabelT } from "@/lib/status";
 import type { RegistryProjectOut } from "@/lib/types";
 
 import { FavoriteStar } from "./FavoriteStar";
@@ -37,10 +37,11 @@ export function RegistryCard({
   onToggleFavorite?: () => void;
 }) {
   const t = useTranslations("registry");
+  const tCommon = useTranslations("common");
   const badge = getStatusBadge(project.status ?? "draft");
-  const label = getStatusLabel(project.status ?? "draft");
+  const label = getStatusLabelT(tCommon, project.status ?? "draft");
   const shortDate = formatShortDate(project.updated_at ?? project.created_at ?? null);
-  const relative = formatRelative(project.updated_at ?? project.created_at ?? null);
+  const relative = formatRelativeT(tCommon, project.updated_at ?? project.created_at ?? null);
   const tags = project.tags?.length ? project.tags : project.category ? [project.category] : [];
 
   const cardInner = (

@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { formatRuDate, formatRuDateTime } from "../src/lib/format-date.ts";
+import { formatDateLocale, formatDateTimeLocale } from "../src/lib/format-date.ts";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -65,12 +65,16 @@ test("навигация: «Новости» в публичном меню и �
   assert.match(footer, /href: "\/news", label: "Новости"/);
 });
 
-test("format-date: человекочитаемые даты по-русски (UTC)", () => {
-  assert.equal(formatRuDate("2026-08-14T10:00:00+00:00"), "14 августа 2026 г.");
-  assert.equal(formatRuDate(null), "");
-  assert.equal(formatRuDate("not-a-date"), "");
+test("format-date: человекочитаемые даты под локалью (UTC, доделка T06)", () => {
+  // RU-шимы удалены: экраны идут через formatDateLocale/formatDateTimeLocale
+  // с текущей локалью (ru → ru-RU, иначе en-GB).
+  assert.equal(formatDateLocale("ru", "2026-08-14T10:00:00+00:00"), "14 августа 2026 г.");
+  assert.equal(formatDateLocale("en", "2026-08-14T10:00:00+00:00"), "14 August 2026");
+  assert.equal(formatDateLocale("ru", null), "");
+  assert.equal(formatDateLocale("ru", "not-a-date"), "");
   assert.equal(
-    formatRuDateTime("2026-08-14T10:00:00+00:00"),
+    formatDateTimeLocale("ru", "2026-08-14T10:00:00+00:00"),
     "14 августа 2026 г. в 10:00",
   );
+  assert.doesNotMatch(formatDateTimeLocale("en", "2026-08-14T10:00:00+00:00"), /[А-Яа-яЁё]/);
 });

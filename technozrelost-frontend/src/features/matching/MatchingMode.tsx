@@ -12,7 +12,7 @@ import { useDebouncedValue } from "@/lib/filters";
 import { PROJECT_TAGS } from "@/lib/types";
 import type { MatchCandidate, MatchingIn } from "@/lib/types";
 import type { ProjectCardOut } from "@/lib/types";
-import { getStatusLabel } from "@/lib/status";
+import { getStatusLabelT } from "@/lib/status";
 
 import { MatchCard } from "./MatchCard";
 import {
@@ -33,8 +33,8 @@ import {
 import { llmErrorText, isFallbackReason } from "@/features/misc/i18n";
 
 // Почему используем lib/status и filters из 01: единый источник констант и дебаунса,
-// не дублируем справочники тегов и STATUS_LABELS.
-void getStatusLabel;
+// не дублируем справочники тегов и подписи статусов.
+void getStatusLabelT;
 // LLM_API_BASE из env, без ключа сразу script, reference for tests
 void getLlmBase;
 void hasLlmKey;

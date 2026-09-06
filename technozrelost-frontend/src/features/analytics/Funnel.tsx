@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { getStatusLabel } from "@/lib/status";
+import { getStatusLabelT } from "@/lib/status";
 import type { FunnelData } from "./types";
 import { funnelSumsToTotal } from "./utils";
 
@@ -22,11 +22,11 @@ export function Funnel({
   const t = useTranslations("common");
   const heading = title ?? t("funnelTitleDefault");
   const linear: Array<{ key: keyof FunnelData; label: string }> = [
-    { key: "draft", label: getStatusLabel("draft") },
-    { key: "auto_confirmed", label: getStatusLabel("auto_confirmed") },
-    { key: "published", label: getStatusLabel("published") },
-    { key: "active", label: getStatusLabel("active") },
-    { key: "completed", label: getStatusLabel("completed") },
+    { key: "draft", label: getStatusLabelT(t, "draft") },
+    { key: "auto_confirmed", label: getStatusLabelT(t, "auto_confirmed") },
+    { key: "published", label: getStatusLabelT(t, "published") },
+    { key: "active", label: getStatusLabelT(t, "active") },
+    { key: "completed", label: getStatusLabelT(t, "completed") },
   ];
   const max = Math.max(1, ...linear.map((s) => funnel[s.key] as number));
   const isValid = funnelSumsToTotal(funnel);
@@ -69,11 +69,11 @@ export function Funnel({
       {/* Ответвления rejected/archived отдельно, но входят в total для инварианта */}
       <div className="mt-4 grid grid-cols-2 gap-3 border-t border-tz-border pt-4 text-sm">
         <div data-testid="funnel-rejected" data-count={funnel.rejected} className="flex items-center justify-between">
-          <span className="text-tz-muted">{getStatusLabel("rejected")}</span>
+          <span className="text-tz-muted">{getStatusLabelT(t, "rejected")}</span>
           <span className="tz-badge tz-badge-review">{funnel.rejected}</span>
         </div>
         <div data-testid="funnel-archived" data-count={funnel.archived} className="flex items-center justify-between">
-          <span className="text-tz-muted">{getStatusLabel("archived")}</span>
+          <span className="text-tz-muted">{getStatusLabelT(t, "archived")}</span>
           <span className="tz-badge tz-badge-neutral">{funnel.archived}</span>
         </div>
       </div>

@@ -16,7 +16,7 @@ import { HistoryPanel } from "./HistoryPanel";
 import { useAutosave } from "./useAutosave";
 import type { DocumentOut, ProjectDetailOut } from "@/lib/types";
 import { asTranslateFn } from "@/lib/types";
-import { getStatusColor, getStatusLabel } from "@/lib/status";
+import { getStatusColor, getStatusLabelT } from "@/lib/status";
 import { getReturnBadgeT } from "./utils";
 
 interface ProjectCardProps {
@@ -33,6 +33,7 @@ interface ProjectCardProps {
 export function ProjectCard({ detail, onProjectChange, className = "" }: ProjectCardProps) {
   const t = useTranslations("projects");
   const tp = useTranslations("project");
+  const tCommon = useTranslations("common");
   const { project, audit_trail, members, documents: initialDocuments, control_points } = detail;
   const statusColor = getStatusColor(project.status);
   // Бюджет всем виден (G38) — форматирование Intl.NumberFormat ru-RU RUB, без «по запросу»
@@ -131,7 +132,7 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
               className="tz-badge font-mono text-xs font-semibold"
               style={{ background: `${statusColor}20`, color: statusColor }}
             >
-              {getStatusLabel(project.status)}
+              {getStatusLabelT(tCommon, project.status)}
             </span>
             {returnBadge && (
               <span data-testid="return-badge" className="tz-badge tz-badge-review">
