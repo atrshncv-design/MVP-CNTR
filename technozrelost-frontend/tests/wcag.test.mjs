@@ -162,9 +162,14 @@ test("layout: html lang ru + skip link + main tabindex", () => {
   assert.match(login, /id="main-content"/);
 });
 
-test("landing nav: aria-label, aria-expanded, aria-haspopup, aria-current", () => {
+test("landing nav: aria-label, aria-expanded, aria-haspopup, aria-current", async () => {
   const nav = read("src/components/landing/landing-nav.tsx");
-  assert.match(nav, /aria-label="Главная навигация"/);
+  // Шов таска 07: подпись nav — резолвером обеих локалей без регулярок
+  // по исходникам; маркер-комментарий со строкой экрана из кода убран сканером.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.equal(translatorFor("landing", "ru")("navMainAria"), "Главная навигация");
+  assert.equal(translatorFor("landing", "en")("navMainAria"), "Main navigation");
+  assert.match(nav, /tLanding\("navMainAria"\)/);
   assert.match(nav, /aria-expanded/);
   assert.match(nav, /aria-haspopup="menu"/);
   assert.match(nav, /aria-current/);

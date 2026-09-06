@@ -30,7 +30,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Пароль", type: "password" },
+        // Без label пароля: страница входа кастомная (/login с собственными подписями),
+        // встроенная форма NextAuth не используется — лейбл провайдера мёртвый.
+        password: { type: "password" },
       },
       async authorize(credentials) {
         const email = credentials?.email as string | undefined;

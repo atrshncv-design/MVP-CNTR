@@ -10,7 +10,6 @@ import { chatDocs, searchDocsRag } from "@/lib/api-client";
 import { getStatusLabelT } from "@/lib/status";
 import { useDebouncedValue } from "@/lib/filters";
 import {
-  DOCS_ONLY_REPLY,
   assertNoPii,
   isDocsQuestion,
   sanitizeFromRequirements,
@@ -36,6 +35,9 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
   void _projectId;
   void CONTOUR_KABA;
   const t = useTranslations("common");
+  // Узкий фолбэк для общих вопросов — через словарь (R01): язык задаёт локаль,
+  // в коде русского литерала нет. Сравнение ответов идёт с этим же значением.
+  const docsOnlyReply = t("aiDocDocsOnly");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
@@ -60,7 +62,7 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
 
     // Узкий фильтр: только про документы УГТ
     if (!isDocsQuestion(q)) {
-      setAnswer(DOCS_ONLY_REPLY);
+      setAnswer(docsOnlyReply);
       return;
     }
 
@@ -122,19 +124,19 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
           const isGeneral =
             lower.includes("я не знаю") || lower.includes("общий вопрос") || lower.includes("не по теме");
           // Но если isDocsQuestion прошёл, считаем ответ валидным, иначе — узкий ответ
-          replyText = isGeneral && !isDocsQuestion(content) ? DOCS_ONLY_REPLY : content;
+          replyText = isGeneral && !isDocsQuestion(content) ? docsOnlyReply : content;
           srcs = (chatRes as { sources?: Array<{ title: string }> })?.sources?.map((s) => s.title) ?? [];
         }
       }
 
       if (replyText) {
-        // Финальная проверка: если LLM ушёл в общие темы — возвращаем узкий ответ
-        if (!isDocsQuestion(replyText) && replyText !== DOCS_ONLY_REPLY) {
-          // Проверяем что ответ действительно про документы, иначе — узкий
-          const hasDocs = DOCS_ONLY_REPLY.toLowerCase().includes("документ") ? false : isDocsQuestion(replyText);
-          // Если LLM ответил про документы — оставляем, иначе — узкий заглушка
-          if (!hasDocs && replyText.length < 20) {
-            setAnswer(DOCS_ONLY_REPLY);
+        // Финальная проверка: если LLM ушёл в общие темы — возвращаем узкий ответ.
+        // Короткий ответ вне тематики документов заменяем фолбэком, длинный оставляем:
+        // прежняя проверка hasDocs была тождественно ложной в этой ветке
+        // (isDocsQuestion уже false), поэтому упрощена до проверки длины без смены поведения.
+        if (!isDocsQuestion(replyText) && replyText !== docsOnlyReply) {
+          if (replyText.length < 20) {
+            setAnswer(docsOnlyReply);
           } else {
             setAnswer(replyText);
           }
@@ -143,14 +145,14 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
         }
         setSources(srcs);
       } else {
-        setAnswer(DOCS_ONLY_REPLY);
+        setAnswer(docsOnlyReply);
       }
     } catch (e) {
       // Тексты бэкенда/LLM (R04/данные) — как есть, фолбэк — через словарь.
       const msg = e instanceof Error && e.message ? e.message : t("aiDocError");
       setError(msg);
       // на общие вопросы даже при ошибке — узкий ответ
-      if (!isDocsQuestion(q)) setAnswer(DOCS_ONLY_REPLY);
+      if (!isDocsQuestion(q)) setAnswer(docsOnlyReply);
     } finally {
       setLoading(false);
     }
@@ -236,7 +238,7 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
 
               {!answer && !loading && (
                 <p className="text-xs text-tz-muted">
-                  {t("aiDocHint", { reply: DOCS_ONLY_REPLY })}
+                  {t("aiDocHint", { reply: docsOnlyReply })}
                 </p>
               )}
             </div>

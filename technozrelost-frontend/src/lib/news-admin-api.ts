@@ -18,6 +18,20 @@ import type {
   NewsStatus,
 } from "@/lib/news-types";
 import { CLIENT_API_BASE } from "@/lib/public-api";
+import { shimLocale, translatorFor, type ContentNamespace } from "./translators.ts";
+
+// news — зонный неймспейс; фабрика типизирована под контентные неймспейсы
+// таска 01, рантайм-резолв для этого скоупа — тот же стандартный.
+const NEWS_NS = "news" as ContentNamespace;
+
+/**
+ * Фолбэк ошибки запроса, когда бэкенд не отдал detail (R01): текст из словаря
+ * news под текущую локаль со статус-кодом параметром. Тексты бэкенда (detail,
+ * R04 вне рамок) — как есть через extractApiError.
+ */
+function newsRequestErrorFallback(status: number): string {
+  return translatorFor(NEWS_NS, shimLocale())("admin.requestError", { status });
+}
 
 
 /** Тело создания/редактирования новости (NewsCreateIn/NewsUpdateIn). */
@@ -69,7 +83,7 @@ async function request<T>(
   const data = await response.json().catch(() => null);
   if (!response.ok) {
     throw new Error(
-      extractApiError(data, `Запрос не выполнен (${response.status}).`),
+      extractApiError(data, newsRequestErrorFallback(response.status)),
     );
   }
   return data as T;

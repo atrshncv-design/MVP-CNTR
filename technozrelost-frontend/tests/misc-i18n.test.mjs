@@ -159,6 +159,8 @@ test("misc-i18n: контрактные строки экранов зоны —
   assert.equal(commonRu("offBannerQueue", { count: 3 }), "в очереди: 3");
   assert.equal(commonRu("aiDocTitle", { level: 5 }), "ИИ-консультант · УГТ 5");
   assert.equal(commonEn("aiDocTitle", { level: 5 }), "AI consultant · TRL 5");
+  assert.equal(commonRu("aiDocDocsOnly"), "Я консультирую только по документам УГТ");
+  assert.equal(commonEn("aiDocDocsOnly"), "I only advise on TRL documents");
 });
 
 test("misc-i18n: метаданные страниц — обе локали через словарь, EN без кириллицы", () => {

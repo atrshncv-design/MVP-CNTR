@@ -33,6 +33,7 @@ export function ExportButton({ rows, filename, registryKey, sheetName }: ExportB
   // Экспорт только cntr_admin (R01, история 1) — менеджеру скрыт
   const isAdmin = roles.includes("cntr_admin");
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Остальные роли (включая менеджера) не видят кнопку — fail-closed
   if (!isAdmin) return null;
@@ -40,6 +41,7 @@ export function ExportButton({ rows, filename, registryKey, sheetName }: ExportB
   const handleExport = async () => {
     if (loading) return;
     setLoading(true);
+    setError(null);
     try {
       // Динамический импорт, чтобы exceljs не тянулся в SSR (client-side per spec)
       const mod = await import("./exportXlsx");
@@ -58,7 +60,10 @@ export function ExportButton({ rows, filename, registryKey, sheetName }: ExportB
         });
       }
     } catch (err) {
-      console.error("Экспорт XLSX не удался", err);
+      // Лог — плоским литералом вне словаря, переводу не подлежит.
+      console.error("ExportButton: XLSX export failed", err);
+      // Сообщение пользователю — через словарь.
+      setError(t("exportError"));
     } finally {
       setLoading(false);
     }
@@ -67,16 +72,23 @@ export function ExportButton({ rows, filename, registryKey, sheetName }: ExportB
   const disabled = loading;
 
   return (
-    <button
-      type="button"
-      onClick={handleExport}
-      disabled={disabled}
-      aria-label={t("exportLabel")}
-      className="tz-btn tz-btn-secondary inline-flex items-center gap-2 disabled:opacity-60"
-    >
-      <Download size={16} aria-hidden="true" />
-      {loading ? t("exporting") : t("exportLabel")}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={handleExport}
+        disabled={disabled}
+        aria-label={t("exportLabel")}
+        className="tz-btn tz-btn-secondary inline-flex items-center gap-2 disabled:opacity-60"
+      >
+        <Download size={16} aria-hidden="true" />
+        {loading ? t("exporting") : t("exportLabel")}
+      </button>
+      {error && (
+        <div role="alert" className="text-sm text-tz-danger">
+          {error}
+        </div>
+      )}
+    </>
   );
 }
 

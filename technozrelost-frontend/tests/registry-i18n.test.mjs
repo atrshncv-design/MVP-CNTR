@@ -133,4 +133,6 @@ test("registry-i18n: ключевые подписи таблицы и звез�
   assert.equal(en("favRemove", { label: "X" }), "Remove from favorites: X");
   assert.equal(ru("viewCardsLabel"), "Вид: карточки");
   assert.equal(en("exportLabel"), "Export XLSX");
+  assert.equal(ru("exportError"), "Экспорт XLSX не удался");
+  assert.equal(en("exportError"), "XLSX export failed");
 });

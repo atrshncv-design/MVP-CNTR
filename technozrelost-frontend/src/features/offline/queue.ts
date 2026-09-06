@@ -4,8 +4,8 @@
  * должны сохраняться в `tz:offline:queue` и повторно отправляться после
  * восстановления сети (online event + Background Sync via SyncManager fallback).
  * Хук `useOfflineQueue` выставляет очередь, а sync скрыт внутри.
- * Background Sync: если доступен `SyncManager` через `navigator.serviceWorker`,
- * регистрируем `tz-offline-queue-sync`; иначе fallback на `window online` event.
+ * Background Sync: если доступен SyncManager через navigator.serviceWorker,
+ * регистрируем тэг tz-offline-queue-sync; иначе fallback на online event в хуке.
  */
 
 export const OFFLINE_QUEUE_KEY = "tz:offline:queue";
@@ -166,7 +166,7 @@ async function defaultFetcher(action: QueuedAction): Promise<Response> {
  * Background Sync регистрация (если доступен SyncManager) — иначе no-op.
  * Почему здесь: современные браузеры поддерживают `SyncManager` для
  * отложенной синхронизации даже при закрытой вкладке; для остальных —
- * fallback на `online` event в `useOfflineQueue`.
+ * fallback на online event в useOfflineQueue.
  */
 export function tryRegisterBackgroundSync(): void {
   if (typeof window === "undefined" || typeof navigator === "undefined") return;

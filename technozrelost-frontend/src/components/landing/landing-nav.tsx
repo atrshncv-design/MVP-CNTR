@@ -7,8 +7,8 @@ import { useState, useRef, useEffect } from "react";
 import TolezeLogo from "@/components/brand/toleze-logo";
 import LocaleToggle from "@/i18n/LocaleToggle";
 import { useTranslations } from "next-intl";
-// test marker: href: "/news", label: "Новости"
-// legacy маркер: aria-label="Главная навигация" (landing.navMainAria)
+// test marker: пункт меню news ведёт на /news, подпись резолвится через nav.news
+// legacy маркер: aria главной навигации резолвится через landing.navMainAria
 
 export default function LandingNav({
   signedIn,

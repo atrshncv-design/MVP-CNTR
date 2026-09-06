@@ -57,12 +57,29 @@ test("public api client: новости без токена, no-store, филь�
   assert.doesNotMatch(source, /Authorization[\s\S]{0,120}\/news/);
 });
 
-test("навигация: «Новости» в публичном меню и футере", () => {
-  const nav = read("src/components/landing/landing-nav.tsx");
+test("навигация: «Новости» в публичном меню и футере", async () => {
+  // Шов таска 07: подпись пункта меню — резолвером обеих локалей без регулярок
+  // по исходникам; маркер-комментарий со строкой экрана из кода убран сканером.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.equal(translatorFor("nav", "ru")("news"), "Новости");
+  assert.equal(translatorFor("nav", "en")("news"), "News");
   const footer = read("src/components/landing/landing-footer.tsx");
 
-  assert.match(nav, /href: "\/news", label: "Новости"/);
   assert.match(footer, /href: "\/news", label: "Новости"/);
+});
+
+test("news admin api: фолбэк ошибки запроса — через словарь обеих локалей", async () => {
+  // Шов таска 07: extractApiError отдаёт detail бэкенда как есть (R04), а фолбэк
+  // без detail резолвится из news.admin.requestError с кодом статуса параметром.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.equal(
+    translatorFor("news", "ru")("admin.requestError", { status: 500 }),
+    "Запрос не выполнен (500).",
+  );
+  assert.equal(
+    translatorFor("news", "en")("admin.requestError", { status: 500 }),
+    "Request failed (500).",
+  );
 });
 
 test("format-date: человекочитаемые даты под локалью (UTC, доделка T06)", () => {
