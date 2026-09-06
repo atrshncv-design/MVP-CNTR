@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
+import { radarAxisLabel, type RadarAxisId } from "@/features/dashboard/i18n";
 
 /**
  * LivingRadar — анимированный «дышащий» радар с интерактивными осями.
@@ -16,16 +18,15 @@ import { motion } from "framer-motion";
  * с detail = индекс оси (или null при уходе курсора) — легенда на главной
  * слушает его и подсвечивает связанную строку синхронно.
  */
-const AXES = [
-  { label: "Научная", angle: 0 },
-  { label: "Техническая", angle: 90 },
-  { label: "Организационная", angle: 180 },
-  { label: "Производственная", angle: 270 },
-];
+const AXIS_IDS: RadarAxisId[] = ["scientific", "technical", "organizational", "production"];
+const AXIS_ANGLES = [0, 90, 180, 270];
 
 const AXIS_HOVER_EVENT = "radar-axis-hover";
 
 export default function LivingRadar({ className = "" }: { className?: string }) {
+  const tLanding = useTranslations("landing");
+  // Подписи осей — через словарь landing тем же хелпером, что радар кабинета (таск 04).
+  const AXES = AXIS_IDS.map((id, i) => ({ label: radarAxisLabel(tLanding, id), angle: AXIS_ANGLES[i] as number }));
   const cx = 100;
   const cy = 100;
   const r = 72;

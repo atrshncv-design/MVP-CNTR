@@ -3,20 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { CLIENT_API_BASE } from "@/lib/public-api";
-
-
-const JOIN_ROLES = [
-  { value: "rd_executor", label: "R&D-исполнитель" },
-  { value: "scientific_org", label: "Научная организация" },
-  { value: "serial_manufacturer", label: "Серийный производитель" },
-  { value: "regulating_organization", label: "Регулирующая организация" },
-  { value: "auditor", label: "Аудитор" },
-  { value: "investor", label: "Инвестор" },
-  { value: "participant", label: "Участник проекта" },
-  { value: "tech_lead", label: "Технический руководитель" },
-  { value: "project_curator", label: "Куратор проекта" },
-] as const;
+import { getJoinRoleOptions } from "@/features/misc/i18n";
 
 interface JoinResponse {
   status: "active" | "pending";
@@ -54,6 +43,10 @@ export default function JoinTokenClient({
   accessToken: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("auth");
+  const tErrors = useTranslations("errors");
+  // Роли — резолвером текущей локали через словарь auth (таск 05).
+  const joinRoles = getJoinRoleOptions(t);
   const [state, setState] = useState<State>({ kind: "pick_role" });
   const [selectedRole, setSelectedRole] = useState<string>("rd_executor");
 
@@ -75,7 +68,7 @@ export default function JoinTokenClient({
         const data = await res.json().catch(() => null);
         setState({
           kind: "error",
-          message: extractError(data, "Не удалось присоединиться к проекту"),
+          message: extractError(data, t("joinFailed")),
         });
         return;
       }
@@ -95,7 +88,7 @@ export default function JoinTokenClient({
     } catch {
       setState({
         kind: "error",
-        message: "Сетевая ошибка. Проверьте подключение и попробуйте снова.",
+        message: tErrors("network"),
       });
     }
   };
@@ -105,23 +98,23 @@ export default function JoinTokenClient({
       <div className="flex min-h-screen items-center justify-center bg-tz-bg px-4">
         <div className="w-full max-w-md rounded-xl border border-tz-border bg-tz-surface p-8 shadow-lg">
           <h1 className="mb-2 text-xl font-bold text-tz-fg">
-            Вступление в проект
+            {t("joinTitle")}
           </h1>
           <p className="mb-6 text-sm text-tz-secondary">
-            Токен{" "}
+            {t("joinTokenLabel")}{" "}
             <code className="rounded bg-tz-accent-soft px-1 font-mono text-tz-accent">
               {token}
             </code>
           </p>
           <p className="mb-4 text-sm text-tz-secondary">
-            Выберите роль в проекте:
+            {t("joinRoleLabel")}
           </p>
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
             className="mb-4 w-full rounded-lg border border-tz-border bg-tz-bg px-3 py-2 text-sm text-tz-fg focus:border-tz-accent focus:outline-none focus:ring-1 focus:ring-tz-accent"
           >
-            {JOIN_ROLES.map((r) => (
+            {joinRoles.map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
               </option>
@@ -135,10 +128,10 @@ export default function JoinTokenClient({
             {state.kind === "joining" ? (
               <span className="inline-flex items-center gap-2">
                 <Loader2 size={16} className="animate-spin" />
-                Вступление…
+                {t("joinSubmitting")}
               </span>
             ) : (
-              "Присоединиться"
+              t("joinSubmit")
             )}
           </button>
         </div>
@@ -155,15 +148,14 @@ export default function JoinTokenClient({
             className="mx-auto mb-4 text-tz-warning"
           />
           <h1 className="mb-2 text-xl font-bold text-tz-fg">
-            Заявка отправлена
+            {t("joinPendingTitle")}
           </h1>
           <p className="text-sm text-tz-secondary">
-            Ваша заявка на вступление в проект передана на рассмотрение
-            владельцу. Вы получите доступ после одобрения.
+            {t("joinPendingDesc")}
           </p>
           {state.project && (
             <p className="mt-3 text-sm text-tz-secondary">
-              Проект:{" "}
+              {t("joinProjectLabel")}{" "}
               <span className="font-medium text-tz-fg">
                 {state.project.name}
               </span>
@@ -173,7 +165,7 @@ export default function JoinTokenClient({
             onClick={() => router.push("/dashboard")}
             className="mt-6 rounded-lg bg-tz-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-tz-accent-hover"
           >
-            Перейти в личный кабинет
+            {t("joinCabinet")}
           </button>
         </div>
       </div>
@@ -186,14 +178,14 @@ export default function JoinTokenClient({
         <div className="w-full max-w-md rounded-xl border border-tz-border bg-tz-surface p-8 text-center shadow-lg">
           <CheckCircle2 size={48} className="mx-auto mb-4 text-tz-danger" />
           <h1 className="mb-2 text-xl font-bold text-tz-fg">
-            Не удалось присоединиться
+            {t("joinErrorTitle")}
           </h1>
           <p className="text-sm text-tz-secondary">{state.message}</p>
           <button
             onClick={() => setState({ kind: "pick_role" })}
             className="mt-6 rounded-lg bg-tz-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-tz-accent-hover"
           >
-            Попробовать снова
+            {t("joinRetry")}
           </button>
         </div>
       </div>

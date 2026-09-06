@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { StatsPoint } from "./types";
 
 /**
@@ -9,18 +10,20 @@ import type { StatsPoint } from "./types";
  */
 export function WeekBars({
   data,
-  title = "Динамика по неделям",
+  title,
   testId = "week-bars",
 }: {
   data: StatsPoint[];
   title?: string;
   testId?: string;
 }) {
+  const t = useTranslations("common");
+  const heading = title ?? t("weekTitle");
   const max = Math.max(1, ...data.map((d) => d.count));
   return (
     <div className="tz-card p-5" data-testid={testId}>
-      <h3 className="font-semibold text-tz-fg">{title}</h3>
-      <p className="mt-1 text-xs text-tz-muted">Начисления по ISO-неделям (понедельник → воскресенье)</p>
+      <h3 className="font-semibold text-tz-fg">{heading}</h3>
+      <p className="mt-1 text-xs text-tz-muted">{t("weekHint")}</p>
       <div className="mt-4 flex items-end gap-1.5" style={{ height: 88 }}>
         {data.map((pt) => {
           const h = Math.round((pt.count / max) * 72) + 8;
@@ -53,6 +56,7 @@ export function WeekBars({
 }
 
 /** Дневные бары — тот же компонент, другой набор точек */
-export function DayBars({ data }: { data: StatsPoint[] }) {
-  return <WeekBars data={data} title="Динамика по дням (30 дней)" testId="day-bars" />;
+export function DayBars({ data, title }: { data: StatsPoint[]; title?: string }) {
+  const t = useTranslations("common");
+  return <WeekBars data={data} title={title ?? t("dayTitle")} testId="day-bars" />;
 }

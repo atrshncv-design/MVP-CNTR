@@ -11,12 +11,14 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { LogIn } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { allowedRolesFor, isProtectedRoute } from "@/lib/roles";
 
 import { draftKey } from "./draft";
 
 export function SessionExpiredModal() {
+  const t = useTranslations("auth");
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
@@ -159,7 +161,7 @@ export function SessionExpiredModal() {
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      aria-label="Сессия истекла"
+      aria-label={t("sessionAria")}
       onClick={() => setVisible(false)}
     >
       <div
@@ -170,10 +172,10 @@ export function SessionExpiredModal() {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id={titleId} className="text-lg font-bold text-tz-fg">
-          Сессия истекла — войдите заново
+          {t("sessionTitle")}
         </h2>
         <p className="mt-2 text-sm text-tz-muted">
-          Ваша сессия истекла или права доступа изменились. Черновик сохранён в браузере и будет восстановлен после входа.
+          {t("sessionDesc")}
         </p>
         {reason && <p className="mt-2 font-mono text-xs text-tz-muted">{reason}</p>}
         <div className="mt-6 flex justify-center gap-3">
@@ -190,13 +192,13 @@ export function SessionExpiredModal() {
             className="tz-btn tz-btn-primary"
           >
             <LogIn size={16} />
-            Войти заново
+            {t("sessionLogin")}
           </button>
           <button onClick={() => setVisible(false)} className="tz-btn tz-btn-ghost">
-            Остаться
+            {t("sessionStay")}
           </button>
         </div>
-        <p className="mt-4 text-xs text-tz-muted">Черновик: localStorage ключ tz:draft:{"{projectId}"}</p>
+        <p className="mt-4 text-xs text-tz-muted">{t("sessionDraftHint", { projectId: "{projectId}" })}</p>
       </div>
     </div>
   );

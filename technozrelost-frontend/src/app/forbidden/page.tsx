@@ -1,14 +1,16 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-export default function ForbiddenPage() {
+export default async function ForbiddenPage() {
+  const t = await getTranslations("auth");
   return (
     <main className="mx-auto mt-24 max-w-md rounded-xl border border-tz-danger bg-tz-danger-soft p-8 text-center">
-      <h1 className="mb-2 tz-page-title text-tz-danger">Доступ запрещён</h1>
+      <h1 className="mb-2 tz-page-title text-tz-danger">{t("forbiddenTitle")}</h1>
       <p className="mb-4 text-tz-secondary">
-        У вашей роли нет прав на просмотр этого личного кабинета.
+        {t("forbiddenDesc")}
       </p>
       <Link href="/dashboard" className="text-tz-accent underline">
-        Перейти в мой кабинет
+        {t("forbiddenLink")}
       </Link>
     </main>
   );

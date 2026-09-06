@@ -4,11 +4,13 @@ import { ArrowRight, Building2, Landmark, Factory, TrendingUp } from "lucide-rea
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 
-export const metadata: Metadata = {
-  title: "Заказчикам — Технозрелость",
-  description:
-    "Кому платформа «Технозрелость» помогает как заказчику: госкомпаниям, научным организациям, инвесторам, региональным ведомствам.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaCustomersTitle"),
+    description: t("metaCustomersDesc"),
+  };
+}
 
 export default async function CustomersPage() {
   const t = await getTranslations("customers");

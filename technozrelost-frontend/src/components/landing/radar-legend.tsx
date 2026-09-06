@@ -1,20 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { radarAxisLabel, type RadarAxisId } from "@/features/dashboard/i18n";
 
 /**
  * RadarLegend — легенда «Радар готовности проекта» на главной.
  * Слушает CustomEvent 'radar-axis-hover' от LivingRadar и подсвечивает
  * строку, соответствующую наведённой оси (detail = индекс оси | null).
  */
-const AXIS_ITEMS = [
-  { label: "Научная", text: "публикации и патентные исследования" },
-  { label: "Техническая", text: "прототипы и результаты испытаний" },
-  { label: "Организационная", text: "команда, процессы и документация" },
-  { label: "Производственная", text: "масштабирование и серийный выпуск" },
-];
+const AXIS_IDS: RadarAxisId[] = ["scientific", "technical", "organizational", "production"];
 
 export default function RadarLegend() {
+  const tLanding = useTranslations("landing");
+  // Подписи и описания — через словарь landing (оси тем же хелпером, что радар кабинета).
+  const AXIS_ITEMS = AXIS_IDS.map((id) => ({
+    id,
+    label: radarAxisLabel(tLanding, id),
+    text: tLanding(
+      id === "scientific"
+        ? "radarLegendTextScientific"
+        : id === "technical"
+          ? "radarLegendTextTechnical"
+          : id === "organizational"
+            ? "radarLegendTextOrganizational"
+            : "radarLegendTextProduction",
+    ),
+  }));
   const [hovered, setHovered] = useState<number | null>(null);
 
   useEffect(() => {

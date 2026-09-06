@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { SectorRow, StatsSectorItem, RegionRow } from "./types";
 
 /**
@@ -9,19 +10,21 @@ import type { SectorRow, StatsSectorItem, RegionRow } from "./types";
  */
 export function SectorRows({
   rows,
-  title = "Отрасли по тегам (30+)",
+  title,
   testId = "sector-rows",
 }: {
   rows: SectorRow[];
   title?: string;
   testId?: string;
 }) {
+  const t = useTranslations("common");
+  const heading = title ?? t("sectorTagsTitle");
   return (
     <div className="tz-card p-5" data-testid={testId}>
-      <h3 className="font-semibold text-tz-fg">{title}</h3>
-      <p className="mt-1 text-xs text-tz-muted">Разрез по 30+ тегам (front-агрегация из GET /projects)</p>
+      <h3 className="font-semibold text-tz-fg">{heading}</h3>
+      <p className="mt-1 text-xs text-tz-muted">{t("sectorTagsHint")}</p>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-tz-muted">Тегов пока нет — проекты без tags</p>
+        <p className="mt-4 text-sm text-tz-muted">{t("sectorTagsEmpty")}</p>
       ) : (
         <div className="mt-4 space-y-2.5">
           {rows.slice(0, 12).map((r) => (
@@ -43,24 +46,26 @@ export function SectorRows({
 
 export function BackendSectorRows({
   rows,
-  title = "Отрасли (бек by_sector)",
+  title,
 }: {
   rows: StatsSectorItem[];
   title?: string;
 }) {
+  const t = useTranslations("common");
+  const heading = title ?? t("sectorBackendTitle");
   return (
     <div className="tz-card p-5" data-testid="backend-sector-rows">
-      <h3 className="font-semibold text-tz-fg">{title}</h3>
-      <p className="mt-1 text-xs text-tz-muted">Из GET /admin/achievements/stats.by_sector (category → count)</p>
+      <h3 className="font-semibold text-tz-fg">{heading}</h3>
+      <p className="mt-1 text-xs text-tz-muted">{t("sectorBackendHint")}</p>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-tz-muted">Секторов пока нет</p>
+        <p className="mt-4 text-sm text-tz-muted">{t("sectorBackendEmpty")}</p>
       ) : (
         <div className="mt-4 space-y-2.5">
           {rows.slice(0, 12).map((r) => (
             <div key={r.category} data-testid={`backend-sector-${r.category}`} className="flex items-center gap-3 text-sm">
               <span className="min-w-0 flex-1 truncate font-medium text-tz-fg">{r.category}</span>
               <span className="font-mono text-xs text-tz-muted">
-                {r.count} проектов: {r.projects}
+                {t("sectorBackendCount", { count: r.count, projects: r.projects })}
               </span>
             </div>
           ))}
@@ -72,19 +77,21 @@ export function BackendSectorRows({
 
 export function RegionRows({
   rows,
-  title = "Муниципалитеты / регионы",
+  title,
   testId = "region-rows",
 }: {
   rows: RegionRow[];
   title?: string;
   testId?: string;
 }) {
+  const t = useTranslations("common");
+  const heading = title ?? t("regionTitle");
   return (
     <div className="tz-card p-5" data-testid={testId}>
-      <h3 className="font-semibold text-tz-fg">{title}</h3>
-      <p className="mt-1 text-xs text-tz-muted">Разрез по Organization.region (муниципалитеты/регионы)</p>
+      <h3 className="font-semibold text-tz-fg">{heading}</h3>
+      <p className="mt-1 text-xs text-tz-muted">{t("regionHint")}</p>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-tz-muted">Регионов пока нет</p>
+        <p className="mt-4 text-sm text-tz-muted">{t("regionEmpty")}</p>
       ) : (
         <div className="mt-4 space-y-2.5">
           {rows.slice(0, 12).map((r) => (

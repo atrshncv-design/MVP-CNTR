@@ -129,25 +129,33 @@ test("content-dictionaries: ПОЛНЫЙ protocol.json соответствуе�
   });
 });
 
-test("content-dictionaries: шимы идут через текущую локаль без RU-default", () => {
-  // node без document: локаль приложения по умолчанию
-  assert.equal(ugt.UGT_LEVELS[0].code, "УГТ 1");
-  assert.equal(ugt.UGT_LEVELS.length, 9);
-  assert.equal(show.SHOWCASE_PROJECTS[2].category, "Производство");
-  assert.ok(show.SHOWCASE_CATEGORIES.includes("НИОКТР"));
+test("content-dictionaries: шимы удалены (таск 05) — единый путь через резолверы", () => {
+  // UGT/SHOWCASE-шимы таска 01 удалены: экраны резолвят контент резолверами
+  // с переводчиком явной локали. Шим validateTags живёт до таска 06.
+  for (const key of ["UGT_LEVELS", "UGP_LEVELS", "UGI_LEVELS", "UGS_LEVELS", "ROADMAP_TRANSITIONS"]) {
+    assert.equal(ugt[key], undefined, `шим ${key} должен быть удалён`);
+  }
+  for (const key of ["SHOWCASE_PROJECTS", "SHOWCASE_CATEGORIES"]) {
+    assert.equal(show[key], undefined, `шим ${key} должен быть удалён`);
+  }
+  // Резолверы — единственный путь, обе локали (значения — контракт task 01).
+  assert.equal(ugt.getUgtLevels(tUgtRu)[0].code, "УГТ 1");
+  assert.equal(ugt.getUgtLevels(tUgtEn)[0].code, "TRL 1");
+  assert.equal(ugt.getUgtLevels(tUgtRu).length, 9);
+  assert.equal(ugt.getUgpLevels(tUgtRu).length, 10);
+  assert.equal(ugt.getRoadmapTransitions(tUgtEn)[7].estimatedTime, "2-4 months");
+  assert.equal(show.getShowcaseProjects(tShowRu)[2].category, "Производство");
+  assert.equal(show.getShowcaseProjects(tShowEn)[2].category, "Manufacturing");
+  assert.ok(show.getShowcaseCategories(tShowRu).includes("НИОКТР"));
+  assert.ok(show.getShowcaseCategories(tShowEn).includes("R&D"));
   assert.equal(tax.validateTags([]), "Выберите хотя бы 1 тег");
+  // Живущий до 06 шим validateTags по-прежнему идёт через текущую локаль.
   const prevDocument = globalThis.document;
   globalThis.document = { cookie: "NEXT_LOCALE=en" };
   try {
-    assert.equal(ugt.UGT_LEVELS[0].code, "TRL 1");
-    assert.equal(ugt.UGP_LEVELS.length, 10);
-    assert.equal(ugt.ROADMAP_TRANSITIONS[7].estimatedTime, "2-4 months");
-    assert.equal(show.SHOWCASE_PROJECTS[2].category, "Manufacturing");
-    assert.ok(show.SHOWCASE_CATEGORIES.includes("R&D"));
     assert.equal(tax.validateTags([]), "Select at least 1 tag");
   } finally {
     if (prevDocument === undefined) delete globalThis.document;
     else globalThis.document = prevDocument;
   }
-  assert.equal(ugt.UGT_LEVELS[0].code, "УГТ 1");
 });

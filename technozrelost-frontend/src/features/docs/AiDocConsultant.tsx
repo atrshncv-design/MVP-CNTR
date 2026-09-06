@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Bot, Loader2, Send, X } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { Drawer } from "@/components/ui/drawer";
 import { chatDocs, searchDocsRag } from "@/lib/api-client";
@@ -34,6 +35,7 @@ interface AiDocConsultantProps {
 export function AiDocConsultant({ level, requirements, projectId: _projectId, className = "" }: AiDocConsultantProps) {
   void _projectId;
   void CONTOUR_KABA;
+  const t = useTranslations("common");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
@@ -63,7 +65,7 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
     }
 
     if (!token) {
-      setError("Нужна авторизация");
+      setError(t("aiDocAuth"));
       return;
     }
 
@@ -78,7 +80,7 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
     const piiLeak = assertNoPii(payloadRecord);
     if (piiLeak) {
       console.warn("[AiDocConsultant] PII leak detected, abort", piiLeak);
-      setError("Обезличивание не прошло — запрос заблокирован");
+      setError(t("aiDocPiiBlocked"));
       return;
     }
 
@@ -144,7 +146,8 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
         setAnswer(DOCS_ONLY_REPLY);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Ошибка консультанта";
+      // Тексты бэкенда/LLM (R04/данные) — как есть, фолбэк — через словарь.
+      const msg = e instanceof Error && e.message ? e.message : t("aiDocError");
       setError(msg);
       // на общие вопросы даже при ошибке — узкий ответ
       if (!isDocsQuestion(q)) setAnswer(DOCS_ONLY_REPLY);
@@ -161,30 +164,32 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
         aria-haspopup="dialog"
         data-testid="ai-doc-consultant-open"
       >
-        <Bot size={16} /> ИИ-консультант по документам УГТ {level}
+        <Bot size={16} /> {t("aiDocOpen", { level })}
       </button>
 
       {open && (
-        <Drawer open={open} onClose={() => setOpen(false)} title={`ИИ-консультант · УГТ ${level}`}>
+        <Drawer open={open} onClose={() => setOpen(false)} title={t("aiDocTitle", { level })}>
           <div className="flex h-full flex-col gap-4" data-testid="ai-doc-consultant">
             <p className="text-sm text-tz-muted">
-              Узкий консультант — отвечает только про документы/шаблоны текущего УГТ ({level}) без ПДн. Контур kaba.
-              Требования: {requirementCodes.length ? requirementCodes.join(" · ") : "—"}
+              {t("aiDocDesc", {
+                level,
+                codes: requirementCodes.length ? requirementCodes.join(" · ") : "—",
+              })}
             </p>
 
             <div className="tz-card p-3">
-              <p className="tz-eyebrow">Текущий УГТ</p>
-              <p className="font-mono text-sm text-tz-fg">УГТ {level} · {requirements.length} доков</p>
-              <p className="mt-1 text-xs text-tz-muted">Обезличенный контекст: level + requirement codes (без ПДн)</p>
+              <p className="tz-eyebrow">{t("aiDocCurrentUgt")}</p>
+              <p className="font-mono text-sm text-tz-fg">{t("aiDocLevelLine", { level, count: requirements.length })}</p>
+              <p className="mt-1 text-xs text-tz-muted">{t("aiDocContext")}</p>
             </div>
 
             <div className="flex-1 space-y-3 overflow-auto">
               <label className="block">
-                <span className="tz-label">Вопрос про документы УГТ</span>
+                <span className="tz-label">{t("aiDocQuestion")}</span>
                 <textarea
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Например: какие документы нужны для перехода УГТ 5→6? Где скачать шаблон акта?"
+                  placeholder={t("aiDocPlaceholder")}
                   className="tz-input min-h-24"
                   data-testid="ai-doc-input"
                 />
@@ -197,7 +202,7 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
                 data-testid="ai-doc-send"
               >
                 {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                {loading ? "Спрашиваю…" : "Спросить (POST /chat/kaba обезличено)"}
+                {loading ? t("aiDocAsking") : t("aiDocAsk")}
               </button>
 
               {error && (
@@ -210,29 +215,28 @@ export function AiDocConsultant({ level, requirements, projectId: _projectId, cl
                 <div className="rounded-xl border border-tz-border bg-tz-surface p-4" data-testid="ai-doc-answer">
                   <div className="mb-1 flex items-center gap-2">
                     <Bot size={14} className="text-tz-accent" />
-                    <span className="text-xs font-semibold text-tz-muted">Ответ</span>
+                    <span className="text-xs font-semibold text-tz-muted">{t("aiDocAnswer")}</span>
                     <button
                       onClick={() => {
                         setAnswer(null);
                         setQuestion("");
                       }}
                       className="ml-auto tz-btn tz-btn-ghost tz-btn-sm"
-                      aria-label="Очистить"
+                      aria-label={t("clear")}
                     >
                       <X size={14} />
                     </button>
                   </div>
                   <p className="whitespace-pre-wrap text-sm text-tz-fg">{answer}</p>
                   {sources.length ? (
-                    <p className="mt-2 text-xs text-tz-muted">Источники: {sources.join(", ")}</p>
+                    <p className="mt-2 text-xs text-tz-muted">{t("aiDocSources", { sources: sources.join(", ") })}</p>
                   ) : null}
                 </div>
               )}
 
               {!answer && !loading && (
                 <p className="text-xs text-tz-muted">
-                  На общие вопросы вне документов консультант отвечает: «{DOCS_ONLY_REPLY}». В payload нет ПДн — только
-                  level + requirement codes.
+                  {t("aiDocHint", { reply: DOCS_ONLY_REPLY })}
                 </p>
               )}
             </div>

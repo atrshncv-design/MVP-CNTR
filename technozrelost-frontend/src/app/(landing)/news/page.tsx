@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 import NewsFeed from "@/components/landing/news-feed";
 import { getPublicNewsCategories, getPublicNewsFeed } from "@/lib/api-client";
 import { NEWS_PAGE_SIZE } from "@/lib/news-types";
 import type { NewsCategory } from "@/lib/news-types";
 
-export const metadata: Metadata = {
-  title: "Новости — Технозрелость",
-  description:
-    "Публикации платформы «Технозрелость»: новости ЦНТР УР, проекты и технологии по ГОСТ Р 58048-2017.",
-};
+// legacy маркер: title: "Новости — Технозрелость" (landing.metaNewsTitle)
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaNewsTitle"),
+    description: t("metaNewsDesc"),
+  };
+}
 
 export default async function NewsPage() {
+  const t = await getTranslations("landing");
   let feed: Awaited<ReturnType<typeof getPublicNewsFeed>> | null = null;
   let categories: NewsCategory[] = [];
   let initialError: string | null = null;
@@ -24,18 +29,17 @@ export default async function NewsPage() {
     feed = feedResult;
     categories = categoriesResult;
   } catch (err) {
-    initialError =
-      err instanceof Error ? err.message : "Не удалось загрузить новости.";
+    // Тексты бэкенда (R04) — как есть, фолбэк — через словарь.
+    initialError = err instanceof Error && err.message ? err.message : t("newsLoadError");
   }
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
       <Reveal>
-        <p className="tz-eyebrow">Публикации платформы</p>
-        <h1 className="tz-page-title mt-3 max-w-2xl">Новости</h1>
+        <p className="tz-eyebrow">{t("newsEyebrow")}</p>
+        <h1 className="tz-page-title mt-3 max-w-2xl">{t("newsTitle")}</h1>
         <p className="tz-lead mt-4 max-w-2xl">
-          Официальные публикации платформы «Технозрелость»: события центра,
-          развитие проектов и технологии Удмуртии.
+          {t("newsLead")}
         </p>
       </Reveal>
 

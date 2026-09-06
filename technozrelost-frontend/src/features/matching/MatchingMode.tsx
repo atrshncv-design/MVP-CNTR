@@ -30,6 +30,7 @@ import {
   getLlmBase,
   hasLlmKey,
 } from "./llm";
+import { llmErrorText, isFallbackReason } from "@/features/misc/i18n";
 
 // Почему используем lib/status и filters из 01: единый источник констант и дебаунса,
 // не дублируем справочники тегов и STATUS_LABELS.
@@ -47,6 +48,7 @@ const UGT_OPTIONS = Array.from({ length: 9 }, (_, i) => i + 1);
 
 export function MatchingMode() {
   const t = useTranslations("matching");
+  const tCommon = useTranslations("common");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
@@ -366,9 +368,10 @@ export function MatchingMode() {
     results.length <= 5 &&
     (() => {
       const maxScore = Math.max(...results.map((r) => r.score ?? 0));
-      // Если бэк вернул score=null — считаем слабыми когда причины содержат fallback-текст
+      // Если бэк вернул score=null — считаем слабыми когда причины script-фолбэка:
+      // ветвление только по сентинел-кодам, никакого сниффинга RU-текста.
       if (results.every((r) => r.score == null)) {
-        return results.some((r) => r.reason.includes("открытые данные"));
+        return results.some((r) => isFallbackReason(r.reason));
       }
       return maxScore > 0 && maxScore < 4;
     })();
@@ -671,12 +674,9 @@ export function MatchingMode() {
                     <span className="text-xs font-semibold text-amber-800">{t("fallbackBadge")}</span>
                   </div>
                   <p className="mt-1 text-sm font-medium text-amber-800" data-testid="fallback-message">
-                    {rerankError || LLM_UNAVAILABLE_MSG}
+                    {llmErrorText(tCommon, rerankError) ?? llmErrorText(tCommon, LLM_UNAVAILABLE_MSG)}
                   </p>
                   <p className="text-xs text-amber-700">{t("fallbackShown")}</p>
-                  {/* Текст для теста: LLM недоступен — script результат — Повторить + Retry */}
-                  <span className="hidden">LLM недоступен — script результат — Повторить</span>
-                  <span className="hidden">Retry</span>
                 </div>
                 <button
                   type="button"

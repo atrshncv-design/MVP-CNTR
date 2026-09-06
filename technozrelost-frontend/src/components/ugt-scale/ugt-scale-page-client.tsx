@@ -3,11 +3,14 @@
 import { motion } from 'framer-motion';
 import { BookOpen, FileText, Beaker, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { UGT_LEVELS } from '@/lib/ugt-data';
+import { useTranslations } from 'next-intl';
+import { getUgtLevels } from '@/lib/ugt-data';
+import { asTranslateFn } from '@/lib/types';
+import { kpiKindForLabel, type KpiKind } from '@/features/misc/i18n';
 
-function getKpiIcon(label: string) {
-  if (label.includes('Публикации')) return BookOpen;
-  if (label.includes('Патенты')) return FileText;
+function getKpiIcon(kind: KpiKind) {
+  if (kind === 'publications') return BookOpen;
+  if (kind === 'patents') return FileText;
   return Beaker;
 }
 
@@ -40,6 +43,10 @@ const heroVariants = {
 };
 
 export default function UgtScalePageClient() {
+  const t = useTranslations('landing');
+  const tU = useTranslations('ugt');
+  // Уровни — резолвером текущей локали (шим UGT_LEVELS удалён в таске 05).
+  const scaleLevels = getUgtLevels(asTranslateFn(tU));
   return (
     <>
       <section
@@ -62,7 +69,7 @@ export default function UgtScalePageClient() {
                   border: '1px solid rgba(46, 91, 255, 0.3)',
                 }}
               >
-                ГОСТ Р 58048-2017
+                {t('ugtScaleGost')}
               </span>
             </motion.div>
 
@@ -70,7 +77,7 @@ export default function UgtScalePageClient() {
               variants={heroVariants}
               className="mt-6 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-[56px] lg:leading-[1.1]"
             >
-              Уровни готовности технологии
+              {t('ugtScaleTitle')}
             </motion.h1>
 
             <motion.p
@@ -78,15 +85,14 @@ export default function UgtScalePageClient() {
               className="mx-auto mt-6 max-w-[640px] text-lg leading-relaxed"
               style={{ color: 'rgba(255,255,255,0.65)' }}
             >
-              Девять уровней от базовых принципов до успешной эксплуатации — оцените
-              технологическое развитие вашего проекта
+              {t('ugtScaleLead')}
             </motion.p>
 
             <motion.div
               variants={heroVariants}
               className="mx-auto mt-10 flex h-2 max-w-[600px] overflow-hidden rounded-full"
             >
-              {UGT_LEVELS.map((level) => (
+              {scaleLevels.map((level) => (
                 <div
                   key={level.id}
                   className="h-full flex-1"
@@ -98,7 +104,7 @@ export default function UgtScalePageClient() {
               variants={heroVariants}
               className="mx-auto mt-2 flex max-w-[600px] justify-between"
             >
-              {UGT_LEVELS.map((level) => (
+              {scaleLevels.map((level) => (
                 <span
                   key={level.id}
                   className="font-mono text-[10px] font-medium"
@@ -120,7 +126,7 @@ export default function UgtScalePageClient() {
           variants={containerVariants}
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {UGT_LEVELS.map((level) => {
+          {scaleLevels.map((level) => {
             const kpiEntries = Object.entries(level.kpi);
             return (
               <motion.div key={level.id} variants={itemVariants}>
@@ -175,7 +181,8 @@ export default function UgtScalePageClient() {
 
                   <div className="flex flex-wrap gap-3">
                     {kpiEntries.map(([label, value]) => {
-                      const Icon = getKpiIcon(label);
+                      // Вид KPI — равенством ключам ugt.kpiLabels текущей локали, без сниффинга текста.
+                      const Icon = getKpiIcon(kpiKindForLabel(asTranslateFn(tU), label));
                       return (
                         <div
                           key={label}
@@ -206,12 +213,12 @@ export default function UgtScalePageClient() {
           className="mt-16 text-center"
         >
           <p className="text-base text-tz-secondary">
-            Не знаете, какой уровень соответствует вашему проекту?{' '}
+            {t('ugtScaleCtaHint')}{' '}
             <Link
               href="/dashboard/gk_customer/projects/new"
               className="inline-flex items-center gap-1 font-medium text-[var(--tz-accent)] transition-colors duration-200 hover:text-[var(--tz-accent-hover)] hover:underline"
             >
-              Пройти оценку
+              {t('ugtScaleCta')}
               <ArrowRight size={16} />
             </Link>
           </p>

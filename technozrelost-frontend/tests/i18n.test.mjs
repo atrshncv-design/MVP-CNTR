@@ -227,6 +227,44 @@ test("i18n: неймспейс dashboard — паритет обеих пар с
   }
 });
 
+for (const ns of ["landing", "auth", "common"]) {
+  test(`i18n: неймспейс ${ns} — паритет обеих пар словарей и резолв каждого ключа в ru/en`, async () => {
+    // Шов таска 05: зеркало project/registry/dashboard-паритета для зоны misc.
+    const { translatorFor } = await import("../src/lib/translators.ts");
+    const pairs = [
+      ["src/messages/ru.json", "src/messages/en.json"],
+      ["messages/ru.json", "messages/en.json"],
+    ];
+    const scopes = {};
+    for (const [ruPath, enPath] of pairs) {
+      const ru = JSON.parse(read(ruPath))[ns];
+      const en = JSON.parse(read(enPath))[ns];
+      assert.ok(ru && en, `${ruPath}: неймспейс ${ns} отсутствует`);
+      assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort(), `${ruPath}: паритет ключей ${ns}`);
+      scopes[ruPath] = ru;
+    }
+    assert.deepEqual(
+      Object.keys(scopes["src/messages/ru.json"]).sort(),
+      Object.keys(scopes["messages/ru.json"]).sort(),
+      `пары словарей ${ns} расходятся`,
+    );
+    const ruT = translatorFor(ns, "ru");
+    const enT = translatorFor(ns, "en");
+    for (const key of Object.keys(scopes["src/messages/ru.json"])) {
+      const tpl = scopes["src/messages/ru.json"][key];
+      assert.equal(typeof tpl, "string", `${ns}.${key} не строка`);
+      const params = Object.fromEntries([...tpl.matchAll(/\{(\w+)\}/g)].map((m) => [m[1], "1"]));
+      for (const [locale, t] of [["ru", ruT], ["en", enT]]) {
+        const val = t(key, params);
+        assert.equal(typeof val, "string", `${ns}.${key} (${locale}) не резолвится`);
+        assert.ok(val.length > 0, `${ns}.${key} (${locale}) пуст`);
+        assert.notEqual(val, key, `${ns}.${key} (${locale}): эхо ключа — неверный ключ`);
+      }
+      assert.doesNotMatch(enT(key, params), /[А-Яа-яЁё]/, `${ns}.${key} (en) содержит кириллицу`);
+    }
+  });
+}
+
 test("i18n: useTranslations используется в UI (300+ ключей via hook)", () => {
   // проверяем что несколько ключевых UI файлов используют next-intl
   const files = [

@@ -10,6 +10,7 @@
 
 import * as React from "react";
 import { WifiOff, Wifi, RefreshCw, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { useOfflineQueue } from "./useOfflineQueue";
 
@@ -21,6 +22,7 @@ export interface OfflineBannerProps {
 }
 
 export function OfflineBanner({ className, dismissible = true }: OfflineBannerProps) {
+  const t = useTranslations("common");
   const { isOnline, isOffline, queueLength, retry, isSyncing } = useOfflineQueue();
   const [mounted, setMounted] = React.useState(false);
   const [dismissed, setDismissed] = React.useState(false);
@@ -54,18 +56,17 @@ export function OfflineBanner({ className, dismissible = true }: OfflineBannerPr
       >
         <WifiOff size={18} aria-hidden="true" className="shrink-0" />
         <span>
-          Нет соединения — вы офлайн. Действия сохраняются в очередь
-          {queueLength > 0 ? ` (${queueLength})` : ""} и синхронизируются после восстановления сети.
+          {t("offBannerText")}
         </span>
         {queueLength > 0 ? (
           <span className="hidden sm:inline rounded-full bg-amber-200 px-2 py-0.5 text-xs font-bold">
-            в очереди: {queueLength}
+            {t("offBannerQueue", { count: queueLength })}
           </span>
         ) : null}
         {dismissible ? (
           <button
             type="button"
-            aria-label="Закрыть баннер офлайн"
+            aria-label={t("offBannerClose")}
             onClick={() => setDismissed(true)}
             className="ml-2 rounded p-1 hover:bg-amber-200"
           >
@@ -90,24 +91,25 @@ export function OfflineBanner({ className, dismissible = true }: OfflineBannerPr
     >
       <Wifi size={18} aria-hidden="true" className="shrink-0 text-sky-600" />
       <span>
-        Соединение восстановлено. {queueLength > 0 ? `Осталось синхронизировать: ${queueLength}.` : "Все действия синхронизированы."}
+        {t("offBannerRestored")}{" "}
+        {queueLength > 0 ? t("offBannerRemaining", { count: queueLength }) : t("offBannerSynced")}
       </span>
       {queueLength > 0 ? (
         <button
           type="button"
           onClick={() => void retry()}
           disabled={isSyncing}
-          aria-label="Повторить синхронизацию очереди"
+          aria-label={t("offBannerRetry")}
           className="inline-flex items-center gap-1.5 rounded-lg border border-sky-300 bg-white px-3 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-50 disabled:opacity-60"
         >
           <RefreshCw size={14} aria-hidden="true" className={isSyncing ? "animate-spin" : ""} />
-          {isSyncing ? "Синхронизация…" : "Синхронизировать"}
+          {isSyncing ? t("offBannerSyncing") : t("offBannerSync")}
         </button>
       ) : null}
       {dismissible ? (
         <button
           type="button"
-          aria-label="Закрыть баннер синхронизации"
+          aria-label={t("offBannerSyncClose")}
           onClick={() => setDismissed(true)}
           className="ml-1 rounded p-1 hover:bg-sky-100"
         >

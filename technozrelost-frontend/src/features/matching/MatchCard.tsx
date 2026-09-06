@@ -5,6 +5,7 @@ import { Building2, MapPin, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import type { MatchCandidate } from "@/lib/types";
+import { llmReasonText } from "@/features/misc/i18n";
 
 // Предложить через ЦНТР, верифицировано — для тестов grep
 export function MatchCard({
@@ -17,9 +18,11 @@ export function MatchCard({
   onPropose: (c: MatchCandidate) => void;
 }) {
   const t = useTranslations("matching");
-  // score не показываем числом — только ранжирование и причины (G28, G44)
+  const tCommon = useTranslations("common");
+  // score не показываем числом — только ранжирование и причины (G28, G44).
+  // Причина: коды script-фолбэка — через словарь, остальные (бэкенд/LLM) — как есть.
   const competencies = candidate.competencies ?? [];
-  const reason = candidate.reason ?? "соответствие по реестру";
+  const reason = llmReasonText(tCommon, candidate.reason);
 
   return (
     <div className="tz-card flex h-full flex-col p-5" data-testid="match-card" data-rank={rank}>

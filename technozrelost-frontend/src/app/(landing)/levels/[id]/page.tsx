@@ -2,14 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Home, ArrowLeft, ArrowRight } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { UGT_LEVELS, type UGTLevel } from "@/lib/ugt-data";
+import { getLocale, getTranslations } from "next-intl/server";
+import { UGT_IDS, getUgtLevels, type UGTLevel } from "@/lib/ugt-data";
+import { translatorFor } from "@/lib/translators";
+import { parseLocale } from "@/i18n/config";
 import LevelDetailInteractive from "@/components/landing/level-detail";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
+/** Уровни резолвером текущей локали (шим UGT_LEVELS удалён в таске 05). */
+async function currentUgtLevels() {
+  return getUgtLevels(translatorFor("ugt", parseLocale(await getLocale())));
+}
+
 export function generateStaticParams() {
-  return UGT_LEVELS.map((lvl) => ({ id: String(lvl.id) }));
+  return UGT_IDS.map((id) => ({ id: String(id) }));
 }
 
 export async function generateMetadata({
@@ -18,10 +25,13 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const lvl = UGT_LEVELS.find((l) => String(l.id) === id);
-  if (!lvl) return { title: "Уровень не найден — Технозрелость" };
+  const lvl = (await currentUgtLevels()).find((l) => String(l.id) === id);
+  const tLevels = await getTranslations("levels");
+  if (!lvl) {
+    return { title: tLevels("levelNotFound") };
+  }
   return {
-    title: `УГТ ${lvl.id} — ${lvl.name} — Технозрелость`,
+    title: tLevels("levelTitle", { id: lvl.id, name: lvl.name }),
     description: lvl.short,
   };
 }
@@ -29,8 +39,9 @@ export async function generateMetadata({
 async function LevelDetail({ level }: { level: UGTLevel }) {
   const t = await getTranslations("levelDetail");
   const tUgt = await getTranslations("ugtData");
-  const prev = UGT_LEVELS.find((l) => l.id === level.id - 1);
-  const next = UGT_LEVELS.find((l) => l.id === level.id + 1);
+  const levels = await currentUgtLevels();
+  const prev = levels.find((l) => l.id === level.id - 1);
+  const next = levels.find((l) => l.id === level.id + 1);
   const color = ugtColor(level.id);
 
   const getStageLabel = (id: number): string => {
@@ -169,7 +180,7 @@ export default async function LevelPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const level = UGT_LEVELS.find((l) => String(l.id) === id);
+  const level = (await currentUgtLevels()).find((l) => String(l.id) === id);
   if (!level) notFound();
   return <LevelDetail level={level} />;
 }

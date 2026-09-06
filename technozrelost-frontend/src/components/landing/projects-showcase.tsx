@@ -13,10 +13,11 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  SHOWCASE_PROJECTS,
-  SHOWCASE_CATEGORIES,
+  getShowcaseCategories,
+  getShowcaseProjects,
   type ShowcaseProject,
 } from "@/lib/showcase";
+import { asTranslateFn } from "@/lib/types";
 import { getStatusLabel, getStatusColor } from "@/lib/status";
 import ProjectRadar from "@/components/dashboard/project-radar";
 
@@ -35,21 +36,14 @@ function ProjectCard({
   index: number;
   onOpen: (p: ShowcaseProject) => void;
 }) {
-  const t = useTranslations("projectsLanding");
   const tUgt = useTranslations("ugtData");
+  const tLanding = useTranslations("landing");
   const color = ugtColor(project.current_level);
   const codeLabel = (() => {
-    try { return tUgt(`code${project.current_level}`); } catch { return `УГТ ${project.current_level}`; }
+    try { return tUgt(`code${project.current_level}`); } catch { return tLanding("ugtBadge", { level: project.current_level }); }
   })();
-  const categoryLabel = (() => {
-    const map: Record<string, string> = {
-      "AI/ML": t("catAI"),
-      "НИОКТР": t("catNIOKTR"),
-      "Производство": t("catManufacturing"),
-      "Медицина": t("catMedicine"),
-    };
-    return map[project.category] ?? project.category;
-  })();
+  // Категория уже локализована резолвером витрины (showcase-каталог текущей локали).
+  const categoryLabel = project.category;
   return (
     <motion.button
       type="button"
@@ -107,6 +101,7 @@ function ProjectModal({
 }) {
   const t = useTranslations("projectsLanding");
   const tUgt = useTranslations("ugtData");
+  const tLanding = useTranslations("landing");
   // Esc — закрыть
   useEffect(() => {
     if (!project) return;
@@ -170,18 +165,10 @@ function ProjectModal({
                 className="rounded-full px-3 py-1 font-mono text-xs font-semibold"
                 style={{ backgroundColor: `${color}18`, color }}
               >
-                {(() => { try { return tUgt(`code${project.current_level}`); } catch { return `УГТ ${project.current_level}`; }})()}
+                {(() => { try { return tUgt(`code${project.current_level}`); } catch { return tLanding("ugtBadge", { level: project.current_level }); }})()}
               </span>
               <span className="rounded-full bg-tz-soft/70 px-3 py-1 font-mono text-xs font-medium text-tz-muted">
-                {(() => {
-                  const map: Record<string, string> = {
-                    "AI/ML": t("catAI"),
-                    "НИОКТР": t("catNIOKTR"),
-                    "Производство": t("catManufacturing"),
-                    "Медицина": t("catMedicine"),
-                  };
-                  return map[project.category] ?? project.category;
-                })()}
+                {project.category}
               </span>
               <span
                 className="rounded-full px-3 py-1 text-[11px] font-medium"
@@ -275,6 +262,10 @@ function ProjectModal({
 
 export default function ProjectsShowcase() {
   const t = useTranslations("projectsLanding");
+  const tShowcase = useTranslations("showcase");
+  // Витрина — резолвером текущей локали (шим SHOWCASE_* удалён в таске 05).
+  const projects = useMemo(() => getShowcaseProjects(asTranslateFn(tShowcase)), [tShowcase]);
+  const showcaseCategories = useMemo(() => getShowcaseCategories(asTranslateFn(tShowcase)), [tShowcase]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [minLevel, setMinLevel] = useState("all");
@@ -282,7 +273,7 @@ export default function ProjectsShowcase() {
   const [selected, setSelected] = useState<ShowcaseProject | null>(null);
 
   const filtered = useMemo(() => {
-    return SHOWCASE_PROJECTS.filter((p) => {
+    return projects.filter((p) => {
       if (category !== "all" && p.category !== category) return false;
       if (minLevel !== "all" && p.current_level < Number(minLevel)) return false;
       if (maxLevel !== "all" && p.current_level > Number(maxLevel)) return false;
@@ -294,19 +285,9 @@ export default function ProjectsShowcase() {
       }
       return true;
     });
-  }, [search, category, minLevel, maxLevel]);
+  }, [search, category, minLevel, maxLevel, projects]);
 
   const levelOptions = ["all", ...Array.from({ length: 9 }, (_, i) => String(i + 1))];
-
-  const formatCategory = (c: string) => {
-    const map: Record<string, string> = {
-      "AI/ML": t("catAI"),
-      "НИОКТР": t("catNIOKTR"),
-      "Производство": t("catManufacturing"),
-      "Медицина": t("catMedicine"),
-    };
-    return map[c] ?? c;
-  };
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
@@ -343,9 +324,9 @@ export default function ProjectsShowcase() {
           aria-label={t("ariaSearch")}
         >
           <option value="all">{t("allCategories")}</option>
-          {SHOWCASE_CATEGORIES.map((c) => (
+          {showcaseCategories.map((c) => (
             <option key={c} value={c}>
-              {formatCategory(c)}
+              {c}
             </option>
           ))}
         </select>
@@ -381,7 +362,7 @@ export default function ProjectsShowcase() {
 
       {/* Счётчик */}
       <p className="mt-6 text-[12.5px] text-tz-muted">
-        {t("shown", { filtered: filtered.length, total: SHOWCASE_PROJECTS.length })}
+        {t("shown", { filtered: filtered.length, total: projects.length })}
       </p>
 
       {/* Сетка маленьких карточек */}

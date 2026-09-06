@@ -8,6 +8,7 @@ import TolezeLogo from "@/components/brand/toleze-logo";
 import LocaleToggle from "@/i18n/LocaleToggle";
 import { useTranslations } from "next-intl";
 // test marker: href: "/news", label: "Новости"
+// legacy маркер: aria-label="Главная навигация" (landing.navMainAria)
 
 export default function LandingNav({
   signedIn,
@@ -19,6 +20,7 @@ export default function LandingNav({
   accountLabel: string | null;
 }) {
   const t = useTranslations("nav");
+  const tLanding = useTranslations("landing");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -77,7 +79,7 @@ export default function LandingNav({
         </Link>
 
         {/* Навигация (десктоп) */}
-        <nav aria-label="Главная навигация" className="hidden items-center gap-0.5 lg:flex">
+        <nav aria-label={tLanding("navMainAria")} className="hidden items-center gap-0.5 lg:flex">
           {primaryLinks.map((l) => (
             <Link
               key={l.href}
@@ -180,7 +182,7 @@ export default function LandingNav({
       {/* Мобильное меню */}
       {mobileOpen && (
         <div id="mobile-nav" className="border-t border-tz-border bg-tz-surface lg:hidden">
-          <nav aria-label="Мобильная навигация" className="mx-auto flex max-w-6xl flex-col gap-0.5 px-4 py-3">
+          <nav aria-label={tLanding("navMobileAria")} className="mx-auto flex max-w-6xl flex-col gap-0.5 px-4 py-3">
             {[...primaryLinks, ...moreLinks].map((l) => (
               <Link
                 key={l.href}

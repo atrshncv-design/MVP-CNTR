@@ -17,23 +17,28 @@ import {
   Zap,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { UGT_LEVELS, type UGTLevel, type RiskItem } from "@/lib/ugt-data";
+import { getUgtLevels, type UGTLevel, type RiskItem } from "@/lib/ugt-data";
+import { asTranslateFn } from "@/lib/types";
+import { kpiKindForLabel, type KpiKind } from "@/features/misc/i18n";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
 const easeOutExpo = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-function getKpiIcon(label: string) {
-  if (label.includes("Публикации") || label.toLowerCase().includes("publication")) return FileText;
-  if (label.includes("Патенты") || label.toLowerCase().includes("patent")) return Gauge;
+function getKpiIcon(kind: KpiKind) {
+  if (kind === "publications") return FileText;
+  if (kind === "patents") return Gauge;
   return Target;
 }
 
 export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
   const t = useTranslations("levelDetail");
   const tUgt = useTranslations("ugtData");
+  const tU = useTranslations("ugt");
+  // Уровни — резолвером текущей локали (шим UGT_LEVELS удалён в таске 05).
+  const allLevels = getUgtLevels(asTranslateFn(tU));
   const color = ugtColor(level.id);
-  const nextLevel = UGT_LEVELS.find((l) => l.id === level.id + 1) ?? null;
+  const nextLevel = allLevels.find((l) => l.id === level.id + 1) ?? null;
 
   const getProbabilityConfig = (probability: RiskItem["probability"]) => {
     switch (probability) {
@@ -62,10 +67,15 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
   const toggleRisk = (index: number) =>
     setExpandedRisks((prev) => ({ ...prev, [index]: !prev[index] }));
 
+  // Вид KPI — равенством ключам ugt.kpiLabels текущей локали (доделка 05),
+  // никакого сниффинга русского текста: в EN-ветке работает так же.
+  const kpiKind = (label: string): KpiKind => kpiKindForLabel(asTranslateFn(tU), label);
+
   const translateKpiLabel = (raw: string) => {
-    if (raw.includes("Публикации")) return t("publications");
-    if (raw.includes("Патенты")) return t("patents");
-    if (raw.includes("Прототип")) return t("prototype");
+    const kind = kpiKind(raw);
+    if (kind === "publications") return t("publications");
+    if (kind === "patents") return t("patents");
+    if (kind === "prototype") return t("prototype");
     return raw;
   };
 
@@ -87,7 +97,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
             }}
           />
           {/* Ноды */}
-          {UGT_LEVELS.map((l) => {
+          {allLevels.map((l) => {
             const isCurrent = l.id === level.id;
             const isCompleted = l.id < level.id;
             let code = l.code;
@@ -387,7 +397,7 @@ export default function LevelDetailInteractive({ level }: { level: UGTLevel }) {
 
         <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(level.kpi).map(([label, value]) => {
-            const Icon = getKpiIcon(label);
+            const Icon = getKpiIcon(kpiKind(label));
             return (
               <motion.div
                 key={label}

@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import RoadmapContent from "@/components/landing/roadmap-content";
 
-export const metadata: Metadata = {
-  title: "Дорожная карта проекта — Технозрелость",
-  description:
-    "Постройте дорожную карту развития вашей технологии: выберите текущий и целевой УГТ, получите план переходов, документы и риски по ГОСТ Р 58048-2017.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaRoadmapTitle"),
+    description: t("metaRoadmapDesc"),
+  };
+}
 
 export default function RoadmapPage() {
   return <RoadmapContent />;

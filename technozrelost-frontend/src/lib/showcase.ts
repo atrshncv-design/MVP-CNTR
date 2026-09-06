@@ -7,7 +7,6 @@
  */
 
 import type { TranslateFn } from "./types";
-import { shimList } from "./translators.ts";
 
 export interface ShowcaseProject {
   id: number;
@@ -70,14 +69,5 @@ export function getShowcaseCategoryLabel(t: TranslateFn, slug: ShowcaseCategoryS
   return t(`categories.${slug}`);
 }
 
-// ─── Deprecated compat shims (tasks 02–05 remove as screens migrate) ───────
-// Same names and shapes as before; every access resolves through the CURRENT
-// locale translator (no RU default). Prefer the get* resolvers above.
-
-/** @deprecated use getShowcaseProjects(t) with a current-locale translator. */
-export const SHOWCASE_PROJECTS: ShowcaseProject[] = shimList("showcase", (t) =>
-  getShowcaseProjects(t),
-);
-
-/** @deprecated use getShowcaseCategories(t) with a current-locale translator. */
-export const SHOWCASE_CATEGORIES: string[] = shimList("showcase", (t) => getShowcaseCategories(t));
+// ─── Compat shims removed (task 05): screens resolve through the get* ──────
+// resolvers above with an explicit-locale translator.

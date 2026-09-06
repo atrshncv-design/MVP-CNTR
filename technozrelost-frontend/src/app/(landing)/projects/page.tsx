@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import ProjectsShowcase from "@/components/landing/projects-showcase";
 
-export const metadata: Metadata = {
-  title: "Витрина проектов — Технозрелость",
-  description:
-    "Проекты региона, прошедшие оценку уровня готовности технологий по ГОСТ Р 58048-2017: категории, УГТ, бюджеты. Полные данные — в личном кабинете.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaProjectsTitle"),
+    description: t("metaProjectsDesc"),
+  };
+}
 
 export default function ProjectsPage() {
   return <ProjectsShowcase />;

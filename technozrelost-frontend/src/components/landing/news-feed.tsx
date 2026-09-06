@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Loader2, Newspaper, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import NewsCard from "@/components/landing/news-card";
 import { NEWS_PAGE_SIZE } from "@/lib/news-types";
 import type { NewsCard as NewsCardData, NewsCategory, NewsFeed } from "@/lib/news-types";
 import { CLIENT_API_BASE as API_URL } from "@/lib/public-api";
+
+// legacy маркер: Пока нет опубликованных новостей
+// legacy маркер: Загрузить ещё
 
 /** Запрос ленты из браузера: относительный путь уходит на бэкенд через rewrites. */
 async function fetchFeedPage(
@@ -21,7 +25,10 @@ async function fetchFeedPage(
   if (tag !== "all") params.set("tag", tag);
   const response = await fetch(`${API_URL}/api/v1/news?${params}`, { cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`Не удалось загрузить новости (${response.status}).`);
+    // Кодированная ошибка со статусом: текст для показа собирает компонент через словарь.
+    const err = new Error("news-feed-page") as Error & { status?: number };
+    err.status = response.status;
+    throw err;
   }
   return (await response.json()) as NewsFeed;
 }
@@ -49,6 +56,7 @@ export default function NewsFeed({
   initialError: string | null;
   categories: NewsCategory[];
 }) {
+  const t = useTranslations("landing");
   const [items, setItems] = useState<NewsCardData[]>(initialFeed?.items ?? []);
   const [total, setTotal] = useState(initialFeed?.total ?? 0);
   const [nextPage, setNextPage] = useState(
@@ -68,6 +76,18 @@ export default function NewsFeed({
   const requestRef = useRef(0);
   // Сервер (RSC) уже отдал первую страницу — не дублируем запрос на монтировании.
   const skipInitialFetchRef = useRef(initialFeed !== null);
+
+  // Текст ошибки для показа: статусная — через словарь с параметром,
+  // остальные (тексты бэкенда, R04 вне рамок) — как есть.
+  const toFeedError = useCallback(
+    (err: unknown, fallbackKey: "newsLoadError" | "newsLoadMoreError"): string => {
+      const status = err instanceof Error ? (err as { status?: number }).status : undefined;
+      if (typeof status === "number") return t("newsLoadErrorStatus", { status });
+      if (err instanceof Error && err.message && err.message !== "news-feed-page") return err.message;
+      return t(fallbackKey);
+    },
+    [t],
+  );
 
   useEffect(() => {
     if (skipInitialFetchRef.current) {
@@ -90,14 +110,12 @@ export default function NewsFeed({
       })
       .catch((err: unknown) => {
         if (requestRef.current !== requestId) return;
-        setError(
-          err instanceof Error ? err.message : "Не удалось загрузить новости.",
-        );
+        setError(toFeedError(err, "newsLoadError"));
       })
       .finally(() => {
         if (requestRef.current === requestId) setLoading(false);
       });
-  }, [category, tag, retryTick]);
+  }, [category, tag, retryTick, toFeedError]);
 
   const seenTags = useMemo(() => {
     const bySlug = new Map<string, NewsCardData["tags"][number]>();
@@ -124,9 +142,7 @@ export default function NewsFeed({
       })
       .catch((err: unknown) => {
         if (requestRef.current !== requestId) return;
-        setMoreError(
-          err instanceof Error ? err.message : "Не удалось загрузить следующую страницу.",
-        );
+        setMoreError(toFeedError(err, "newsLoadMoreError"));
       })
       .finally(() => {
         if (requestRef.current === requestId) setLoadingMore(false);
@@ -141,7 +157,7 @@ export default function NewsFeed({
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm font-medium text-tz-secondary">
-            Категория
+            {t("newsCategory")}
             <select
               value={category}
               onChange={(e) => {
@@ -150,7 +166,7 @@ export default function NewsFeed({
               }}
               className="tz-select w-auto min-w-[200px]"
             >
-              <option value="all">Все категории</option>
+              <option value="all">{t("newsAllCategories")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.slug}>
                   {c.name}
@@ -163,7 +179,7 @@ export default function NewsFeed({
         {seenTags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium uppercase tracking-wider text-tz-muted">
-              Теги
+              {t("newsTags")}
             </span>
             <button
               type="button"
@@ -174,7 +190,7 @@ export default function NewsFeed({
                   : "border-tz-border text-tz-secondary hover:border-tz-accent hover:text-tz-accent"
               }`}
             >
-              Все
+              {t("newsAll")}
             </button>
             {seenTags.map((t) => (
               <button
@@ -208,7 +224,7 @@ export default function NewsFeed({
         <div className="tz-card mt-8 flex flex-col items-center gap-4 p-10 text-center">
           <AlertCircle className="h-10 w-10 text-tz-danger" />
           <div>
-            <p className="font-semibold text-tz-fg">Новости не загрузились</p>
+            <p className="font-semibold text-tz-fg">{t("newsNotLoaded")}</p>
             <p className="mt-1 text-sm text-tz-secondary">{error}</p>
           </div>
           <button
@@ -217,7 +233,7 @@ export default function NewsFeed({
             className="tz-btn tz-btn-secondary"
           >
             <RefreshCw className="h-4 w-4" />
-            Повторить
+            {t("newsRetry")}
           </button>
         </div>
       )}
@@ -239,14 +255,10 @@ export default function NewsFeed({
           </div>
           <div>
             <p className="font-semibold text-tz-fg">
-              {filtersActive
-                ? "По выбранным фильтрам новостей нет"
-                : "Пока нет опубликованных новостей"}
+              {filtersActive ? t("newsEmptyFiltered") : t("newsEmptyDefault")}
             </p>
             <p className="mt-1 text-sm text-tz-secondary">
-              {filtersActive
-                ? "Попробуйте сбросить фильтры категории или тега."
-                : "Первые публикации появятся здесь после публикации на платформе."}
+              {filtersActive ? t("newsEmptyFilteredHint") : t("newsEmptyDefaultHint")}
             </p>
           </div>
           {filtersActive && (
@@ -258,7 +270,7 @@ export default function NewsFeed({
               }}
               className="tz-btn tz-btn-secondary"
             >
-              Сбросить фильтры
+              {t("newsResetFilters")}
             </button>
           )}
         </div>
@@ -279,14 +291,14 @@ export default function NewsFeed({
             {loadingMore ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Загрузка…
+                {t("newsLoading")}
               </>
             ) : (
-              "Загрузить ещё"
+              t("newsLoadMore")
             )}
           </button>
           <p className="text-xs text-tz-muted">
-            Показано {items.length} из {total}
+            {t("newsShownCount", { shown: items.length, total })}
           </p>
         </div>
       )}

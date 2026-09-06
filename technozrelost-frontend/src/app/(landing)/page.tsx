@@ -9,17 +9,23 @@ import {
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 import UGTInteractiveScale from "@/components/landing/ugt-interactive-scale";
-import { SHOWCASE_PROJECTS } from "@/lib/showcase";
+import { getShowcaseProjects } from "@/lib/showcase";
+import { asTranslateFn } from "@/lib/types";
 
-export const metadata: Metadata = {
-  title: "Технозрелость — цифровая платформа трансфера технологий ЦНТР УР",
-  description:
-    "Оценивайте уровень готовности технологий (УГТ) по ГОСТ Р 58048-2017, ведите проекты уровнями N→N+1 и доводите разработки до серийного производства.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaHomeTitle"),
+    description: t("metaHomeDesc"),
+  };
+}
 
 export default async function LandingHome() {
   const t = await getTranslations("landing");
   const tUgt = await getTranslations("ugtData");
+  const tShowcase = await getTranslations("showcase");
+  // Тизер витрины — резолвером текущей локали (шим SHOWCASE_* удалён в таске 05).
+  const showcaseTeaser = getShowcaseProjects(asTranslateFn(tShowcase)).slice(0, 3);
   const STEPS = [
     {
       n: "01",
@@ -156,7 +162,7 @@ export default async function LandingHome() {
           </div>
         </Reveal>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SHOWCASE_PROJECTS.slice(0, 3).map((p, i) => (
+          {showcaseTeaser.map((p, i) => (
             <Reveal key={p.id} delay={i * 0.06}>
               <div className="tz-card tz-card-hover flex h-full flex-col p-5">
                 <div className="flex items-center justify-between gap-2">
@@ -167,7 +173,7 @@ export default async function LandingHome() {
                       color: `var(--tz-ugt-${p.current_level})`,
                     }}
                   >
-                    {(() => { try { return tUgt(`code${p.current_level}`); } catch { return `УГТ ${p.current_level}`; }})()}
+                    {(() => { try { return tUgt(`code${p.current_level}`); } catch { return t("ugtBadge", { level: p.current_level }); }})()}
                   </span>
                   <span className="font-mono text-[11px] font-medium text-tz-muted">
                     {p.category}

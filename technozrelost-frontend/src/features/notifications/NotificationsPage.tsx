@@ -31,6 +31,7 @@ function NotificationsSkeleton() {
 
 export function NotificationsPage() {
   const t = useTranslations("notifications");
+  const tCommon = useTranslations("common");
   const { items, loading, error, reload, markRead, filtered } = useNotifications({ pollMs: 30_000 });
   const [filter, setFilter] = React.useState<NotificationsFilter>("all");
 
@@ -72,7 +73,7 @@ export function NotificationsPage() {
       </div>
 
       {/* Фильтры «Все/Непрочитано» */}
-      <div className="mb-4 flex gap-2" role="tablist" aria-label="Фильтр уведомлений">
+      <div className="mb-4 flex gap-2" role="tablist" aria-label={tCommon("notifFilterAria")}>
         <button
           role="tab"
           aria-selected={filter === "all"}

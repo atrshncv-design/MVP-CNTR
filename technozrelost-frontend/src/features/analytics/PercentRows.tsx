@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { StatsGroupItem } from "./types";
 
 /**
@@ -16,12 +17,13 @@ export function PercentRows({
   title: string;
   testId?: string;
 }) {
+  const t = useTranslations("common");
   return (
     <div className="tz-card p-5" data-testid={testId}>
       <h3 className="font-semibold text-tz-fg">{title}</h3>
-      <p className="mt-1 text-xs text-tz-muted">Доля от total_awards</p>
+      <p className="mt-1 text-xs text-tz-muted">{t("percentHint")}</p>
       {items.length === 0 ? (
-        <p className="mt-4 text-sm text-tz-muted">Данных пока нет</p>
+        <p className="mt-4 text-sm text-tz-muted">{t("percentEmpty")}</p>
       ) : (
         <div className="mt-4 space-y-3">
           {items.map((it) => (

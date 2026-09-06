@@ -4,11 +4,13 @@ import { ArrowRight, BookOpen, Landmark, Target, Users2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 
-export const metadata: Metadata = {
-  title: "О центре — Технозрелость",
-  description:
-    "Центр технологического развития Удмуртской Республики и цифровая платформа «Технозрелость»: миссия, нормативная база, что даёт платформа.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaAboutTitle"),
+    description: t("metaAboutDesc"),
+  };
+}
 
 export default async function AboutPage() {
   const t = await getTranslations("about");

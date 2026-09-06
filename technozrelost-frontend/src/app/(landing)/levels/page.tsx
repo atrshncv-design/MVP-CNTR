@@ -3,13 +3,16 @@ import Link from "next/link";
 import { ArrowRight, FileText, ListChecks } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
-import { UGT_LEVELS } from "@/lib/ugt-data";
+import { getUgtLevels } from "@/lib/ugt-data";
+import { asTranslateFn } from "@/lib/types";
 
-export const metadata: Metadata = {
-  title: "Уровни УГТ 1–9 — Технозрелость",
-  description:
-    "Девять уровней готовности технологий по ГОСТ Р 58048-2017: от базовых принципов до промышленной эксплуатации.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaLevelsTitle"),
+    description: t("metaLevelsDesc"),
+  };
+}
 
 /** Цвет уровня из токенов темы (тёплые низкие → зелёные высокие). */
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
@@ -17,6 +20,8 @@ const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 export default async function LevelsPage() {
   const t = await getTranslations("levels");
   const tUgt = await getTranslations("ugtData");
+  // Уровни — резолвером текущей локали (шим UGT_LEVELS удалён в таске 05).
+  const levels = getUgtLevels(asTranslateFn(await getTranslations("ugt")));
   const plural = (n: number, one: string, few: string, many: string): string => {
     // Use translated words from t where possible, but keep logic for RU/EN
     const m10 = n % 10;
@@ -37,7 +42,7 @@ export default async function LevelsPage() {
       </Reveal>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {UGT_LEVELS.map((lvl, i) => {
+        {levels.map((lvl, i) => {
           let displayName = lvl.name;
           let displayShort = lvl.short;
           let displayCode = lvl.code;

@@ -13,13 +13,16 @@ import {
 import type { NewsDetail } from "@/lib/news-types";
 import { sortNewsMedia } from "@/lib/news-types";
 import { formatRuDate, formatRuDateTime } from "@/lib/format-date";
+import { getTranslations } from "next-intl/server";
 
 /**
  * Полная публикация (спека §3.7): обложка, заголовок, дата/автор,
  * HTML-контент, галерея, вложения, теги, категория.
  * Серверный компонент: данные уже получены в /news/[id]/page.tsx.
+ * Контент, имена и даты — данные бэкенда, chrome — через словарь landing.
  */
-export default function NewsDetailView({ post }: { post: NewsDetail }) {
+export default async function NewsDetailView({ post }: { post: NewsDetail }) {
+  const t = await getTranslations("landing");
   const media = sortNewsMedia(post.media);
   const gallery = media.filter((m) => m.kind === "gallery");
   const attachments = media.filter((m) => m.kind === "attachment");
@@ -30,11 +33,11 @@ export default function NewsDetailView({ post }: { post: NewsDetail }) {
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-tz-muted">
         <Link href="/" className="flex items-center gap-1 transition-colors hover:text-tz-accent">
           <Home size={14} />
-          <span>Главная</span>
+          <span>{t("newsHome")}</span>
         </Link>
         <ChevronRight size={14} />
         <Link href="/news" className="transition-colors hover:text-tz-accent">
-          Новости
+          {t("newsTitle")}
         </Link>
         <ChevronRight size={14} />
         <span className="line-clamp-1 font-medium text-tz-secondary">
@@ -79,8 +82,8 @@ export default function NewsDetailView({ post }: { post: NewsDetail }) {
 
       {/* Галерея */}
       {gallery.length > 0 && (
-        <section className="mt-10" aria-label="Галерея">
-          <h2 className="tz-section-title">Галерея</h2>
+        <section className="mt-10" aria-label={t("newsGallery")}>
+          <h2 className="tz-section-title">{t("newsGallery")}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {gallery.map((m) => (
               <div
@@ -99,14 +102,14 @@ export default function NewsDetailView({ post }: { post: NewsDetail }) {
 
       {/* Вложения */}
       {attachments.length > 0 && (
-        <section className="mt-10" aria-label="Вложения">
-          <h2 className="tz-section-title">Вложения</h2>
+        <section className="mt-10" aria-label={t("newsAttachments")}>
+          <h2 className="tz-section-title">{t("newsAttachments")}</h2>
           <ul className="tz-card mt-4 divide-y divide-tz-border">
             {attachments.map((m) => (
               <li
                 key={m.id}
                 className="flex items-center gap-3 px-5 py-3.5"
-                title="Скачивание станет доступно после подключения медиа-маршрута бэкенда"
+                title={t("newsDownloadSoon")}
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-tz-accent-soft text-tz-accent">
                   <Paperclip size={16} />
@@ -142,11 +145,11 @@ export default function NewsDetailView({ post }: { post: NewsDetail }) {
       <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-tz-border pt-6">
         <Link href="/news" className="tz-btn tz-btn-secondary">
           <ArrowLeft className="h-4 w-4" />
-          Ко всем новостям
+          {t("newsAllNews")}
         </Link>
         {post.updated_at && (
           <span className="text-xs text-tz-muted">
-            Обновлено {formatRuDateTime(post.updated_at)}
+            {t("newsUpdated", { date: formatRuDateTime(post.updated_at) })}
           </span>
         )}
       </div>

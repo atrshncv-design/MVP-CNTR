@@ -7,9 +7,10 @@ import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 
 import { downloadFile, getProjectFiles, rescanFile, uploadFile } from "@/lib/api-client";
-import type { DocumentOut } from "@/lib/types";
+import type { DocumentOut, TranslateFn } from "@/lib/types";
 import { getStatusBadge } from "@/lib/status";
 import { useDebouncedValue } from "@/lib/filters";
+import { formatSizeT } from "@/features/misc/i18n";
 
 // legacy маркер: Документы
 // legacy маркер: Загрузить документ
@@ -60,11 +61,9 @@ const ALLOWED_TYPES = ["PDF", "DOCX", "XLSX", "JPG", "PNG"] as const;
 const ACCEPT = ".pdf,.docx,.xlsx,.jpg,.png";
 const MAX_MB = 25;
 
-function formatSize(bytes: number | null): string {
-  if (bytes == null) return "—";
-  if (bytes < 1024) return `${bytes} Б`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
+// Размер файла — через словарь common тем же хелпером, что витрина достижений (таск 04).
+function formatSize(t: TranslateFn, bytes: number | null): string {
+  return formatSizeT(t, bytes);
 }
 
 /**
@@ -86,6 +85,7 @@ export function DocsPanel({
   onDocumentsChange?: (docs: DocumentOut[]) => void;
 }) {
   const t = useTranslations("docs");
+  const tCommon = useTranslations("common");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -370,7 +370,7 @@ export function DocsPanel({
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-tz-fg">{file.file_name ?? file.title}</p>
                   <p className="font-mono text-xs text-tz-muted">
-                    {file.title} · v{file.version} · {formatSize(file.file_size)} · {file.mime_type ?? "—"} · uploaded_by:{" "}
+                    {file.title} · v{file.version} · {formatSize(tCommon, file.file_size)} · {file.mime_type ?? "—"} · uploaded_by:{" "}
                     {file.uploaded_by ?? "—"}
                   </p>
                 </div>

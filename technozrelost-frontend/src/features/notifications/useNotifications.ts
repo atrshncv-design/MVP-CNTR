@@ -7,6 +7,7 @@
 
 import * as React from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { getNotifications, markNotificationRead } from "@/lib/api-client";
 import type { NotificationOut } from "@/lib/types";
@@ -15,6 +16,7 @@ export type NotificationsFilter = "all" | "unread";
 
 export function useNotifications(opts?: { pollMs?: number }) {
   const pollMs = opts?.pollMs ?? 30_000; // fallback polling 30с по ТЗ (не спамить)
+  const t = useTranslations("notifications");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
@@ -29,11 +31,11 @@ export function useNotifications(opts?: { pollMs?: number }) {
       const list = await getNotifications(token);
       setItems(Array.isArray(list) ? list : []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить уведомления");
+      setError(e instanceof Error && e.message ? e.message : t("loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, t]);
 
   // initial + polling fallback (SSE может дополнить, но не заменяет)
   React.useEffect(() => {

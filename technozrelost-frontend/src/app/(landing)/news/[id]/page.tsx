@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import NewsDetailView from "@/components/landing/news-detail";
 import { ApiError, getPublicNewsDetail } from "@/lib/api-client";
 import type { NewsDetail } from "@/lib/news-types";
@@ -12,14 +13,15 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
+  const t = await getTranslations("landing");
   let post: NewsDetail | null = null;
   try {
     post = await getPublicNewsDetail(id);
   } catch {
-    return { title: "Новость не найдена — Технозрелость" };
+    return { title: t("metaNewsNotFound") };
   }
   return {
-    title: `${post.title} — Новости — Технозрелость`,
+    title: t("metaNewsDetailTitle", { title: post.title }),
     description: post.excerpt ?? post.title,
   };
 }

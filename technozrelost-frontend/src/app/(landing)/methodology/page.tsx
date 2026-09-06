@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import MethodologyContent from "@/components/landing/methodology-content";
 
-export const metadata: Metadata = {
-  title: "Методика оценки УГТ — Технозрелость",
-  description:
-    "Методология оценки уровня готовности технологий по ГОСТ Р 58048-2017: шкалы УГТ, УГП, УГИ, УГС, процесс оценки и матрица соответствия.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaMethodologyTitle"),
+    description: t("metaMethodologyDesc"),
+  };
+}
 
 export default function MethodologyPage() {
   return <MethodologyContent />;

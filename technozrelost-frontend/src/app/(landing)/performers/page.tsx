@@ -4,11 +4,13 @@ import { ArrowRight, FlaskConical, Factory, Landmark, Rocket } from "lucide-reac
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 
-export const metadata: Metadata = {
-  title: "Исполнителям — Технозрелость",
-  description:
-    "Кому платформа «Технозрелость» помогает как исполнителю: R&D-организациям, серийным производителям, регулирующим организациям, инженерным командам.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("landing");
+  return {
+    title: t("metaPerformersTitle"),
+    description: t("metaPerformersDesc"),
+  };
+}
 
 export default async function PerformersPage() {
   const t = await getTranslations("performers");

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { UGT_LEVELS } from "@/lib/ugt-data";
+import { getUgtLevels } from "@/lib/ugt-data";
+import { asTranslateFn } from "@/lib/types";
 
 /**
  * UGTInteractiveScale — интерактивная шкала УГТ 1–9 (главная страница).
@@ -22,8 +23,11 @@ const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 export default function UGTInteractiveScale() {
   const t = useTranslations("ugtScale");
   const tUgt = useTranslations("ugtData");
+  const tU = useTranslations("ugt");
+  // Шкала — резолвером текущей локали (шим UGT_LEVELS удалён в таске 05).
+  const scaleLevels = getUgtLevels(asTranslateFn(tU));
   const [activeId, setActiveId] = useState<number | null>(null);
-  const selected = UGT_LEVELS.find((l) => l.id === activeId) ?? null;
+  const selected = scaleLevels.find((l) => l.id === activeId) ?? null;
 
   const PHASES = [
     { label: t("research"), range: [1, 2, 3] as number[] },
@@ -52,7 +56,7 @@ export default function UGTInteractiveScale() {
 
         {/* Ноды */}
         <div className="flex justify-between">
-          {UGT_LEVELS.map((level, i) => {
+          {scaleLevels.map((level, i) => {
             const isActive = activeId === level.id;
             let name = level.name;
             try { name = tUgt(`level${level.id}Name`); } catch {}
@@ -91,9 +95,9 @@ export default function UGTInteractiveScale() {
 
       {/* ── Подписи нод ────────────────────────────────────────────── */}
       <div className="mx-auto mt-1 flex max-w-[900px] justify-between">
-        {UGT_LEVELS.map((level) => {
-          let code = `УГТ ${level.id}`;
-          try { code = tUgt(`code${level.id}`); } catch {}
+        {scaleLevels.map((level) => {
+          let code: string;
+          try { code = tUgt(`code${level.id}`); } catch { code = level.code; }
           return (
           <span
             key={level.id}

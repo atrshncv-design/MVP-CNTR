@@ -4,9 +4,10 @@
 import * as React from "react";
 import { CheckCircle2, Download, FileUp, RefreshCw } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { getGostRequirements, getStageRequirements } from "@/lib/api-client";
-import type { DocumentOut } from "@/lib/types";
+import type { DocumentOut, TranslateFn } from "@/lib/types";
 import { getStatusLabel } from "@/lib/status";
 import { getUgtColor } from "@/features/project/utils";
 import { downloadTemplate as downloadTemplateWithFallback } from "@/features/project/template";
@@ -50,6 +51,7 @@ export function GostChecklist({
   className = "",
 }: GostChecklistProps) {
   void status;
+  const t = useTranslations("common");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const [requirements, setRequirements] = React.useState<Requirement[]>([]);
@@ -83,7 +85,7 @@ export function GostChecklist({
           const st = (e2 as { status?: number })?.status;
           if (st === 409 || st === 404) {
             // fallback mock из RAG/ГОСТ — генерим локально
-            const mock = mockRequirements(currentLevel);
+            const mock = mockRequirements(t, currentLevel);
             setRequirements(mock);
             onRequirementsChange?.(mock);
           } else {
@@ -92,14 +94,15 @@ export function GostChecklist({
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить требования.");
-      const mock = mockRequirements(currentLevel);
+      // Тексты бэкенда (R04) — как есть, фолбэк — через словарь.
+      setError(e instanceof Error && e.message ? e.message : t("gostLoadFailed"));
+      const mock = mockRequirements(t, currentLevel);
       setRequirements(mock);
       onRequirementsChange?.(mock);
     } finally {
       setLoading(false);
     }
-  }, [projectId, currentLevel, token, onRequirementsChange]);
+  }, [projectId, currentLevel, token, onRequirementsChange, t]);
 
   React.useEffect(() => {
     void load();
@@ -146,23 +149,23 @@ export function GostChecklist({
     <section
       className={`tz-card p-6 ${className}`}
       data-testid="gost-checklist"
-      aria-label="Чек-лист ГОСТ документов"
+      aria-label={t("gostAria")}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="tz-eyebrow">Чек-лист ГОСТ</p>
+          <p className="tz-eyebrow">{t("gostEyebrow")}</p>
           <h2 className="tz-card-title mt-1">
-            Переход УГТ {currentLevel} → {currentLevel + 1}
+            {t("gostTransition", { from: currentLevel, to: currentLevel + 1 })}
           </h2>
           <p className="mt-1 text-sm text-tz-muted">
-            Секторов в уровне: {total} · выполнено {done}/{total}
+            {t("gostProgress", { total, done })}
           </p>
           <p className="mt-1 text-xs text-tz-muted">
-            Источник: GET /gost-requirements?level={currentLevel} или StageRequirement (ГОСТ Р 58048-2017)
+            {t("gostSource", { level: currentLevel })}
           </p>
         </div>
-        <button className="tz-btn tz-btn-ghost" onClick={() => void load()} aria-label="Обновить чек-лист">
-          <RefreshCw size={15} /> Обновить
+        <button className="tz-btn tz-btn-ghost" onClick={() => void load()} aria-label={t("gostRefreshAria")}>
+          <RefreshCw size={15} /> {t("update")}
         </button>
       </div>
 
@@ -196,18 +199,18 @@ export function GostChecklist({
               <p className="text-sm font-semibold text-tz-fg">{r.title}</p>
               <p className="text-xs text-tz-muted">{r.description}</p>
               {r.template_version && (
-                <p className="mt-1 font-mono text-xs text-tz-secondary">Шаблон: {r.template_version}</p>
+                <p className="mt-1 font-mono text-xs text-tz-secondary">{t("gostTemplate", { version: r.template_version })}</p>
               )}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="text-xs text-tz-muted">{r.uploaded ? "Загружено" : "Не загружено"}</span>
+              <span className="text-xs text-tz-muted">{r.uploaded ? t("gostUploaded") : t("gostNotUploaded")}</span>
               <button
                 className="tz-btn tz-btn-secondary tz-btn-sm"
                 onClick={() => void downloadTemplateWithFallback(r, token)}
-                aria-label={`Скачать шаблон ${r.title}`}
+                aria-label={t("gostDownloadAria", { title: r.title })}
                 data-testid={`download-template-${r.id}`}
               >
-                <Download size={14} /> Скачать шаблон
+                <Download size={14} /> {t("gostDownloadTemplate")}
               </button>
             </div>
           </li>
@@ -216,21 +219,21 @@ export function GostChecklist({
 
       {onRefresh && (
         <button className="tz-btn tz-btn-ghost mt-4" onClick={onRefresh}>
-          Обновить документы
+          {t("gostRefreshDocs")}
         </button>
       )}
     </section>
   );
 }
 
-function mockRequirements(level: number): Requirement[] {
+function mockRequirements(t: TranslateFn, level: number): Requirement[] {
   const fallbackCount = ({ 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 3, 7: 4, 8: 5, 9: 6 } as Record<number, number>)[level] ?? 4;
   return Array.from({ length: fallbackCount }, (_, i) => ({
     id: level * 100 + i,
     from_level: level,
     to_level: Math.min(9, level + 1),
-    title: `Документ ${i + 1} для УГТ ${level}`,
-    description: `Обязательный документ по ГОСТ Р 58048-2017 для перехода УГТ ${level}→${level + 1}`,
+    title: t("gostMockTitle", { i: i + 1, level }),
+    description: t("gostMockDesc", { level, next: level + 1 }),
     template_version: "v1",
     uploaded: false,
   }));

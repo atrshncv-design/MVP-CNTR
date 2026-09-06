@@ -12,11 +12,13 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  UGT_LEVELS,
-  UGP_LEVELS,
-  UGI_LEVELS,
-  UGS_LEVELS,
+  getUgiLevels,
+  getUgpLevels,
+  getUgsLevels,
+  getUgtLevels,
+  type UGTLevel,
 } from "@/lib/ugt-data";
+import { asTranslateFn } from "@/lib/types";
 
 /* ================================================================== */
 /*  Хелперы                                                           */
@@ -234,7 +236,7 @@ function UGTAccordionItem({
   level,
   index,
 }: {
-  level: (typeof UGT_LEVELS)[number];
+  level: UGTLevel;
   index: number;
 }) {
   const [open, setOpen] = useState(index === 0);
@@ -351,6 +353,9 @@ function UGTAccordionItem({
 function UGTLevelsSection() {
   const t = useTranslations("methodology");
   const tUgt = useTranslations("ugtData");
+  const tU = useTranslations("ugt");
+  // Уровни — резолвером текущей локали (шим UGT_LEVELS удалён в таске 05).
+  const sectionLevels = getUgtLevels(asTranslateFn(tU));
   return (
     <section id="ugt-levels" className="bg-tz-surface/40">
       <div className="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 lg:px-8">
@@ -371,7 +376,7 @@ function UGTLevelsSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          {UGT_LEVELS.map((level, i) => {
+          {sectionLevels.map((level, i) => {
             const code = (() => { try { return tUgt(`code${level.id}`); } catch { return level.code; }})();
             const name = (() => { try { return tUgt(`level${level.id}Name`); } catch { return level.name; }})();
             return (
@@ -401,7 +406,7 @@ function UGTLevelsSection() {
 
         {/* Аккордеон */}
         <div className="space-y-3">
-          {UGT_LEVELS.map((level, i) => (
+          {sectionLevels.map((level, i) => (
             <UGTAccordionItem key={level.id} level={level} index={i} />
           ))}
         </div>
@@ -689,9 +694,12 @@ function CorrespondenceSection() {
 
 export default function MethodologyContent() {
   const t = useTranslations("methodology");
-  // Translate UGP/UGI/UGS level names via t if available, fallback to raw
+  const tU = useTranslations("ugt");
+  const tUgt = asTranslateFn(tU);
+  // Шкалы УГП/УГИ/УГС — резолверами текущей локали (шимы удалены в таске 05).
+  // Имена дополнительно маппятся через ключи methodology при наличии, иначе данные резолвера.
   const tAny = t as unknown as (key: string) => string;
-  const ugpLevels = UGP_LEVELS.map((lvl) => {
+  const ugpLevels = getUgpLevels(tUgt).map((lvl) => {
     try {
       const key = `ugp${lvl.id}`;
       const translated = tAny(key);
@@ -700,7 +708,7 @@ export default function MethodologyContent() {
       return lvl;
     }
   });
-  const ugiLevels = UGI_LEVELS.map((lvl) => {
+  const ugiLevels = getUgiLevels(tUgt).map((lvl) => {
     try {
       const key = `ugi${lvl.id}`;
       const translated = tAny(key);
@@ -709,7 +717,7 @@ export default function MethodologyContent() {
       return lvl;
     }
   });
-  const ugsLevels = UGS_LEVELS.map((lvl) => {
+  const ugsLevels = getUgsLevels(tUgt).map((lvl) => {
     try {
       const key = `ugs${lvl.id}`;
       const translated = tAny(key);
@@ -718,7 +726,7 @@ export default function MethodologyContent() {
       return lvl;
     }
   });
-  // Translate code columns for UGS? Keep code as is but UGS codes are like "УГС 1" — translate via methodology? For EN, codes should be SRL 1 etc but we keep UGS codes; the data's code remains Russian, but we could map via tUgtData? Keep as is for now.
+  // Коды шкалы УГС идут из резолвера как есть (каноника ГОСТ).
   return (
     <>
       <MethodologyHero />

@@ -10,6 +10,13 @@
 
 import { assertNoPii, CONTOUR_TUNO, sanitizeMatchingInput } from "./sanitize.ts";
 import type { MatchingIn, MatchCandidate } from "@/lib/types";
+import {
+  LLM_REASON_SCRIPT,
+  LLM_REASON_TECH,
+  LLM_SENTINEL_PAYLOAD_PII,
+  LLM_SENTINEL_PII,
+  LLM_SENTINEL_UNAVAILABLE,
+} from "@/features/misc/i18n";
 
 /**
  * Бейджи rerank — для UI: llm при успехе, fallback при деградации.
@@ -23,8 +30,13 @@ export const RERANK_BADGE_SCRIPT = "script" as const;
 export type RerankBadge = typeof RERANK_BADGE_LLM | typeof RERANK_BADGE_FALLBACK | typeof RERANK_BADGE_SCRIPT;
 export type RerankMethod = "llm" | "script";
 
-export const LLM_UNAVAILABLE_MSG = "LLM недоступен — script результат — Повторить";
-export const LLM_RETRY_LABEL = "Повторить";
+/**
+ * Сентинел недоступности LLM для UI (таск 05): значение — код, не текст.
+ * Сравнение по === в MatchingMode, показ — через common.llmUnavailable
+ * (misc/llmErrorText). Прямого русского текста здесь нет.
+ */
+export const LLM_UNAVAILABLE_MSG = LLM_SENTINEL_UNAVAILABLE;
+export const LLM_RETRY_LABEL = "llm-retry";
 export const RETRY_LABEL = "Retry";
 
 /**
@@ -94,8 +106,8 @@ function scriptFallback(
   // причины script — используем уже имеющиеся reason кандидата или дефолт
   const withFallbackReasons = candidates.map((c) => ({
     ...c,
-    // сохраняем исходную причину, если нет — ставим script-метку
-    reason: c.reason || "соответствие по реестру (script)",
+    // сохраняем исходную причину, если нет — ставим script-метку (код, показ через словарь)
+    reason: c.reason || LLM_REASON_SCRIPT,
   }));
   return {
     candidates: withFallbackReasons.slice(0, 5),
@@ -139,7 +151,7 @@ export async function rerankWithLlm(
   if (piiCheck) {
     // PII leak — не шлём в LLM, сразу fallback script
     console.error("[matching/llm] PII leak detected — fallback script", piiCheck);
-    return scriptFallback(candidates, "Обнаружены ПДн в payload — использован script fallback");
+    return scriptFallback(candidates, LLM_SENTINEL_PII);
   }
 
   // LLM_API_BASE из env, без ключа — сразу script без запроса (не делаем fetch)
@@ -218,7 +230,7 @@ export async function rerankWithLlm(
   );
   if (forbiddenInBody.length) {
     console.error("[matching/llm] forbidden keys in LLM body", forbiddenInBody);
-    return scriptFallback(candidates, "Payload содержит ПДн — fallback script");
+    return scriptFallback(candidates, LLM_SENTINEL_PAYLOAD_PII);
   }
 
   try {
@@ -310,7 +322,7 @@ export async function rerankWithLlm(
     // Успех LLM — llm бейдж + причины LLM (перезаписываем reason кандидатов)
     const reranked = candidates.slice(0, 5).map((c, idx) => ({
       ...c,
-      reason: (llmReasons[idx] ?? llmReasons[0] ?? c.reason ?? "LLM rerank: соответствие по технологическому контуру").slice(
+      reason: (llmReasons[idx] ?? llmReasons[0] ?? c.reason ?? LLM_REASON_TECH).slice(
         0,
         300,
       ),

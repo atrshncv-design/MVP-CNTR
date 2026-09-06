@@ -7,6 +7,7 @@
 
 import type { ProjectCardOut } from "@/lib/types";
 import type { FunnelData, RegionRow, SectorRow } from "./types";
+import { commonTranslator } from "@/features/misc/i18n";
 
 // ─── Бюджет: всем виден, Intl.NumberFormat ru-RU RUB (G38) ─────────────────
 
@@ -87,16 +88,19 @@ export function buildSectorRows(projects: ProjectCardOut[]): SectorRow[] {
 // ─── Срез по регионам/муниципалитетам (Organization.region) ─────────────────
 // Почему через organization string: ProjectCardOut.organization — имя,
 // регион берём из отдельного списка OrganizationOut или из project-расширения.
-// Если регион отсутствует — группируем как «Без региона».
+// Если регион отсутствует — группируем под меткой словаря common.noRegion
+// (переводчик текущей локали; явно переопределяется параметром noRegionLabel).
 export function buildRegionRowsFromProjects(
   projects: ProjectCardOut[],
   orgRegionMap?: Map<string, string | null>,
+  noRegionLabel?: string,
 ): RegionRow[] {
+  const fallback = noRegionLabel ?? commonTranslator()("noRegion");
   const map = new Map<string, number>();
   for (const p of projects) {
     const orgName = p.organization ?? "—";
     const region = orgRegionMap?.get(orgName) ?? (p as unknown as { region?: string | null }).region ?? null;
-    const key = region?.trim() ? region.trim() : "Без региона";
+    const key = region?.trim() ? region.trim() : fallback;
     map.set(key, (map.get(key) ?? 0) + 1);
   }
   const total = projects.length || 1;
@@ -112,10 +116,12 @@ export function buildRegionRowsFromProjects(
 // Отдельный хелпер для OrganizationOut[] (когда есть данные с /nioktr/organizations)
 export function buildRegionRowsFromOrgs(
   orgs: Array<{ region: string | null; projects_count?: number }>,
+  noRegionLabel?: string,
 ): RegionRow[] {
+  const fallback = noRegionLabel ?? commonTranslator()("noRegion");
   const map = new Map<string, number>();
   for (const o of orgs) {
-    const key = o.region?.trim() ? o.region!.trim() : "Без региона";
+    const key = o.region?.trim() ? o.region!.trim() : fallback;
     // если есть projects_count — взвешиваем, иначе 1
     const weight = typeof o.projects_count === "number" && o.projects_count > 0 ? o.projects_count : 1;
     map.set(key, (map.get(key) ?? 0) + weight);

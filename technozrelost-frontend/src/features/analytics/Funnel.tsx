@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { getStatusLabel } from "@/lib/status";
 import type { FunnelData } from "./types";
 import { funnelSumsToTotal } from "./utils";
@@ -11,13 +12,15 @@ import { funnelSumsToTotal } from "./utils";
  */
 export function Funnel({
   funnel,
-  title = "Воронка УГТ — статусы проектов",
+  title,
   testId = "funnel",
 }: {
   funnel: FunnelData;
   title?: string;
   testId?: string;
 }) {
+  const t = useTranslations("common");
+  const heading = title ?? t("funnelTitleDefault");
   const linear: Array<{ key: keyof FunnelData; label: string }> = [
     { key: "draft", label: getStatusLabel("draft") },
     { key: "auto_confirmed", label: getStatusLabel("auto_confirmed") },
@@ -31,11 +34,11 @@ export function Funnel({
   return (
     <div className="tz-card p-5" data-testid={testId} data-total={funnel.total} data-valid={isValid ? "true" : "false"}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-semibold text-tz-fg">{title}</h3>
-        <span className="tz-badge tz-badge-neutral">Всего {funnel.total}</span>
+        <h3 className="font-semibold text-tz-fg">{heading}</h3>
+        <span className="tz-badge tz-badge-neutral">{t("funnelTotal", { total: funnel.total })}</span>
       </div>
       <p className="mt-1 text-xs text-tz-muted">
-        draft → auto_confirmed → published → active → completed · сумма = total {isValid ? "✓" : "✗"}
+        {t("funnelFormula", { mark: isValid ? "✓" : "✗" })}
       </p>
       <div className="mt-4 space-y-2.5">
         {linear.map(({ key, label }) => {
@@ -75,9 +78,18 @@ export function Funnel({
         </div>
       </div>
       <p className="mt-3 font-mono text-[11px] text-tz-muted" data-testid="funnel-sum-check">
-        Проверка: {funnel.draft}+{funnel.auto_confirmed}+{funnel.published}+{funnel.active}+{funnel.completed}+{funnel.rejected}+
-        {funnel.archived}={funnel.draft + funnel.auto_confirmed + funnel.published + funnel.active + funnel.completed + funnel.rejected + funnel.archived}{" "}
-        = total {funnel.total} {isValid ? "✓ сумма = total" : "✗ сумма ≠ total"}
+        {t("funnelSumCheck", {
+          a: funnel.draft,
+          b: funnel.auto_confirmed,
+          c: funnel.published,
+          d: funnel.active,
+          e: funnel.completed,
+          f: funnel.rejected,
+          g: funnel.archived,
+          sum: funnel.draft + funnel.auto_confirmed + funnel.published + funnel.active + funnel.completed + funnel.rejected + funnel.archived,
+          total: funnel.total,
+          verdict: t(isValid ? "funnelSumOk" : "funnelSumFail"),
+        })}
       </p>
     </div>
   );
