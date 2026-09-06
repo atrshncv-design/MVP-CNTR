@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Gauge } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
@@ -14,6 +15,7 @@ import { CLIENT_API_BASE } from "@/lib/public-api";
  */
 export function AssessUgTCard() {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
   const [drafts, setDrafts] = useState<number | null>(null);
 
   useEffect(() => {
@@ -41,23 +43,22 @@ export function AssessUgTCard() {
           <Gauge size={20} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="tz-card-title">Оценка УГТ проекта</p>
+          <p className="tz-card-title">{t("assessTitle")}</p>
           <p className="mt-1 text-sm leading-relaxed text-tz-muted">
-            Экспресс-оценка по ГОСТ Р 58048-2017: 4 категории × 9 уровней. Результат —
-            черновик проекта с предварительным уровнем УГТ.
+            {t("assessDesc")}
           </p>
         </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-4">
         <Link href="/dashboard/gk_customer/projects/new" className="tz-btn tz-btn-primary">
-          Оценить УГТ
+          {t("assessCta")}
           <ArrowRight size={16} aria-hidden="true" />
         </Link>
         <Link
           href="/dashboard/projects"
           className="text-sm font-medium text-tz-accent transition hover:text-tz-accent-hover"
         >
-          Черновики: {drafts === null ? "…" : drafts}
+          {t("assessDrafts", { count: drafts === null ? "…" : drafts })}
         </Link>
       </div>
     </div>

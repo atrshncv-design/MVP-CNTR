@@ -4,19 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { KeyRound, Loader2, LogIn, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { CLIENT_API_BASE } from "@/lib/public-api";
-
-
-/** Роли, доступные при вступлении в проект по токену */
-const JOIN_ROLES = [
-  { value: 'rd_executor', label: 'R&D-исполнитель' },
-  { value: 'scientific_org', label: 'Научная организация' },
-  { value: 'serial_manufacturer', label: 'Серийный производитель' },
-  { value: 'regulating_organization', label: 'Регулирующая организация' },
-  { value: 'auditor', label: 'Аудитор' },
-  { value: 'investor', label: 'Инвестор' },
-  { value: 'participant', label: 'Участник проекта' },
-] as const;
+import { getJoinRoles } from "@/features/dashboard/i18n";
 
 interface JoinResponse {
   status: 'active' | 'pending';
@@ -36,20 +26,19 @@ function extractError(data: unknown, fallback: string): string {
   return fallback;
 }
 
-/**
- * Форма вступления в проект по токену (TZ-XXXXXX).
- * При status='active' редиректит в карточку проекта, при 'pending' —
- * показывает сообщение о заявке, переданной на рассмотрение.
- */
+
 export default function JoinProjectForm() {
   const router = useRouter();
   const { data: session } = useSession();
+  const t = useTranslations('dashboard');
 
   const [token, setToken] = useState('');
   const [role, setRole] = useState<string>('rd_executor');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  const joinRoles = getJoinRoles(t);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -58,11 +47,11 @@ export default function JoinProjectForm() {
 
     const normalized = token.trim();
     if (!normalized) {
-      setError('Введите токен доступа.');
+      setError(t('joinTokenErrorRequired'));
       return;
     }
     if (!session?.user?.accessToken) {
-      setError('Сессия недоступна — войдите в систему заново.');
+      setError(t('joinErrorNoSession'));
       return;
     }
 
@@ -79,7 +68,7 @@ export default function JoinProjectForm() {
       const data = (await res.json().catch(() => null)) as JoinResponse | null;
 
       if (!res.ok) {
-        throw new Error(extractError(data, `Не удалось присоединиться к проекту (${res.status}).`));
+        throw new Error(extractError(data, t('joinFormErrorStatus', { status: res.status })));
       }
 
       if (data?.status === 'active') {
@@ -91,9 +80,9 @@ export default function JoinProjectForm() {
         return;
       }
 
-      setInfo('Заявка отправлена на рассмотрение. Решение появится в карточке проекта.');
+      setInfo(t('joinSuccess'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось присоединиться к проекту.');
+      setError(err instanceof Error ? err.message : t('joinFormErrorGeneric'));
     } finally {
       setLoading(false);
     }
@@ -110,8 +99,8 @@ export default function JoinProjectForm() {
           <KeyRound size={20} />
         </span>
         <div>
-          <h3 className="tz-card-title">Присоединиться к проекту</h3>
-          <p className="text-sm text-tz-muted">Введите токен, выданный заказчиком или ЦНТР</p>
+          <h3 className="tz-card-title">{t('joinFormTitle')}</h3>
+          <p className="text-sm text-tz-muted">{t('joinFormDesc')}</p>
         </div>
       </div>
 
@@ -126,7 +115,7 @@ export default function JoinProjectForm() {
         />
         <div>
           <label htmlFor="join-role" className="mb-1 block text-xs font-medium text-tz-muted">
-            Роль в проекте
+            {t('joinFormRoleLabel')}
           </label>
           <select
             id="join-role"
@@ -135,7 +124,7 @@ export default function JoinProjectForm() {
             disabled={loading}
             className="w-full rounded-xl border border-tz-border bg-tz-surface px-3 py-2.5 text-sm text-tz-fg outline-none transition focus:border-tz-accent disabled:opacity-60"
           >
-            {JOIN_ROLES.map((r) => (
+            {joinRoles.map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
               </option>
@@ -162,7 +151,7 @@ export default function JoinProjectForm() {
           className="tz-btn tz-btn-primary w-full"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
-          {loading ? 'Отправка…' : 'Присоединиться'}
+          {loading ? t('joinFormSending') : t('joinFormSubmit')}
         </button>
       </div>
     </form>

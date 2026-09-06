@@ -5,7 +5,7 @@ import test from "node:test";
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const exists = (p) => existsSync(new URL(`../${p}`, import.meta.url));
 
-test("matching: standalone mode /dashboard/matching exists and is accessible to all 8 roles", () => {
+test("matching: standalone mode /dashboard/matching exists and is accessible to all 8 roles", async () => {
   assert.ok(exists("src/app/dashboard/matching/page.tsx"), "missing /dashboard/matching/page.tsx");
   assert.ok(exists("src/features/matching/MatchingMode.tsx"), "missing MatchingMode");
   assert.ok(exists("src/features/matching/sanitize.ts"), "missing sanitize");
@@ -16,7 +16,11 @@ test("matching: standalone mode /dashboard/matching exists and is accessible to 
 
   const layout = read("src/app/dashboard/layout.tsx");
   assert.match(layout, /\/dashboard\/matching/);
-  assert.match(layout, /Подбор партнёра/);
+  // подпись пункта — через словарь dashboard в обеих локалях (таск 04)
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.match(layout, /navMatching/);
+  assert.equal(translatorFor("dashboard", "ru")("navMatching"), "Подбор партнёра");
+  assert.equal(translatorFor("dashboard", "en")("navMatching"), "Partner matching");
 });
 
 test("matching: form has project select from GET /projects + idea textarea + region/sector/ugt filters + Подобрать button", () => {

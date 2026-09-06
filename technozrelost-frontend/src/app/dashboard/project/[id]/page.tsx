@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Loader2, XCircle, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { ProjectCard } from '@/features/project';
 import { getProject } from '@/lib/api-client';
 import { CLIENT_API_BASE } from '@/lib/public-api';
@@ -20,6 +21,7 @@ import type { ProjectDetailOut } from '@/lib/types';
 export default function ProjectDashboardPage() {
   const params = useParams();
   const { data: session } = useSession();
+  const t = useTranslations('dashboard');
   const [detail, setDetail] = useState<ProjectDetailOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,12 +51,12 @@ export default function ProjectDashboardPage() {
       }
       setDetail(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Не удалось загрузить проект');
+      setError(e instanceof Error ? e.message : t('projectLoadError'));
       setDetail(null);
     } finally {
       setLoading(false);
     }
-  }, [session, params.id]);
+  }, [session, params.id, t]);
 
   useEffect(() => {
     void load();
@@ -63,7 +65,7 @@ export default function ProjectDashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20" data-testid="project-loading">
-        <Loader2 className="h-8 w-8 animate-spin text-tz-accent" aria-label="Загрузка" />
+        <Loader2 className="h-8 w-8 animate-spin text-tz-accent" aria-label={t('projectLoading')} />
       </div>
     );
   }
@@ -72,10 +74,10 @@ export default function ProjectDashboardPage() {
     return (
       <div className="rounded-2xl border border-tz-danger bg-tz-danger-soft p-8 text-center" data-testid="project-error">
         <XCircle className="mx-auto mb-2 text-tz-danger" size={40} />
-        <p className="text-lg font-semibold text-tz-danger">Проект не найден</p>
+        <p className="text-lg font-semibold text-tz-danger">{t('projectNotFound')}</p>
         {error && <p className="mt-2 text-sm text-tz-danger">{error}</p>}
         <button onClick={() => void load()} className="tz-btn tz-btn-secondary mt-4">
-          <RefreshCw size={15} /> Повторить
+          <RefreshCw size={15} /> {t('newsRetry')}
         </button>
       </div>
     );

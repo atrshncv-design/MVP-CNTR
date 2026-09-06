@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import MoreFunctionsMenu from "@/components/dashboard/more-functions-menu";
 
 export interface HeaderNavItem {
@@ -33,9 +34,10 @@ export default function HeaderNav({
   userRoles?: string[];
 }) {
   const pathname = usePathname();
+  const t = useTranslations("dashboard");
 
   return (
-    <nav aria-label="Основная навигация" className={vertical ? "w-full" : "flex items-center gap-1"}>
+    <nav aria-label={t("mainNavAria")} className={vertical ? "w-full" : "flex items-center gap-1"}>
       <ul
         className={
           vertical ? "flex flex-col gap-0.5" : "flex items-center gap-1"

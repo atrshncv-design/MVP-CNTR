@@ -12,19 +12,21 @@ import LocaleToggle from "@/i18n/LocaleToggle";
 
 /**
  * Компактная шапка ЛК (по образцу internal-ux-redesign): логотип +
- * «Рабочий стол» / «Проекты» / «Заявки» + «Больше функций» (dropdown,
- * см. more-functions-menu.tsx) + уведомления + профиль + выход.
+ * core-навигация + «Больше функций» (dropdown, см. more-functions-menu.tsx) +
+ * уведомления + профиль + выход. Подписи core-навигации — через словарь
+ * dashboard (серверный getTranslations, R01); бренд ТЕХНОЗРЕЛОСТЬ —
+ * метаданные, не трогаем.
  * Остальные разделы (Реестры, НИОКТР, Организации, Новости, Документы,
  * Исполнители, Профиль) переехали в сетку «Больше функций»
  * (src/lib/more-menu.ts). Mobile shell: логотип + кнопка меню.
  */
-const coreNavigation = [
-  { href: "/dashboard", label: "Рабочий стол" },
-  { href: "/dashboard/projects", label: "Проекты" },
-  { href: "/dashboard/gk_customer/projects/new", label: "Заявки" },
+const CORE_NAVIGATION = [
+  { href: "/dashboard", labelKey: "navWorkspace" },
+  { href: "/dashboard/projects", labelKey: "navProjects" },
+  { href: "/dashboard/gk_customer/projects/new", labelKey: "navRequests" },
   // Тикет 05: отдельный режим подбора — доступен всем 8 ролям (R23, G27).
-  { href: "/dashboard/matching", label: "Подбор партнёра" },
-];
+  { href: "/dashboard/matching", labelKey: "navMatching" },
+] as const;
 
 /** Инициалы для аватара профиля. */
 function initials(name: string): string {
@@ -37,8 +39,15 @@ function initials(name: string): string {
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("a11y");
+  const td = await getTranslations("dashboard");
   const session = await auth();
   const user = session?.user;
+
+  // Подписи core-навигации резолвятся серверным переводом (R01.2).
+  const coreNavigation = CORE_NAVIGATION.map((item) => ({
+    href: item.href,
+    label: td(item.labelKey),
+  }));
 
   return (
     <div className="min-h-screen bg-tz-bg">
@@ -80,7 +89,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 </span>
                 <span className="hidden text-left lg:block">
                   <span className="block max-w-[200px] truncate text-sm font-semibold text-tz-fg">
-                    {user.name ?? user.email ?? "Пользователь"}
+                    {user.name ?? user.email ?? td("defaultUser")}
                   </span>
                 </span>
               </Link>
@@ -97,7 +106,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 type="submit"
                 className="rounded-lg border border-tz-border px-2.5 py-2.5 text-sm text-tz-muted transition hover:border-tz-fg/25 hover:text-tz-fg sm:px-3"
               >
-                Выйти
+                {td("signOut")}
               </button>
             </form>
 

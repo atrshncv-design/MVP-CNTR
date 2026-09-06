@@ -8,22 +8,25 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Medal } from "@/components/achievements/medal";
 import { CLIENT_API_BASE } from "@/lib/public-api";
+import { achieveCountT, getAchievementGroupLabel } from "@/features/dashboard/i18n";
 
 
-const GROUP_LABELS: Record<string, string> = {
-  ugt: "УГТ",
-  documents: "Документы",
-  project: "Проект",
-  quality: "Качество",
-  sector: "Отрасль",
-  role: "Роль",
-  member: "Участник",
-  organization: "Организация",
-  secret: "Секретные",
-};
+/** Группы фильтров витрины — подписи через словарь (getAchievementGroupLabel). */
+const GROUP_IDS = [
+  "ugt",
+  "documents",
+  "project",
+  "quality",
+  "sector",
+  "role",
+  "member",
+  "organization",
+  "secret",
+] as const;
 
 interface AchievementItem {
   id: number;
@@ -61,6 +64,7 @@ function formatDate(iso: string): string {
 
 export default function AchievementsShowcase() {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
   const token = session?.user?.accessToken;
 
   const [items, setItems] = useState<UserAchievementOut[]>([]);
@@ -82,12 +86,12 @@ export default function AchievementsShowcase() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         setItems(await res.json());
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Не удалось загрузить достижения");
+        setError(e instanceof Error ? e.message : t("achieveLoadError"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [token]);
+  }, [token, t]);
 
   const filtered = useMemo(() => {
     if (group === "all") return items;
@@ -118,24 +122,23 @@ export default function AchievementsShowcase() {
   if (error) {
     return (
       <div className="tz-card p-6 text-tz-danger">
-        Не удалось загрузить достижения: {error}
+        {t("achieveShowcaseError", { error })}
       </div>
     );
   }
 
   return (
-    <section className="tz-card p-6" aria-label="Мои достижения">
+    <section className="tz-card p-6" aria-label={t("achieveTitle")}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-tz-fg">Мои достижения</h2>
+        <h2 className="text-lg font-semibold text-tz-fg">{t("achieveTitle")}</h2>
         <span className="text-sm text-tz-muted">
-          {items.length > 0 ? `${items.length} медал${items.length === 1 ? "ь" : "и"}` : ""}
+          {items.length > 0 ? achieveCountT(t, items.length) : ""}
         </span>
       </div>
 
       {items.length === 0 ? (
         <p className="mt-4 text-sm text-tz-muted">
-          Пока нет достижений. Медали начисляются автоматически за подтверждённые
-          события: принятые документы и переходы проекта по уровням УГТ.
+          {t("achieveEmpty")}
         </p>
       ) : (
         <>
@@ -145,23 +148,23 @@ export default function AchievementsShowcase() {
               onClick={() => setGroup("all")}
               className={`tz-btn tz-btn-sm ${group === "all" ? "tz-btn-primary" : "tz-btn-secondary"}`}
             >
-              Все
+              {t("achieveAll")}
             </button>
-            {Object.entries(GROUP_LABELS).map(([key, label]) => (
+            {GROUP_IDS.map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => setGroup(key)}
                 className={`tz-btn tz-btn-sm ${group === key ? "tz-btn-primary" : "tz-btn-secondary"}`}
               >
-                {label}
+                {getAchievementGroupLabel(t, key)}
               </button>
             ))}
           </div>
 
           {progressRows.length > 0 && (
             <div className="mt-5 space-y-2">
-              <h3 className="text-sm font-medium text-tz-fg">Прогресс до следующей ступени</h3>
+              <h3 className="text-sm font-medium text-tz-fg">{t("achieveProgressTitle")}</h3>
               {progressRows.map((row) => {
                 const { current_count, next_threshold } = row.progress!;
                 const percent = Math.min(
@@ -180,7 +183,11 @@ export default function AchievementsShowcase() {
                       />
                     </div>
                     <span className="shrink-0 font-mono text-xs text-tz-muted">
-                      {current_count}/{next_threshold} — осталось {next_threshold - current_count}
+                      {t("achieveProgressRemain", {
+                        current: current_count,
+                        total: next_threshold,
+                        left: next_threshold - current_count,
+                      })}
                     </span>
                   </div>
                 );
@@ -189,7 +196,7 @@ export default function AchievementsShowcase() {
           )}
 
           {filtered.length === 0 ? (
-            <p className="mt-4 text-sm text-tz-muted">В этой группе пока нет медалей.</p>
+            <p className="mt-4 text-sm text-tz-muted">{t("achieveEmptyGroup")}</p>
           ) : (
             <div className="mt-5 grid grid-cols-4 gap-4 sm:grid-cols-6 md:grid-cols-8">
               {filtered.map((row) => (
@@ -220,7 +227,7 @@ export default function AchievementsShowcase() {
           )}
 
           <div className="mt-6 border-t border-tz-border pt-4">
-            <h3 className="text-sm font-medium text-tz-fg">История начислений</h3>
+            <h3 className="text-sm font-medium text-tz-fg">{t("achieveHistory")}</h3>
             <ul className="mt-3 space-y-2">
               {items.slice(0, 10).map((row) => (
                 <li key={`${row.achievement.slug}-${row.awarded_at}`} className="flex items-center gap-3 text-sm">
@@ -234,7 +241,7 @@ export default function AchievementsShowcase() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-tz-fg">{row.achievement.title}</p>
                     <p className="truncate text-xs text-tz-muted">
-                      {row.project_name ?? "Платформа"} · {formatDate(row.awarded_at)}
+                      {row.project_name ?? t("achievePlatform")} · {formatDate(row.awarded_at)}
                       {row.times > 1 ? ` · ×${row.times}` : ""}
                     </p>
                   </div>

@@ -7,6 +7,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Medal } from "@/components/achievements/medal";
 import { CLIENT_API_BASE } from "@/lib/public-api";
@@ -34,6 +35,7 @@ interface ProjectAchievementOut {
 
 export default function ProjectAchievements({ projectId }: { projectId: number }) {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
   const token = session?.user?.accessToken;
 
   const [items, setItems] = useState<ProjectAchievementOut[]>([]);
@@ -52,12 +54,12 @@ export default function ProjectAchievements({ projectId }: { projectId: number }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         setItems(await res.json());
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Не удалось загрузить достижения");
+        setError(e instanceof Error ? e.message : t("achieveLoadError"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [projectId, token]);
+  }, [projectId, token, t]);
 
   if (loading) {
     return (
@@ -73,16 +75,15 @@ export default function ProjectAchievements({ projectId }: { projectId: number }
   }
 
   if (error) {
-    return <p className="text-sm text-tz-danger">Достижения недоступны: {error}</p>;
+    return <p className="text-sm text-tz-danger">{t("achieveTeamError", { error })}</p>;
   }
 
   return (
-    <section className="mt-6" aria-label="Достижения команды">
-      <h2 className="mb-3 text-base font-semibold text-tz-fg">Достижения команды</h2>
+    <section className="mt-6" aria-label={t("achieveTeamTitle")}>
+      <h2 className="mb-3 text-base font-semibold text-tz-fg">{t("achieveTeamTitle")}</h2>
       {items.length === 0 ? (
         <p className="text-sm text-tz-muted">
-          У команды пока нет достижений. Медали появятся автоматически при
-          подтверждении уровней УГТ и принятии документов.
+          {t("achieveTeamEmpty")}
         </p>
       ) : (
         <div className="flex flex-wrap gap-3">

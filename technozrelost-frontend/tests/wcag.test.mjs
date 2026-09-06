@@ -9,7 +9,7 @@ const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
  * Проверяем через исходники — статический эквивалент axe для зоны src/app + src/components/ui.
  */
 
-test("modal: фокус-ловушка, Escape, aria-modal, aria-labelledby, возврат фокуса, скролл-лок", () => {
+test("modal: фокус-ловушка, Escape, aria-modal, aria-labelledby, возврат фокуса, скролл-лок", async () => {
   const src = read("src/components/ui/modal.tsx");
   assert.match(src, /role="dialog"/);
   assert.match(src, /aria-modal="true"/);
@@ -22,10 +22,14 @@ test("modal: фокус-ловушка, Escape, aria-modal, aria-labelledby, в�
   assert.match(src, /prevFocus/);
   assert.match(src, /document\.body\.style\.overflow/);
   assert.match(src, /tabIndex=\{-1\}/);
-  assert.match(src, /Закрыть модальное окно/);
+  // подпись закрытия — через словарь dashboard в обеих локалях (таск 04)
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.match(src, /uiDialogClose/);
+  assert.equal(translatorFor("dashboard", "ru")("uiDialogClose"), "Закрыть модальное окно");
+  assert.equal(translatorFor("dashboard", "en")("uiDialogClose"), "Close dialog");
 });
 
-test("drawer: зеркало модалки — ловушка и Escape", () => {
+test("drawer: зеркало модалки — ловушка и Escape", async () => {
   const src = read("src/components/ui/drawer.tsx");
   assert.match(src, /role="dialog"/);
   assert.match(src, /aria-modal/);
@@ -33,7 +37,10 @@ test("drawer: зеркало модалки — ловушка и Escape", () =>
   assert.match(src, /Escape/);
   assert.match(src, /Tab/);
   assert.match(src, /prevFocus/);
-  assert.match(src, /Закрыть боковую панель/);
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.match(src, /uiDrawerClose/);
+  assert.equal(translatorFor("dashboard", "ru")("uiDrawerClose"), "Закрыть боковую панель");
+  assert.equal(translatorFor("dashboard", "en")("uiDrawerClose"), "Close side panel");
 });
 
 test("tooltip: клавиатура + скринридер (role tooltip, aria-describedby, focus/blur)", () => {
@@ -91,9 +98,13 @@ test("toast: aria-live polite + role status", () => {
   assert.match(src, /role="status"/);
 });
 
-test("pagination: nav aria-label и aria-live", () => {
+test("pagination: nav aria-label и aria-live", async () => {
   const src = read("src/components/ui/pagination.tsx");
-  assert.match(src, /aria-label="Навигация по страницам"/);
+  // имя навигации — через словарь dashboard в обеих локалях (таск 04)
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.match(src, /uiPageNavAria/);
+  assert.equal(translatorFor("dashboard", "ru")("uiPageNavAria"), "Навигация по страницам");
+  assert.equal(translatorFor("dashboard", "en")("uiPageNavAria"), "Page navigation");
   assert.match(src, /aria-live="polite"/);
 });
 

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Search as SearchIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface SearchProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
   onSearch?: (value: string) => void;
@@ -9,17 +10,18 @@ export interface SearchProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
 }
 
 /**
- * Поиск с доступностью: иконка aria-hidden, input с aria-label по умолчанию "Поиск",
+ * Поиск с доступностью: иконка aria-hidden, input с aria-label из словаря,
  * либо видимый label если передан.
  */
 export function Search({ className, onSearch, onChange, label, id, "aria-label": ariaLabel, ...props }: SearchProps) {
+  const t = useTranslations("dashboard");
   const autoId = React.useId();
   const inputId = id ?? autoId;
   const handle = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange?.(e);
     onSearch?.(e.target.value);
   };
-  const a11yLabel = ariaLabel ?? label ?? "Поиск";
+  const a11yLabel = ariaLabel ?? label ?? t("uiSearchLabel");
   return (
     <div className={["relative max-w-md", className].filter(Boolean).join(" ")}>
       {label ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Modal } from "./modal";
 import { Button } from "./button";
 
@@ -8,7 +9,7 @@ export function Confirm({
   open,
   title,
   description,
-  confirmLabel = "Подтвердить",
+  confirmLabel,
   variant = "danger",
   onConfirm,
   onCancel,
@@ -23,6 +24,7 @@ export function Confirm({
   onCancel: () => void;
   loading?: boolean;
 }) {
+  const t = useTranslations("dashboard");
   const descId = React.useId();
   return (
     <Modal open={open} onClose={onCancel} title={title} ariaDescribedBy={description ? descId : undefined}>
@@ -33,10 +35,10 @@ export function Confirm({
       ) : null}
       <div className="mt-6 flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>
-          Отмена
+          {t("uiCancel")}
         </Button>
         <Button type="button" variant={variant} onClick={onConfirm} loading={loading} autoFocus>
-          {confirmLabel}
+          {confirmLabel ?? t("uiConfirmDefault")}
         </Button>
       </div>
     </Modal>

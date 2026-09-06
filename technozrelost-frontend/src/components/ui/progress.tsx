@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 export function Progress({ value, className, "aria-label": ariaLabel, ...props }: { value: number; "aria-label"?: string } & React.HTMLAttributes<HTMLDivElement>) {
+  const t = useTranslations("dashboard");
   const v = Math.max(0, Math.min(100, value));
   return (
     <div
@@ -11,7 +13,7 @@ export function Progress({ value, className, "aria-label": ariaLabel, ...props }
       aria-valuenow={v}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={ariaLabel ?? `Прогресс ${v}%`}
+      aria-label={ariaLabel ?? t("uiProgressLabel", { value: v })}
       {...props}
     >
       <div className="tz-progress-fill" style={{ width: `${v}%` }} />

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function FileUpload({
   onFiles,
@@ -16,13 +17,14 @@ export function FileUpload({
 }) {
   const [error, setError] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const t = useTranslations("dashboard");
 
   const handle = (files: FileList | null) => {
     if (!files) return;
     const list = Array.from(files);
     const tooLarge = list.find((f) => f.size > maxSizeMb * 1024 * 1024);
     if (tooLarge) {
-      setError(`Файл ${tooLarge.name} превышает ${maxSizeMb} МБ`);
+      setError(t("uiFileTooLarge", { name: tooLarge.name, size: maxSizeMb }));
       return;
     }
     setError(null);
@@ -50,18 +52,18 @@ export function FileUpload({
     >
       <Upload size={22} className="mx-auto text-tz-muted" aria-hidden="true" />
       <p id={headingId} className="mt-2 text-sm text-tz-secondary">
-        Перетащите файлы или{" "}
+        {t("uiFileDrop")}{" "}
         <button
           type="button"
           className="font-semibold text-tz-accent underline"
           onClick={() => inputRef.current?.click()}
-          aria-label="Выбрать файлы для загрузки"
+          aria-label={t("uiFilePickAria")}
         >
-          выберите
+          {t("uiFilePickLink")}
         </button>
       </p>
       <p className="mt-1 text-xs text-tz-muted">
-        {accept} до {maxSizeMb} МБ
+        {t("uiFileLimits", { accept, size: maxSizeMb })}
       </p>
       <input
         ref={inputRef}
@@ -69,7 +71,7 @@ export function FileUpload({
         accept={accept}
         multiple={multiple}
         className="hidden"
-        aria-label="Загрузка файлов"
+        aria-label={t("uiFileUploadAria")}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? true : undefined}
         onChange={(e) => handle(e.target.files)}
@@ -82,7 +84,7 @@ export function FileUpload({
         onClick={() => inputRef.current?.click()}
         onKeyDown={onKeyDown}
       >
-        Выбрать файлы
+        {t("uiFilePickButton")}
       </button>
       {error ? (
         <p id={errorId} role="alert" className="mt-2 text-xs text-tz-danger">

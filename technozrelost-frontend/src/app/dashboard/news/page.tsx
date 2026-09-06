@@ -16,6 +16,8 @@ import { NEWS_PAGE_SIZE } from "@/lib/news-types";
 import type { NewsCard, NewsDetail, NewsStatus } from "@/lib/news-types";
 import { getAdminNewsList, publishNews, unpublishNews } from "@/lib/news-admin-api";
 import { CLIENT_API_BASE } from "@/lib/public-api";
+import { useTranslations } from "next-intl";
+import type { TranslateFn } from "@/lib/types";
 
 function isAdmin(roles?: string[]): boolean {
   return !!roles?.some((r) => r === "cntr_admin");
@@ -29,11 +31,11 @@ function isStaff(roles?: string[]): boolean {
 }
 
 /** Публичная лента (published) через rewrites — без токена. */
-async function fetchPublicFeed(): Promise<NewsDetail[]> {
+async function fetchPublicFeed(t: TranslateFn): Promise<NewsDetail[]> {
   const params = new URLSearchParams({ page: "1", per_page: "50" });
   const response = await fetch(`${CLIENT_API_BASE}/api/v1/news?${params}`, { cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`Не удалось загрузить ленту (${response.status}).`);
+    throw new Error(t("newsFeedError", { status: response.status }));
   }
   const feed = (await response.json()) as {
     items: NewsCard[];
@@ -68,6 +70,7 @@ function sortFeed(items: NewsDetail[]): NewsDetail[] {
 
 export default function DashboardNewsPage() {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
   const token = session?.user?.accessToken;
   const roles = session?.user?.roles;
   const admin = isAdmin(roles);
@@ -90,23 +93,23 @@ export default function DashboardNewsPage() {
       } else if (staff) {
         const [own, feed] = await Promise.all([
           getAdminNewsList(token),
-          fetchPublicFeed(),
+          fetchPublicFeed(t),
         ]);
         const ownIds = new Set(own.map((n) => n.id));
         list = [...own, ...feed.filter((n) => !ownIds.has(n.id))];
       } else {
-        list = await fetchPublicFeed();
+        list = await fetchPublicFeed(t);
       }
       setItems(sortFeed(list));
       setError(null);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Не удалось загрузить новости.",
+        err instanceof Error ? err.message : t("newsListError"),
       );
     } finally {
       setLoading(false);
     }
-  }, [token, admin, staff]);
+  }, [token, admin, staff, t]);
 
   useEffect(() => {
     // setState внутри load выполняется после await — не синхронно с телом
@@ -123,7 +126,7 @@ export default function DashboardNewsPage() {
       const updated = await publishNews(token, item.id);
       setItems((prev) => sortFeed(prev.map((n) => (n.id === item.id ? updated : n))));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось опубликовать.");
+      setError(err instanceof Error ? err.message : t("newsPublishError"));
     } finally {
       setBusyId(null);
     }
@@ -137,7 +140,7 @@ export default function DashboardNewsPage() {
       setItems((prev) => sortFeed(prev.map((n) => (n.id === item.id ? updated : n))));
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Не удалось снять с публикации.",
+        err instanceof Error ? err.message : t("newsUnpublishError"),
       );
     } finally {
       setBusyId(null);
@@ -159,25 +162,24 @@ export default function DashboardNewsPage() {
     <div data-od-id="dashboard-news">
       {/* Hero (светлый стиль ЛК) */}
       <div className="border-b border-tz-border pb-6">
-        <p className="tz-eyebrow">Публикации платформы</p>
+        <p className="tz-eyebrow">{t("newsEyebrow")}</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-          <h1 className="tz-page-title">Новости</h1>
+          <h1 className="tz-page-title">{t("newsTitle")}</h1>
           {staff && (
             <div className="flex flex-wrap gap-2">
               <Link href="/dashboard/news/new" className="tz-btn tz-btn-primary tz-btn-sm">
                 <Plus size={14} />
-                Создать новость
+                {t("newsCreate")}
               </Link>
               <Link href="/dashboard/news/admin" className="tz-btn tz-btn-secondary tz-btn-sm">
                 <Settings2 size={14} />
-                Консоль
+                {t("newsConsole")}
               </Link>
             </div>
           )}
         </div>
         <p className="mt-2 max-w-2xl text-tz-secondary">
-          Официальные публикации платформы: события ЦНТР УР, конкурсы, проекты
-          и обучение. {staff ? "Ваши черновики и запланированные видны только вам." : ""}
+          {t("newsHero")} {staff ? t("newsStaffNote") : ""}
         </p>
       </div>
 
@@ -203,15 +205,15 @@ export default function DashboardNewsPage() {
           <span className="tz-empty-icon">
             <AlertCircle size={22} aria-hidden="true" />
           </span>
-          <h2 className="tz-empty-title">Новости не загрузились</h2>
+          <h2 className="tz-empty-title">{t("newsLoadError")}</h2>
           <p className="tz-empty-text">{error}</p>
           <button
             type="button"
-            onClick={() => setRetryTick((t) => t + 1)}
+            onClick={() => setRetryTick((v) => v + 1)}
             className="tz-btn tz-btn-secondary"
           >
             <RefreshCw size={14} aria-hidden="true" />
-            Повторить
+            {t("newsRetry")}
           </button>
         </div>
       )}
@@ -223,17 +225,17 @@ export default function DashboardNewsPage() {
             <Newspaper size={22} aria-hidden="true" />
           </span>
           <h2 className="tz-empty-title">
-            {staff ? "Пока нет новостей" : "Пока нет опубликованных новостей"}
+            {staff ? t("newsEmptyStaff") : t("newsEmptyPublic")}
           </h2>
           <p className="tz-empty-text">
             {staff
-              ? "Создайте первую новость — черновик появится здесь и в консоли."
-              : "Первые публикации появятся после публикации на платформе."}
+              ? t("newsEmptyStaffHint")
+              : t("newsEmptyPublicHint")}
           </p>
           {staff && (
             <Link href="/dashboard/news/new" className="tz-btn tz-btn-primary">
               <PenSquare size={15} aria-hidden="true" />
-              Создать новость
+              {t("newsCreate")}
             </Link>
           )}
         </div>

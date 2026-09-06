@@ -1,7 +1,9 @@
 "use client";
 
 import { MotionConfig, motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { ugtTone } from "@/components/landing/ugt-card";
+import { radarAria, radarAxisLabel } from "@/features/dashboard/i18n";
 
 /**
  * ProjectRadar — data-driven радар профиля готовности проекта для ЛК.
@@ -28,15 +30,18 @@ export interface ProjectRadarDoc {
   title?: string;
 }
 
+/**
+ * Оси радара: id + угол. Подписи — через словарь (radarAxisLabel),
+ * в коде литералов нет.
+ */
 export const RADAR_CATEGORIES: ReadonlyArray<{
   id: RadarCategory;
-  label: string;
   angle: number;
 }> = [
-  { id: "scientific", label: "Научная", angle: -90 },
-  { id: "technical", label: "Техническая", angle: 0 },
-  { id: "organizational", label: "Организационная", angle: 90 },
-  { id: "production", label: "Производственная", angle: 180 },
+  { id: "scientific", angle: -90 },
+  { id: "technical", angle: 0 },
+  { id: "organizational", angle: 90 },
+  { id: "production", angle: 180 },
 ];
 
 /** Явные doc_type-слаги бэкенда (см. app/db/seed_templates.py, generation.py). */
@@ -144,6 +149,7 @@ export default function ProjectRadar({
   const r = 72;
   const accent = ugtTone(currentLevel);
   const values = radarAxisValues(currentLevel, documents);
+  const t = useTranslations("dashboard");
 
   const pointFor = (category: RadarCategory) => {
     const axis = RADAR_CATEGORIES.find((a) => a.id === category)!;
@@ -176,7 +182,7 @@ export default function ProjectRadar({
         className={`pointer-events-none absolute ${positionClass} leading-tight`}
       >
         <span className="block whitespace-nowrap text-[9px] font-semibold tracking-wide text-tz-secondary">
-          {axis.label}
+          {radarAxisLabel(t, axis.id)}
         </span>
         <span
           className="block whitespace-nowrap font-mono text-[10px] font-bold"
@@ -194,7 +200,12 @@ export default function ProjectRadar({
         className={`relative ${className}`}
         style={{ width: size, height: size }}
         role="img"
-        aria-label={`Радар готовности проекта: научная ${formatAxisValue(values.scientific)}, техническая ${formatAxisValue(values.technical)}, организационная ${formatAxisValue(values.organizational)}, производственная ${formatAxisValue(values.production)} из 9`}
+        aria-label={radarAria(t, {
+          scientific: formatAxisValue(values.scientific),
+          technical: formatAxisValue(values.technical),
+          organizational: formatAxisValue(values.organizational),
+          production: formatAxisValue(values.production),
+        })}
       >
         <svg viewBox="0 0 200 200" className="aspect-square w-full">
           {/* Сетка: кольца уровней 3 / 6 / 9 */}

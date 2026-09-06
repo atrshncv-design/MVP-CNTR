@@ -10,6 +10,7 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Check } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { getNotifications, markNotificationRead } from "@/lib/api-client";
 import { CLIENT_API_BASE } from "@/lib/public-api";
@@ -38,6 +39,7 @@ function beep() {
 
 export default function NotificationBell() {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
   const token = session?.user?.accessToken;
   const [items, setItems] = useState<NotificationOut[]>([]);
   const [open, setOpen] = useState(false);
@@ -165,7 +167,7 @@ export default function NotificationBell() {
           if (!open) void load();
         }}
         className="relative grid h-9 w-9 place-items-center rounded-xl text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--tz-accent)] focus-visible:outline-offset-2"
-        aria-label={`Уведомления${unread ? `, ${unread} непрочитанных` : ""}`}
+        aria-label={unread > 0 ? t("bellLabelUnread", { unread }) : t("bellTitle")}
       >
         <Bell size={18} />
         {unread > 0 && (
@@ -178,14 +180,14 @@ export default function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-11 w-80 rounded-2xl border border-tz-border bg-tz-surface p-2 shadow-2xl">
           <div className="flex items-center justify-between px-3 py-2">
-            <span className="text-sm font-bold text-tz-fg">Уведомления</span>
+            <span className="text-sm font-bold text-tz-fg">{t("bellTitle")}</span>
             <Link href="/dashboard/notifications" className="text-xs font-semibold text-tz-accent hover:underline" onClick={() => setOpen(false)}>
-              Все
+              {t("bellAll")}
             </Link>
           </div>
           <div className="max-h-80 overflow-y-auto">
             {items.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-tz-muted">Уведомлений пока нет</p>
+              <p className="px-3 py-6 text-center text-sm text-tz-muted">{t("bellEmpty")}</p>
             ) : (
               // дропдаун последние 10 с mark read — по ТЗ 10, не 20
               items.slice(0, 10).map((n) => (

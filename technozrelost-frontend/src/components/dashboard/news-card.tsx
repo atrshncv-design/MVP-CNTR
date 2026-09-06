@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { CalendarDays, Newspaper, Pencil, Rocket, Unlink } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
-  NEWS_STATUS_LABELS,
   type NewsDetail,
   type NewsStatus,
 } from "@/lib/news-types";
 import { formatRuDate } from "@/lib/format-date";
+import { getNewsStatusLabel } from "@/features/dashboard/i18n";
 
 /** Цвета статусных бейджей (tz-токены, три темы — спека §3.7). */
 const STATUS_BADGE: Record<NewsStatus, string> = {
@@ -36,6 +37,7 @@ export default function DashboardNewsCard({
 }) {
   const badge = STATUS_BADGE[item.status] ?? "tz-badge-neutral";
   const date = item.published_at ?? item.created_at;
+  const t = useTranslations("dashboard");
 
   return (
     <div className="tz-card tz-card-hover flex h-full flex-col overflow-hidden">
@@ -45,7 +47,7 @@ export default function DashboardNewsCard({
           <Newspaper size={26} strokeWidth={1.75} />
         </div>
         <span className={`absolute bottom-2.5 left-2.5 tz-badge ${badge}`}>
-          {NEWS_STATUS_LABELS[item.status] ?? item.status}
+          {getNewsStatusLabel(t, item.status)}
         </span>
         {item.category && (
           <span className="absolute right-2.5 top-2.5 tz-badge tz-badge-accent">
@@ -65,7 +67,7 @@ export default function DashboardNewsCard({
           {item.status === "scheduled" && item.scheduled_at && (
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays size={13} />
-              план: {formatRuDate(item.scheduled_at)}
+              {t("newsCardScheduled", { date: formatRuDate(item.scheduled_at) })}
             </span>
           )}
         </div>
@@ -100,7 +102,7 @@ export default function DashboardNewsCard({
               className="tz-btn tz-btn-secondary tz-btn-sm"
             >
               <Pencil size={13} />
-              Редактировать
+              {t("newsCardEdit")}
             </Link>
             {item.status !== "published" && (
               <button
@@ -110,7 +112,7 @@ export default function DashboardNewsCard({
                 className="tz-btn tz-btn-primary tz-btn-sm"
               >
                 <Rocket size={13} />
-                Опубликовать
+                {t("newsCardPublish")}
               </button>
             )}
             {item.status === "published" && (
@@ -121,7 +123,7 @@ export default function DashboardNewsCard({
                 className="tz-btn tz-btn-ghost tz-btn-sm"
               >
                 <Unlink size={13} />
-                Снять с публикации
+                {t("newsCardUnpublish")}
               </button>
             )}
           </div>

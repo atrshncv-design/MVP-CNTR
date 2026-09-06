@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { getVisibleMenuItems, MORE_MENU_LABEL } from "@/lib/more-menu";
 
 /**
@@ -30,6 +31,7 @@ export default function MoreFunctionsMenu({
 
   // Ролевая фильтрация всегда: пустые/неизвестные роли → unrestricted-only.
   const items = getVisibleMenuItems(userRoles);
+  const t = useTranslations("dashboard");
 
   const close = useCallback((returnFocus: boolean) => {
     setOpen(false);
@@ -115,7 +117,7 @@ export default function MoreFunctionsMenu({
                   <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm font-medium text-tz-fg">
                     {item.label}
                     {!item.isReady && (
-                      <span className="tz-badge tz-badge-neutral">В разработке</span>
+                      <span className="tz-badge tz-badge-neutral">{t("moreMenuInDev")}</span>
                     )}
                   </span>
                 </Link>

@@ -3,7 +3,9 @@
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, FileUp, Loader2, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { CLIENT_API_BASE } from "@/lib/public-api";
+import { SCAN_CLASSES, formatSizeT, getScanLabel } from "@/features/dashboard/i18n";
 
 
 interface ProjectFile {
@@ -17,24 +19,11 @@ interface ProjectFile {
   created_at: string | null;
 }
 
-const SCAN_LABELS: Record<string, { label: string; cls: string }> = {
-  pending: { label: "На проверке", cls: "tz-badge-review" },
-  clean: { label: "Проверен", cls: "tz-badge-success" },
-  infected: { label: "Заражён", cls: "tz-badge-danger" },
-  error: { label: "Ошибка проверки", cls: "tz-badge-danger" },
-};
-
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
-
-function formatSize(bytes: number | null): string {
-  if (bytes == null) return "—";
-  if (bytes < 1024) return `${bytes} Б`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
-}
 
 export default function ProjectFilesPanel({ projectId }: { projectId: number }) {
   const { data: session } = useSession();
+  const t = useTranslations("dashboard");
   const token = session?.user?.accessToken;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,11 +44,11 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
       setFiles(await res.json());
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить файлы");
+      setError(e instanceof Error ? e.message : t("filesLoadError"));
     } finally {
       setLoading(false);
     }
-  }, [token, projectId]);
+  }, [token, projectId, t]);
 
   useEffect(() => {
     (async () => {
@@ -85,18 +74,21 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
         const msg =
           data && typeof (data as { detail?: string }).detail === "string"
             ? (data as { detail: string }).detail
-            : `Ошибка загрузки (${res.status})`;
+            : t("filesUploadErrorStatus", { status: res.status });
         throw new Error(msg);
       }
       const uploaded = (await res.json()) as ProjectFile;
       setNotice(
         uploaded.scan_status === "clean"
-          ? `Файл «${uploaded.file_name}» проверен и принят`
-          : `Файл «${uploaded.file_name}» загружен, статус: ${uploaded.scan_status}`,
+          ? t("filesUploadedClean", { name: uploaded.file_name ?? "" })
+          : t("filesUploadedStatus", {
+              name: uploaded.file_name ?? "",
+              status: getScanLabel(t, uploaded.scan_status),
+            }),
       );
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка загрузки файла");
+      setError(e instanceof Error ? e.message : t("filesUploadFailed"));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -114,7 +106,7 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
         throw new Error(
           data && typeof (data as { detail?: string }).detail === "string"
             ? (data as { detail: string }).detail
-            : `Ошибка скачивания (${res.status})`,
+            : t("filesDownloadErrorStatus", { status: res.status }),
         );
       }
       const blob = await res.blob();
@@ -125,7 +117,7 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка скачивания");
+      setError(e instanceof Error ? e.message : t("filesDownloadFailed"));
     }
   };
 
@@ -134,14 +126,14 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileUp size={18} className="text-tz-accent" />
-          <h2 className="tz-card-title">Файлы проекта</h2>
+          <h2 className="tz-card-title">{t("filesTitle")}</h2>
         </div>
-        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label="Обновить">
+        <button onClick={() => void load()} className="tz-btn tz-btn-ghost" aria-label={t("filesRefresh")}>
           <RefreshCw size={15} />
         </button>
       </div>
       <p className="mt-1 text-sm text-tz-muted">
-        PDF, DOCX, XLSX, PNG, JPEG до 25 МБ. Файл учитывается после антивирусной проверки.
+        {t("filesHint")}
       </p>
 
       {error && (
@@ -172,41 +164,41 @@ export default function ProjectFilesPanel({ projectId }: { projectId: number }) 
           className="tz-btn tz-btn-primary"
         >
           {uploading ? <Loader2 size={15} className="animate-spin" /> : <FileUp size={15} />}
-          {uploading ? "Загрузка…" : "Загрузить документ"}
+          {uploading ? t("filesUploading") : t("filesUpload")}
         </button>
       </div>
 
       {loading ? (
         <div className="mt-4 h-20 animate-pulse rounded bg-tz-soft" />
       ) : files.length === 0 ? (
-        <p className="mt-4 text-sm text-tz-secondary">Файлов пока нет.</p>
+        <p className="mt-4 text-sm text-tz-secondary">{t("filesEmpty")}</p>
       ) : (
         <ul className="mt-4 grid gap-2">
           {files.map((file) => {
-            const scan = SCAN_LABELS[file.scan_status] ?? SCAN_LABELS.pending;
+            const scanCls = SCAN_CLASSES[file.scan_status] ?? SCAN_CLASSES.pending;
             return (
               <li key={file.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-tz-border bg-tz-bg px-4 py-2.5">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-tz-fg">{file.file_name ?? file.title}</p>
                   <p className="font-mono text-xs text-tz-muted">
-                    v{file.version} · {formatSize(file.file_size)} · {file.mime_type ?? "—"}
+                    v{file.version} · {formatSizeT(t, file.file_size)} · {file.mime_type ?? "—"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {file.scan_status === "clean" ? (
                     <span className="inline-flex items-center gap-1 text-xs text-tz-success-fg">
-                      <ShieldCheck size={13} /> проверен
+                      <ShieldCheck size={13} /> {t("filesVerified")}
                     </span>
                   ) : (
-                    <span className={`tz-badge ${scan.cls}`}>
+                    <span className={`tz-badge ${scanCls}`}>
                       <ShieldAlert size={12} className="mr-1 inline" />
-                      {scan.label}
+                      {getScanLabel(t, file.scan_status)}
                     </span>
                   )}
                   <button
                     onClick={() => void download(file.id)}
                     className="tz-btn tz-btn-ghost"
-                    aria-label={`Скачать ${file.file_name}`}
+                    aria-label={t("filesDownloadAria", { name: file.file_name ?? "" })}
                     disabled={file.scan_status === "infected"}
                   >
                     <Download size={15} />

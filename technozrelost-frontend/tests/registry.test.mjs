@@ -117,7 +117,12 @@ test("registry grid: skeleton 6, empty tz-empty CTA, error Retry, 403, drawer, 1
   assert.match(grid, /loadMore/);
 
   const errorComp = read("src/components/ui/error.tsx");
-  assert.match(errorComp, /Повторить/);
+  // кнопка повтора ErrorState — через словарь dashboard (таск 04)
+  const tDashRu = translatorFor("dashboard", "ru");
+  const tDashEn = translatorFor("dashboard", "en");
+  assert.match(errorComp, /newsRetry/);
+  assert.equal(tDashRu("newsRetry"), "Повторить");
+  assert.equal(tDashEn("newsRetry"), "Retry");
 
   const fb = read("src/features/registry/FilterBar.tsx");
   assert.match(fb, /Drawer/);

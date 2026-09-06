@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FileCheck, FileText, Loader2, ShieldCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
 
@@ -26,6 +27,7 @@ function formatDate(value: string | null): string {
 
 export default function VerificationDocsPanel() {
   const { data: session } = useSession();
+  const t = useTranslations('dashboard');
   const token = session?.user?.accessToken;
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -50,7 +52,7 @@ export default function VerificationDocsPanel() {
         const res = await fetch(`${CLIENT_API_BASE}/api/v1/projects/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) throw new Error(`Не удалось загрузить карточку проекта (${res.status}).`);
+        if (!res.ok) throw new Error(t('verifyCardError', { status: res.status }));
         const data = (await res.json()) as { verification_documents?: VerificationDoc[] };
         setDocs(data.verification_documents ?? []);
       } catch {
@@ -59,14 +61,14 @@ export default function VerificationDocsPanel() {
         setDocsLoading(false);
       }
     },
-    [token],
+    [token, t],
   );
 
   useEffect(() => {
     if (!token) return;
     fetch(`${CLIENT_API_BASE}/api/v1/projects`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (res) => {
-        if (!res.ok) throw new Error(`Не удалось загрузить проекты (${res.status}).`);
+        if (!res.ok) throw new Error(t('verifyProjectsError', { status: res.status }));
         return res.json();
       })
       .then((data: Project[]) => {
@@ -87,7 +89,7 @@ export default function VerificationDocsPanel() {
     event.preventDefault();
     if (!token || !projectId || !title.trim()) {
       setState('error');
-      setMessage('Выберите проект и укажите название документа.');
+      setMessage(t('verifyFormError'));
       return;
     }
     setState('loading');
@@ -105,12 +107,12 @@ export default function VerificationDocsPanel() {
     if (!res.ok) {
       setState('error');
       setMessage(
-        typeof data?.detail === 'string' ? data.detail : `Ошибка загрузки (${res.status}).`,
+        typeof data?.detail === 'string' ? data.detail : t('filesUploadErrorStatus', { status: res.status }),
       );
       return;
     }
     setState('success');
-    setMessage('Документ добавлен и передан в очередь менеджера ЦНТР.');
+    setMessage(t('verifySuccess'));
     setTitle('');
     setComment('');
     setFileRef('');
@@ -124,13 +126,12 @@ export default function VerificationDocsPanel() {
           <FileCheck size={20} />
         </span>
         <div>
-          <p className="tz-eyebrow">Документы подтверждения</p>
+          <p className="tz-eyebrow">{t('verifyEyebrow')}</p>
           <h2 className="tz-card-title mt-1">
-            Верифицирующие документы УГТ
+            {t('verifyTitle')}
           </h2>
           <p className="mt-1 text-sm text-tz-muted">
-            Сначала присоединитесь к карточке проекта по токену TZ. Документ станет
-            доказательством для решения менеджера ЦНТР.
+            {t('verifyDesc')}
           </p>
         </div>
       </div>
@@ -144,10 +145,10 @@ export default function VerificationDocsPanel() {
             void loadDocs(e.target.value);
           }}
         >
-          <option value="">Выберите проект</option>
+          <option value="">{t('verifySelectProject')}</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
-              ЦНТР-{p.id} · {p.name} · УГТ {p.current_level}
+              {t('verifyProjectOption', { id: p.id, name: p.name, level: p.current_level })}
             </option>
           ))}
         </select>
@@ -156,17 +157,17 @@ export default function VerificationDocsPanel() {
       {/* Список уже загруженных верифицирующих документов (живой источник — карточка проекта) */}
       <div className="mt-5" data-od-id="verification-docs-list">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-tz-muted">
-          Загруженные документы
+          {t('verifyListTitle')}
         </p>
         {docsLoading ? (
           <div className="mt-3 flex items-center gap-2 text-sm text-tz-muted">
-            <Loader2 size={15} className="animate-spin" /> Загружаем документы…
+            <Loader2 size={15} className="animate-spin" /> {t('verifyLoading')}
           </div>
         ) : docs.length === 0 ? (
           <div className="mt-3 rounded-xl border border-dashed border-tz-border bg-tz-surface px-4 py-6 text-center">
             <ShieldCheck size={22} className="mx-auto text-tz-muted" />
             <p className="mt-2 text-sm text-tz-muted">
-              Пока нет документов подтверждения по этому проекту.
+              {t('verifyEmpty')}
             </p>
           </div>
         ) : (
@@ -180,7 +181,7 @@ export default function VerificationDocsPanel() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-tz-fg">{doc.title}</p>
                   <p className="mt-0.5 text-xs text-tz-muted">
-                    {doc.uploader_name ?? 'Пользователь'} · {formatDate(doc.created_at)}
+                    {doc.uploader_name ?? t('defaultUser')} · {formatDate(doc.created_at)}
                   </p>
                   {doc.comment && <p className="mt-1 text-xs text-tz-muted">{doc.comment}</p>}
                   {doc.file_ref && (
@@ -200,19 +201,19 @@ export default function VerificationDocsPanel() {
           className="tz-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Название документа"
+          placeholder={t('verifyTitlePlaceholder')}
         />
         <input
           className="tz-input"
           value={fileRef}
           onChange={(e) => setFileRef(e.target.value)}
-          placeholder="Ссылка или идентификатор файла (необязательно)"
+          placeholder={t('verifyFilePlaceholder')}
         />
         <textarea
           className="tz-input min-h-20"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Комментарий для менеджера"
+          placeholder={t('verifyCommentPlaceholder')}
         />
         <button className="tz-btn tz-btn-primary" disabled={state === 'loading'}>
           {state === 'loading' ? (
@@ -220,7 +221,7 @@ export default function VerificationDocsPanel() {
           ) : (
             <FileCheck size={15} />
           )}
-          Передать документ менеджеру
+          {t('verifySubmit')}
         </button>
       </form>
 

@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import NewsEditor from "@/components/dashboard/news-editor";
 
 /** Редактор: правка существующей новости (тикет 08, спека §3.7). */
 export default function EditNewsPage() {
   const params = useParams<{ id: string }>();
   const postId = Number(params.id);
+  const t = useTranslations("dashboard");
 
   return (
     <div data-od-id="news-editor-edit">
@@ -18,13 +20,12 @@ export default function EditNewsPage() {
           className="inline-flex items-center gap-1.5 text-sm text-tz-muted transition hover:text-tz-fg"
         >
           <ArrowLeft size={14} />
-          К новостям
+          {t("newsBack")}
         </Link>
-        <p className="tz-eyebrow mt-4">Редактор новостей</p>
-        <h1 className="tz-page-title mt-2">Редактирование новости</h1>
+        <p className="tz-eyebrow mt-4">{t("newsEditorEyebrow")}</p>
+        <h1 className="tz-page-title mt-2">{t("newsEditTitle")}</h1>
         <p className="mt-2 max-w-2xl text-tz-secondary">
-          Правки опубликованной новости не меняют дату публикации — карточка не
-          «всплывает» в ленте.
+          {t("newsEditDesc")}
         </p>
       </div>
       <NewsEditor postId={Number.isFinite(postId) ? postId : undefined} />

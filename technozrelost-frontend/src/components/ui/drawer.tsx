@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /**
  * Drawer (выезжающая панель) с фокус-ловушкой и Escape — зеркало Modal для WCAG AA.
@@ -22,6 +23,7 @@ export function Drawer({
   const titleId = React.useId();
   const panelRef = React.useRef<HTMLDivElement>(null);
   const prevFocus = React.useRef<HTMLElement | null>(null);
+  const t = useTranslations("dashboard");
 
   React.useEffect(() => {
     if (!open) return;
@@ -79,7 +81,7 @@ export function Drawer({
 
   if (!open) return null;
   const labelledBy = title ? titleId : undefined;
-  const label = ariaLabel ?? (title ? undefined : "Боковая панель");
+  const label = ariaLabel ?? (title ? undefined : t("uiDrawerLabel"));
 
   return (
     <div
@@ -104,7 +106,7 @@ export function Drawer({
           ) : (
             <span aria-hidden="true" />
           )}
-          <button type="button" onClick={onClose} aria-label="Закрыть боковую панель" className="tz-btn tz-btn-ghost tz-btn-sm">
+          <button type="button" onClick={onClose} aria-label={t("uiDrawerClose")} className="tz-btn tz-btn-ghost tz-btn-sm">
             <X size={18} aria-hidden="true" />
           </button>
         </div>

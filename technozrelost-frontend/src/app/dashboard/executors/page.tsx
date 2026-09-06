@@ -40,13 +40,6 @@ interface Executor {
   region?: string | null;
 }
 
-const _ROLE_NAMES: Record<string, string> = {
-  rd_executor: "R&D-исполнитель",
-  scientific_org: "Научная организация",
-  serial_manufacturer: "Серийный производитель",
-};
-void _ROLE_NAMES;
-
 const ROLE_COLORS: Record<string, string> = {
   rd_executor: "var(--tz-accent)",
   scientific_org: "var(--tz-success)",

@@ -191,6 +191,42 @@ test("i18n: неймспейс registry — паритет обеих пар с�
   }
 });
 
+test("i18n: неймспейс dashboard — паритет обеих пар словарей и резолв каждого ключа в ru/en", async () => {
+  // Шов таска 04: зеркало project/registry-паритета для dashboard; неверный ключ краснеет.
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const pairs = [
+    ["src/messages/ru.json", "src/messages/en.json"],
+    ["messages/ru.json", "messages/en.json"],
+  ];
+  const scopes = {};
+  for (const [ruPath, enPath] of pairs) {
+    const ru = JSON.parse(read(ruPath)).dashboard;
+    const en = JSON.parse(read(enPath)).dashboard;
+    assert.ok(ru && en, `${ruPath}: неймспейс dashboard отсутствует`);
+    assert.deepEqual(Object.keys(ru).sort(), Object.keys(en).sort(), `${ruPath}: паритет ключей dashboard`);
+    scopes[ruPath] = ru;
+  }
+  assert.deepEqual(
+    Object.keys(scopes["src/messages/ru.json"]).sort(),
+    Object.keys(scopes["messages/ru.json"]).sort(),
+    "пары словарей dashboard расходятся",
+  );
+  const ruT = translatorFor("dashboard", "ru");
+  const enT = translatorFor("dashboard", "en");
+  for (const key of Object.keys(scopes["src/messages/ru.json"])) {
+    const tpl = scopes["src/messages/ru.json"][key];
+    assert.equal(typeof tpl, "string", `dashboard.${key} не строка`);
+    const params = Object.fromEntries([...tpl.matchAll(/\{(\w+)\}/g)].map((m) => [m[1], "1"]));
+    for (const [locale, t] of [["ru", ruT], ["en", enT]]) {
+      const val = t(key, params);
+      assert.equal(typeof val, "string", `dashboard.${key} (${locale}) не резолвится`);
+      assert.ok(val.length > 0, `dashboard.${key} (${locale}) пуст`);
+      assert.notEqual(val, key, `dashboard.${key} (${locale}): эхо ключа — неверный ключ`);
+    }
+    assert.doesNotMatch(enT(key, params), /[А-Яа-яЁё]/, `dashboard.${key} (en) содержит кириллицу`);
+  }
+});
+
 test("i18n: useTranslations используется в UI (300+ ключей via hook)", () => {
   // проверяем что несколько ключевых UI файлов используют next-intl
   const files = [

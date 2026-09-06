@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Filter, RotateCcw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "./button";
 
 export function FilterPanel({
@@ -15,6 +16,7 @@ export function FilterPanel({
   hasFilters?: boolean;
   className?: string;
 }) {
+  const t = useTranslations("dashboard");
   return (
     <div className={["flex flex-wrap items-center gap-2", className].filter(Boolean).join(" ")}>
       <Filter size={16} className="text-tz-muted" aria-hidden="true" />
@@ -22,7 +24,7 @@ export function FilterPanel({
       {hasFilters && onReset ? (
         <Button variant="ghost" size="sm" onClick={onReset}>
           <RotateCcw size={12} aria-hidden="true" />
-          Сбросить
+          {t("uiReset")}
         </Button>
       ) : null}
     </div>

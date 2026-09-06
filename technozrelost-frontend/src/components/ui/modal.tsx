@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /**
  * Модалка с WCAG AA: фокус-ловушка, Escape, возврат фокуса, aria-labelledby, скролл-лок.
@@ -27,6 +28,7 @@ export function Modal({
   const titleId = React.useId();
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const prevFocus = React.useRef<HTMLElement | null>(null);
+  const t = useTranslations("dashboard");
 
   // Фокус-ловушка + Escape + скролл-лок (R03)
   React.useEffect(() => {
@@ -94,7 +96,7 @@ export function Modal({
   if (!open) return null;
 
   const labelledBy = title ? titleId : undefined;
-  const label = ariaLabel ?? (title ? undefined : "Диалог");
+  const label = ariaLabel ?? (title ? undefined : t("uiDialogLabel"));
 
   return (
     <div
@@ -123,7 +125,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Закрыть модальное окно"
+            aria-label={t("uiDialogClose")}
             className="tz-btn tz-btn-ghost tz-btn-sm"
           >
             <X size={18} aria-hidden="true" />

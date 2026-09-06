@@ -19,7 +19,7 @@ test("login exposes the approved product identity and explicit form states", () 
   assert.match(source, /\[1, 2, 3, 4, 5, 6, 7, 8, 9\]/);
 });
 
-test("dashboard shell uses compact header with menu button instead of link row", () => {
+test("dashboard shell uses compact header with menu button instead of link row", async () => {
   const layout = read("src/app/dashboard/layout.tsx");
 
   // Требование владельца: в шапке — кнопка-меню, а не длинный ряд ссылок.
@@ -27,9 +27,19 @@ test("dashboard shell uses compact header with menu button instead of link row",
   // остальное уезжает в выпадающее меню «Больше функций».
   assert.match(layout, /import HeaderNav from "@\/components\/dashboard\/header-nav"/);
   assert.match(layout, /import MobileNav from "@\/components\/dashboard\/mobile-nav"/);
-  for (const label of ["Рабочий стол", "Проекты", "Заявки"]) {
-    assert.match(layout, new RegExp(label));
+  // подписи core-пунктов — через словарь dashboard в обеих локалях (таск 04)
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const ru = translatorFor("dashboard", "ru");
+  const en = translatorFor("dashboard", "en");
+  for (const key of ["navWorkspace", "navProjects", "navRequests"]) {
+    assert.match(layout, new RegExp(key));
   }
+  assert.equal(ru("navWorkspace"), "Рабочий стол");
+  assert.equal(ru("navProjects"), "Проекты");
+  assert.equal(ru("navRequests"), "Заявки");
+  assert.equal(en("navWorkspace"), "Workspace");
+  assert.equal(en("navProjects"), "Projects");
+  assert.equal(en("navRequests"), "Requests");
   assert.match(layout, /ТЕХНОЗРЕЛОСТЬ/);
   assert.match(layout, /Перейти к основному содержимому/);
 });

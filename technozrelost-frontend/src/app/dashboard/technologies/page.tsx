@@ -25,7 +25,7 @@ import { ExportButton } from "@/features/registry/export";
 /**
  * Реестр технологий — проекция проектов с УГТ 7+ (тикет 04, R20, G13, G14, G24).
  * Берёт `projects/registry?ugt_min=7`, не GET /technologies.
- * Удалён мок CATEGORIES=["AI/ML","НИОКТР"], бюджет всем, сортировка по дате ↓,
+ * Удалён мок категорий (AI/ML и НИОКТР-справочник), бюджет всем, сортировка по дате ↓,
  * дата 31.03.2027 + тултип «2 дня назад», мобилка 1 колонка + drawer, лимит 20.
  */
 export default function TechnologiesPage() {

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 type Variant = "neutral" | "success" | "warning" | "review" | "danger" | "accent";
 
@@ -18,11 +19,12 @@ export function Badge({ variant = "neutral", className, ...props }: React.HTMLAt
 }
 
 export function UgtBadge({ level, className, ...props }: React.HTMLAttributes<HTMLSpanElement> & { level: number }) {
+  const t = useTranslations("dashboard");
   const lvl = Math.max(1, Math.min(9, level));
   const cls = ["tz-ugt", `tz-ugt-${lvl}`, className].filter(Boolean).join(" ");
   return (
     <span className={cls} {...props}>
-      УГТ {lvl}
+      {t("uiUgtBadge", { level: lvl })}
     </span>
   );
 }

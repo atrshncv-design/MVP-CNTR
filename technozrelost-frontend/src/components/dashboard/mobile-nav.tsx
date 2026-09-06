@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import HeaderNav, { type HeaderNavItem } from "@/components/dashboard/header-nav";
 
 /**
@@ -20,6 +21,7 @@ export default function MobileNav({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const t = useTranslations("dashboard");
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +54,7 @@ export default function MobileNav({
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls="mobile-nav-panel"
-        aria-label="Меню"
+        aria-label={t("menuAria")}
         className="grid h-10 w-10 place-items-center rounded-xl text-tz-secondary transition hover:bg-tz-surface-2 hover:text-tz-fg"
       >
         {open ? (

@@ -10,21 +10,33 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("dashboard news feed: лента всех ролей + управление для автора/админа", () => {
+test("dashboard news feed: лента всех ролей + управление для автора/админа", async () => {
   const page = read("src/app/dashboard/news/page.tsx");
   const card = read("src/components/dashboard/news-card.tsx");
 
   assert.match(page, /getAdminNewsList/);
   assert.match(page, /publishNews/);
   assert.match(page, /unpublishNews/);
-  assert.match(page, /Создать новость/); // CTA для сотрудников ЦНТР
-  assert.match(page, /Консоль/);
-  assert.match(page, /Пока нет опубликованных новостей/); // честный empty-state
+  // CTA и empty-state — через словарь dashboard в обеих локалях (таск 04)
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const ru = translatorFor("dashboard", "ru");
+  const en = translatorFor("dashboard", "en");
+  for (const key of ["newsCreate", "newsConsole", "newsEmptyPublic", "newsTitle"]) {
+    assert.match(page, new RegExp(key));
+  }
+  assert.equal(ru("newsCreate"), "Создать новость"); // CTA для сотрудников ЦНТР
+  assert.equal(en("newsCreate"), "Create news");
+  assert.equal(ru("newsConsole"), "Консоль");
+  assert.equal(ru("newsEmptyPublic"), "Пока нет опубликованных новостей"); // честный empty-state
+  assert.equal(en("newsEmptyPublic"), "No published news yet");
   // Кнопки управления в карточке: редактировать/опубликовать/снять.
-  assert.match(card, /Редактировать/);
-  assert.match(card, /Опубликовать/);
-  assert.match(card, /Снять с публикации/);
-  assert.match(card, /NEWS_STATUS_LABELS/);
+  for (const key of ["newsCardEdit", "newsCardPublish", "newsCardUnpublish"]) {
+    assert.match(card, new RegExp(key));
+  }
+  assert.equal(ru("newsCardEdit"), "Редактировать");
+  assert.equal(en("newsCardPublish"), "Publish");
+  assert.equal(ru("newsCardUnpublish"), "Снять с публикации");
+  assert.match(card, /getNewsStatusLabel/);
 });
 
 test("admin console: фильтры статуса/категории и все действия", () => {
@@ -73,15 +85,23 @@ test("news editor: форма, предпросмотр, медиа, кнопк�
   assert.match(editor, /Нет доступа к этой новости/);
 });
 
-test("news editor pages: new и [id]/edit используют общий редактор", () => {
+test("news editor pages: new и [id]/edit используют общий редактор", async () => {
   const newPage = read("src/app/dashboard/news/new/page.tsx");
   const editPage = read("src/app/dashboard/news/[id]/edit/page.tsx");
 
   assert.match(newPage, /NewsEditor/);
-  assert.match(newPage, /Новая новость/);
   assert.match(editPage, /NewsEditor/);
   assert.match(editPage, /useParams/);
-  assert.match(editPage, /Редактирование новости/);
+  // заголовки страниц — через словарь dashboard в обеих локалях (таск 04)
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  const ru = translatorFor("dashboard", "ru");
+  const en = translatorFor("dashboard", "en");
+  assert.match(newPage, /newsNewTitle/);
+  assert.match(editPage, /newsEditTitle/);
+  assert.equal(ru("newsNewTitle"), "Новая новость");
+  assert.equal(en("newsNewTitle"), "New article");
+  assert.equal(ru("newsEditTitle"), "Редактирование новости");
+  assert.equal(en("newsEditTitle"), "Edit article");
 });
 
 test("authorized api client: консоль, lifecycle и media (Bearer)", () => {
