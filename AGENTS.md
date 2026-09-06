@@ -109,4 +109,16 @@ Tier T2, slug `reestr-kompetencii-udgu`, 25 требований (R01-R25), 4 т
 - Повтор из корня: `python3 .autopilot/2026-09-04-hardcode-audit/scan.py .autopilot/2026-09-04-hardcode-audit/evidence` (верифицировано 2026-09-04, exit 0, summary идентичен).
 - Gotcha: каталог `out/` в gitignore (`.gitignore:28`) — артефакты лежат в `evidence/`; `reports/*.json` в gitignore (`.gitignore:63`, коммитится только `.md`); сканер ловит кириллические литералы/JSX — английские строки и склейки через переменные частично вне покрытия.
 - Шов/правила: интерфейс — Next.js+next-intl / FastAPI; правки продуктового кода запрещены; память — из `interfaces.md`, не из spec/tickets.
+
+## Hardcode-remediation (tier T2, 2026-09-04, P0 фронта закрыт)
+- P0 фронта вынесен в словари next-intl, неймспейсы `ugt/showcase/taxonomy/project/registry/dashboard/landing/auth/common`; шов — `t(неймспейс.ключ)` с подстановками параметрами, без склейки строк.
+- Живой словарь `technozrelost-frontend/src/messages/ru.json+en.json` + зеркало `technozrelost-frontend/messages/ru.json+en.json`; паритет 2605/2605, расхождений 0; новые ключи — только добавлением в свой неймспейс.
+- Фабрика `src/lib/translators.ts` (`translatorFor/asTranslateFn/contentMessages`) + зонные переводчики `src/features/{project,registry,dashboard,misc}/i18n.ts` (делегируют фабрике).
+- Шимы удалены полностью (`UGT_*/SHOWCASE_*/ROADMAP_TRANSITIONS/validateTags/shimList/formatRuDate/STATUS_LABELS`); потребители на резолверах (`getUgtLevels/getShowcaseProjects/getProjectTags/...`).
+- Сюита `cd technozrelost-frontend && npm test` → 150/150; `npm run lint` + `tsc` + `npm run build` зелёные (верифицировано в прогоне).
+- Сканер `python3 .autopilot/2026-09-04-hardcode-audit/scan.py <out>`: ui-string 1335→83; остаток — только запрещёнка (стемы 48, логи/LLM, бренд, test-пин, P1-конфиги, FP).
+- Не тронуто: `technozrelost-backend/`, стемы обезличивания/`sanitize`, сиды, конфиги/адреса; R04/P1 (в т.ч. 2 API-ошибки `ExportButton/news-admin-api`) — следующий заход.
+- EN-решения сборки (`ЦНТР→CNTR`, `УГТ→TRL`, `НИОКТР→R&D`); спорные формулировки методологий — списком на ревью пользователя на приёмке.
+- Память — из кода и `.autopilot/2026-09-04-hardcode-remediation/interfaces.md` (spec/manifest/tickets прогона не открывались); `protocol.json` — locale-free каноника RU-значений.
+- Повтор: `cd technozrelost-frontend && npm run lint && npm test` (+ `npm run build` для финала).
 <!-- autopilot:end -->
