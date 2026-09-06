@@ -18,7 +18,7 @@ import {
   type ShowcaseProject,
 } from "@/lib/showcase";
 import { asTranslateFn } from "@/lib/types";
-import { getStatusLabel, getStatusColor } from "@/lib/status";
+import { getStatusLabelT, getStatusColor } from "@/lib/status";
 import ProjectRadar from "@/components/dashboard/project-radar";
 
 const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
@@ -102,6 +102,7 @@ function ProjectModal({
   const t = useTranslations("projectsLanding");
   const tUgt = useTranslations("ugtData");
   const tLanding = useTranslations("landing");
+  const tCommon = useTranslations("common");
   // Esc — закрыть
   useEffect(() => {
     if (!project) return;
@@ -177,7 +178,7 @@ function ProjectModal({
                   color: getStatusColor(project.status),
                 }}
               >
-                {getStatusLabel(project.status)}
+                {getStatusLabelT(tCommon, project.status)}
               </span>
             </div>
 

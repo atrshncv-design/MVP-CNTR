@@ -1,16 +1,48 @@
+import type { TranslateFn } from "./types";
+
 export const ROLES = [
-  { slug: "gk_customer", name: "ГосКомпания-заказчик", order: 1 },
-  { slug: "rd_executor", name: "R&D-исполнитель", order: 2 },
-  { slug: "scientific_org", name: "Научная организация", order: 3 },
-  { slug: "serial_manufacturer", name: "Серийный производитель", order: 4 },
-  { slug: "regulating_organization", name: "Регулирующая организация", order: 5 },
-  { slug: "auditor", name: "Аудитор", order: 6 },
-  { slug: "investor", name: "Инвестор", order: 7 },
-  { slug: "cntr_admin", name: "Администратор ЦНТР", order: 8 },
-  { slug: "cntr_manager", name: "Менеджер ЦНТР", order: 9 },
+  { slug: "gk_customer", order: 1 },
+  { slug: "rd_executor", order: 2 },
+  { slug: "scientific_org", order: 3 },
+  { slug: "serial_manufacturer", order: 4 },
+  { slug: "regulating_organization", order: 5 },
+  { slug: "auditor", order: 6 },
+  { slug: "investor", order: 7 },
+  { slug: "cntr_admin", order: 8 },
+  { slug: "cntr_manager", order: 9 },
 ] as const;
 
 export type RoleSlug = (typeof ROLES)[number]["slug"];
+
+/**
+ * Имя роли с экрана регистрации через словарь auth (доделка T06, R01):
+ * язык задаёт словарь, в коде русских литералов нет.
+ * Неизвестный слаг — как есть (данные сессии, не UI-строка).
+ */
+export function getRoleName(t: TranslateFn, slug: string): string {
+  switch (slug) {
+    case "gk_customer":
+      return t("roleGkCustomer");
+    case "rd_executor":
+      return t("roleRdExecutor");
+    case "scientific_org":
+      return t("roleScientificOrg");
+    case "serial_manufacturer":
+      return t("roleSerialManufacturer");
+    case "regulating_organization":
+      return t("roleRegulatingOrg");
+    case "auditor":
+      return t("roleAuditor");
+    case "investor":
+      return t("roleInvestor");
+    case "cntr_admin":
+      return t("roleCntrAdmin");
+    case "cntr_manager":
+      return t("roleCntrManager");
+    default:
+      return slug;
+  }
+}
 
 // Маршрут кабинета каждой роли (под /dashboard/...).
 export const ROLE_DASHBOARD: Record<RoleSlug, string> = {

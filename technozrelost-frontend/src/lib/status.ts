@@ -18,6 +18,8 @@ export type ProjectStatus =
   | "rejected"
   | "archived";
 
+import type { TranslateFn } from "./types";
+
 export const PROJECT_STATUSES: readonly ProjectStatus[] = [
   "draft",
   "auto_confirmed",
@@ -33,33 +35,37 @@ export function isProjectStatus(value: string): value is ProjectStatus {
 }
 
 /**
- * Человекочитаемые подписи статусов — используются в карточках, фильтрах, таблицах.
- * Значения сверены со спекой и существующими экранами (gk_customer, technologies etc).
+ * Подписи статусов проекта — только через словарь: getStatusLabelT(t, status)
+ * (T06, R01). Русских литералов в коде нет; канонические 7 статусов спеки §1.6
+ * плюс легаси-алиас review.
  */
-export const STATUS_LABELS: Record<ProjectStatus, string> = {
-  draft: "Черновик",
-  auto_confirmed: "Подтверждён автоматически",
-  published: "Опубликован",
-  active: "В работе",
-  completed: "Завершён",
-  rejected: "Отклонён",
-  archived: "В архиве",
-};
 
 /**
- * Легаси-алиасы статусов (старые значения из showcase/FRONT-01).
- * Нужны чтобы старые записи/фильтры не падали с undefined.
- * Маппим на канонические 7 статусов.
+ * Переведённая подпись статуса проекта через словарь common (T06, R01):
+ * язык задаёт словарь, в коде русских литералов нет.
+ * Неизвестный статус — как есть (данные бэкенда, не UI-строка).
  */
-export const LEGACY_STATUS_LABELS: Record<string, string> = {
-  review: "На проверке",
-  ...STATUS_LABELS,
-};
-
-export function getStatusLabel(status: string): string {
-  if (status in STATUS_LABELS) return STATUS_LABELS[status as ProjectStatus];
-  if (status in LEGACY_STATUS_LABELS) return LEGACY_STATUS_LABELS[status];
-  return status;
+export function getStatusLabelT(t: TranslateFn, status: string): string {
+  switch (status) {
+    case "draft":
+      return t("statusDraft");
+    case "auto_confirmed":
+      return t("statusAutoConfirmed");
+    case "published":
+      return t("statusPublished");
+    case "active":
+      return t("statusActive");
+    case "completed":
+      return t("statusCompleted");
+    case "rejected":
+      return t("statusRejected");
+    case "archived":
+      return t("statusArchived");
+    case "review":
+      return t("statusReview");
+    default:
+      return status;
+  }
 }
 
 /**

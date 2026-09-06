@@ -68,18 +68,10 @@ export function roadmapResultsT(t: TranslateFn, count: number): string {
   return t(`roadmapResults${slavicPluralKind(count)}`, { count });
 }
 
-// ─── Размер файла (то же решение, что formatSizeT в dashboard) ───────────────
-
-/**
- * Человекочитаемый размер файла целыми строками словаря common (R01.3):
- * единицы измерения — часть перевода, никакой склейки в коде.
- */
-export function formatSizeT(t: TranslateFn, bytes: number | null): string {
-  if (bytes == null) return "—";
-  if (bytes < 1024) return t("filesSizeB", { bytes: String(bytes) });
-  if (bytes < 1024 * 1024) return t("filesSizeKb", { value: (bytes / 1024).toFixed(1) });
-  return t("filesSizeMb", { value: (bytes / 1024 / 1024).toFixed(1) });
-}
+// ─── Размер файла — общий хелпер дашборда (T06) ───────────────────────────────
+// Единая реализация — в features/dashboard/i18n.ts; здесь только реэкспорт,
+// чтобы потребители misc не держали второй дубль того же кода.
+export { formatSizeT } from "../dashboard/i18n.ts";
 
 // ─── Роли вступления по токену (9 значений экрана join/[token]) ──────────────
 

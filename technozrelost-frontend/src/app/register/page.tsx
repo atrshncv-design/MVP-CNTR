@@ -31,7 +31,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ROLES } from "@/lib/roles";
+import { ROLES, getRoleName } from "@/lib/roles";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
 type Status = "idle" | "loading" | "error";
@@ -211,7 +211,7 @@ export default function RegisterPage() {
               >
                 {PUBLIC_REGISTRATION_ROLES.map((role) => (
                   <option key={role.slug} value={role.slug}>
-                    {role.name}
+                    {getRoleName(t, role.slug)}
                   </option>
                 ))}
               </select>

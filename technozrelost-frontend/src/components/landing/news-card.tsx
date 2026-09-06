@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { CalendarDays, Newspaper } from "lucide-react";
 import type { NewsCard as NewsCardData } from "@/lib/news-types";
-import { formatRuDate } from "@/lib/format-date";
+import { formatDateLocale } from "@/lib/format-date";
+import { getLocale } from "next-intl/server";
 
 /**
  * Карточка новости в публичной ленте (спека §3.7).
  * Обложка: бэкенд отдаёт только storage_key без публичного медиа-маршрута,
  * поэтому честно рендерим стилизованный placeholder-блок (тикет 07).
  */
-export default function NewsCard({ item }: { item: NewsCardData }) {
+export default async function NewsCard({ item }: { item: NewsCardData }) {
+  const locale = await getLocale();
   return (
     <Link
       href={`/news/${item.id}`}
@@ -31,7 +33,7 @@ export default function NewsCard({ item }: { item: NewsCardData }) {
           {item.published_at && (
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays size={13} />
-              {formatRuDate(item.published_at)}
+              {formatDateLocale(locale, item.published_at)}
             </span>
           )}
         </div>

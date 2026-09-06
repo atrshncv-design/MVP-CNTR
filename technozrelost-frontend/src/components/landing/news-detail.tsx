@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import type { NewsDetail } from "@/lib/news-types";
 import { sortNewsMedia } from "@/lib/news-types";
-import { formatRuDate, formatRuDateTime } from "@/lib/format-date";
-import { getTranslations } from "next-intl/server";
+import { formatDateLocale, formatDateTimeLocale } from "@/lib/format-date";
+import { getLocale, getTranslations } from "next-intl/server";
 
 /**
  * Полная публикация (спека §3.7): обложка, заголовок, дата/автор,
@@ -23,6 +23,7 @@ import { getTranslations } from "next-intl/server";
  */
 export default async function NewsDetailView({ post }: { post: NewsDetail }) {
   const t = await getTranslations("landing");
+  const locale = await getLocale();
   const media = sortNewsMedia(post.media);
   const gallery = media.filter((m) => m.kind === "gallery");
   const attachments = media.filter((m) => m.kind === "attachment");
@@ -53,7 +54,7 @@ export default async function NewsDetailView({ post }: { post: NewsDetail }) {
         {post.published_at && (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-tz-muted">
             <CalendarDays size={13} />
-            {formatRuDate(post.published_at)}
+            {formatDateLocale(locale, post.published_at)}
           </span>
         )}
       </div>
@@ -149,7 +150,7 @@ export default async function NewsDetailView({ post }: { post: NewsDetail }) {
         </Link>
         {post.updated_at && (
           <span className="text-xs text-tz-muted">
-            {t("newsUpdated", { date: formatRuDateTime(post.updated_at) })}
+            {t("newsUpdated", { date: formatDateTimeLocale(locale, post.updated_at) })}
           </span>
         )}
       </div>

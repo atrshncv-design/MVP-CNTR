@@ -133,8 +133,9 @@ test("RBAC: лента — всем, консоль и редактор — то
   assert.match(roles, /"\/dashboard\/news": ALL_ROLES/);
   // Навигация кабинета — по кнопке «Больше функций» (header-nav), не текстовым рядом:
   // «Новости» доступны всем в общем меню, админ-раздел фильтруется по ролям.
-  assert.match(moreMenu, /label: "Новости", href: "\/dashboard\/news"/);
-  assert.match(moreMenu, /label: "Новости: админ", href: "\/dashboard\/news\/admin"/);
+  // Метки — ключами словаря common (доделка T06), резолв — потребителем через t.
+  assert.match(moreMenu, /labelKey: "moreMenuNews", href: "\/dashboard\/news"/);
+  assert.match(moreMenu, /labelKey: "moreMenuNewsAdmin", href: "\/dashboard\/news\/admin"/);
   assert.match(moreMenu, /allowedRolesFor/); // фильтрация пунктов по ролям сессии
   assert.match(layout, /HeaderNav/);
   assert.match(layout, /MoreFunctionsMenu|more-functions-menu/);

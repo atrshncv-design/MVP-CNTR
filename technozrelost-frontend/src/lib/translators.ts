@@ -43,29 +43,3 @@ export function shimLocale(): AppLocale {
   }
   return parseLocale(undefined);
 }
-
-/**
- * Thin compat list: every access resolves a fresh array through the
- * current-locale translator (tasks 02–05 remove these as screens migrate).
- * Behaves like a readonly array (map/filter/find/length/index/iteration).
- */
-export function shimList<T>(namespace: ContentNamespace, resolve: (t: TranslateFn) => T[]): T[] {
-  const materialize = (): T[] => resolve(translatorFor(namespace, shimLocale()));
-  const target: T[] = [];
-  return new Proxy(target, {
-    get(_t, prop) {
-      const arr = materialize();
-      const value = Reflect.get(arr, prop);
-      return typeof value === "function" ? (value as (...a: never[]) => unknown).bind(arr) : value;
-    },
-    has(_t, prop) {
-      return Reflect.has(materialize(), prop);
-    },
-    ownKeys() {
-      return Reflect.ownKeys(materialize());
-    },
-    getOwnPropertyDescriptor(_t, prop) {
-      return Reflect.getOwnPropertyDescriptor(materialize(), prop);
-    },
-  }) as T[];
-}

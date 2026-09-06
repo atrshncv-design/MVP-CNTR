@@ -83,6 +83,16 @@ test("dashboard-i18n: статусы новостей и сканировани�
   assert.equal(i18n.getScanLabel(ru, "pending"), "На проверке");
 });
 
+test("dashboard-i18n: доделка T06 — NEWS_STATUS_LABELS удалён, путь через резолвер", async () => {
+  // lib/news-types.ts больше не держит RU-подписи: экраны идут через
+  // getNewsStatusLabel(t, status) со словарём dashboard обеих локалей.
+  const newsTypes = await import("../src/lib/news-types.ts");
+  assert.equal(newsTypes.NEWS_STATUS_LABELS, undefined, "константа NEWS_STATUS_LABELS должна быть удалена");
+  assert.equal(i18n.getNewsStatusLabel(ru, "scheduled"), "Запланирована");
+  assert.equal(i18n.getNewsStatusLabel(en, "published"), "Published");
+  assert.equal(i18n.getNewsStatusLabel(ru, "unknown-status"), "unknown-status");
+});
+
 test("dashboard-i18n: группы достижений и роли вступления — через перевод", () => {
   assert.equal(i18n.getAchievementGroupLabel(ru, "documents"), "Документы");
   assert.equal(i18n.getAchievementGroupLabel(en, "documents"), "Documents");

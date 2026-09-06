@@ -10,6 +10,7 @@ import { readFileSync } from "node:fs";
 const { translatorFor } = await import("../src/lib/translators.ts");
 const i18n = await import("../src/features/misc/i18n.ts");
 const dash = await import("../src/features/dashboard/i18n.ts");
+const roles = await import("../src/lib/roles.ts");
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
@@ -203,4 +204,34 @@ test("misc-i18n: weak-ветка мэтчинга — только сентин�
   assert.equal(i18n.isFallbackReason("LLM reason"), false);
   assert.equal(i18n.llmReasonText(commonRu, "registry-script"), "соответствие по реестру (script)");
   assert.equal(i18n.llmReasonText(commonEn, "registry-script"), "registry match (script)");
+});
+
+test("misc-i18n: доделка T06 — меню, роли и причина сессии через словарь обеих локалей", () => {
+  // more-menu (common): триггер + 9 пунктов резолвятся резолвером обеих локалей.
+  assert.equal(commonRu("moreMenuTrigger"), "Больше функций");
+  assert.equal(commonEn("moreMenuTrigger"), "More features");
+  assert.equal(commonRu("moreMenuRegistries"), "Реестры");
+  assert.equal(commonEn("moreMenuRegistries"), "Registries");
+  assert.equal(commonRu("moreMenuNioktr"), "НИОКТР");
+  assert.equal(commonEn("moreMenuNioktr"), "R&D");
+  assert.equal(commonRu("moreMenuNewsAdmin"), "Новости: админ");
+  assert.equal(commonEn("moreMenuNewsAdmin"), "News: admin");
+  assert.equal(commonRu("moreMenuExecutors"), "Исполнители");
+  assert.equal(commonEn("moreMenuExecutors"), "Performers");
+  // Роли регистрации (auth): резолвер getRoleName обеих локалей, 9 слагов.
+  assert.equal(roles.getRoleName(authRu, "gk_customer"), "ГосКомпания-заказчик");
+  assert.equal(roles.getRoleName(authEn, "gk_customer"), "State-owned customer company");
+  assert.equal(roles.getRoleName(authRu, "rd_executor"), "R&D-исполнитель");
+  assert.equal(roles.getRoleName(authEn, "rd_executor"), "R&D executor");
+  assert.equal(roles.getRoleName(authRu, "cntr_admin"), "Администратор ЦНТР");
+  assert.equal(roles.getRoleName(authEn, "cntr_admin"), "CNTR administrator");
+  assert.equal(roles.getRoleName(authEn, "cntr_manager"), "CNTR manager");
+  assert.equal(roles.getRoleName(authEn, "unknown-slug"), "unknown-slug");
+  assert.doesNotMatch(
+    JSON.stringify([roles.getRoleName(authEn, "gk_customer"), roles.getRoleName(authEn, "cntr_manager")]),
+    /[А-Яа-яЁё]/,
+  );
+  // Причина 403 модалки сессии (common): код резолвится, техкоды — как есть.
+  assert.equal(commonRu("sessionForbiddenReason"), "403 forbidden — роли изменены");
+  assert.equal(commonEn("sessionForbiddenReason"), "403 forbidden — roles changed");
 });

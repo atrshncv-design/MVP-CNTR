@@ -17,4 +17,4 @@ export function formatBudget(budget: number | null | undefined): string {
 /** Алиас для теста 08 */
 export const formatBudgetRUB = formatBudget;
 
-export { formatShortDate, formatRelative } from "./format-date";
+export { formatShortDate } from "./format-date";

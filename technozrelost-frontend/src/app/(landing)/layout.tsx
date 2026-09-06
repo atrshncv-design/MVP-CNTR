@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { auth } from "@/auth.config";
-import { ROLE_DASHBOARD, ROLES, type RoleSlug } from "@/lib/roles";
+import { ROLE_DASHBOARD, getRoleName, type RoleSlug } from "@/lib/roles";
+import { asTranslateFn } from "@/lib/types";
 import LandingNav from "@/components/landing/landing-nav";
 import LandingFooter from "@/components/landing/landing-footer";
 import { getTranslations } from "next-intl/server";
@@ -14,8 +15,9 @@ export default async function LandingLayout({
 }) {
   const session = await auth();
   const primary = (session?.user?.roles?.[0] as RoleSlug) ?? null;
+  const tAuth = asTranslateFn(await getTranslations("auth"));
   const accountLabel = primary
-    ? ROLES.find((r) => r.slug === primary)?.name ?? primary
+    ? getRoleName(tAuth, primary)
     : null;
   const t = await getTranslations("landing");
 

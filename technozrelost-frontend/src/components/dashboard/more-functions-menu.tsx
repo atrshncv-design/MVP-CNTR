@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getVisibleMenuItems, MORE_MENU_LABEL } from "@/lib/more-menu";
+import { getVisibleMenuItems, MORE_MENU_LABEL_KEY } from "@/lib/more-menu";
 
 /**
  * Кнопка «Больше функций» с выпадающей сеткой карточек (по образцу
@@ -32,6 +32,7 @@ export default function MoreFunctionsMenu({
   // Ролевая фильтрация всегда: пустые/неизвестные роли → unrestricted-only.
   const items = getVisibleMenuItems(userRoles);
   const t = useTranslations("dashboard");
+  const tCommon = useTranslations("common");
 
   const close = useCallback((returnFocus: boolean) => {
     setOpen(false);
@@ -81,7 +82,7 @@ export default function MoreFunctionsMenu({
             : "text-tz-secondary hover:bg-tz-surface-2 hover:text-tz-fg"
         }`}
       >
-        {MORE_MENU_LABEL}
+        {tCommon(MORE_MENU_LABEL_KEY)}
         <ChevronDown
           size={16}
           aria-hidden="true"
@@ -94,7 +95,7 @@ export default function MoreFunctionsMenu({
           id="more-functions-panel"
           ref={panelRef}
           role="region"
-          aria-label={MORE_MENU_LABEL}
+          aria-label={tCommon(MORE_MENU_LABEL_KEY)}
           tabIndex={-1}
           className="absolute left-0 top-full z-50 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-tz-border bg-tz-surface p-2"
           style={{
@@ -115,7 +116,7 @@ export default function MoreFunctionsMenu({
                 >
                   <item.icon size={18} aria-hidden="true" className="text-tz-accent" />
                   <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm font-medium text-tz-fg">
-                    {item.label}
+                    {tCommon(item.labelKey)}
                     {!item.isReady && (
                       <span className="tz-badge tz-badge-neutral">{t("moreMenuInDev")}</span>
                     )}

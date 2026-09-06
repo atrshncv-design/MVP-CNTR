@@ -19,6 +19,7 @@ import { draftKey } from "./draft";
 
 export function SessionExpiredModal() {
   const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
@@ -86,8 +87,9 @@ export function SessionExpiredModal() {
       return;
     }
     if (hasForbidden) {
-      // Потеря прав — считаем как сессия истекла (403 по allowedRolesFor)
-      setReason("403 forbidden — роли изменены");
+      // Потеря прав — считаем как сессия истекла (403 по allowedRolesFor);
+      // подпись причины — через словарь common при рендере (код "forbidden").
+      setReason("forbidden");
       setVisible(true);
     }
   }, [hasRefreshError, hasForbidden, status, pathname]);
@@ -177,7 +179,11 @@ export function SessionExpiredModal() {
         <p className="mt-2 text-sm text-tz-muted">
           {t("sessionDesc")}
         </p>
-        {reason && <p className="mt-2 font-mono text-xs text-tz-muted">{reason}</p>}
+        {reason && (
+          <p className="mt-2 font-mono text-xs text-tz-muted">
+            {reason === "forbidden" ? tCommon("sessionForbiddenReason") : reason}
+          </p>
+        )}
         <div className="mt-6 flex justify-center gap-3">
           <button
             onClick={async () => {

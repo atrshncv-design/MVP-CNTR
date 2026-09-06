@@ -129,9 +129,9 @@ test("content-dictionaries: ПОЛНЫЙ protocol.json соответствуе�
   });
 });
 
-test("content-dictionaries: шимы удалены (таск 05) — единый путь через резолверы", () => {
-  // UGT/SHOWCASE-шимы таска 01 удалены: экраны резолвят контент резолверами
-  // с переводчиком явной локали. Шим validateTags живёт до таска 06.
+test("content-dictionaries: шимы удалены (таски 05–06) — единый путь через резолверы", () => {
+  // UGT/SHOWCASE-шимы таска 01 и шим validateTags (таск 06) удалены:
+  // экраны резолвят контент резолверами с переводчиком явной локали.
   for (const key of ["UGT_LEVELS", "UGP_LEVELS", "UGI_LEVELS", "UGS_LEVELS", "ROADMAP_TRANSITIONS"]) {
     assert.equal(ugt[key], undefined, `шим ${key} должен быть удалён`);
   }
@@ -148,14 +148,7 @@ test("content-dictionaries: шимы удалены (таск 05) — едины
   assert.equal(show.getShowcaseProjects(tShowEn)[2].category, "Manufacturing");
   assert.ok(show.getShowcaseCategories(tShowRu).includes("НИОКТР"));
   assert.ok(show.getShowcaseCategories(tShowEn).includes("R&D"));
-  assert.equal(tax.validateTags([]), "Выберите хотя бы 1 тег");
-  // Живущий до 06 шим validateTags по-прежнему идёт через текущую локаль.
-  const prevDocument = globalThis.document;
-  globalThis.document = { cookie: "NEXT_LOCALE=en" };
-  try {
-    assert.equal(tax.validateTags([]), "Select at least 1 tag");
-  } finally {
-    if (prevDocument === undefined) delete globalThis.document;
-    else globalThis.document = prevDocument;
-  }
+  assert.equal(tax.validateTags, undefined, "шим validateTags должен быть удалён");
+  assert.equal(tax.validateTagsT(tTaxRu, []), "Выберите хотя бы 1 тег");
+  assert.equal(tax.validateTagsT(tTaxEn, []), "Select at least 1 tag");
 });

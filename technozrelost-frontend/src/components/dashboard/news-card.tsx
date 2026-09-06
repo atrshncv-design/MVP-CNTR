@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { CalendarDays, Newspaper, Pencil, Rocket, Unlink } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   type NewsDetail,
   type NewsStatus,
 } from "@/lib/news-types";
-import { formatRuDate } from "@/lib/format-date";
+import { formatDateLocale } from "@/lib/format-date";
 import { getNewsStatusLabel } from "@/features/dashboard/i18n";
 
 /** Цвета статусных бейджей (tz-токены, три темы — спека §3.7). */
@@ -38,6 +38,7 @@ export default function DashboardNewsCard({
   const badge = STATUS_BADGE[item.status] ?? "tz-badge-neutral";
   const date = item.published_at ?? item.created_at;
   const t = useTranslations("dashboard");
+  const locale = useLocale();
 
   return (
     <div className="tz-card tz-card-hover flex h-full flex-col overflow-hidden">
@@ -61,13 +62,13 @@ export default function DashboardNewsCard({
           {date && (
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays size={13} />
-              {formatRuDate(date)}
+              {formatDateLocale(locale, date)}
             </span>
           )}
           {item.status === "scheduled" && item.scheduled_at && (
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays size={13} />
-              {t("newsCardScheduled", { date: formatRuDate(item.scheduled_at) })}
+              {t("newsCardScheduled", { date: formatDateLocale(locale, item.scheduled_at) })}
             </span>
           )}
         </div>

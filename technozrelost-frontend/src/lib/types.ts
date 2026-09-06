@@ -7,7 +7,6 @@
  */
 
 import type { ProjectStatus } from "./status";
-import { shimLocale, translatorFor } from "./translators.ts";
 import protocolData from "./protocol.json" with { type: "json" };
 
 /**
@@ -79,14 +78,6 @@ export function validateTagsT(t: TranslateFn, tags: string[]): string | null {
   const invalid = tags.filter((tag) => !TAG_SLUG_BY_VALUE.has(tag));
   if (invalid.length) return t("validation.unknownTags", { list: invalid.join(", ") });
   return null;
-}
-
-/**
- * @deprecated shim (tasks 02–05): use validateTagsT(t, tags) with a
- * current-locale translator. Resolves through the current locale, no default.
- */
-export function validateTags(tags: string[]): string | null {
-  return validateTagsT(translatorFor("taxonomy", shimLocale()), tags);
 }
 
 /** Localised labels for the whole catalogue, in canonical order. */

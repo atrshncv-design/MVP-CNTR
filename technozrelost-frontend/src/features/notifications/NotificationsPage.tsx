@@ -9,7 +9,7 @@ import * as React from "react";
 import { Bell, CheckCheck, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { formatRelative, formatShortDate } from "@/lib/format-date";
+import { formatRelativeT, formatShortDate } from "@/lib/format-date";
 
 import { useNotifications, type NotificationsFilter } from "./useNotifications";
 import { useNotificationsStream } from "./useNotificationsStream";
@@ -106,7 +106,7 @@ export function NotificationsPage() {
         <ul className="space-y-3">
           {list.map((n) => {
             const short = formatShortDate(n.created_at); // 31.03.2027
-            const rel = formatRelative(n.created_at); // 2 дня назад
+            const rel = formatRelativeT(tCommon, n.created_at); // 2 дня назад
             return (
               <li
                 key={n.id}

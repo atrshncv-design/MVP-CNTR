@@ -19,31 +19,32 @@ import { allowedRolesFor } from "@/lib/roles";
  * src/lib/roles.ts (ROUTE_ALLOWED_ROLES / allowedRolesFor), не менять.
  */
 export interface MoreMenuItem {
-  label: string;
+  /** Ключ словаря common для подписи пункта; метку резолвит потребитель через t. */
+  labelKey: string;
   href: string;
   icon: LucideIcon;
   isReady: boolean;
 }
 
-/** Заголовок кнопки-триггера dropdown. */
-export const MORE_MENU_LABEL = "Больше функций";
+/** Ключ словаря common для заголовка кнопки-триггера dropdown. */
+export const MORE_MENU_LABEL_KEY = "moreMenuTrigger";
 
 export const MORE_MENU_ITEMS: MoreMenuItem[] = [
-  { label: "Реестры", href: "/dashboard/technologies", icon: Database, isReady: true },
-  { label: "НИОКТР", href: "/dashboard/nioktr", icon: FlaskConical, isReady: true },
-  { label: "Организации", href: "/dashboard/organizations", icon: Building2, isReady: true },
-  { label: "Новости", href: "/dashboard/news", icon: Newspaper, isReady: true },
+  { labelKey: "moreMenuRegistries", href: "/dashboard/technologies", icon: Database, isReady: true },
+  { labelKey: "moreMenuNioktr", href: "/dashboard/nioktr", icon: FlaskConical, isReady: true },
+  { labelKey: "moreMenuOrgs", href: "/dashboard/organizations", icon: Building2, isReady: true },
+  { labelKey: "moreMenuNews", href: "/dashboard/news", icon: Newspaper, isReady: true },
   // Админ-раздел новостей (тикет 07): виден только сотрудникам ЦНТР —
   // маршрут ограничен картой ролей (/dashboard/news/admin → cntr_admin/cntr_manager).
-  { label: "Новости: админ", href: "/dashboard/news/admin", icon: ShieldCheck, isReady: true },
+  { labelKey: "moreMenuNewsAdmin", href: "/dashboard/news/admin", icon: ShieldCheck, isReady: true },
   // Реестр специалистов: страница живёт на платформе.
-  { label: "Исполнители", href: "/dashboard/executors", icon: Users, isReady: true },
-  { label: "Документы", href: "/dashboard/ai-assistant", icon: FileText, isReady: true },
+  { labelKey: "moreMenuExecutors", href: "/dashboard/executors", icon: Users, isReady: true },
+  { labelKey: "moreMenuDocs", href: "/dashboard/ai-assistant", icon: FileText, isReady: true },
   // Профиль включает витрину «Мои достижения»; аналитика достижений —
   // вкладка кабинета cntr_admin («Рабочий стол» ведёт в кабинет роли).
-  { label: "Профиль", href: "/dashboard/profile", icon: UserRound, isReady: true },
+  { labelKey: "moreMenuProfile", href: "/dashboard/profile", icon: UserRound, isReady: true },
   // Уведомления (тикет 07): колокольчик + страница, доступна всем ролям
-  { label: "Уведомления", href: "/dashboard/notifications", icon: Bell, isReady: true },
+  { labelKey: "moreMenuNotifications", href: "/dashboard/notifications", icon: Bell, isReady: true },
 ];
 
 /**

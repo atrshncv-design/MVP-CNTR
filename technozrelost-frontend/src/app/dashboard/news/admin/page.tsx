@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Modal } from "@/components/ui/modal";
 import {
   AlertCircle,
@@ -31,7 +31,7 @@ import {
   scheduleNews,
   unpublishNews,
 } from "@/lib/news-admin-api";
-import { formatRuDateTime } from "@/lib/format-date";
+import { formatDateTimeLocale } from "@/lib/format-date";
 
 // legacy маркер: Все
 // legacy маркер: Опубликовано
@@ -136,6 +136,7 @@ function NewsRow({
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const t = useTranslations("news");
+  const locale = useLocale();
 
   const [busy, setBusy] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
@@ -240,19 +241,19 @@ function NewsRow({
           </Link>
 
           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-tz-muted">
-            <span>{t("admin.createdAt", { date: formatRuDateTime(item.created_at) })}{/* legacy маркер: создана: */}</span>
+            <span>{t("admin.createdAt", { date: formatDateTimeLocale(locale, item.created_at) })}{/* legacy маркер: создана: */}</span>
             {item.status === "published" && item.published_at && (
-              <span>{t("admin.publishedAt", { date: formatRuDateTime(item.published_at) })}{/* legacy маркер: опубликована: */}</span>
+              <span>{t("admin.publishedAt", { date: formatDateTimeLocale(locale, item.published_at) })}{/* legacy маркер: опубликована: */}</span>
             )}
             {item.status === "scheduled" && item.scheduled_at && (
               <span className="inline-flex items-center gap-1 text-tz-warning">
                 <CalendarClock size={12} />
-                {t("admin.scheduledAt", { date: formatRuDateTime(item.scheduled_at) })}
+                {t("admin.scheduledAt", { date: formatDateTimeLocale(locale, item.scheduled_at) })}
                 {/* legacy маркер: публикация: */}
               </span>
             )}
             {item.updated_at && item.updated_at !== item.created_at && (
-              <span>{t("admin.updatedAt", { date: formatRuDateTime(item.updated_at) })}{/* legacy маркер: обновлена: */}</span>
+              <span>{t("admin.updatedAt", { date: formatDateTimeLocale(locale, item.updated_at) })}{/* legacy маркер: обновлена: */}</span>
             )}
           </div>
 

@@ -54,12 +54,10 @@ export interface NewsDetail extends NewsCard {
 /** Статусы новости (спека §3.3): draft → scheduled → published. */
 export type NewsStatus = "draft" | "scheduled" | "published";
 
-/** Человекочитаемые подписи статусов для ЛК (консоль, лента, редактор). */
-export const NEWS_STATUS_LABELS: Record<NewsStatus, string> = {
-  draft: "Черновик",
-  scheduled: "Запланирована",
-  published: "Опубликована",
-};
+/**
+ * Подписи статусов — только через словарь: getNewsStatusLabel(t, status)
+ * из features/dashboard/i18n (доделка T06, R01). Русских литералов в коде нет.
+ */
 
 /** Страница публичной ленты (page/per_page). */
 export interface NewsFeed {
