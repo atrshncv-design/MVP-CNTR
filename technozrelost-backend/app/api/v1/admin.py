@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DBSession, require_role
@@ -34,6 +34,7 @@ def _at_out(entry: AuditTrailEntry, user_name: str | None = None) -> AuditTrailE
 async def global_audit(
     db: DBSession,
     user: CurrentUser,
+    request: Request,
     project_id: int | None = Query(None),
     action: str | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
@@ -43,7 +44,7 @@ async def global_audit(
     Записи не редактируются и не удаляются — только чтение; новые события
     дописываются бизнес-логикой (AuditTrailEntry в ассessment/manager/stages).
     """
-    await AdminOnly(user)
+    await AdminOnly(user, request)
     stmt = (
         select(AuditTrailEntry, User.full_name)
         .outerjoin(User, AuditTrailEntry.user_id == User.id)
@@ -62,6 +63,7 @@ async def global_audit(
 async def achievements_stats(
     db: DBSession,
     user: CurrentUser,
+    request: Request,
 ) -> AdminAchievementsStatsOut:
     """Аналитика достижений (спека §4.7), только cntr_admin.
 
@@ -69,7 +71,7 @@ async def achievements_stats(
     редкости, отраслевые срезы, топ-10 медалей, застрявшие проекты, среднее
     время проверки менеджеров. Пустая БД — нули и пустые списки без ошибок.
     """
-    await AdminOnly(user)
+    await AdminOnly(user, request)
     stats = await achievement_stats(db)
     return AdminAchievementsStatsOut(
         generated_at=datetime.now(UTC).isoformat(),

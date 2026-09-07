@@ -13,11 +13,12 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, cast
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import func, select
 
 from app.api.v1.projects import get_project_or_404, require_project_access
 from app.core.deps import CurrentUser, DBSession, require_role
+from app.core.errors import raise_error
 from app.db.models import Project, ProjectInvite, ProjectMember, User
 from app.schemas import (
     InviteAcceptIn,
@@ -63,7 +64,7 @@ async def _membership(
 
 
 async def require_project_admin(
-    db: DBSession, project_id: int, user: CurrentUser
+    db: DBSession, project_id: int, user: CurrentUser, request: Request | None = None
 ) -> Project:
     """Полномочие project_admin: участник с флагом admin.
 
@@ -83,18 +84,16 @@ async def require_project_admin(
     )
     if (admin_count or 0) == 0 and project.created_by == user.id:
         return project
-    raise HTTPException(
-        status.HTTP_403_FORBIDDEN, "Требуется полномочие project_admin"
-    )
+    raise raise_error("INVITE_ADMIN_REQUIRED", request=request)
 
 
 @router.post(
     "/projects/{project_id}/invites", response_model=InviteOut, status_code=status.HTTP_201_CREATED
 )
 async def create_invite(
-    project_id: int, payload: InviteIn, db: DBSession, user: CurrentUser
+    project_id: int, payload: InviteIn, request: Request, db: DBSession, user: CurrentUser
 ) -> InviteOut:
-    await require_project_admin(db, project_id, user)
+    await require_project_admin(db, project_id, user, request)
     token = "INV-" + secrets.token_urlsafe(16).replace("-", "").replace("_", "").upper()
     invite = ProjectInvite(
         project_id=project_id,
@@ -116,9 +115,9 @@ async def create_invite(
 
 @router.get("/projects/{project_id}/invites", response_model=list[InviteOut])
 async def list_invites(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> list[InviteOut]:
-    await require_project_admin(db, project_id, user)
+    await require_project_admin(db, project_id, user, request)
     invites = (
         await db.execute(
             select(ProjectInvite)
@@ -131,33 +130,32 @@ async def list_invites(
 
 @router.post("/invites/accept")
 async def accept_invite(
-    payload: InviteAcceptIn, db: DBSession, user: CurrentUser
+    payload: InviteAcceptIn, request: Request, db: DBSession, user: CurrentUser
 ) -> dict[str, Any]:
     token = payload.token.strip().upper()
     invite = await db.scalar(select(ProjectInvite).where(ProjectInvite.token == token))
     if invite is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Приглашение не найдено")
+        raise raise_error("INVITE_NOT_FOUND", request=request)
 
     now = datetime.now(UTC)
     if invite.revoked_at is not None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Приглашение отозвано")
+        raise raise_error("INVITE_REVOKED", request=request)
     if invite.expires_at is not None and invite.expires_at < now:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Срок приглашения истёк")
+        raise raise_error("INVITE_EXPIRED", request=request)
     if invite.used_count >= invite.max_uses:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Лимит использований приглашения исчерпан")
+        raise raise_error("INVITE_LIMIT", request=request)
     if invite.allowed_roles and payload.role_in_project not in invite.allowed_roles:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            f"Роль «{payload.role_in_project}» не разрешена приглашением",
+        raise raise_error(
+            "INVITE_ROLE_NOT_ALLOWED",
+            {"role": payload.role_in_project},
+            request=request,
         )
 
     project = await get_project_or_404(db, invite.project_id)
     existing = await _membership(db, project.id, user.id)
     if existing is not None:
         if existing.status == "active":
-            raise HTTPException(
-                status.HTTP_409_CONFLICT, "Вы уже состоите в проекте"
-            )
+            raise raise_error("INVITE_ALREADY_MEMBER", request=request)
         existing.status = "active"
         existing.role_in_project = payload.role_in_project
         existing.invited_by = invite.created_by
@@ -184,14 +182,14 @@ async def accept_invite(
 
 @router.post("/projects/{project_id}/invites/{invite_id}/revoke", response_model=InviteOut)
 async def revoke_invite(
-    project_id: int, invite_id: int, db: DBSession, user: CurrentUser
+    project_id: int, invite_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> InviteOut:
-    await require_project_admin(db, project_id, user)
+    await require_project_admin(db, project_id, user, request)
     invite = await db.get(ProjectInvite, invite_id)
     if invite is None or invite.project_id != project_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Приглашение не найдено")
+        raise raise_error("INVITE_NOT_FOUND", request=request)
     if invite.revoked_at is not None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Приглашение уже отозвано")
+        raise raise_error("INVITE_ALREADY_REVOKED", request=request)
     invite.revoked_at = datetime.now(UTC)
     await db.commit()
     return _invite_out(invite)
@@ -199,14 +197,12 @@ async def revoke_invite(
 
 @router.post("/projects/{project_id}/transfer-admin")
 async def transfer_project_admin(
-    project_id: int, payload: TransferAdminIn, db: DBSession, user: CurrentUser
+    project_id: int, payload: TransferAdminIn, request: Request, db: DBSession, user: CurrentUser
 ) -> dict[str, Any]:
-    await require_project_admin(db, project_id, user)
+    await require_project_admin(db, project_id, user, request)
     target = await _membership(db, project_id, payload.user_id)
     if target is None or target.status != "active":
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "Участник не найден в проекте"
-        )
+        raise raise_error("INVITE_MEMBER_MISSING", request=request)
 
     # текущий администратор снимает полномочие (создатель тоже)
     admins = (

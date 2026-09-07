@@ -24,6 +24,7 @@ from sqlalchemy import func, select, text
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.deps import CurrentUser, DBSession, has_role, require_role
+from app.core.errors import raise_error
 from app.db.models import Notification, NotificationOutbox, User
 from app.schemas import ManagerTaskOut
 from app.services.notifications import claim_next_task, notify_managers
@@ -108,17 +109,17 @@ async def stream_notifications(
                 raise ValueError("token type is not access")
             uid = int(payload["sub"])
         except Exception as exc:  # noqa: BLE001
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Невалидный токен") from exc
+            raise raise_error("AUTH_INVALID_TOKEN", request=request) from exc
         # проверка активности короткой сессией (не держим Session)
     try:
         async with SessionLocal() as tmp:
             active = await tmp.get(User, uid)
             if active is None or not active.is_active:
-                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь неактивен")
+                raise raise_error("AUTH_USER_INACTIVE", request=request)
     except HTTPException:
         raise
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь неактивен") from exc
+        raise raise_error("AUTH_USER_INACTIVE", request=request) from exc
 
     assert uid is not None  # для mypy: после проверки токена uid определён
     # snapshot непрочитанных — короткая сессия, не держим соединение (N-03)
@@ -203,6 +204,7 @@ async def stream_notifications(
 
 @router.post("/notifications/emit", status_code=status.HTTP_201_CREATED)
 async def emit_event(
+    request: Request,
     db: DBSession,
     user: CurrentUser,
     type: str = "general",
@@ -215,7 +217,7 @@ async def emit_event(
     эндпоинт позволяет проверить realtime-доставку и outbox.
     """
     if not _is_manager(user):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Только менеджеры")
+        raise raise_error("MANAGER_ONLY", request=request)
     entry = await notify_managers(db, type, title, {"project_id": project_id})
     await db.commit()
     # best-effort realtime: подписанным менеджерам
@@ -245,10 +247,13 @@ async def emit_event(
 
 @router.get("/manager/tasks", response_model=list[ManagerTaskOut])
 async def manager_tasks(
-    db: DBSession, user: CurrentUser, status_filter: str | None = None
+    db: DBSession,
+    user: CurrentUser,
+    request: Request,
+    status_filter: str | None = None,
 ) -> list[ManagerTaskOut]:
     """Очередь общих задач: pending (неназначенные) и claimed (взятые)."""
-    await ManagerOnly(user)
+    await ManagerOnly(user, request)
     stmt = (
         select(NotificationOutbox, User.full_name)
         .outerjoin(User, NotificationOutbox.manager_id == User.id)
@@ -274,10 +279,10 @@ async def manager_tasks(
 
 @router.post("/manager/tasks/{task_id}/claim", response_model=ManagerTaskOut)
 async def claim_task(
-    task_id: int, db: DBSession, user: CurrentUser
+    task_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> ManagerTaskOut:
     """Атомарное взятие неназначенной задачи (FOR UPDATE SKIP LOCKED)."""
-    await ManagerOnly(user)
+    await ManagerOnly(user, request)
     entry = await claim_next_task(db, user.id)
     if entry is None or entry.id != task_id:
         # конкретная задача уже взята или не найдена
@@ -285,11 +290,8 @@ async def claim_task(
             select(NotificationOutbox).where(NotificationOutbox.id == task_id)
         )
         if existing is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Задача не найдена")
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Задача уже взята другим менеджером",
-        )
+            raise raise_error("TASK_NOT_FOUND", request=request)
+        raise raise_error("TASK_TAKEN", request=request)
     await db.commit()
     manager = await db.get(User, user.id)
     return ManagerTaskOut(
@@ -305,16 +307,16 @@ async def claim_task(
 
 @router.post("/manager/tasks/{task_id}/reassign", response_model=ManagerTaskOut)
 async def reassign_task(
-    task_id: int, db: DBSession, user: CurrentUser, manager_id: int
+    task_id: int, request: Request, db: DBSession, user: CurrentUser, manager_id: int
 ) -> ManagerTaskOut:
     """Переназначение задачи администратором."""
-    await require_role("cntr_admin")(user)
+    await require_role("cntr_admin")(user, request)
     entry = await db.get(NotificationOutbox, task_id)
     if entry is None or entry.target_scope != "general":
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Задача не найдена")
+        raise raise_error("TASK_NOT_FOUND", request=request)
     target = await db.get(User, manager_id)
     if target is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Менеджер не найден")
+        raise raise_error("MANAGER_MISSING", request=request)
     entry.manager_id = manager_id
     entry.status = "claimed"
     await db.commit()

@@ -13,11 +13,12 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, Request, Response, status
 from sqlalchemy import select
 
 from app.api.v1.projects import can_access_project, get_project_or_404
 from app.core.deps import CurrentUser, CurrentUserOptional, DBSession, ReadDBSession
+from app.core.errors import raise_error
 from app.db.models import Achievement, Project, ProjectAchievement, UserAchievement
 from app.schemas import (
     AchievementCatalogOut,
@@ -187,6 +188,7 @@ project_router = APIRouter(prefix="/projects", tags=["achievements"])
 )
 async def project_achievements(
     project_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUserOptional,
 ) -> list[ProjectAchievementOut]:
@@ -195,12 +197,12 @@ async def project_achievements(
     Анонимам медали видны только для публичного проекта (is_public=True);
     нарушителям — 404, чтобы не раскрывать существование закрытого проекта.
     """
-    project = await get_project_or_404(db, project_id)
+    project = await get_project_or_404(db, project_id, request)
     if user is None:
         if not project.is_public:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+            raise raise_error("PROJECT_NOT_FOUND", request=request)
     elif not await can_access_project(db, project, user):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
 
     rows = (
         await db.execute(

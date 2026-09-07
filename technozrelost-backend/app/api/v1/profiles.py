@@ -10,10 +10,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DBSession, require_role
+from app.core.errors import raise_error
 from app.db.models import OrganizationMember, User, UserOrganization, UserProfile
 from app.schemas import ManagerDecideIn, OrgIn, OrgOut, OrgQueueOut, ProfileIn, ProfileOut
 
@@ -94,13 +95,13 @@ async def my_profile(db: DBSession, user: CurrentUser) -> dict[str, Any]:
 
 
 @router.patch("/profile", response_model=ProfileOut)
-async def update_my_profile(payload: ProfileIn, db: DBSession, user: CurrentUser) -> ProfileOut:
+async def update_my_profile(
+    payload: ProfileIn, request: Request, db: DBSession, user: CurrentUser
+) -> ProfileOut:
     profile = await _get_own_profile(db, user)
     if profile.state not in EDITABLE_STATES:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Профиль в состоянии «{profile.state}» нельзя редактировать. "
-            "Дождитесь решения или верните его в черновик.",
+        raise raise_error(
+            "PROFILE_BAD_STATE_EDIT", {"state": profile.state}, request=request
         )
     profile.headline = payload.headline
     profile.bio = payload.bio
@@ -112,15 +113,16 @@ async def update_my_profile(payload: ProfileIn, db: DBSession, user: CurrentUser
 
 
 @router.post("/profile/submit", response_model=ProfileOut)
-async def submit_my_profile(db: DBSession, user: CurrentUser) -> ProfileOut:
+async def submit_my_profile(
+    request: Request, db: DBSession, user: CurrentUser
+) -> ProfileOut:
     profile = await _get_own_profile(db, user)
     if profile.state not in SUBMITTABLE_STATES:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Нельзя отправить профиль в состоянии «{profile.state}».",
+        raise raise_error(
+            "PROFILE_BAD_STATE_SUBMIT", {"state": profile.state}, request=request
         )
     if not profile.headline:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Укажите должность (headline)")
+        raise raise_error("PROFILE_HEADLINE_REQUIRED", request=request)
     profile.state = "pending"
     profile.review_comment = None
     await db.flush()
@@ -171,13 +173,15 @@ async def _get_membership(db: DBSession, org_id: int, user_id: int) -> Organizat
 
 
 @router.post("/orgs/{org_id}/join", response_model=OrgOut)
-async def join_organization(org_id: int, db: DBSession, user: CurrentUser) -> OrgOut:
+async def join_organization(
+    org_id: int, request: Request, db: DBSession, user: CurrentUser
+) -> OrgOut:
     org = await db.get(UserOrganization, org_id)
     if org is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Организация не найдена")
+        raise raise_error("ORG_NOT_FOUND", request=request)
     existing = await _get_membership(db, org_id, user.id)
     if existing is not None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Вы уже состоите в этой организации")
+        raise raise_error("ORG_ALREADY_MEMBER", request=request)
     db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role_in_org="member"))
     await db.flush()
     await db.commit()
@@ -186,20 +190,17 @@ async def join_organization(org_id: int, db: DBSession, user: CurrentUser) -> Or
 
 @router.patch("/orgs/{org_id}", response_model=OrgOut)
 async def update_organization(
-    org_id: int, payload: OrgIn, db: DBSession, user: CurrentUser
+    org_id: int, payload: OrgIn, request: Request, db: DBSession, user: CurrentUser
 ) -> OrgOut:
     org = await db.get(UserOrganization, org_id)
     if org is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Организация не найдена")
+        raise raise_error("ORG_NOT_FOUND", request=request)
     membership = await _get_membership(db, org_id, user.id)
     if membership is None or membership.role_in_org != "admin":
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN, "Редактировать может только администратор организации"
-        )
+        raise raise_error("ORG_EDIT_FORBIDDEN", request=request)
     if org.state not in EDITABLE_STATES:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Организация в состоянии «{org.state}» — редактирование закрыто",
+        raise raise_error(
+            "ORG_NOT_EDITABLE", {"state": org.state}, request=request
         )
     org.name = payload.name
     org.short_name = payload.short_name
@@ -213,18 +214,18 @@ async def update_organization(
 
 
 @router.post("/orgs/{org_id}/submit", response_model=OrgOut)
-async def submit_organization(org_id: int, db: DBSession, user: CurrentUser) -> OrgOut:
+async def submit_organization(
+    org_id: int, request: Request, db: DBSession, user: CurrentUser
+) -> OrgOut:
     org = await db.get(UserOrganization, org_id)
     if org is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Организация не найдена")
+        raise raise_error("ORG_NOT_FOUND", request=request)
     membership = await _get_membership(db, org_id, user.id)
     if membership is None or membership.role_in_org != "admin":
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN, "Отправить на проверку может администратор организации"
-        )
+        raise raise_error("ORG_SUBMIT_FORBIDDEN", request=request)
     if org.state not in SUBMITTABLE_STATES:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, f"Нельзя отправить организацию в состоянии «{org.state}»"
+        raise raise_error(
+            "ORG_SUBMIT_BAD_STATE", {"state": org.state}, request=request
         )
     org.state = "pending"
     org.review_comment = None
@@ -237,12 +238,14 @@ async def submit_organization(org_id: int, db: DBSession, user: CurrentUser) -> 
 
 
 async def _apply_decision(
-    obj: UserProfile | UserOrganization, payload: ManagerDecideIn, manager: User
+    obj: UserProfile | UserOrganization,
+    payload: ManagerDecideIn,
+    manager: User,
+    request: Request | None = None,
 ) -> None:
     if obj.state != "pending":
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"Объект не в статусе pending (сейчас «{obj.state}»)",
+        raise raise_error(
+            "REVIEW_BAD_STATUS", {"state": obj.state}, request=request
         )
     obj.state = "verified" if payload.action == "verify" else "rejected"
     obj.review_comment = payload.comment
@@ -290,12 +293,16 @@ async def manager_profile_queue(
 
 @router.post("/manager/profiles/{profile_id}/decide", response_model=ProfileOut)
 async def manager_decide_profile(
-    profile_id: int, payload: ManagerDecideIn, db: DBSession, manager: Manager
+    profile_id: int,
+    payload: ManagerDecideIn,
+    request: Request,
+    db: DBSession,
+    manager: Manager,
 ) -> ProfileOut:
     profile = await db.get(UserProfile, profile_id)
     if profile is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Профиль не найден")
-    await _apply_decision(profile, payload, manager)
+        raise raise_error("PROFILE_NOT_FOUND", request=request)
+    await _apply_decision(profile, payload, manager, request)
     await db.flush()
     await db.commit()
     return _profile_out(profile)
@@ -323,12 +330,16 @@ async def manager_org_queue(
 
 @router.post("/manager/orgs/{org_id}/decide", response_model=OrgOut)
 async def manager_decide_org(
-    org_id: int, payload: ManagerDecideIn, db: DBSession, manager: Manager
+    org_id: int,
+    payload: ManagerDecideIn,
+    request: Request,
+    db: DBSession,
+    manager: Manager,
 ) -> OrgOut:
     org = await db.get(UserOrganization, org_id)
     if org is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Организация не найдена")
-    await _apply_decision(org, payload, manager)
+        raise raise_error("ORG_NOT_FOUND", request=request)
+    await _apply_decision(org, payload, manager, request)
     await db.flush()
     await db.commit()
     return _org_out(org)

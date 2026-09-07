@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Query, Request, status
 
 from app.core.deps import CurrentUser, DBSession
+from app.core.errors import raise_error
 from app.schemas import RagDocumentIn, RagDocumentOut, RagSearchIn, RagSearchResult
 from app.services.rag import list_templates, search_documents, upsert_document
 
@@ -12,15 +13,13 @@ router = APIRouter(prefix="/rag", tags=["rag"])
 @router.post("/templates", response_model=RagDocumentOut, status_code=status.HTTP_201_CREATED)
 async def upload_template(
     payload: RagDocumentIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> RagDocumentOut:
     allowed_slugs = {"cntr_admin", "cntr_manager"}
     if not user.is_superuser and not any(r.slug in allowed_slugs for r in user.roles):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "Только администраторы ЦНТР могут загружать шаблоны",
-        )
+        raise raise_error("RAG_ADMIN_ONLY", request=request)
     doc = await upsert_document(db, payload)
     return RagDocumentOut(
         id=doc.id,

@@ -9,6 +9,8 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import text
@@ -45,6 +47,7 @@ from app.api.v1.technologies import router as technologies_router
 from app.api.v1.users import router as users_router
 from app.core.config import settings
 from app.core.database import SessionLocal
+from app.core.errors import CATALOG, get_message, locale_from_request
 from app.core.logging_config import request_id_ctx, setup_logging
 from app.services.metrics import PrometheusMetricsMiddleware, install_db_listeners
 from app.services.news_scheduler import (
@@ -206,6 +209,45 @@ class RequestIDMiddleware:
             request_id_ctx.reset(token)
 
 
+_CATALOG_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
+
+
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Коды каталога из pydantic-валидаторов — в текст на языке запроса.
+
+    Валидаторам (app/schemas.py) недоступен запрос, поэтому они кидают
+    bare-код каталога в ValueError; текст подставляет этот хендлер по
+    Accept-Language (умолчание русское, история 5). Неизвестные ValueError
+    идут как раньше: дефолтная форма FastAPI (422 + detail-массив).
+    """
+    locale = locale_from_request(request)
+    details: list[object] = []
+    for err in exc.errors():
+        code: str | None = None
+        ctx = err.get("ctx")
+        if isinstance(ctx, dict):
+            text = str(ctx.get("error", ""))
+            if _CATALOG_CODE_RE.match(text) and text in CATALOG:
+                code = text
+        if code is None:
+            details.append(err)
+            continue
+        try:
+            localized = get_message(code, locale)
+        except KeyError:
+            # Код с плейсхолдерами без params — дефолтная форма, без падения.
+            details.append(err)
+            continue
+        item = {key: value for key, value in err.items() if key != "ctx"}
+        item["msg"] = localized
+        details.append(item)
+    return JSONResponse(
+        status_code=422, content={"detail": jsonable_encoder(details)}
+    )
+
+
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """P-11: глобальный handler — 500 с request_id, лог с тем же ID.
 
@@ -254,6 +296,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestIDMiddleware)
     # P-11: глобальный handler — 500 с request_id (проверяется в create_app)
     app.add_exception_handler(Exception, unhandled_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
     install_db_listeners()
     app.include_router(health_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")

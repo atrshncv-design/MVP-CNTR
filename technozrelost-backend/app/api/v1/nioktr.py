@@ -11,6 +11,7 @@ from sqlalchemy import func, or_, select, true
 
 from app.core.config import settings
 from app.core.deps import CurrentUserOptional, ReadDBSession
+from app.core.errors import raise_error
 from app.db.models import NioktrCard, Organization
 from app.schemas import NioktrCardOut, OrganizationDetailOut, OrgCardOut
 
@@ -92,9 +93,7 @@ async def _enforce_registry_limit(request: Request) -> None:
                 except Exception:  # noqa: BLE001
                     pass
             if count > limit:
-                raise HTTPException(
-                    status_code=429, detail="Слишком много запросов к реестру, попробуйте позже"
-                )
+                raise raise_error("REGISTRY_RATE_LIMITED", request=request)
             return
     except HTTPException:
         raise
@@ -112,9 +111,7 @@ async def _enforce_registry_limit(request: Request) -> None:
         with contextlib.suppress(KeyError):
             _registry_attempts.move_to_end(rkey)
     if len(stamps) >= limit:
-        raise HTTPException(
-            status_code=429, detail="Слишком много запросов к реестру, попробуйте позже"
-        )
+        raise raise_error("REGISTRY_RATE_LIMITED", request=request)
     stamps.append(now)
     while len(_registry_attempts) > REGISTRY_MAX_ENTRIES:
         _registry_attempts.popitem(last=False)
@@ -239,7 +236,7 @@ async def get_organization(
     await _enforce_registry_limit(request)
     org = await db.scalar(select(Organization).where(Organization.ogrn == ogrn))
     if org is None:
-        raise HTTPException(status_code=404, detail="Организация не найдена")
+        raise raise_error("ORG_NOT_FOUND", request=request)
     # P-07: ограниченная выборка карточек организации — не более 20 (защита от unbounded payload).
     cards_stmt = (
         select(NioktrCard)
@@ -277,5 +274,5 @@ async def get_nioktr_card(
         select(NioktrCard).where(NioktrCard.registration_number == registration_number)
     )
     if card is None:
-        raise HTTPException(status_code=404, detail="Карточка НИОКТР не найдена")
+        raise raise_error("NIOKTR_CARD_NOT_FOUND", request=request)
     return _card_out(card)

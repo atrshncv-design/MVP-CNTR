@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Request
 from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DBSession
+from app.core.errors import raise_error
 from app.db.models import Notification
 from app.schemas import NotificationOut
 
@@ -41,11 +42,11 @@ async def my_notifications(db: DBSession, user: CurrentUser) -> list[Notificatio
 
 @router.post("/{notification_id}/read", response_model=NotificationOut)
 async def mark_read(
-    notification_id: int, db: DBSession, user: CurrentUser
+    notification_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> NotificationOut:
     note = await db.get(Notification, notification_id)
     if note is None or note.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Уведомление не найдено")
+        raise raise_error("NOTIFICATION_NOT_FOUND", request=request)
     note.is_read = True
     await db.commit()
     await db.refresh(note)

@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from app.core.errors import readiness_text
+
 READINESS_TEMPLATE_VERSION = "2026-08-04-v1"
 
 ANSWER_STATUSES = (
@@ -57,6 +59,42 @@ DIMENSION_LABELS = {
     "organizational": "Организационная",
     "production": "Производственная",
 }
+
+# Ключи каталога (app.core.errors.READINESS_TEXTS) для пользовательских
+# текстов: сервис отдаёт тексты на языке запроса, ru — умолчание.
+# Русские словари выше оставлены как исходные константы методологии.
+_ANSWER_LABEL_KEYS = {
+    "not_started": "READINESS_ANSWER_NOT_STARTED",
+    "in_progress": "READINESS_ANSWER_IN_PROGRESS",
+    "formed": "READINESS_ANSWER_FORMED",
+    "documented": "READINESS_ANSWER_DOCUMENTED",
+    "verified": "READINESS_ANSWER_VERIFIED",
+    "not_applicable": "READINESS_ANSWER_NOT_APPLICABLE",
+}
+_EVIDENCE_LABEL_KEYS = {
+    "missing": "READINESS_EVIDENCE_MISSING",
+    "draft": "READINESS_EVIDENCE_DRAFT",
+    "ready": "READINESS_EVIDENCE_READY",
+    "verified": "READINESS_EVIDENCE_VERIFIED",
+}
+_DIMENSION_LABEL_KEYS = {
+    "scientific": "READINESS_DIM_SCIENTIFIC",
+    "technical": "READINESS_DIM_TECHNICAL",
+    "organizational": "READINESS_DIM_ORGANIZATIONAL",
+    "production": "READINESS_DIM_PRODUCTION",
+}
+
+
+def _checkpoint_title(code: str, locale: str) -> str:
+    return readiness_text(f"READINESS_CP_{code}_TITLE", locale)
+
+
+def _checkpoint_explanation(code: str, locale: str) -> str:
+    return readiness_text(f"READINESS_CP_{code}_EXPL", locale)
+
+
+def _evidence_title(code: str, locale: str) -> str:
+    return readiness_text(f"READINESS_EV_{code.replace('-', '_')}", locale)
 
 
 @dataclass(frozen=True)
@@ -215,7 +253,9 @@ def _evidence_score(
     return sum(scores) / len(scores)
 
 
-def compute_readiness(answers: list[dict[str, Any]]) -> dict[str, Any]:
+def compute_readiness(
+    answers: list[dict[str, Any]], locale: str = "ru"
+) -> dict[str, Any]:
     """Calculate a conservative, continuous preliminary assessment.
 
     The result is intentionally server-side and deterministic. A UGT block is
@@ -241,7 +281,7 @@ def compute_readiness(answers: list[dict[str, Any]]) -> dict[str, Any]:
                 "checkpoint_code": checkpoint.code,
                 "number": checkpoint.number,
                 "ugt_level": checkpoint.ugt_level,
-                "title": checkpoint.title,
+                "title": _checkpoint_title(checkpoint.code, locale),
                 "status": "not_applicable",
                 "score_pct": None,
                 "evidence_pct": None,
@@ -332,29 +372,29 @@ def compute_readiness(answers: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def template_payload() -> dict[str, Any]:
+def template_payload(locale: str = "ru") -> dict[str, Any]:
     return {
         "version": READINESS_TEMPLATE_VERSION,
         "answer_statuses": [
-            {"value": value, "label": ANSWER_STATUS_LABELS[value], "score_pct": int(ANSWER_STATUS_SCORES.get(value, 0) * 100)}
+            {"value": value, "label": readiness_text(_ANSWER_LABEL_KEYS[value], locale), "score_pct": int(ANSWER_STATUS_SCORES.get(value, 0) * 100)}
             for value in ANSWER_STATUSES
         ],
         "evidence_statuses": [
-            {"value": value, "label": EVIDENCE_STATUS_LABELS[value], "score_pct": int(EVIDENCE_STATUS_SCORES[value] * 100)}
+            {"value": value, "label": readiness_text(_EVIDENCE_LABEL_KEYS[value], locale), "score_pct": int(EVIDENCE_STATUS_SCORES[value] * 100)}
             for value in EVIDENCE_STATUSES
         ],
-        "dimensions": [{"value": value, "label": DIMENSION_LABELS[value]} for value in DIMENSIONS],
+        "dimensions": [{"value": value, "label": readiness_text(_DIMENSION_LABEL_KEYS[value], locale)} for value in DIMENSIONS],
         "checkpoints": [
             {
                 "code": item.code,
                 "number": item.number,
                 "ugt_level": item.ugt_level,
-                "title": item.title,
-                "explanation": item.explanation,
+                "title": _checkpoint_title(item.code, locale),
+                "explanation": _checkpoint_explanation(item.code, locale),
                 "dimensions": list(item.dimensions),
                 "critical": item.critical,
                 "evidence": [
-                    {"code": evidence.code, "title": evidence.title, "required": evidence.required}
+                    {"code": evidence.code, "title": _evidence_title(evidence.code, locale), "required": evidence.required}
                     for evidence in item.evidence
                 ],
             }

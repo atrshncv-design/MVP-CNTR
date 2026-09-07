@@ -32,7 +32,6 @@ from fastapi import (
     Depends,
     File,
     Form,
-    HTTPException,
     Query,
     Request,
     Response,
@@ -50,6 +49,7 @@ from app.core.deps import (
     has_role,
     require_role,
 )
+from app.core.errors import raise_error
 from app.db.models import NewsCategory, NewsPost, NewsPostMedia, NewsTag, User
 from app.schemas import (
     NewsCardOut,
@@ -68,6 +68,7 @@ from app.services.file_storage import (
     read_upload_limited,
     storage,
     store_news_media,
+    to_http_exception,
 )
 from app.services.html_sanitizer import sanitize_html, strip_tags
 from app.services.notifications import notify_news_published
@@ -140,12 +141,12 @@ def _detail_out(post: NewsPost, author_name: str | None = None) -> NewsDetailOut
     )
 
 
-async def _get_category(db: DBSession, category_id: int) -> NewsCategory:
+async def _get_category(
+    db: DBSession, category_id: int, request: Request | None = None
+) -> NewsCategory:
     category = await db.get(NewsCategory, category_id)
     if category is None:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, "Категория не найдена"
-        )
+        raise raise_error("NEWS_CATEGORY_MISSING", request=request)
     return category
 
 
@@ -167,17 +168,14 @@ async def _ensure_tags(db: DBSession, names: list[str]) -> list[NewsTag]:
 
 
 async def _get_manageable_post(
-    db: DBSession, post_id: int, user: User
+    db: DBSession, post_id: int, user: User, request: Request | None = None
 ) -> NewsPost:
     """Новость, доступная пользователю на изменение (автор или cntr_admin)."""
     post = await db.get(NewsPost, post_id)
     if post is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Новость не найдена")
+        raise raise_error("NEWS_NOT_FOUND", request=request)
     if not (has_role(user, "cntr_admin") or post.author_id == user.id):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "Можно управлять только своими новостями",
-        )
+        raise raise_error("NEWS_OWN_ONLY", request=request)
     return post
 
 
@@ -265,6 +263,7 @@ async def my_news(db: DBSession, user: CurrentUser) -> list[NewsDetailOut]:
 
 @router.get("/admin-list", response_model=list[NewsDetailOut])
 async def admin_news_list(
+    request: Request,
     db: DBSession,
     user: Annotated[User, Depends(require_role("cntr_admin", "cntr_manager"))],
     status_filter: str | None = Query(
@@ -276,10 +275,7 @@ async def admin_news_list(
         status_filter is not None
         and status_filter not in {"draft", "scheduled", "published"}
     ):
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "status должен быть draft|scheduled|published",
-        )
+        raise raise_error("NEWS_STATUS_INVALID", request=request)
     base = select(NewsPost)
     if not has_role(user, "cntr_admin"):
         base = base.where(NewsPost.author_id == user.id)
@@ -345,6 +341,7 @@ async def news_categories(
 @router.get("/{news_id}", response_model=NewsDetailOut)
 async def news_detail(
     news_id: int,
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> NewsDetailOut:
@@ -363,12 +360,12 @@ async def news_detail(
     )
     post = result.scalars().first()
     if post is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Новость не найдена")
+        raise raise_error("NEWS_NOT_FOUND", request=request)
     can_view_any = user is not None and (
         has_role(user, "cntr_admin") or post.author_id == user.id
     )
     if post.status != "published" and not can_view_any:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Новость не найдена")
+        raise raise_error("NEWS_NOT_FOUND", request=request)
     return _detail_out(post, await _author_name(db, post.author_id))
 
 
@@ -382,23 +379,17 @@ async def news_detail(
 )
 async def create_news(
     payload: NewsCreateIn,
+    request: Request,
     db: DBSession,
     user: Annotated[User, Depends(require_role("cntr_admin", "cntr_manager"))],
 ) -> NewsDetailOut:
     """Создать новость (cntr_admin/cntr_manager; source=manual)."""
     if payload.source != "manual":
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "source должен быть 'manual': auto/api зарезервированы "
-            "для шлюза контент-завода",
-        )
+        raise raise_error("NEWS_SOURCE_MANUAL_ONLY", request=request)
     if payload.created_automatically:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "created_automatically выставляется только шлюзом контент-завода",
-        )
+        raise raise_error("NEWS_AUTO_GATEWAY_ONLY", request=request)
     category = (
-        await _get_category(db, payload.category_id)
+        await _get_category(db, payload.category_id, request)
         if payload.category_id is not None
         else None
     )
@@ -406,15 +397,9 @@ async def create_news(
     status_value = payload.status
     if status_value == "scheduled":
         if payload.scheduled_at is None:
-            raise HTTPException(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                "Для статуса scheduled укажите scheduled_at",
-            )
+            raise raise_error("NEWS_SCHEDULED_AT_REQUIRED", request=request)
         if payload.scheduled_at <= now:
-            raise HTTPException(
-                status.HTTP_422_UNPROCESSABLE_ENTITY,
-                "scheduled_at должен быть в будущем",
-            )
+            raise raise_error("NEWS_SCHEDULED_FUTURE", request=request)
     post = NewsPost(
         title=strip_tags(payload.title),
         content=sanitize_html(payload.content),
@@ -441,11 +426,12 @@ async def create_news(
 async def update_news(
     news_id: int,
     payload: NewsUpdateIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> NewsDetailOut:
     """Редактирование (автор/cntr_admin); published_at не меняется."""
-    post = await _get_manageable_post(db, news_id, user)
+    post = await _get_manageable_post(db, news_id, user, request)
     fields = payload.model_dump(exclude_unset=True)
     if "title" in fields:
         post.title = strip_tags(fields["title"] or "")
@@ -454,7 +440,7 @@ async def update_news(
     if "category_id" in fields:
         category_id = fields["category_id"]
         post.category_id = (
-            (await _get_category(db, category_id)).id
+            (await _get_category(db, category_id, request)).id
             if category_id is not None
             else None
         )
@@ -473,11 +459,12 @@ async def update_news(
 @router.post("/{news_id}/publish", response_model=NewsDetailOut)
 async def publish_news(
     news_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> NewsDetailOut:
     """Опубликовать сейчас (автор/cntr_admin); draft/scheduled → published."""
-    post = await _get_manageable_post(db, news_id, user)
+    post = await _get_manageable_post(db, news_id, user, request)
     if post.status == "published":
         pass  # идемпотентно: published_at не трогаем
     elif post.status in {"draft", "scheduled"}:
@@ -486,7 +473,7 @@ async def publish_news(
         post.scheduled_at = None
         await notify_news_published(db, post.id, post.title)
     else:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Некорректный статус")
+        raise raise_error("NEWS_STATUS_CONFLICT", request=request)
     await db.commit()
     await db.refresh(post)
     await post.awaitable_attrs.tags
@@ -499,22 +486,16 @@ async def publish_news(
 async def schedule_news(
     news_id: int,
     payload: NewsScheduleIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> NewsDetailOut:
     """Отложить публикацию (автор/cntr_admin); draft/scheduled → scheduled."""
-    post = await _get_manageable_post(db, news_id, user)
+    post = await _get_manageable_post(db, news_id, user, request)
     if post.status == "published":
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Опубликованную новость нельзя запланировать — сначала "
-            "снимите с публикации",
-        )
+        raise raise_error("NEWS_RESCHEDULE_CONFLICT", request=request)
     if payload.scheduled_at <= datetime.now(UTC):
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "scheduled_at должен быть в будущем",
-        )
+        raise raise_error("NEWS_SCHEDULED_FUTURE", request=request)
     post.status = "scheduled"
     post.scheduled_at = payload.scheduled_at
     await db.commit()
@@ -528,11 +509,12 @@ async def schedule_news(
 @router.post("/{news_id}/unpublish", response_model=NewsDetailOut)
 async def unpublish_news(
     news_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> NewsDetailOut:
     """Снять с публикации (cntr_admin любую, автор — свою) → draft."""
-    post = await _get_manageable_post(db, news_id, user)
+    post = await _get_manageable_post(db, news_id, user, request)
     post.status = "draft"
     post.published_at = None  # следующая публикация ставит новый published_at
     await db.commit()
@@ -546,6 +528,7 @@ async def unpublish_news(
 @router.delete("/{news_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_news(
     news_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> None:
@@ -554,7 +537,7 @@ async def delete_news(
     P-13: удаление файлов из MinIO — строго после commit БД.
     Иначе падение commit оставляет строки-сироты без файлов.
     """
-    post = await _get_manageable_post(db, news_id, user)
+    post = await _get_manageable_post(db, news_id, user, request)
     # P-13/P-16: media грузим явно (awaitable) до удаления, удаление файлов — после commit
     await post.awaitable_attrs.media
     media_keys = [m.storage_key for m in post.media]
@@ -575,32 +558,30 @@ async def delete_news(
 )
 async def upload_news_media(
     news_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
     file: Annotated[UploadFile, File(description="PDF/DOCX/XLSX/PNG/JPEG до 25 МБ")],
     kind: str = Form("inline"),
 ) -> NewsMediaOut:
     """Загрузка медиа (обложка/вложение/галерея); авторизация как у PATCH."""
-    post = await _get_manageable_post(db, news_id, user)
+    post = await _get_manageable_post(db, news_id, user, request)
     if kind not in MEDIA_KINDS:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "kind должен быть inline|attachment|gallery|cover",
-        )
+        raise raise_error("NEWS_MEDIA_KIND_INVALID", request=request)
     try:
         data = await read_upload_limited(file)
     except FileSizeExceeded as exc:
         # Единообразие с files.py: превышение лимита — 413 (Payload Too Large).
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     except ValueError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     try:
         # P-02 MinIO put в threadpool — не блокирует event loop (news.py:487)
         stored = await asyncio.to_thread(store_news_media, post.id, file.filename or "media", data)
     except ValueError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     except FileStorageError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     max_order = await db.scalar(
         select(func.max(NewsPostMedia.sort_order)).where(
             NewsPostMedia.post_id == post.id
@@ -635,14 +616,15 @@ async def upload_news_media(
 async def delete_news_media(
     news_id: int,
     media_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> None:
     """Удаление медиа (автор/cntr_admin); файл удаляется из хранилища."""
-    post = await _get_manageable_post(db, news_id, user)
+    post = await _get_manageable_post(db, news_id, user, request)
     media = await db.get(NewsPostMedia, media_id)
     if media is None or media.post_id != post.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Медиа не найдено")
+        raise raise_error("NEWS_MEDIA_MISSING", request=request)
     with contextlib.suppress(FileStorageError):
         storage.remove(media.storage_key)
     if post.cover_key == media.storage_key:

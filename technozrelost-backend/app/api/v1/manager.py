@@ -10,11 +10,12 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 
 from app.api.v1.projects import CONTROL_POINTS_TEMPLATE, _qr_out
 from app.core.deps import DBSession, require_role
+from app.core.errors import raise_error
 from app.db.models import (
     AuditTrailEntry,
     ControlPoint,
@@ -113,25 +114,23 @@ async def queue_drafts(db: DBSession, user: ManagerUser) -> list[DraftProjectOut
 
 @router.post("/queue/drafts/{project_id}/decide", response_model=DraftProjectOut)
 async def decide_draft(
-    project_id: int, payload: DraftDecisionIn, db: DBSession, user: ManagerUser
+    project_id: int,
+    payload: DraftDecisionIn,
+    request: Request,
+    db: DBSession,
+    user: ManagerUser,
 ) -> DraftProjectOut:
     project = await db.get(Project, project_id)
     if project is None or project.status != "draft":
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Черновик не найден")
+        raise raise_error("MANAGER_DRAFT_MISSING", request=request)
 
     if payload.approve:
         # Тикет 08: первичное подтверждение — на заявленный уровень, не ниже УГТ 2
         level = payload.level or project.preliminary_level or 2
         if level < 2:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                "Официальный уровень не может быть ниже УГТ 2",
-            )
+            raise raise_error("MANAGER_LEVEL_MIN", request=request)
         if project.preliminary_level is not None and level > project.preliminary_level:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                "Нельзя подтвердить уровень выше предварительного (заявленного)",
-            )
+            raise raise_error("MANAGER_LEVEL_ABOVE", request=request)
         project.status = "published"
         project.current_level = level
         project.rejection_reason = None
@@ -240,27 +239,25 @@ async def queue_promotions(db: DBSession, user: ManagerUser) -> list[PromotionRe
 
 @router.post("/queue/promotions/{request_id}/decide", response_model=PromotionRequestOut)
 async def decide_promotion(
-    request_id: int, payload: PromotionDecisionIn, db: DBSession, user: ManagerUser
+    request_id: int,
+    payload: PromotionDecisionIn,
+    request: Request,
+    db: DBSession,
+    user: ManagerUser,
 ) -> PromotionRequestOut:
     req = await db.get(PromotionRequest, request_id)
     if req is None or req.status != "pending_manager":
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена или уже рассмотрена")
+        raise raise_error("REQUEST_NOT_FOUND_OR_DECIDED", request=request)
 
     project = await db.get(Project, req.project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
 
     # Тикет 08: повышение строго N→N+1 от текущего уровня проекта
     if project.current_level != req.from_level:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Уровень проекта изменился — переоформите заявку (N→N+1)",
-        )
+        raise raise_error("MANAGER_LEVEL_CHANGED", request=request)
     if req.to_level != req.from_level + 1:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Подтверждается только следующий уровень (N→N+1)",
-        )
+        raise raise_error("MANAGER_LEVEL_NEXT_ONLY", request=request)
 
     if payload.approve:
         project.current_level = req.to_level

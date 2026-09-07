@@ -3,28 +3,28 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Request
 
 from app.core.deps import CurrentUser, DBSession
+from app.core.errors import raise_error
 from app.schemas import ChatIn, ChatOut
 from app.services import ai_metrics
 from app.services.ai_assistant import process_chat
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-AI_RATE_LIMIT_MESSAGE = (
-    "Слишком много запросов к AI-консультанту — подождите минуту "
-    "или задайте вопрос более конкретно."
-)
-
 
 async def _handle_chat(
-    payload: ChatIn, db: DBSession, user: CurrentUser, contour: str | None = None
+    payload: ChatIn,
+    db: DBSession,
+    user: CurrentUser,
+    contour: str | None = None,
+    request: Request | None = None,
 ) -> ChatOut:
     """Общий обработчик с контур-фильтром tuno/kaba (rag.py:26)."""
 
     if not ai_metrics.allow_request(user.id):
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, AI_RATE_LIMIT_MESSAGE)
+        raise raise_error("AI_RATE_LIMITED", request=request)
 
     ai_metrics.METRICS["requests_total"] += 1
     started = time.monotonic()
@@ -36,6 +36,7 @@ async def _handle_chat(
 @router.post("", response_model=ChatOut)
 async def chat(
     payload: ChatIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> ChatOut:
@@ -45,29 +46,31 @@ async def chat(
     провайдера или таймаут не влияют на основную платформу (fallback).
     """
 
-    return await _handle_chat(payload, db, user, contour=None)
+    return await _handle_chat(payload, db, user, contour=None, request=request)
 
 
 @router.post("/tuno", response_model=ChatOut)
 async def chat_tuno(
     payload: ChatIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> ChatOut:
     """Контур Туно: реестры/организации (tuno) — изолирован WHERE contour='tuno'."""
 
-    return await _handle_chat(payload, db, user, contour="tuno")
+    return await _handle_chat(payload, db, user, contour="tuno", request=request)
 
 
 @router.post("/kaba", response_model=ChatOut)
 async def chat_kaba(
     payload: ChatIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> ChatOut:
     """Контур Каба: ГОСТ/методология (kaba) — изолирован WHERE contour='kaba'."""
 
-    return await _handle_chat(payload, db, user, contour="kaba")
+    return await _handle_chat(payload, db, user, contour="kaba", request=request)
 
 
 @router.get("/metrics/ai")

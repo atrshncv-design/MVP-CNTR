@@ -158,7 +158,9 @@ class ReadinessAnswerIn(BaseModel):
     @model_validator(mode="after")
     def require_not_applicable_reason(self) -> ReadinessAnswerIn:
         if self.status == "not_applicable" and not (self.comment or "").strip():
-            raise ValueError("Для ответа «Неприменимо» нужно указать обоснование.")
+            # Код каталога, не текст: глобальный хендлер RequestValidationError
+            # (app/main.py) переводит его через каталог с учётом Accept-Language.
+            raise ValueError("ASSESS_NA_NEEDS_REASON")
         return self
 
 

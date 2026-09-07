@@ -12,12 +12,13 @@ from __future__ import annotations
 import hashlib
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, Request, UploadFile, status
 from sqlalchemy import select
 
 from app.api.v1.manager import notify_managers
 from app.api.v1.projects import require_project_access
 from app.core.deps import CurrentUser, DBSession
+from app.core.errors import raise_error
 from app.db.models import (
     AuditTrailEntry,
     Project,
@@ -39,6 +40,7 @@ from app.services.file_storage import (
     read_upload_limited,
     scanner,
     store_project_file,
+    to_http_exception,
 )
 
 router = APIRouter(prefix="/projects", tags=["stages"])
@@ -158,17 +160,17 @@ async def _latest_request(db: DBSession, project_id: int) -> PromotionRequest | 
 
 @router.get("/{project_id}/stage-requirements", response_model=list[StageRequirementOut])
 async def stage_requirements(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> list[StageRequirementOut]:
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
     project = await db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
     if project.status != "published":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект ещё не опубликован менеджером")
+        raise raise_error("PROJECT_NOT_PUBLISHED", request=request)
     stage = await _current_stage(db, project)
     if stage is None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект достиг максимального УГТ 9")
+        raise raise_error("PROJECT_MAX_LEVEL", request=request)
     return await _stage_reqs_with_status(db, project, stage)
 
 
@@ -185,7 +187,11 @@ async def _next_version(db: DBSession, project_id: int, title: str) -> int:
 
 
 async def _trigger_application(
-    db: DBSession, project: Project, doc: ProjectDocument, user: CurrentUser
+    db: DBSession,
+    project: Project,
+    doc: ProjectDocument,
+    user: CurrentUser,
+    http_request: Request | None = None,
 ) -> dict[str, object]:
     """Автотриггер: полный комплект → заявка на повышение (снимок версий)."""
     result: dict[str, object] = {"doc_id": doc.id, "request_id": None, "request_status": None}
@@ -272,11 +278,7 @@ async def _trigger_application(
                         if d.storage_key is None or d.scan_status == "clean"
                     }
                     if current == snapshot and current:
-                        raise HTTPException(
-                            status.HTTP_409_CONFLICT,
-                            "Комплект не изменён после отклонения — "
-                            "загрузите исправленные документы",
-                        )
+                        raise raise_error("STAGE_KIT_UNCHANGED", request=http_request)
                 attempt = (previous.attempt_no + 1) if previous else 1
                 request = PromotionRequest(
                     project_id=project.id,
@@ -360,6 +362,7 @@ async def _trigger_application(
 )
 async def upload_stage_document_file(
     project_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
     file: Annotated[UploadFile, File()],
@@ -370,34 +373,31 @@ async def upload_stage_document_file(
 
     Только clean-файл засчитывается в комплект и инициирует автозаявку.
     """
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
     project = await db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
     if project.status != "published":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект ещё не опубликован менеджером")
+        raise raise_error("PROJECT_NOT_PUBLISHED", request=request)
     if project.current_level >= MAX_LEVEL:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект достиг максимального УГТ 9")
+        raise raise_error("PROJECT_MAX_LEVEL", request=request)
 
     requirement = await db.get(StageRequirement, stage_requirement_id)
     if requirement is None or requirement.from_level != project.current_level:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Требование не относится к текущему этапу проекта",
-        )
+        raise raise_error("PROJECT_STAGE_INVALID", request=request)
 
     # Единый лимитированный читатель (R16): обрыв чтения сверх лимита ДО записи
     # в хранилище; единообразие с files.py/news.py — превышение = 413.
     try:
         data = await read_upload_limited(file)
     except FileSizeExceeded as exc:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     try:
         stored = store_project_file(project.id, file.filename or "document", data)
     except ValueError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     except FileStorageError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     scan_status, scan_result = await scanner.scan(data)
 
     doc_title = title or (file.filename or "Документ")
@@ -430,32 +430,30 @@ async def upload_stage_document_file(
             "scan_status": scan_status,
             "evaluation_success": None,
         }
-    return await _trigger_application(db, project, doc, user)
+    return await _trigger_application(db, project, doc, user, request)
 
 
 @router.post("/{project_id}/stage-documents", status_code=status.HTTP_201_CREATED)
 async def upload_stage_document(
     project_id: int,
     payload: StageDocumentIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> dict[str, object]:
     """Загрузка документа этапа. Полный комплект → автозаявка на повышение УГТ."""
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
     project = await db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
     if project.status != "published":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект ещё не опубликован менеджером")
+        raise raise_error("PROJECT_NOT_PUBLISHED", request=request)
     if project.current_level >= MAX_LEVEL:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект достиг максимального УГТ 9")
+        raise raise_error("PROJECT_MAX_LEVEL", request=request)
 
     requirement = await db.get(StageRequirement, payload.stage_requirement_id)
     if requirement is None or requirement.from_level != project.current_level:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Требование не относится к текущему этапу проекта",
-        )
+        raise raise_error("PROJECT_STAGE_INVALID", request=request)
 
     doc = ProjectDocument(
         project_id=project.id,
@@ -469,30 +467,28 @@ async def upload_stage_document(
     db.add(doc)
     await db.flush()
 
-    return await _trigger_application(db, project, doc, user)
+    return await _trigger_application(db, project, doc, user, request)
 
 
 @router.post("/{project_id}/stage-evaluate", response_model=StageEvaluateOut)
 async def stage_evaluate(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> StageEvaluateOut:
     """Повторный запуск предварительной оценки комплекта (после дозагрузки)."""
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
     project = await db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
 
-    request = await _latest_request(db, project.id)
-    if request is None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, "Заявка не создана — загрузите документы этапа"
-        )
+    latest = await _latest_request(db, project.id)
+    if latest is None:
+        raise raise_error("PROJECT_REQUEST_MISSING", request=request)
 
     stage = await db.scalar(
-        select(StageRequirement).where(StageRequirement.from_level == request.from_level)
+        select(StageRequirement).where(StageRequirement.from_level == latest.from_level)
     )
     if stage is None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Этап не найден в словаре")
+        raise raise_error("PROJECT_STAGE_UNKNOWN", request=request)
 
     docs = list(
         (
@@ -507,24 +503,24 @@ async def stage_evaluate(
         .all()
     )
     success, missing, summary = await _evaluate(project, stage, docs)
-    request.evaluation_result = {
+    latest.evaluation_result = {
         "success": success,
         "missing": missing,
         "summary": summary,
     }
-    if success and request.status in ("docs_uploaded", "pre_evaluated"):
-        request.status = "pending_manager"
+    if success and latest.status in ("docs_uploaded", "pre_evaluated"):
+        latest.status = "pending_manager"
         await notify_managers(
             db,
             "promotion.pending",
             f"Автозаявка на повышение УГТ {project.name}",
-            {"project_id": project.id, "request_id": request.id},
+            {"project_id": project.id, "request_id": latest.id},
         )
 
     await db.commit()
-    await db.refresh(request)
+    await db.refresh(latest)
     return StageEvaluateOut(
-        request_id=request.id,
+        request_id=latest.id,
         success=success,
         missing=missing,
         summary=summary,

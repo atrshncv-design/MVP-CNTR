@@ -122,6 +122,15 @@ CATALOG: dict[str, ErrorEntry] = {
         ru="Файл превышает лимит {limit} МБ",
         en="File exceeds the {limit} MB limit",
     ),
+    # Пара к FILE_TOO_LARGE: тот же текст, но 413 — поток чтения оборван
+    # на лимите ДО записи (read_upload_limited → FileSizeExceeded), а 422 —
+    # валидация уже прочитанного (store_* → ValueError). Статусы разные
+    # исторически (история 5: тот же статус, что раньше, в каждой ветке).
+    "FILE_UPLOAD_TOO_LARGE": ErrorEntry(
+        status=413,
+        ru="Файл превышает лимит {limit} МБ",
+        en="File exceeds the {limit} MB limit",
+    ),
     "FILE_BAD_FORMAT": ErrorEntry(
         status=422,
         ru="Недопустимый формат: разрешены PDF, DOCX, XLSX, PNG, JPEG",

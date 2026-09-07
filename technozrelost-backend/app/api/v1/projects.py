@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi import APIRouter, Query, Request, Response, status
 from sqlalchemy import Select, and_, func, or_, select
 
 from app.core.deps import (
@@ -14,6 +14,7 @@ from app.core.deps import (
     has_role,
     is_cntr_staff,
 )
+from app.core.errors import raise_error
 from app.db.models import (
     AuditTrailEntry,
     ControlPoint,
@@ -155,10 +156,12 @@ def project_list_stmt(user: CurrentUser) -> Select[tuple[Project]]:
     )
 
 
-async def get_project_or_404(db: DBSession, project_id: int) -> Project:
+async def get_project_or_404(
+    db: DBSession, project_id: int, request: Request | None = None
+) -> Project:
     project = await db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
     return project
 
 
@@ -179,10 +182,15 @@ async def can_access_project(db: DBSession, project: Project, user: CurrentUser)
     return membership is not None
 
 
-async def require_project_access(db: DBSession, project_id: int, user: CurrentUser) -> Project:
-    project = await get_project_or_404(db, project_id)
+async def require_project_access(
+    db: DBSession,
+    project_id: int,
+    user: CurrentUser,
+    request: Request | None = None,
+) -> Project:
+    project = await get_project_or_404(db, project_id, request)
     if not await can_access_project(db, project, user):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Проект не найден")
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
     return project
 
 
@@ -296,6 +304,7 @@ async def project_registry(
 async def publish_project(
     project_id: int,
     payload: PublishIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> ProjectOut:
@@ -304,7 +313,7 @@ async def publish_project(
     УГТ 1–2: публикуется после авто-подтверждения (`auto_confirmed`).
     УГТ 3–9: публикуется только после решения менеджера (`approved`).
     """
-    project = await require_project_access(db, project_id, user)
+    project = await require_project_access(db, project_id, user, request)
     membership = await db.scalar(
         select(ProjectMember).where(
             ProjectMember.project_id == project_id,
@@ -314,10 +323,7 @@ async def publish_project(
     )
     is_staff = is_cntr_staff(user)
     if membership is None and not is_staff and project.created_by != user.id:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "Публикация доступна только администратору проекта или менеджеру",
-        )
+        raise raise_error("PROJECT_PUBLISH_FORBIDDEN", request=request)
 
     if payload.is_public:
         # Проверка права на публикацию
@@ -328,10 +334,7 @@ async def publish_project(
         elif project.status == "published" and project.current_level >= 1:
             pass  # После менеджерского апрува драфта (draft→published)
         else:
-            raise HTTPException(
-                status.HTTP_409_CONFLICT,
-                "Публикация требует подтверждения УГТ (авто для 1-2, менеджер для 3-9)",
-            )
+            raise raise_error("PROJECT_PUBLISH_NEEDS_CONFIRM", request=request)
         project.is_public = True
         project.show_preliminary = payload.show_preliminary
         if project.published_at is None:
@@ -347,15 +350,15 @@ async def publish_project(
 
 @router.delete("/{project_id}", status_code=204)
 async def delete_project(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> None:
     """Удаление только пустого черновика (тикет 13).
 
     Верифицированный/опубликованный проект удалить нельзя — только архив.
     """
-    project = await require_project_access(db, project_id, user)
+    project = await require_project_access(db, project_id, user, request)
     if project.created_by != user.id and not is_cntr_staff(user):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Только владелец")
+        raise raise_error("PROJECT_OWNER_ONLY", request=request)
     has_answers = await db.scalar(
         select(QuestionnaireResult.id).where(
             QuestionnaireResult.project_id == project_id
@@ -367,25 +370,21 @@ async def delete_project(
         ).limit(1)
     )
     if has_answers or has_docs or project.status not in ("draft", "auto_confirmed"):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Удалить можно только пустой черновик без документов; "
-            "верифицированный проект архивируется",
-        )
+        raise raise_error("PROJECT_DELETE_DRAFT_ONLY", request=request)
     await db.delete(project)
     await db.commit()
 
 
 @router.post("/{project_id}/archive", response_model=ProjectOut)
 async def archive_project(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> ProjectOut:
     """Архивирование верифицированного проекта (тикет 13)."""
-    project = await require_project_access(db, project_id, user)
+    project = await require_project_access(db, project_id, user, request)
     if project.created_by != user.id and not is_cntr_staff(user):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Только владелец")
+        raise raise_error("PROJECT_OWNER_ONLY", request=request)
     if project.status == "archived":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Проект уже в архиве")
+        raise raise_error("PROJECT_ARCHIVED", request=request)
     project.status = "archived"
     project.is_public = False
     await db.commit()
@@ -395,14 +394,14 @@ async def archive_project(
 
 @router.get("/{project_id}/export")
 async def export_project(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> Response:
     """Экспорт проекта: карточка, решения заявок, заключения (тикет 13).
 
     Отдаёт JSON-пакет (переносимый) с подтверждёнными данными; файлы
     документов не включаются в публичный экспорт — только метаданные.
     """
-    project = await require_project_access(db, project_id, user)
+    project = await require_project_access(db, project_id, user, request)
     from fastapi.responses import JSONResponse
 
     results = (
@@ -503,13 +502,14 @@ async def export_project(
 @router.get("/{project_id}", response_model=ProjectDetailOut)
 async def get_project_detail(
     project_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
     all: bool = Query(  # noqa: A002
         False, description="M4 TICKET-08: staff ?all=1 → все строки, иначе avg"
     ),
 ) -> ProjectDetailOut:
-    project = await require_project_access(db, project_id, user)
+    project = await require_project_access(db, project_id, user, request)
 
     # Fetch all related data — M-02 + M4 TICKET-08: изоляция + staff avg.
     # member → свои строки, staff без all → avg per level, staff ?all=1 → все.
@@ -611,6 +611,7 @@ async def get_project_detail(
 )
 async def save_questionnaire(
     payload: QuestionnaireResultIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> QuestionnaireResultOut:
@@ -620,7 +621,7 @@ async def save_questionnaire(
     перезаписывал проценты всего проекта. После — изолировано по user_id:
     (project_id, level_id, user_id) уникальны, чужие записи не трогаются.
     """
-    await require_project_access(db, payload.project_id, user)
+    await require_project_access(db, payload.project_id, user, request)
 
     stmt = select(QuestionnaireResult).where(
         QuestionnaireResult.project_id == payload.project_id,
@@ -654,11 +655,12 @@ async def decide_control_point(
     project_id: int,
     cp_id: int,
     payload: ControlPointDecisionIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> ControlPointOut:
     """Решение по контрольной точке: эксперт УГТ (верификация) или аудитор (КТ-1 Go/No-Go)."""
-    await get_project_or_404(db, project_id)  # проверка существования проекта
+    await get_project_or_404(db, project_id, request)  # проверка существования проекта
     is_verifier = (
         user.is_superuser
         or is_cntr_staff(user)
@@ -666,12 +668,12 @@ async def decide_control_point(
     )
     if not is_verifier:
         # Обычные роли — только участники проекта (иначе 404)
-        await require_project_access(db, project_id, user)
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Недостаточно прав для решения по КТ")
+        await require_project_access(db, project_id, user, request)
+        raise raise_error("PROJECT_KT_FORBIDDEN", request=request)
 
     cp = await db.get(ControlPoint, cp_id)
     if cp is None or cp.project_id != project_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Контрольная точка не найдена")
+        raise raise_error("CONTROL_POINT_NOT_FOUND", request=request)
 
     cp.status = payload.status
     cp.decision = payload.decision
@@ -698,6 +700,7 @@ async def decide_control_point(
 async def upload_verification_doc(
     project_id: int,
     payload: VerificationDocIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> VerificationDocOut:
@@ -706,12 +709,9 @@ async def upload_verification_doc(
     Специальный случай RBAC: до вступления по токену (в т.ч. для регулирующей
     организации) возвращаем 403 с понятным сообщением, а не 404.
     """
-    project = await get_project_or_404(db, project_id)
+    project = await get_project_or_404(db, project_id, request)
     if not await can_access_project(db, project, user):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "Сначала присоединитесь к проекту по токену TZ-XXXXXX",
-        )
+        raise raise_error("PROJECT_JOIN_REQUIRED", request=request)
     # H-01 (TICKET-01, SPEC-01 FR-01): любой непустой file_ref валидируется.
     # Легаси-allowlist {"ref-1","ref-2"} — исключение (фикстуры без MinIO-объекта).
     # Иначе: ProjectDocument.storage_key того же проекта — ок, иначе storage.get → 404.
@@ -728,9 +728,7 @@ async def upload_verification_doc(
             try:
                 await asyncio.to_thread(storage.get, payload.file_ref)
             except FileStorageError as exc:
-                raise HTTPException(
-                    status.HTTP_404_NOT_FOUND, "Файл не найден в хранилище"
-                ) from exc
+                raise raise_error("STORED_FILE_MISSING", request=request) from exc
     doc = VerificationDocument(
         project_id=project.id,
         uploader_id=user.id,

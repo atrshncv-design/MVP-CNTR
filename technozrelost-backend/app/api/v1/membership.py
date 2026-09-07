@@ -10,11 +10,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 
 from app.api.v1.projects import get_project_or_404, require_project_access
 from app.core.deps import CNTR_STAFF_SLUGS, CurrentUser, DBSession, has_role, require_role
+from app.core.errors import raise_error
 from app.core.security import sign_share_attribution, verify_share_attribution
 from app.db.models import AuditTrailEntry, Project, ProjectMember, User, generate_join_token
 from app.schemas import (
@@ -87,15 +88,18 @@ async def _is_priority_member(db: DBSession, project_id: int, user_id: int) -> b
 
 
 async def require_priority_access(
-    db: DBSession, project_id: int, user: CurrentUser
+    db: DBSession,
+    project_id: int,
+    user: CurrentUser,
+    request: Request | None = None,
 ) -> Project:
     """Доступ к модерации вступления: создатель, персонал ЦНТР или приоритетный участник."""
-    project = await require_project_access(db, project_id, user)
+    project = await require_project_access(db, project_id, user, request)
     if user.is_superuser or has_role(user, *CNTR_STAFF_SLUGS) or project.created_by == user.id:
         return project
     if await _is_priority_member(db, project_id, user.id):
         return project
-    raise HTTPException(status.HTTP_403_FORBIDDEN, "Недостаточно прав для модерации вступления")
+    raise raise_error("MEMBERSHIP_MODERATION_FORBIDDEN", request=request)
 
 
 async def _sharer_is_priority(
@@ -114,7 +118,7 @@ async def _sharer_is_priority(
 
 @router.get("/{project_id}/share-sig", response_model=ShareSigOut)
 async def share_signature(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> ShareSigOut:
     """Выдаёт подписанную атрибуцию «поделился ссылкой» (N-01).
 
@@ -122,7 +126,7 @@ async def share_signature(
     кто вправе авто-одобрять вступление. Подпись живёт ограниченный срок,
     поэтому «вечных» приглашений не остаётся.
     """
-    project = await require_priority_access(db, project_id, user)
+    project = await require_priority_access(db, project_id, user, request)
     return ShareSigOut(share_sig=sign_share_attribution(project.id, user.id))
 
 
@@ -130,11 +134,13 @@ async def share_signature(
 
 
 @router.post("/join", response_model=JoinResultOut)
-async def join_project(payload: JoinIn, db: DBSession, user: CurrentUser) -> JoinResultOut:
+async def join_project(
+    payload: JoinIn, request: Request, db: DBSession, user: CurrentUser
+) -> JoinResultOut:
     token = payload.token.strip().upper()
     project = await db.scalar(select(Project).where(Project.join_token == token))
     if project is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Токен недействителен")
+        raise raise_error("MEMBERSHIP_TOKEN_INVALID", request=request)
 
     existing = await db.scalar(
         select(ProjectMember).where(
@@ -146,8 +152,8 @@ async def join_project(payload: JoinIn, db: DBSession, user: CurrentUser) -> Joi
         if existing.status == "active":
             return JoinResultOut(status="active", project=_project_out(project))
         if existing.status == "pending":
-            raise HTTPException(status.HTTP_409_CONFLICT, "Заявка уже отправлена на рассмотрение")
-        raise HTTPException(status.HTTP_409_CONFLICT, "Вы были исключены из проекта")
+            raise raise_error("MEMBERSHIP_ALREADY_PENDING", request=request)
+        raise raise_error("MEMBERSHIP_EXCLUDED", request=request)
 
     # N-01: авторство ссылки подтверждает только серверная HMAC-подпись;
     # всё, что клиент пришлёт сверх этого (в т.ч. бывший shared_by), игнорируется.
@@ -190,9 +196,9 @@ async def join_project(payload: JoinIn, db: DBSession, user: CurrentUser) -> Joi
 
 @router.get("/{project_id}/join-requests", response_model=list[JoinRequestOut])
 async def list_join_requests(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> list[JoinRequestOut]:
-    await require_priority_access(db, project_id, user)
+    await require_priority_access(db, project_id, user, request)
 
     rows = await db.execute(
         select(ProjectMember, User)
@@ -230,16 +236,17 @@ async def decide_join_request(
     project_id: int,
     member_id: int,
     payload: JoinDecisionIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> JoinRequestOut:
-    await require_priority_access(db, project_id, user)
+    await require_priority_access(db, project_id, user, request)
 
     member = await db.get(ProjectMember, member_id)
     if member is None or member.project_id != project_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+        raise raise_error("REQUEST_NOT_FOUND", request=request)
     if member.status != "pending":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Заявка уже рассмотрена")
+        raise raise_error("MEMBERSHIP_ALREADY_DECIDED", request=request)
 
     member.status = "active" if payload.approve else "removed"
     if payload.approve and payload.role_in_project:
@@ -273,9 +280,9 @@ async def decide_join_request(
 
 @router.post("/{project_id}/regenerate-token", response_model=RegenerateTokenOut)
 async def regenerate_token(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> RegenerateTokenOut:
-    project = await require_priority_access(db, project_id, user)
+    project = await require_priority_access(db, project_id, user, request)
 
     old_token = project.join_token
     project.join_token = generate_join_token()
@@ -292,10 +299,11 @@ async def set_member_priority(
     project_id: int,
     user_id: int,
     payload: MemberPriorityIn,
+    request: Request,
     db: DBSession,
     user: ManagerUser,
 ) -> JoinRequestOut:
-    await get_project_or_404(db, project_id)  # проверка существования проекта
+    await get_project_or_404(db, project_id, request)  # проверка существования проекта
     member = await db.scalar(
         select(ProjectMember).where(
             ProjectMember.project_id == project_id,
@@ -304,7 +312,7 @@ async def set_member_priority(
         )
     )
     if member is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Активный участник не найден")
+        raise raise_error("MEMBERSHIP_ACTIVE_MISSING", request=request)
 
     member.is_priority = payload.is_priority
     await _add_audit(

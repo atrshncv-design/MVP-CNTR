@@ -12,12 +12,13 @@ import asyncio
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.auth import _user_out
 from app.core.deps import CurrentUser, DBSession, require_role
+from app.core.errors import raise_error
 from app.core.security import hash_password, verify_password
 from app.db.models import AuditTrailEntry, RefreshToken, Role, User, user_roles_tbl
 from app.schemas import (
@@ -64,11 +65,11 @@ async def update_profile(
 
 @router.post("/me/password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(
-    payload: PasswordChangeIn, db: DBSession, user: CurrentUser
+    payload: PasswordChangeIn, request: Request, db: DBSession, user: CurrentUser
 ) -> None:
     # Q-01 bcrypt в threadpool — не блокирует event loop при смене пароля
     if not await asyncio.to_thread(verify_password, payload.old_password, user.password_hash):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный текущий пароль")
+        raise raise_error("AUTH_WRONG_PASSWORD", request=request)
     user.password_hash = await asyncio.to_thread(hash_password, payload.new_password)
     # R15: смена пароля (утеря ноутбука) обязана убить ВСЕ сессии —
     # ревоким каждый живой refresh пользователя одним запросом.
@@ -93,12 +94,13 @@ async def list_users(db: DBSession, user: AdminUser) -> list[UserAdminOut]:
 async def update_user(
     user_id: int,
     payload: UserRoleUpdateIn,
+    request: Request,
     db: DBSession,
     user: AdminUser,
 ) -> UserAdminOut:
     target = await db.get(User, user_id)
     if target is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Пользователь не найден")
+        raise raise_error("USER_NOT_FOUND", request=request)
 
     if payload.roles:
         roles = (
@@ -109,8 +111,10 @@ async def update_user(
         found = {r.slug for r in roles}
         missing = set(payload.roles) - found
         if missing:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, f"Неизвестные роли: {', '.join(sorted(missing))}"
+            raise raise_error(
+                "USER_UNKNOWN_ROLES",
+                {"roles": ", ".join(sorted(missing))},
+                request=request,
             )
         # Частичный уникальный индекс user_roles_primary_uq допускает только
         # одну primary-роль — первая становится primary, остальные нет.

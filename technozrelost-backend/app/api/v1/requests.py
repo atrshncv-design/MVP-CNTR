@@ -10,12 +10,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Request, status
 from fastapi.responses import Response
 from sqlalchemy import delete, func, select
 
 from app.api.v1.projects import require_project_access
 from app.core.deps import CurrentUser, DBSession, has_role
+from app.core.errors import raise_error
 from app.db.models import (
     Project,
     ProjectDocument,
@@ -37,12 +38,16 @@ def _is_staff(user: CurrentUser) -> bool:
 
 
 async def _require_request_access(
-    db: DBSession, project_id: int, request_id: int, user: CurrentUser
+    db: DBSession,
+    project_id: int,
+    request_id: int,
+    user: CurrentUser,
+    request: Request | None = None,
 ) -> PromotionRequest:
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
     req = await db.get(PromotionRequest, request_id)
     if req is None or req.project_id != project_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+        raise raise_error("REQUEST_NOT_FOUND", request=request)
     return req
 
 
@@ -59,10 +64,10 @@ async def _comment_out(db: DBSession, comment: RequestComment) -> CommentOut:
 
 @router.get("/{project_id}/requests", response_model=list[RequestOut])
 async def list_project_requests(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> list[RequestOut]:
     """Заявки проекта для участников (лента обсуждений, US 53)."""
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
     requests = (
         (
             await db.execute(
@@ -105,9 +110,13 @@ async def list_project_requests(
     "/{project_id}/requests/{request_id}/comments", response_model=list[CommentOut]
 )
 async def list_comments(
-    project_id: int, request_id: int, db: DBSession, user: CurrentUser
+    project_id: int,
+    request_id: int,
+    request: Request,
+    db: DBSession,
+    user: CurrentUser,
 ) -> list[CommentOut]:
-    await _require_request_access(db, project_id, request_id, user)
+    await _require_request_access(db, project_id, request_id, user, request)
     comments = (
         (
             await db.execute(
@@ -131,21 +140,20 @@ async def add_comment(
     project_id: int,
     request_id: int,
     payload: CommentIn,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
 ) -> CommentOut:
-    req = await _require_request_access(db, project_id, request_id, user)
+    req = await _require_request_access(db, project_id, request_id, user, request)
     if req.status == "approved":
-        raise HTTPException(
-            status.HTTP_409_CONFLICT, "Заявка подтверждена — комментарии закрыты"
-        )
+        raise raise_error("REQUEST_CLOSED", request=request)
     comment = RequestComment(
         promotion_request_id=request_id,
         author_id=user.id,
         body=payload.body.strip(),
     )
     if not comment.body:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Пустой комментарий")
+        raise raise_error("REQUEST_EMPTY_COMMENT", request=request)
     db.add(comment)
     await db.commit()
     return await _comment_out(db, comment)
@@ -153,15 +161,16 @@ async def add_comment(
 
 @router.get("/{project_id}/requests/{request_id}/conclusion.pdf")
 async def download_conclusion(
-    project_id: int, request_id: int, db: DBSession, user: CurrentUser
+    project_id: int,
+    request_id: int,
+    request: Request,
+    db: DBSession,
+    user: CurrentUser,
 ) -> Response:
     """PDF-заключение по рассмотренной заявке (участники и менеджеры)."""
-    req = await _require_request_access(db, project_id, request_id, user)
+    req = await _require_request_access(db, project_id, request_id, user, request)
     if req.status not in ("approved", "rejected"):
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            "Заключение доступно после решения менеджера",
-        )
+        raise raise_error("REQUEST_CONCLUSION_PENDING", request=request)
     project = await db.get(Project, project_id)
     manager = await db.get(User, req.manager_id) if req.manager_id else None
     pdf = build_conclusion_pdf(
@@ -187,11 +196,11 @@ async def download_conclusion(
 
 @router.delete("/{project_id}/files/old-versions")
 async def cleanup_old_versions(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> dict[str, Any]:
     """Retention: удаляет старые версии документов (кроме последней на title),
     защищая версии, зафиксированные в неизменяемых снимках заявок."""
-    project = await require_project_access(db, project_id, user)
+    project = await require_project_access(db, project_id, user, request)
     membership = await db.scalar(
         select(ProjectMember).where(
             ProjectMember.project_id == project_id,
@@ -201,10 +210,7 @@ async def cleanup_old_versions(
     )
     is_staff = _is_staff(user)
     if membership is None and not is_staff and project.created_by != user.id:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "Очистка версий доступна администратору проекта или менеджеру",
-        )
+        raise raise_error("REQUEST_VERSIONS_FORBIDDEN", request=request)
 
     documents = (
         (

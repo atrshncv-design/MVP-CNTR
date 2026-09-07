@@ -10,11 +10,12 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Request, status
 from sqlalchemy import or_, select
 
 from app.api.v1.projects import compute_current_level
 from app.core.deps import CurrentUser, DBSession
+from app.core.errors import locale_from_request, raise_error
 from app.db.models import (
     AssessmentAnswer,
     AssessmentCheckpoint,
@@ -139,14 +140,14 @@ async def _ensure_template(db: DBSession) -> tuple[AssessmentTemplate, list[Asse
 
 
 @router.get("/template")
-async def assessment_template() -> dict[str, Any]:
+async def assessment_template(request: Request) -> dict[str, Any]:
     """Публичный versioned-контракт вопросов для клиента экспресс-оценки."""
-    return template_payload()
+    return template_payload(locale=locale_from_request(request))
 
 
 @router.post("", response_model=DraftProjectOut, status_code=status.HTTP_201_CREATED)
 async def create_assessment(
-    payload: AssessmentIn, db: DBSession, user: CurrentUser
+    payload: AssessmentIn, request: Request, db: DBSession, user: CurrentUser
 ) -> DraftProjectOut:
     """Экспресс-оценка: черновик с предварительным УГТ (переоценка → 403)."""
     already = await db.scalar(
@@ -157,32 +158,28 @@ async def create_assessment(
         )
     )
     if already is not None:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            "Переоценка недоступна — проект уже оценён; доработка идёт уровнями N→N+1.",
-        )
+        raise raise_error("ASSESS_REEVAL_FORBIDDEN", request=request)
 
     if not payload.answers and not payload.questionnaire_results:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "Нужно заполнить экспресс-оценку.",
-        )
+        raise raise_error("ASSESS_EMPTY", request=request)
 
     readiness_result: dict[str, Any] | None = None
     template: AssessmentTemplate | None = None
     checkpoints: list[AssessmentCheckpoint] = []
     if payload.answers:
         if payload.template_version and payload.template_version != READINESS_TEMPLATE_VERSION:
-            raise HTTPException(
-                status.HTTP_409_CONFLICT,
-                "Версия анкеты устарела — обновите страницу и заполните актуальный шаблон.",
-            )
+            raise raise_error("ASSESS_STALE_TEMPLATE", request=request)
         try:
             readiness_result = compute_readiness(
-                [answer.model_dump() for answer in payload.answers]
+                [answer.model_dump() for answer in payload.answers],
+                locale=locale_from_request(request),
             )
         except ValueError as exc:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+            # compute_readiness бросает только Unknown answer status — маппим на код.
+            bad_status = str(exc).rsplit(": ", 1)[-1]
+            raise raise_error(
+                "READINESS_UNKNOWN_STATUS", {"status": bad_status}, request=request
+            ) from exc
         template, checkpoints = await _ensure_template(db)
         preliminary = readiness_result["preliminary_ugt"]
     else:

@@ -12,12 +12,13 @@ import re
 from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Request, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy import func, select
 
 from app.api.v1.projects import require_project_access
 from app.core.deps import CurrentUser, DBSession
+from app.core.errors import raise_error
 from app.db.models import ProjectDocument
 from app.schemas import DocumentFileOut
 from app.services.file_storage import (
@@ -27,16 +28,10 @@ from app.services.file_storage import (
     read_upload_limited,
     scanner,
     store_project_file,
+    to_http_exception,
 )
 
 router = APIRouter(tags=["files"])
-
-SCAN_LABELS = {
-    "pending": "На проверке",
-    "clean": "Проверен",
-    "infected": "Заражён",
-    "error": "Ошибка проверки",
-}
 
 
 def _doc_out(doc: ProjectDocument) -> DocumentFileOut:
@@ -74,23 +69,24 @@ async def _next_version(db: DBSession, project_id: int, title: str) -> int:
 )
 async def upload_project_file(
     project_id: int,
+    request: Request,
     db: DBSession,
     user: CurrentUser,
     file: Annotated[UploadFile, File(description="PDF/DOCX/XLSX/PNG/JPEG до 25 МБ")],
     title: str | None = None,
 ) -> DocumentFileOut:
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
 
     try:
         data = await read_upload_limited(file)
     except FileSizeExceeded as exc:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     try:
         stored = store_project_file(project_id, file.filename or "document", data)
     except ValueError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     except FileStorageError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
 
     scan_status, scan_result = await scanner.scan(data)
     doc_title = title or (file.filename or "Документ")
@@ -116,9 +112,9 @@ async def upload_project_file(
 
 @router.get("/projects/{project_id}/files", response_model=list[DocumentFileOut])
 async def list_project_files(
-    project_id: int, db: DBSession, user: CurrentUser
+    project_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> list[DocumentFileOut]:
-    await require_project_access(db, project_id, user)
+    await require_project_access(db, project_id, user, request)
     docs = (
         await db.execute(
             select(ProjectDocument)
@@ -131,26 +127,23 @@ async def list_project_files(
 
 @router.get("/files/{file_id}/download")
 async def download_project_file(
-    file_id: int, db: DBSession, user: CurrentUser
+    file_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> Response:
     doc = await db.get(ProjectDocument, file_id)
     if doc is None or doc.storage_key is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Файл не найден")
-    await require_project_access(db, doc.project_id, user)
+        raise raise_error("FILE_NOT_FOUND", request=request)
+    await require_project_access(db, doc.project_id, user, request)
     # Fail-closed (R05.3): скачивание разрешено только clean-файлам —
     # infected, pending и error (clamd недоступен) блокируются.
     if doc.scan_status != "clean":
-        detail = (
-            "Файл заблокирован антивирусом"
-            if doc.scan_status == "infected"
-            else "Антивирусная проверка не пройдена — скачивание недоступно"
-        )
-        raise HTTPException(status.HTTP_409_CONFLICT, detail)
+        if doc.scan_status == "infected":
+            raise raise_error("FILE_BLOCKED_INFECTED", request=request)
+        raise raise_error("FILE_SCAN_PENDING", request=request)
     try:
         # M-06 (TICKET-10, SPEC-01 FR-04): sync MinIO get_object через to_thread
         data = await asyncio.to_thread(read_stored_file, doc.storage_key)
     except FileStorageError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     # N-14: RFC 5987 filename* для кириллицы — filename остаётся ASCII-фолбэком,
     # filename* передаёт исходное имя в UTF-8 с процент-кодированием.
     raw_name = doc.file_name or "file"
@@ -172,17 +165,17 @@ async def download_project_file(
 
 @router.post("/files/{file_id}/rescan", response_model=DocumentFileOut)
 async def rescan_project_file(
-    file_id: int, db: DBSession, user: CurrentUser
+    file_id: int, request: Request, db: DBSession, user: CurrentUser
 ) -> DocumentFileOut:
     doc = await db.get(ProjectDocument, file_id)
     if doc is None or doc.storage_key is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Файл не найден")
-    await require_project_access(db, doc.project_id, user)
+        raise raise_error("FILE_NOT_FOUND", request=request)
+    await require_project_access(db, doc.project_id, user, request)
     try:
         # M-06 (TICKET-10, SPEC-01 FR-04): sync MinIO get_object через to_thread
         data = await asyncio.to_thread(read_stored_file, doc.storage_key)
     except FileStorageError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+        raise to_http_exception(exc, request) from exc
     doc.scan_status, doc.scan_result = await scanner.scan(data)
     await db.commit()
     return _doc_out(doc)

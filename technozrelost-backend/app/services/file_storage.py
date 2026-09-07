@@ -22,7 +22,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
+from fastapi import HTTPException, Request
+
 from app.core.config import settings
+from app.core.errors import raise_error
 
 ALLOWED_MIME: dict[str, tuple[bytes, str]] = {
     "application/pdf": (b"%PDF-", "pdf"),
@@ -87,6 +90,36 @@ class FileStorageError(Exception):
 
 class FileSizeExceeded(Exception):
     """Загрузка превышает MAX_FILE_SIZE — чтение оборвано до записи."""
+
+
+def to_http_exception(
+    exc: FileSizeExceeded | ValueError | FileStorageError,
+    request: Request | None = None,
+) -> HTTPException:
+    """Единый маппинг ошибок файлового слоя в HTTPException каталога.
+
+    Почему здесь, а не в трёх копиях по API-модулям: типы исключений
+    принадлежат этому модулю, а тексты/статусы — каталогу app.core.errors.
+    Ветки сохраняют исторические статусы (история 5): обрыв потока — 413,
+    валидация содержимого — 422, отсутствие объекта — 404, сбой MinIO — 503.
+    """
+    if isinstance(exc, FileSizeExceeded):
+        return raise_error(
+            "FILE_UPLOAD_TOO_LARGE",
+            {"limit": settings.max_file_size_mb},
+            request=request,
+        )
+    if isinstance(exc, FileStorageError):
+        if str(exc) == "Объект не найден":
+            return raise_error("STORAGE_OBJECT_MISSING", request=request)
+        return raise_error("STORAGE_UNAVAILABLE", {"detail": str(exc)}, request=request)
+    if str(exc).startswith("Файл превышает лимит"):
+        return raise_error(
+            "FILE_TOO_LARGE",
+            {"limit": settings.max_file_size_mb},
+            request=request,
+        )
+    return raise_error("FILE_BAD_FORMAT", request=request)
 
 
 @dataclass
