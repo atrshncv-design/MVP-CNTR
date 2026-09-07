@@ -97,6 +97,27 @@ def test_validation_code_translated_by_locale(
     assert details[0]["msg"] == expected
 
 
+def test_registry_limits_live_in_settings_with_old_defaults() -> None:
+    """Лимиты реестра — в settings с прежними дефолтами (R02i)."""
+    from app.core.config import settings
+
+    assert settings.registry_auth_limit == 10000
+    assert settings.registry_window_seconds == 60.0
+    assert settings.registry_max_entries == 5000
+
+
+def test_registry_auth_limit_from_settings_is_enforced(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Переопределение лимита через settings режет аутентифицированные запросы."""
+    monkeypatch.setattr("app.core.config.settings.registry_auth_limit", 0)
+    response = client.get(
+        "/api/v1/nioktr", headers={"Authorization": f"Bearer {_token(client)}"}
+    )
+    assert response.status_code == 429
+    assert response.headers.get("X-Error-Code") == "REGISTRY_RATE_LIMITED"
+
+
 def test_registry_limit_ru_and_en_with_stable_code(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:

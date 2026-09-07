@@ -21,11 +21,9 @@ router = APIRouter(prefix="/nioktr", tags=["nioktr"])
 # Дорогие ILIKE '%…%' защищаем на двух уровнях: nginx limit_req (registry zone
 # 100r/s burst 100) + прикладной Redis. Аноним — строже
 # (settings.registry_anon_limit/60s), аутентифицированный
-# — мягче (10000/60s ≈166r/s) чтобы пилотный loadtest 714 RPS с одного IP
+# — мягче (settings.registry_auth_limit/settings.registry_window_seconds)
+# чтобы пилотный loadtest 714 RPS с одного IP
 # (все VU аутентифицированы) не падал, но бот-секвенс с ротацией IP резался.
-REGISTRY_AUTH_LIMIT = 10000
-REGISTRY_WINDOW_SECONDS = 60.0
-REGISTRY_MAX_ENTRIES = 5000
 
 _registry_attempts: OrderedDict[str, list[float]] = OrderedDict()
 _registry_redis_client: Any | None = None
@@ -74,22 +72,23 @@ async def _enforce_registry_limit(request: Request) -> None:
     """
     # Аутентифицированный запрос (loadtest) — лимит выше
     is_authed = bool(request.headers.get("authorization"))
-    limit = REGISTRY_AUTH_LIMIT if is_authed else settings.registry_anon_limit
+    limit = settings.registry_auth_limit if is_authed else settings.registry_anon_limit
     ip = _registry_source(request)
     kind = "auth" if is_authed else "anon"
     rkey = f"registry:{kind}:{ip}"
+    window = int(settings.registry_window_seconds)
     # Redis fixed window INCR EXPIRE 60 — async via to_thread (H-02a)
     try:
         client = await asyncio.to_thread(_registry_get_redis)
         if client is not None:
             count = int(await asyncio.to_thread(client.incr, rkey))
             if count == 1:
-                await asyncio.to_thread(client.expire, rkey, int(REGISTRY_WINDOW_SECONDS))
+                await asyncio.to_thread(client.expire, rkey, window)
             else:
                 try:
                     ttl = await asyncio.to_thread(client.ttl, rkey)
                     if ttl == -1:
-                        await asyncio.to_thread(client.expire, rkey, int(REGISTRY_WINDOW_SECONDS))
+                        await asyncio.to_thread(client.expire, rkey, window)
                 except Exception:  # noqa: BLE001
                     pass
             if count > limit:
@@ -106,14 +105,14 @@ async def _enforce_registry_limit(request: Request) -> None:
         stamps = []
         _registry_attempts[rkey] = stamps
     else:
-        while stamps and now - stamps[0] > REGISTRY_WINDOW_SECONDS:
+        while stamps and now - stamps[0] > settings.registry_window_seconds:
             stamps.pop(0)
         with contextlib.suppress(KeyError):
             _registry_attempts.move_to_end(rkey)
     if len(stamps) >= limit:
         raise raise_error("REGISTRY_RATE_LIMITED", request=request)
     stamps.append(now)
-    while len(_registry_attempts) > REGISTRY_MAX_ENTRIES:
+    while len(_registry_attempts) > settings.registry_max_entries:
         _registry_attempts.popitem(last=False)
 
 

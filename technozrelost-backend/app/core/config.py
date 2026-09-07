@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     # константой в api-слое; имя — в .env.example.
     registry_anon_limit: int = 120
 
+    # N-18: остальные лимиты публичного реестра — та же причина, что выше.
+    # Дефолты — прежние значения модульных констант (10000/60.0/5000).
+    registry_auth_limit: int = 10000
+    registry_window_seconds: float = 60.0
+    registry_max_entries: int = 5000
+
     jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 60
