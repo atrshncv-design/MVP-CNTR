@@ -47,6 +47,11 @@ class Settings(BaseSettings):
 
     redis_url: str | None = None
 
+    # N-18: лимит анонимных запросов к публичному реестру (/nioktr) за 60s.
+    # Окружение-зависимый (стенды различаются), поэтому живёт здесь, а не
+    # константой в api-слое; имя — в .env.example.
+    registry_anon_limit: int = 120
+
     jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 60

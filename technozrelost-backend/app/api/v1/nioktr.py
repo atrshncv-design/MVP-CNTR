@@ -19,10 +19,10 @@ router = APIRouter(prefix="/nioktr", tags=["nioktr"])
 
 # ── N-18: rate limit публичных реестров — Redis fixed window + LRU fallback ──
 # Дорогие ILIKE '%…%' защищаем на двух уровнях: nginx limit_req (registry zone
-# 100r/s burst 100) + прикладной Redis. Аноним — строже (120/60s), аутентифицированный
+# 100r/s burst 100) + прикладной Redis. Аноним — строже
+# (settings.registry_anon_limit/60s), аутентифицированный
 # — мягче (10000/60s ≈166r/s) чтобы пилотный loadtest 714 RPS с одного IP
 # (все VU аутентифицированы) не падал, но бот-секвенс с ротацией IP резался.
-REGISTRY_ANON_LIMIT = 120
 REGISTRY_AUTH_LIMIT = 10000
 REGISTRY_WINDOW_SECONDS = 60.0
 REGISTRY_MAX_ENTRIES = 5000
@@ -74,7 +74,7 @@ async def _enforce_registry_limit(request: Request) -> None:
     """
     # Аутентифицированный запрос (loadtest) — лимит выше
     is_authed = bool(request.headers.get("authorization"))
-    limit = REGISTRY_AUTH_LIMIT if is_authed else REGISTRY_ANON_LIMIT
+    limit = REGISTRY_AUTH_LIMIT if is_authed else settings.registry_anon_limit
     ip = _registry_source(request)
     kind = "auth" if is_authed else "anon"
     rkey = f"registry:{kind}:{ip}"

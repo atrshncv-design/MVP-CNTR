@@ -100,7 +100,7 @@ def test_validation_code_translated_by_locale(
 def test_registry_limit_ru_and_en_with_stable_code(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("app.api.v1.nioktr.REGISTRY_ANON_LIMIT", 0)
+    monkeypatch.setattr("app.core.config.settings.registry_anon_limit", 0)
     plain = client.get("/api/v1/nioktr")
     assert plain.status_code == 429
     assert plain.headers.get("X-Error-Code") == "REGISTRY_RATE_LIMITED"
