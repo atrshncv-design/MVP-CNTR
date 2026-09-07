@@ -1,0 +1,7 @@
+# Handoff 02-2 — миграция ошибок на каталог (эстафета от 2026-09-07)
+
+СДЕЛАНО: мигрированы deps.py (3×401), users.py (3), notifications.py (1), realtime.py (7), invites.py (9); таргет 45 passed; полный прогон 399 passed до invites (после — только таргет).
+ФАЙЛЫ: готовы auth.py, nioktr.py, deps.py, users.py, notifications.py, realtime.py, invites.py; начато: ничего; остаток: news, stages, projects, profiles, membership, manager, requests, users(готово), files, assessments, generation, rag, achievements, chat, health + services-цепочки + schemas.py + SCAN_LABELS/readiness_text.
+РЕШЕНИЯ: паттерн raise raise_error(CODE[, params], request=request); Request первым параметром после payload/path (порядок FastAPI не важен); require_project_admin получил request опциональным (None→ru) чтобы не ломать импортеров; require_role 403 в deps.py НЕ тронут (зона — только 401); except HTTPException сохранен где был (realtime stream).
+ТУПИКИ: живой :8000 stale — curl /auth/me без X-Error-Code и без EN (нужен рестарт, код через TestClient корректен); полные имена тестов ≠ угаданные (users→profile_admin, realtime→realtime_notifications); полный pytest ~5 мин — дальше только точечные.
+ДАЛЬШЕ: следующий — membership.py тем же паттерном (8 мест, шов каталога); затем profiles/news/stages/projects; финал — цепочки ValueError/str(exc) через file_storage/document_generator маппить на коды в api-слое, SCAN_LABELS/readiness_text пробросить.

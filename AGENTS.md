@@ -121,4 +121,15 @@ Tier T2, slug `reestr-kompetencii-udgu`, 25 требований (R01-R25), 4 т
 - EN-решения сборки (`ЦНТР→CNTR`, `УГТ→TRL`, `НИОКТР→R&D`); спорные формулировки методологий — списком на ревью пользователя на приёмке.
 - Память — из кода и `.autopilot/2026-09-04-hardcode-remediation/interfaces.md` (spec/manifest/tickets прогона не открывались); `protocol.json` — locale-free каноника RU-значений.
 - Повтор: `cd technozrelost-frontend && npm run lint && npm test` (+ `npm run build` для финала).
+
+## Backend-hardcode (tier T1, 2026-09-07, каталог ошибок + конфиг реестра)
+- Каталог `technozrelost-backend/app/core/errors.py:19`: `ERROR_HEADER="X-Error-Code"`, вызов `raise raise_error(CODE[, params], request=request)`; тело `detail` всегда строка, код в заголовке; `resolve_locale`/`locale_from_request` — `Accept-Language`, ru default, всё не-en → ru (проверено запуском).
+- Тексты ru/en в `CATALOG` + `READINESS_TEXTS`; подстановки только `params` (`{role}`/`{limit}`/`{state}`), склейка в местах вызова запрещена; EN-каноника TRL/CNTR/R&D.
+- Миграция закрыта: везде `raise_error`; `FILE_TOO_LARGE=422` vs `FILE_UPLOAD_TOO_LARGE=413`; общий `file_storage.to_http_exception` (`app/services/file_storage.py:95`); мёртвые константы удалены.
+- Валидаторы (`app/schemas.py:163` кидает bare-код в `ValueError`) + `validation_exception_handler` в `technozrelost-backend/app/main.py:215` переводит по `Accept-Language` (ru default, fallback в дефолтную форму FastAPI без падения).
+- Конфиг: `settings.registry_anon_limit: int = 120` (`app/core/config.py:53`, env `REGISTRY_ANON_LIMIT`, имя в `.env.example:53` без значения); потребление `app/api/v1/nioktr.py:77` (anon — settings, auth — `REGISTRY_AUTH_LIMIT`) (проверено запуском: int 120).
+- Сюита (нужна поднятая БД, проверено оркестратором, не дублировалось): `cd technozrelost-backend && uv run pytest -q` → `403 passed`; один файл — `uv run pytest <путь> -q`; голый `uv sync` без `--extra dev` запрещён.
+- Бэкенд (поднят оркестратором, пробы входят в приёмку, не дублировалось): `cd technozrelost-backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000` — живьём `AUTH_INVALID`/`AUTH_REQUIRED` ru/en, `REGISTRY_RATE_LIMITED`, ready ok.
+- Сканер: `python3 .autopilot/2026-09-04-hardcode-audit/scan.py <out>` — backend user-text 122→43 (остаток OpenAPI/сиды/маппируемые raises), config-url 8 (7 дефолтов в config + 1 FP).
+- Следующий проход: sibling-константы `REGISTRY_AUTH_LIMIT/WINDOW_SECONDS/MAX_ENTRIES` в `app/api/v1/nioktr.py:26-28` пока не в settings (проверено запуском: 10000/60.0/5000); не трогать `technozrelost-frontend/`, логи/сиды/фикстуры, алгоконстанты; память из кода и `.autopilot/2026-09-07-backend-hardcode--wip/interfaces.md` (spec/manifest/tickets не открывались).
 <!-- autopilot:end -->
