@@ -28,3 +28,4 @@
 | 2026-08-29 | `2026-08-29-m4-audit-plan` | сдан | M4 14/14 done 362/39 green, H-01/H-02/M-01..M-05/L-01..L-04/I-01..I-03 closed, external smoke — pending прод-хост (stubs) |
 | 2026-08-30 | `2026-08-30-server-infrastructure-requirements` | сдан | Инфраструктурный отчёт: два бюджетных узла до 1 млн ₽, сценарии до 10 000 concurrent и 300–500 RPS, закупочная спецификация и обязательные benchmark-гейты |
 | 2026-09-07 | `2026-09-07-backend-hardcode` | сдан | Ошибки API с кодами ru/en + лимит реестра в env, 403 passed |
+| 2026-09-07 | `2026-09-07-registry-limits-env` | сдан | Лимиты реестра в env, дефолты те же, 405 passed |

@@ -132,4 +132,10 @@ Tier T2, slug `reestr-kompetencii-udgu`, 25 требований (R01-R25), 4 т
 - Бэкенд (поднят оркестратором, пробы входят в приёмку, не дублировалось): `cd technozrelost-backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000` — живьём `AUTH_INVALID`/`AUTH_REQUIRED` ru/en, `REGISTRY_RATE_LIMITED`, ready ok.
 - Сканер: `python3 .autopilot/2026-09-04-hardcode-audit/scan.py <out>` — backend user-text 122→43 (остаток OpenAPI/сиды/маппируемые raises), config-url 8 (7 дефолтов в config + 1 FP).
 - Следующий проход: sibling-константы `REGISTRY_AUTH_LIMIT/WINDOW_SECONDS/MAX_ENTRIES` в `app/api/v1/nioktr.py:26-28` пока не в settings (проверено запуском: 10000/60.0/5000); не трогать `technozrelost-frontend/`, логи/сиды/фикстуры, алгоконстанты; память из кода и `.autopilot/2026-09-07-backend-hardcode--wip/interfaces.md` (spec/manifest/tickets не открывались).
+
+## Registry-limits-env (tier T0, 2026-09-07, все лимиты реестра — в settings)
+- Конфиг `technozrelost-backend/app/core/config.py:57-59`: `registry_auth_limit: int = 10000`, `registry_window_seconds: float = 60.0`, `registry_max_entries: int = 5000` (env `REGISTRY_AUTH_LIMIT/WINDOW_SECONDS/MAX_ENTRIES`, дефолты — прежние значения модульных констант); имена в `.env.example:54-56` без значений, секретов нет.
+- Потребление `technozrelost-backend/app/api/v1/nioktr.py:75,79,108,115` — всё через `settings` (anon/auth лимит, window, max_entries); модульные константы удалены, все лимиты реестра теперь в settings (закрыт хвост из Backend-hardcode).
+- Швы: чтение лимитов из `settings` + существующий тест лимита (`tests/test_api_error_locale.py:104-106` дефолты, `:109-131` enforcement через monkeypatch); сюита `cd technozrelost-backend && uv run pytest -q` → `405 passed` (нужна поднятая БД).
+- Не тронуто: frontend, логи/сиды/фикстуры, алгоконстанты; голый `uv sync` запрещён; память — из кода и `.autopilot/2026-09-07-registry-limits-env--wip/interfaces.md` (spec/manifest/tickets не открывались).
 <!-- autopilot:end -->
