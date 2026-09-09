@@ -9,6 +9,10 @@ MVP: скриптовый фильтр по 5 полям title+annotation/sector
 competencies (25-) + LLM rerank top-5, 1 endpoint POST /match, очередь
 как llm-eval (13-). Пока gateway_enabled=false — мэтчинг без LLM fallback
 (скриптовый детерминированный скоринг).
+
+Таск 12 (R05i): скоринг синоним-aware (стемминг RU + канонические группы
+из app.core.embeddings), LLM rerank меняет ПОРЯДОК по ранжированию модели
+(парсинг номеров кандидатов), а не только текст причин.
 """
 
 from __future__ import annotations
@@ -19,12 +23,24 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.deps import DBSession
+from app.core.embeddings import expanded_terms
 from app.db.models import Organization
 from app.schemas import MatchCandidate, MatchIn, MatchOut
 
 
 def _tokenize(text: str) -> set[str]:
     return {t for t in re.split(r"[^a-zа-яё0-9]+", text.lower()) if len(t) > 2}
+
+
+def _expanded(text: str) -> set[str]:
+    """Расширенные термы: стемы + канонические синонимы (офлайн-семантика)."""
+    try:
+        terms = expanded_terms(text)
+        if terms:
+            return terms
+    except Exception:
+        pass
+    return _tokenize(text)
 
 
 def _score_org(
@@ -39,14 +55,14 @@ def _score_org(
     org_region = (org.region or "").lower()
     org_type = (org.org_type or "").lower()
 
-    # title+annotation → перекрытие токенов с name и competencies
-    name_tokens = _tokenize(org.name or "")
-    overlap = len(query_tokens & name_tokens)
+    # title+annotation → перекрытие расширенных термов с name и competencies
+    name_terms = _expanded(org.name or "")
+    overlap = len(query_tokens & name_terms)
     if overlap:
         score += overlap * 2
         reasons.append(f"пересечение по названию/ключевым словам ({overlap})")
 
-    # competencies
+    # competencies (точное + расширенное)
     payload_comp = [c.lower() for c in payload.competencies]
     comp_overlap = len(set(payload_comp) & set(org_competencies))
     if comp_overlap:
@@ -54,10 +70,10 @@ def _score_org(
         score += comp_overlap * 3
         reasons.append(f"совпадение компетенций ({comp_overlap}: {shared})")
 
-    # также ищем токены из title/annotation в компетенциях организации
+    # также ищем расширенные термы запроса в компетенциях организации
     comp_text = " ".join(org_competencies)
-    comp_tokens = _tokenize(comp_text)
-    ct_overlap = len(query_tokens & comp_tokens)
+    comp_terms = _expanded(comp_text)
+    ct_overlap = len(query_tokens & comp_terms)
     if ct_overlap:
         score += ct_overlap * 1.5
         if comp_overlap == 0:
@@ -89,6 +105,38 @@ def _score_org(
         reasons.append("открытые данные организации соответствуют запросу по реестру")
 
     return score, reasons
+
+
+def parse_llm_ranking(llm_text: str, n: int) -> list[int] | None:
+    """Порядок кандидатов из ответа LLM (0-based индексы входного топа).
+
+    Формат: каждая строка начинается с номера кандидата (1..n),
+    затем разделитель (./-/)/:/—) и объяснение; строки идут в порядке
+    убывания релевантности. Возвращает None, если ранжирование не
+    распознано (fallback — сохранить скриптовый порядок).
+    """
+    order: list[int] = []
+    seen: set[int] = set()
+    for line in llm_text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        m = re.match(r"^(\d{1,2})\s*[.\-):\u2014—]", stripped)
+        if not m:
+            m = re.match(r"^[^\d]{0,20}?кандидат\s+(\d{1,2})\b", stripped, re.IGNORECASE)
+        if not m:
+            continue
+        idx = int(m.group(1)) - 1
+        if 0 <= idx < n and idx not in seen:
+            seen.add(idx)
+            order.append(idx)
+    if len(order) < min(n, 3):
+        return None
+    if len(order) != n:
+        # Частичное ранжирование: добиваем остальными в исходном порядке.
+        rest = [i for i in range(n) if i not in seen]
+        order = order + rest
+    return order
 
 
 async def _retrieve_candidates(
@@ -135,7 +183,7 @@ async def match_organizations(db: DBSession, payload: MatchIn) -> MatchOut:
     """Топ-5 через центр: retriever 20 → (LLM rerank | script fallback)."""
 
     candidates = await _retrieve_candidates(db, payload, limit=20)
-    query_tokens = _tokenize(
+    query_tokens = _expanded(
         f"{payload.title} {payload.annotation or ''} {' '.join(payload.competencies)}"
     )
 
@@ -179,18 +227,36 @@ async def match_organizations(db: DBSession, payload: MatchIn) -> MatchOut:
                 f"Регион: {payload.region or '—'}\n"
                 f"Компетенции: {', '.join(payload.competencies) or '—'}\n\n"
                 f"Кандидаты (топ retriever):\n{cand_text}\n\n"
-                "Верни топ-5 с объяснением почему полезно "
-                "(каждый — 1-2 предложения)."
+                "Верни ровно 5 строк в порядке убывания релевантности: "
+                "каждая строка начинается с номера кандидата (1-5) из списка "
+                "выше, затем дефис и объяснение почему полезно "
+                "(1-2 предложения)."
             )
             llm_text = await ask_llm(system_prompt, user_message)
             if llm_text:
-                # Если LLM ответил — используем его объяснения
                 llm_reasons = [r.strip() for r in llm_text.split("\n") if r.strip()][:5]
                 if llm_reasons:
                     method = "llm"
-                    for idx, (score, org, _) in enumerate(top):
-                        if idx < len(llm_reasons):
-                            top[idx] = (score, org, [llm_reasons[idx][:300]])
+                    ordering = parse_llm_ranking(llm_text, len(top))
+                    if ordering is not None:
+                        # Честный rerank: порядок — по ранжированию LLM.
+                        reordered: list[tuple[float, Organization, list[str]]] = []
+                        for rank_pos, src_idx in enumerate(ordering):
+                            score, org, _old = top[src_idx]
+                            reason_line = (
+                                llm_reasons[rank_pos]
+                                if rank_pos < len(llm_reasons)
+                                else llm_reasons[src_idx]
+                            )
+                            clean = re.sub(
+                                r"^\s*\d{1,2}\s*[.\-):\u2014—]\s*", "", reason_line
+                            ).strip()[:300]
+                            reordered.append((score, org, [clean or reason_line[:300]]))
+                        top = reordered
+                    else:
+                        for idx, (score, org, _) in enumerate(top):
+                            if idx < len(llm_reasons):
+                                top[idx] = (score, org, [llm_reasons[idx][:300]])
         except Exception:  # noqa: BLE001 — LLM не должен ломать мэтчинг
             pass
 
