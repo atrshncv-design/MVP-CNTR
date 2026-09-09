@@ -4,8 +4,8 @@
  * Почему barrel: единый импорт из @/features/offline.
  */
 
-export { OFFLINE_QUEUE_KEY, OFFLINE_MAX_RETRIES } from "./queue";
-export type { QueuedAction } from "./queue";
+export { OFFLINE_QUEUE_KEY, OFFLINE_MAX_RETRIES, sanitizeOfflineHeaders, syncOfflineQueue } from "./queue";
+export type { QueuedAction, OfflineTokenProvider, SyncOfflineQueueOptions } from "./queue";
 export { getOfflineQueue, setOfflineQueue, enqueueOfflineAction, dequeueOfflineAction, clearOfflineQueue } from "./queue";
 export { useOfflineQueue } from "./useOfflineQueue";
 export type { UseOfflineQueueReturn } from "./useOfflineQueue";

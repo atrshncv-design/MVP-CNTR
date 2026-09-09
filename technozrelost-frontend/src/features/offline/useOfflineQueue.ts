@@ -6,10 +6,13 @@
  * localStorage очередь `tz:offline:queue` и retry/sync после восстановления сети.
  * Выставляет `useOfflineQueue`, прячет sync-реализацию (внутри хука + queue.ts).
  * Background Sync: пробует `SyncManager` (`navigator.serviceWorker` + `reg.sync.register`),
+ * R05i: токен сессии (NextAuth) подставляется в sync в момент отправки — в очереди секретов нет.
  * иначе fallback на `window.addEventListener("online")`.
  */
 
 import * as React from "react";
+
+import { useSession } from "next-auth/react";
 
 import {
   OFFLINE_QUEUE_KEY,
@@ -46,6 +49,8 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
   const [queue, setQueue] = React.useState<QueuedAction[]>(() => getOfflineQueue());
   const [isSyncing, setIsSyncing] = React.useState(false);
   const syncingRef = React.useRef(false);
+  const { data: session } = useSession();
+  const accessToken = (session?.user as { accessToken?: string } | undefined)?.accessToken ?? null;
 
   const refresh = React.useCallback(() => {
     setQueue(getOfflineQueue());
@@ -61,7 +66,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
       setIsSyncing(true);
       void (async () => {
         try {
-          await syncOfflineQueue();
+          await syncOfflineQueue(undefined, { accessToken });
         } finally {
           syncingRef.current = false;
           setIsSyncing(false);
@@ -92,7 +97,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("tz:offline:queue:updated", handleCustom as EventListener);
     };
-  }, []);
+  }, [accessToken]);
 
   const enqueue = React.useCallback(
     (payload: Omit<QueuedAction, "id" | "createdAt" | "retries">) => {
@@ -123,7 +128,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     syncingRef.current = true;
     setIsSyncing(true);
     try {
-      const result = await syncOfflineQueue();
+      const result = await syncOfflineQueue(undefined, { accessToken });
       setQueue(getOfflineQueue());
       return result;
     } finally {
@@ -131,7 +136,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
       setIsSyncing(false);
       setQueue(getOfflineQueue());
     }
-  }, []);
+  }, [accessToken]);
 
   // retry — алиас sync для критерия "queue + retry after online"
   const retry = React.useCallback(() => sync(), [sync]);

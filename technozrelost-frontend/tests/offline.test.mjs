@@ -99,3 +99,113 @@ test("providers: глобальный OfflineBanner смонтирован", () 
   assert.match(src, /OfflineBanner/);
   assert.match(src, /from "@\/features\/offline/);
 });
+
+/**
+ * R05i история 21: поведенческие швы очереди (без секретов + слияние при sync).
+ * Почему runtime, а не static: static-проверки выше не ловят Bearer в localStorage
+ * и потерю параллельно добавленных действий — проверяем через публичный интерфейс queue.ts.
+ */
+
+function installOfflineDom() {
+  const store = new Map();
+  const storage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => void store.set(k, String(v)),
+    removeItem: (k) => void store.delete(k),
+    clear: () => void store.clear(),
+  };
+  const prevWindow = globalThis.window;
+  const prevNavigator = globalThis.navigator;
+  globalThis.window = {
+    localStorage: storage,
+    dispatchEvent: () => true,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  };
+  try {
+    if (typeof globalThis.navigator === "undefined") {
+      Object.defineProperty(globalThis, "navigator", { value: { onLine: true }, configurable: true });
+    }
+  } catch {}
+  return {
+    storage,
+    restore() {
+      if (prevWindow === undefined) delete globalThis.window;
+      else globalThis.window = prevWindow;
+      if (prevNavigator === undefined) {
+        try { delete globalThis.navigator; } catch {}
+      }
+    },
+  };
+}
+
+test("offline R05i: в localStorage очереди нет строки Bearer после постановки действия", async () => {
+  const dom = installOfflineDom();
+  try {
+    const q = await import("../src/features/offline/queue.ts");
+    q.clearOfflineQueue();
+    q.enqueueOfflineAction({
+      url: "/api/v1/projects/1/publish",
+      method: "PUT",
+      body: { is_public: true },
+      headers: { Authorization: "Bearer secret-token-xyz", "Content-Type": "application/json" },
+    });
+    const raw = dom.storage.getItem(q.OFFLINE_QUEUE_KEY);
+    assert.ok(raw, "очередь должна быть записана в localStorage");
+    assert.ok(!raw.includes("Bearer"), "в localStorage не должно быть строки Bearer");
+    assert.ok(!raw.includes("secret-token-xyz"), "значение токена не должно храниться");
+    const [item] = q.getOfflineQueue();
+    const keys = Object.keys(item.headers ?? {});
+    assert.ok(!keys.some((k) => k.toLowerCase() === "authorization"), "headers без Authorization");
+    assert.equal(item.headers?.["Content-Type"], "application/json");
+  } finally {
+    dom.restore();
+  }
+});
+
+test("offline R05i: синхронизация уходит с актуальным токеном сессии и доходит до API", async () => {
+  const dom = installOfflineDom();
+  try {
+    const q = await import("../src/features/offline/queue.ts");
+    q.clearOfflineQueue();
+    q.enqueueOfflineAction({ url: "/api/v1/projects/1/publish", method: "PUT", body: { is_public: true } });
+    const seen = [];
+    const fetcher = async (action) => {
+      seen.push(action);
+      return { ok: true, status: 200 };
+    };
+    const result = await q.syncOfflineQueue(fetcher, { accessToken: "fresh-session-token" });
+    assert.equal(result.succeeded.length, 1);
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].headers?.Authorization, "Bearer fresh-session-token");
+    assert.equal(q.getOfflineQueue().length, 0);
+  } finally {
+    dom.restore();
+  }
+});
+
+test("offline R05i: действие, добавленное во время sync, сохраняется (слияние по id)", async () => {
+  const dom = installOfflineDom();
+  try {
+    const q = await import("../src/features/offline/queue.ts");
+    q.clearOfflineQueue();
+    q.enqueueOfflineAction({ url: "/api/v1/projects/1/publish", method: "PUT", body: { a: 1 } });
+    let concurrentId = null;
+    const fetcher = async () => {
+      if (concurrentId === null) {
+        const added = q.enqueueOfflineAction({ url: "/api/v1/projects/2/archive", method: "POST" });
+        concurrentId = added.id;
+      }
+      return { ok: true, status: 200 };
+    };
+    const result = await q.syncOfflineQueue(fetcher, { accessToken: "t" });
+    assert.equal(result.succeeded.length, 1);
+    assert.ok(concurrentId, "параллельное действие должно быть добавлено");
+    const rest = q.getOfflineQueue();
+    assert.equal(rest.length, 1);
+    assert.equal(rest[0].id, concurrentId);
+    assert.equal(rest[0].url, "/api/v1/projects/2/archive");
+  } finally {
+    dom.restore();
+  }
+});
