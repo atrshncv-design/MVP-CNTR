@@ -544,6 +544,12 @@ class NotificationOut(BaseModel):
     created_at: str | None = None
 
 
+class SseTicketOut(BaseModel):
+    """Одноразовый ticket для SSE-стрима (таск 04, R04i): TTL ~30с, один стрим."""
+
+    ticket: str
+
+
 # ─── НИОКТР-реестр (тикеты 01-07) ────────────────────────────────────────────
 
 

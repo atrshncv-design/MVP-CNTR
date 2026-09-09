@@ -7,6 +7,7 @@
 import * as React from "react";
 import { useSession } from "next-auth/react";
 
+import { getSseTicket } from "@/lib/api-client";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
 export function useNotificationsStream(onEvent: () => void, opts?: { enabled?: boolean; pollMs?: number }) {
@@ -40,15 +41,26 @@ export function useNotificationsStream(onEvent: () => void, opts?: { enabled?: b
 
     const connect = () => {
       if (closed) return;
-      // Backend stream ожидает access_token в query (EventSource не умеет header)
-      // Используем CLIENT_API_BASE (относительный в проде через rewrites)
-      const url = `${CLIENT_API_BASE}/api/v1/notifications/stream?access_token=${encodeURIComponent(token)}`;
-      try {
-        es = new EventSource(url);
-      } catch {
-        startPolling();
-        return;
-      }
+      // R04i: токен в URL запрещён — одноразовый ticket через POST (TTL ~30с).
+      // EventSource не умеет в header, поэтому ticket берём заранее по Bearer.
+      // Используем CLIENT_API_BASE (относительный в проде через rewrites).
+      // Недоступность ticket/SSE — в polling c backoff, не спамим.
+      void (async () => {
+        let ticket: string;
+        try {
+          ticket = (await getSseTicket(token)).ticket;
+        } catch {
+          startPolling();
+          return;
+        }
+        if (closed) return;
+        const url = `${CLIENT_API_BASE}/api/v1/notifications/stream?ticket=${encodeURIComponent(ticket)}`;
+        try {
+          es = new EventSource(url);
+        } catch {
+          startPolling();
+          return;
+        }
 
       const handler = () => {
         backoffMs = 1_000;
@@ -62,23 +74,24 @@ export function useNotificationsStream(onEvent: () => void, opts?: { enabled?: b
       es.addEventListener("project_updated", handler);
       es.addEventListener("is_public", handler);
       es.onmessage = handler;
-      es.onerror = () => {
-        es?.close();
-        es = null;
-        startPolling();
-        // backoff reconnection, не спамить
-        if (closed) return;
-        const delay = Math.min(backoffMs, 30_000);
-        retryTimer = setTimeout(() => {
-          backoffMs = Math.min(backoffMs * 2, 30_000);
-          connect();
-        }, delay);
-      };
-      // при успешном open сбрасываем polling
-      es.onopen = () => {
-        stopPolling();
-        backoffMs = 1_000;
-      };
+        es.onerror = () => {
+          es?.close();
+          es = null;
+          startPolling();
+          // backoff reconnection, не спамить
+          if (closed) return;
+          const delay = Math.min(backoffMs, 30_000);
+          retryTimer = setTimeout(() => {
+            backoffMs = Math.min(backoffMs * 2, 30_000);
+            connect();
+          }, delay);
+        };
+        // при успешном open сбрасываем polling
+        es.onopen = () => {
+          stopPolling();
+          backoffMs = 1_000;
+        };
+      })();
     };
 
     connect();

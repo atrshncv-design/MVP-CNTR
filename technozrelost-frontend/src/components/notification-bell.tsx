@@ -12,7 +12,7 @@ import { Bell, Check } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import { getNotifications, markNotificationRead } from "@/lib/api-client";
+import { getNotifications, getSseTicket, markNotificationRead } from "@/lib/api-client";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 import type { NotificationOut } from "@/lib/types";
 
@@ -81,16 +81,26 @@ export default function NotificationBell() {
 
     const connect = () => {
       if (stale) return;
-      // Предпочитаем прямой токен в query (backend реалтайм поддерживает access_token)
-      // Если бэкап sse-ticket недоступен — падаем в polling, не спамим.
-      const url = `${CLIENT_API_BASE}/api/v1/notifications/stream?access_token=${encodeURIComponent(token)}`;
-      try {
-        es = new EventSource(url);
-        esRef.current = es;
-      } catch {
-        startPolling();
-        return;
-      }
+      // R04i: токен в URL запрещён — одноразовый ticket через POST (TTL ~30с).
+      // EventSource не умеет в заголовки, поэтому ticket берём заранее по Bearer.
+      // Если выпуск ticket недоступен — падаем в polling, не спамим.
+      void (async () => {
+        let ticket: string;
+        try {
+          ticket = (await getSseTicket(token)).ticket;
+        } catch {
+          startPolling();
+          return;
+        }
+        if (stale) return;
+        const url = `${CLIENT_API_BASE}/api/v1/notifications/stream?ticket=${encodeURIComponent(ticket)}`;
+        try {
+          es = new EventSource(url);
+          esRef.current = es;
+        } catch {
+          startPolling();
+          return;
+        }
 
       const onNotification = () => {
         beep();
@@ -116,17 +126,18 @@ export default function NotificationBell() {
         backoffMs = 1_000;
         stopPolling();
       };
-      es.onerror = () => {
-        es?.close();
-        esRef.current = null;
-        startPolling();
-        if (stale) return;
-        const delay = Math.min(backoffMs, 30_000);
-        retryTimer = setTimeout(() => {
-          backoffMs = Math.min(backoffMs * 2, 30_000);
-          connect();
-        }, delay);
-      };
+        es.onerror = () => {
+          es?.close();
+          esRef.current = null;
+          startPolling();
+          if (stale) return;
+          const delay = Math.min(backoffMs, 30_000);
+          retryTimer = setTimeout(() => {
+            backoffMs = Math.min(backoffMs * 2, 30_000);
+            connect();
+          }, delay);
+        };
+      })();
     };
 
     // сразу грузим и коннектим SSE

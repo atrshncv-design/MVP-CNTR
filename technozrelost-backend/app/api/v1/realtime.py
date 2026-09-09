@@ -14,6 +14,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import secrets
+import threading
+import time
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -26,7 +29,7 @@ from app.core.database import SessionLocal
 from app.core.deps import CurrentUser, DBSession, has_role, require_role
 from app.core.errors import raise_error
 from app.db.models import Notification, NotificationOutbox, User
-from app.schemas import ManagerTaskOut
+from app.schemas import ManagerTaskOut, SseTicketOut
 from app.services.notifications import claim_next_task, notify_managers
 
 router = APIRouter(tags=["notifications"])
@@ -35,6 +38,61 @@ ManagerOnly = require_role("cntr_manager", "cntr_admin")
 
 # Fallback in-memory pubsub, когда Redis недоступен (тесты, локальный запуск)
 _fallback_queues: dict[int, set[asyncio.Queue[dict[str, Any]]]] = {}
+
+# Одноразовые SSE-ticket (R04i, история 8): TTL ~30с, сгорают при первом
+# использовании. При наличии REDIS_URL — в Redis (две реплики видят ticket),
+# иначе — in-memory fallback (тесты, локальный запуск, как _fallback_queues).
+SSE_TICKET_TTL_SECONDS = 30
+_sse_tickets: dict[str, tuple[int, float]] = {}
+_sse_tickets_guard = threading.Lock()
+
+
+def _sse_ticket_key(ticket: str) -> str:
+    return f"sse-ticket:{ticket}"
+
+
+def _purge_expired_sse_tickets(now: float) -> None:
+    for stale in [t for t, (_, exp) in _sse_tickets.items() if exp <= now]:
+        _sse_tickets.pop(stale, None)
+
+
+async def _store_sse_ticket(ticket: str, uid: int, ttl: int) -> None:
+    client = _get_redis_async()
+    if client is not None:
+        try:
+            await client.set(_sse_ticket_key(ticket), str(uid), ex=ttl, nx=True)
+            return
+        except Exception:  # noqa: BLE001 — fallback
+            pass
+    with _sse_tickets_guard:
+        _purge_expired_sse_tickets(time.time())
+        _sse_tickets[ticket] = (uid, time.time() + ttl)
+
+
+async def _consume_sse_ticket(ticket: str) -> int | None:
+    """Атомарно забирает ticket: первое использование — uid, повтор — None."""
+    client = _get_redis_async()
+    if client is not None:
+        try:
+            getdel = getattr(client, "getdel", None)
+            if getdel is not None:
+                raw = await getdel(_sse_ticket_key(ticket))
+            else:
+                pipe = client.pipeline(transaction=True)
+                pipe.get(_sse_ticket_key(ticket))
+                pipe.delete(_sse_ticket_key(ticket))
+                raw, _ = await pipe.execute()
+            return int(raw) if raw is not None else None
+        except Exception:  # noqa: BLE001 — fallback
+            pass
+    with _sse_tickets_guard:
+        found = _sse_tickets.pop(ticket, None)
+    if found is None:
+        return None
+    uid, exp = found
+    if exp <= time.time():
+        return None
+    return uid
 
 
 def _is_manager(user: CurrentUser) -> bool:
@@ -81,36 +139,40 @@ async def _publish_stream(user_ids: list[int], event: dict[str, Any]) -> None:
                 _fallback_queues.get(uid, set()).discard(queue)
 
 
+@router.post("/notifications/sse-ticket", response_model=SseTicketOut)
+async def issue_sse_ticket(user: CurrentUser) -> SseTicketOut:
+    """Выпуск одноразового ticket для SSE-стрима (R04i, история 8).
+
+    Почему ticket, а не токен в query: EventSource не умеет в заголовки,
+    а access-токен в URL оседает в access-логах балансировщика, которые
+    читают люди. Ticket живёт ~30с и сгорает при первом использовании —
+    повтор и чужой ticket поток не открывают.
+    """
+    ticket = secrets.token_urlsafe(32)
+    await _store_sse_ticket(ticket, user.id, SSE_TICKET_TTL_SECONDS)
+    return SseTicketOut(ticket=ticket)
+
+
 @router.get("/notifications/stream")
 async def stream_notifications(
     request: Request,
+    ticket: str | None = None,
     access_token: str | None = None,
 ) -> StreamingResponse:
     """SSE-поток событий. Соединение держится, события доставляются live.
 
     Snapshot берётся короткой сессией до старта стрима (N-03: не держит
     Session во время keep-alive). EventSource не поддерживает заголовки —
-    токен принимается query-параметром (access_token) или Bearer-заголовком
-    и валидируется тем же механизмом, что и CurrentUser.
+    авторизация одноразовым ticket из POST /notifications/sse-ticket
+    (TTL ~30с, сгорает при первом использовании). Access-токен в query
+    запрещён (R04i): он оседает в access-логах балансировщика.
     """
-    # резолв uid из query или Authorization
-    token: str | None = access_token
-    if token is None:
-        auth = request.headers.get("authorization") or request.headers.get("Authorization")
-        if auth and auth.lower().startswith("bearer "):
-            token = auth[7:].strip()
-    uid: int | None = None
-    if token:
-        from app.core.security import decode_token
-
-        try:
-            payload = decode_token(token)
-            if payload.get("type") != "access":
-                raise ValueError("token type is not access")
-            uid = int(payload["sub"])
-        except Exception as exc:  # noqa: BLE001
-            raise raise_error("AUTH_INVALID_TOKEN", request=request) from exc
-        # проверка активности короткой сессией (не держим Session)
+    if access_token is not None:
+        raise raise_error("SSE_TOKEN_IN_URL", request=request)
+    uid = await _consume_sse_ticket(ticket) if ticket else None
+    if uid is None:
+        raise raise_error("SSE_TICKET_INVALID", request=request)
+    # проверка активности короткой сессией (не держим Session)
     try:
         async with SessionLocal() as tmp:
             active = await tmp.get(User, uid)
@@ -121,7 +183,6 @@ async def stream_notifications(
     except Exception as exc:  # noqa: BLE001
         raise raise_error("AUTH_USER_INACTIVE", request=request) from exc
 
-    assert uid is not None  # для mypy: после проверки токена uid определён
     # snapshot непрочитанных — короткая сессия, не держим соединение (N-03)
     try:
         async with SessionLocal() as tmp:

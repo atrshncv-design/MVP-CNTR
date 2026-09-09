@@ -236,7 +236,10 @@ export function markNotificationRead(notificationId: number | string, accessToke
 }
 
 export function getSseTicket(accessToken: string): Promise<{ ticket: string }> {
-  return apiRequest<{ ticket: string }>("/notifications/sse-ticket", accessToken);
+  // R04i: выпуск одноразового SSE-ticket — POST (TTL ~30с, сгорает при использовании).
+  return apiRequest<{ ticket: string }>("/notifications/sse-ticket", accessToken, {
+    method: "POST",
+  });
 }
 
 // ─── Верификация профилей/организаций (менеджер+админ, R32, G54) ──────────
@@ -576,4 +579,34 @@ export function getPublicNewsDetail(id: number | string): Promise<NewsDetail> {
 
 export function getPublicNewsCategories(): Promise<NewsCategory[]> {
   return publicApiRequest<NewsCategory[]>("/news/categories");
+}
+
+// ─── Публичный реестр для витрины лендинга (таск 13, R06i, история 18) ───
+// GET /projects/registry — публичный (CurrentUserOptional на бэке),
+// поэтому без Authorization: токена у гостя нет и слать нечего.
+// Шлём только параметры, которые понимает бэкенд
+// (ugt_min/ugt_max/category/budget_min/budget_max/after_id/limit);
+// search/status/region/tags — клиентские фильтры витрины, не запрос.
+
+export interface PublicRegistryParams {
+  ugt_min?: number;
+  ugt_max?: number;
+  category?: string;
+  budget_min?: number;
+  budget_max?: number;
+  after_id?: number;
+  limit?: number;
+}
+
+export function getPublicRegistry(params: PublicRegistryParams = {}): Promise<RegistryProjectOut[]> {
+  const query = new URLSearchParams();
+  if (params.ugt_min != null) query.set("ugt_min", String(params.ugt_min));
+  if (params.ugt_max != null) query.set("ugt_max", String(params.ugt_max));
+  if (params.category) query.set("category", params.category);
+  if (params.budget_min != null) query.set("budget_min", String(params.budget_min));
+  if (params.budget_max != null) query.set("budget_max", String(params.budget_max));
+  if (params.after_id != null) query.set("after_id", String(params.after_id));
+  query.set("limit", String(params.limit ?? 20));
+  const qs = query.toString();
+  return publicApiRequest<RegistryProjectOut[]>(`/projects/registry${qs ? `?${qs}` : ""}`);
 }
