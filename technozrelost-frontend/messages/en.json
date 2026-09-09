@@ -725,7 +725,9 @@
     "metaRoadmapTitle": "Project roadmap — Techno-maturity",
     "metaRoadmapDesc": "Build your technology roadmap: pick current and target TRL and get a transition plan, documents and risks per GOST R 58048-2017.",
     "metaNewsNotFound": "News article not found — Techno-maturity",
-    "metaNewsDetailTitle": "{title} — News — Techno-maturity"
+    "metaNewsDetailTitle": "{title} — News — Techno-maturity",
+    "showcaseEmptyTitle": "Projects will appear here",
+    "showcaseEmptyHint": "Performers have not published any projects yet. Check the showcase later or submit a request."
   },
   "projects": {
     "newRequest": "New application",
@@ -2236,7 +2238,7 @@
     "nothingFound": "Nothing found",
     "tryOtherFilters": "Try adjusting filters or query.",
     "liveRegistry": "Live registry — in personal account",
-    "liveDesc": "Public showcase shows demo data. Sign up to see live projects, TRL 7+ technologies and performer contacts per GOST R 58048-2017.",
+    "liveDesc": "Live public platform registry: projects published by performers. Full data, stage documents and performer contacts are in your personal account.",
     "register": "Sign up",
     "login": "Log in",
     "budgetNotSpecified": "Budget not specified",
@@ -2254,7 +2256,11 @@
     "catAI": "AI/ML",
     "catNIOKTR": "R&D",
     "catManufacturing": "Manufacturing",
-    "catMedicine": "Medicine"
+    "catMedicine": "Medicine",
+    "emptyRegistryTitle": "No published projects yet",
+    "emptyRegistryHint": "Once performers publish projects, they will appear here. Submit a request to be the first.",
+    "loadError": "Failed to load projects.",
+    "loadErrorStatus": "Failed to load projects ({status})."
   },
   "projectsShowcase": {
     "eyebrow": "Platform registry",
