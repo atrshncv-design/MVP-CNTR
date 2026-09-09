@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Query, Request, status
 from fastapi.responses import Response
 from sqlalchemy import delete, func, select
 
@@ -64,16 +64,27 @@ async def _comment_out(db: DBSession, comment: RequestComment) -> CommentOut:
 
 @router.get("/{project_id}/requests", response_model=list[RequestOut])
 async def list_project_requests(
-    project_id: int, request: Request, db: DBSession, user: CurrentUser
+    project_id: int,
+    request: Request,
+    db: DBSession,
+    user: CurrentUser,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
 ) -> list[RequestOut]:
-    """Заявки проекта для участников (лента обсуждений, US 53)."""
+    """Заявки проекта для участников постранично (P2, таск 14; US 53).
+
+    limit/offset с верхней границей; счётчики комментариев — одним
+    GROUP BY-запросом, а не по заявке.
+    """
     await require_project_access(db, project_id, user, request)
     requests = (
         (
             await db.execute(
                 select(PromotionRequest)
                 .where(PromotionRequest.project_id == project_id)
-                .order_by(PromotionRequest.attempt_no.desc())
+                .order_by(PromotionRequest.attempt_no.desc(), PromotionRequest.id.desc())
+                .limit(limit)
+                .offset(offset)
             )
         )
         .scalars()
@@ -128,7 +139,24 @@ async def list_comments(
         .scalars()
         .all()
     )
-    return [await _comment_out(db, c) for c in comments]
+    # Batched-загрузка авторов: один IN-запрос вместо N+1 db.get (P2, таск 14).
+    author_ids = {c.author_id for c in comments}
+    names: dict[int, str] = {}
+    if author_ids:
+        name_rows = await db.execute(
+            select(User.id, User.full_name).where(User.id.in_(author_ids))
+        )
+        names = {int(uid): name for uid, name in name_rows.all()}
+    return [
+        CommentOut(
+            id=c.id,
+            author_id=c.author_id,
+            author_name=names.get(c.author_id, "—"),
+            body=c.body,
+            created_at=c.created_at.isoformat() if c.created_at else None,
+        )
+        for c in comments
+    ]
 
 
 @router.post(

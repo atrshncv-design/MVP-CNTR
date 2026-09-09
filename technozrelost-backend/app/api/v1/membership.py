@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 
 from app.api.v1.projects import get_project_or_404, require_project_access
@@ -196,8 +196,18 @@ async def join_project(
 
 @router.get("/{project_id}/join-requests", response_model=list[JoinRequestOut])
 async def list_join_requests(
-    project_id: int, request: Request, db: DBSession, user: CurrentUser
+    project_id: int,
+    request: Request,
+    db: DBSession,
+    user: CurrentUser,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
 ) -> list[JoinRequestOut]:
+    """Очередь заявок на вступление постранично (P2, таск 14).
+
+    limit/offset с верхней границей; связи грузятся batched (один запрос
+    на очередь + один на пригласивших), а не N+1 по invited_by.
+    """
     await require_priority_access(db, project_id, user, request)
 
     rows = await db.execute(
@@ -207,14 +217,24 @@ async def list_join_requests(
             ProjectMember.project_id == project_id,
             ProjectMember.status == "pending",
         )
-        .order_by(ProjectMember.joined_at)
+        .order_by(ProjectMember.joined_at, ProjectMember.id)
+        .limit(limit)
+        .offset(offset)
     )
+    pairs = list(rows)
+    # Batched-загрузка пригласивших: один IN-запрос вместо N+1 db.get.
+    sharer_ids = {m.invited_by for m, _ in pairs if m.invited_by is not None}
+    sharers: dict[int, str] = {}
+    if sharer_ids:
+        sharer_rows = await db.execute(
+            select(User.id, User.full_name).where(User.id.in_(sharer_ids))
+        )
+        sharers = {int(uid): name for uid, name in sharer_rows.all()}
     result: list[JoinRequestOut] = []
-    for member, member_user in rows:
-        invited_by_name: str | None = None
-        if member.invited_by is not None:
-            sharer = await db.get(User, member.invited_by)
-            invited_by_name = sharer.full_name if sharer else None
+    for member, member_user in pairs:
+        invited_by_name: str | None = (
+            sharers.get(member.invited_by) if member.invited_by is not None else None
+        )
         result.append(
             JoinRequestOut(
                 id=member.id,

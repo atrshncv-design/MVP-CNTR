@@ -194,6 +194,16 @@ class Project(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
     )
 
+    # P2 (таск 14, миграция 0037): жизненный цикл проекта. 'review' — legacy
+    # в данных (код не создаёт); active/completed считает executors.py.
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'auto_confirmed', 'published', 'approved',"
+            " 'rejected', 'archived', 'completed', 'active', 'review')",
+            name="projects_status_check",
+        ),
+    )
+
 
 # Горячие пути реестров (таск 06) — зеркала миграции 0027_performance_indexes.
 Index(
@@ -388,6 +398,14 @@ class ControlPoint(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
+    # P2 (таск 14, миграция 0037): pending → approved|rejected (ControlPointDecisionIn).
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected')",
+            name="control_points_status_check",
+        ),
+    )
+
 
 class ProjectDocument(Base):
     __tablename__ = "project_documents"
@@ -417,6 +435,14 @@ class ProjectDocument(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+    # P2 (таск 14, миграция 0037): draft (default) / uploaded (files.py) / active (stages.py).
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'uploaded', 'active')",
+            name="project_documents_status_check",
+        ),
     )
 
 
@@ -573,6 +599,16 @@ class PromotionRequest(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, onupdate=func.now()
+    )
+
+    # P2 (таск 14, миграция 0037): docs_uploaded → pre_evaluated →
+    # pending_manager → approved|rejected (+ evaluation_unavailable).
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('docs_uploaded', 'pre_evaluated', 'evaluation_unavailable',"
+            " 'pending_manager', 'approved', 'rejected')",
+            name="promotion_requests_status_check",
+        ),
     )
 
 

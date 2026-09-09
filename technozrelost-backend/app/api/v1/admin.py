@@ -38,6 +38,7 @@ async def global_audit(
     project_id: int | None = Query(None),
     action: str | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
 ) -> list[AuditTrailEntryOut]:
     """Глобальный аудит append-only: все события платформы (администратор).
 
@@ -50,6 +51,7 @@ async def global_audit(
         .outerjoin(User, AuditTrailEntry.user_id == User.id)
         .order_by(AuditTrailEntry.id.desc())
         .limit(limit)
+        .offset(offset)
     )
     if project_id is not None:
         stmt = stmt.where(AuditTrailEntry.project_id == project_id)
