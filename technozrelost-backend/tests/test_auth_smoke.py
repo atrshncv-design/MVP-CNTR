@@ -85,7 +85,7 @@ def test_duplicate_email_conflict(client: TestClient) -> None:
         "email": email,
         "password": "Probe12345",
         "full_name": "Dup",
-        "role_slug": "investor",
+        "role_slug": "gk_customer",
     }
     first = client.post("/api/v1/auth/register", json=payload)
     assert first.status_code == 201

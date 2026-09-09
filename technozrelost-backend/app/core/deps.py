@@ -85,6 +85,29 @@ def has_role(user: User, *slugs: str) -> bool:
 
 CNTR_STAFF_SLUGS = ("cntr_admin", "cntr_manager")
 
+# R04i (таск 03): закрытая выдача привилегий — явный allowlist саморегистрации.
+# Почему allowlist, а не ban-list: запрет «кроме staff» уже пропустил auditor
+# один раз (история 6, Решение §3). Привилегии выдаёт только администратор
+# через PATCH /users/{id}; миграция 0033 отзывает ранее самозарегистрированные.
+# ugt_expert — до-переименованный slug regulating_organization (миграция 0010):
+# оставлен привилегированным, чтобы старое значение не открыло лазейку.
+PRIVILEGED_ROLE_SLUGS: tuple[str, ...] = (
+    "auditor",
+    "regulating_organization",
+    "ugt_expert",
+    "investor",
+    "cntr_admin",
+    "cntr_manager",
+)
+SELF_REGISTER_ALLOWED_SLUGS: frozenset[str] = frozenset(
+    {
+        "gk_customer",
+        "rd_executor",
+        "scientific_org",
+        "serial_manufacturer",
+    }
+)
+
 
 def is_cntr_staff(user: User) -> bool:
     return has_role(user, *CNTR_STAFF_SLUGS)

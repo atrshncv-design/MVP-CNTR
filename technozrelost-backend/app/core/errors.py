@@ -55,6 +55,11 @@ CATALOG: dict[str, ErrorEntry] = {
         ru="Роли работников ЦНТР назначаются администратором центра",
         en="CNTR staff roles are assigned by the center administrator",
     ),
+    "AUTH_PRIVILEGED_ROLE_FORBIDDEN": ErrorEntry(
+        status=403,
+        ru="Привилегированная роль назначается администратором",
+        en="Privileged roles are assigned by the administrator",
+    ),
     "AUTH_UNKNOWN_ROLE": ErrorEntry(
         status=400, ru="Неизвестная роль: {role}", en="Unknown role: {role}"
     ),
@@ -485,6 +490,16 @@ CATALOG: dict[str, ErrorEntry] = {
     ),
     "NOTIFICATION_NOT_FOUND": ErrorEntry(
         status=404, ru="Уведомление не найдено", en="Notification not found"
+    ),
+    "SSE_TICKET_INVALID": ErrorEntry(
+        status=401,
+        ru="Недействительный или просроченный ticket",
+        en="Invalid or expired ticket",
+    ),
+    "SSE_TOKEN_IN_URL": ErrorEntry(
+        status=400,
+        ru="Токен в URL запрещён — получите одноразовый ticket",
+        en="Token in URL is forbidden — issue a one-time ticket",
     ),
     "RAG_ADMIN_ONLY": ErrorEntry(
         status=403,

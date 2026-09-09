@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
-from app.core.deps import CNTR_STAFF_SLUGS, CurrentUser, DBSession
+from app.core.deps import SELF_REGISTER_ALLOWED_SLUGS, CurrentUser, DBSession
 from app.core.errors import raise_error
 from app.core.security import (
     create_access_token,
@@ -47,8 +47,17 @@ async def register(payload: RegisterIn, request: Request, db: DBSession) -> Toke
     client_host = auth_throttle.source_from_request(request)
     if await auth_throttle.is_blocked(payload.email, client_host):
         raise raise_error("AUTH_REGISTER_LIMIT", request=request)
-    if payload.role_slug in CNTR_STAFF_SLUGS:
-        raise raise_error("AUTH_CNTR_ROLE_FORBIDDEN", request=request)
+    # R04i (таск 03): саморегистрация только по allowlist непривилегированных
+    # ролей; auditor/regulating_organization/investor/staff → 403, выдача только
+    # администратором через PATCH /users/{id}. Неизвестный slug проверяется ниже
+    # (400 AUTH_UNKNOWN_ROLE) — allowlist не раскрывает существование ролей.
+    if payload.role_slug not in SELF_REGISTER_ALLOWED_SLUGS:
+        role_known = await db.scalar(stmt_role_by_slug(payload.role_slug))
+        if role_known is None:
+            raise raise_error(
+                "AUTH_UNKNOWN_ROLE", {"role": payload.role_slug}, request=request
+            )
+        raise raise_error("AUTH_PRIVILEGED_ROLE_FORBIDDEN", request=request)
 
     role = await db.scalar(stmt_role_by_slug(payload.role_slug))
     if role is None:
@@ -104,25 +113,59 @@ async def login(payload: LoginIn, request: Request, db: DBSession) -> TokenOut:
 async def refresh(payload: RefreshTokenIn, request: Request, db: DBSession) -> TokenOut:
     """Ротация refresh-токена: старый отзывается, выдаётся новая пара.
 
+    R05i (таск 06): ротация — одним атомарным UPDATE с условием «ещё не
+    отозван и не истёк». Почему так: check-then-act (SELECT, затем UPDATE)
+    в двух параллельных запросах проигрывает гонку всегда — оба видят
+    токен валидным и выдают по паре (два 200). Атомарный UPDATE берёт
+    строковую блокировку: побеждает один (200), второй видит 0 строк (401).
+
     Повторное использование уже отозванного токена — компрометация семьи:
     отзываем все refresh-токены пользователя (N-09) и отклоняем запрос (401).
+    Проигравший гонку тоже отзывает семью, если пара победителя уже
+    закоммитилась, — reuse есть reuse; гонка проверяется кодами 200/401.
     """
     try:
         claims = decode_token(payload.refresh_token)
         if claims.get("type") != "refresh":
             raise ValueError("not a refresh token")
-        user_id = int(claims["sub"])
+        int(claims["sub"])
     except Exception as exc:  # noqa: BLE001
         raise raise_error("AUTH_REFRESH_INVALID", request=request) from exc
 
     token_hash = hash_token(payload.refresh_token)
-    row = await db.scalar(
-        select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+    now = datetime.now(UTC)
+    # Атомарная заявка: «забери, если ещё не отозван и не истёк».
+    # Строка блокируется до коммита — второй конкурент ждёт, затем видит
+    # 0 обновлённых строк и уходит в ветку reuse/expired, а не выдаёт пару.
+    claimed = await db.execute(
+        update(RefreshToken)
+        .where(
+            RefreshToken.token_hash == token_hash,
+            RefreshToken.revoked_at.is_(None),
+            RefreshToken.expires_at >= now,
+        )
+        .values(revoked_at=now)
+        .returning(RefreshToken.user_id)
     )
+    claimed_row = claimed.fetchone()
+    if claimed_row is not None:
+        winner_user_id = int(claimed_row[0])
+        user = await db.get(User, winner_user_id)
+        if user is None or not user.is_active:
+            # Как раньше: неактивному пару не выдаём и токен не потребляем —
+            # откатываем заявку, чтобы не менять семантику ошибок.
+            await db.rollback()
+            raise raise_error("AUTH_USER_INACTIVE", request=request)
+        await db.refresh(user, attribute_names=["roles"])
+        # Коммит внутри сохраняет ревок старого и выпуск нового атомарно.
+        return await _issue_tokens(db, user)
+
+    # Заявка не удалась: причину отдаём тем же швом ошибок, что раньше.
+    row = await db.scalar(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
     if row is None:
         raise raise_error("AUTH_REFRESH_REVOKED", request=request)
     if row.revoked_at is not None:
-        # N-09: reuse отозванного токена → ревок всей семьи (все активные токены пользователя)
+        # N-09: reuse отозванного токена → ревок всей семьи пользователя.
         await db.execute(
             update(RefreshToken)
             .where(RefreshToken.user_id == row.user_id, RefreshToken.revoked_at.is_(None))
@@ -130,18 +173,7 @@ async def refresh(payload: RefreshTokenIn, request: Request, db: DBSession) -> T
         )
         await db.commit()
         raise raise_error("AUTH_REFRESH_REVOKED", request=request)
-    if row.expires_at < datetime.now(UTC):
-        raise raise_error("AUTH_REFRESH_EXPIRED", request=request)
-
-    user = await db.get(User, user_id)
-    if user is None or not user.is_active:
-        raise raise_error("AUTH_USER_INACTIVE", request=request)
-
-    # Ротация: отзываем старый, выдаём новую пару
-    row.revoked_at = datetime.now(UTC)
-    await db.flush()
-    await db.refresh(user, attribute_names=["roles"])
-    return await _issue_tokens(db, user)
+    raise raise_error("AUTH_REFRESH_EXPIRED", request=request)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

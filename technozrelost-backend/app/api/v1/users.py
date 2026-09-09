@@ -12,12 +12,12 @@ import asyncio
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.auth import _user_out
-from app.core.deps import CurrentUser, DBSession, require_role
+from app.core.deps import PRIVILEGED_ROLE_SLUGS, CurrentUser, DBSession, require_role
 from app.core.errors import raise_error
 from app.core.security import hash_password, verify_password
 from app.db.models import AuditTrailEntry, RefreshToken, Role, User, user_roles_tbl
@@ -85,8 +85,20 @@ async def change_password(
 
 
 @router.get("", response_model=list[UserAdminOut])
-async def list_users(db: DBSession, user: AdminUser) -> list[UserAdminOut]:
-    rows = await db.execute(select(User).order_by(User.created_at.desc()))
+async def list_users(
+    db: DBSession,
+    user: AdminUser,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+) -> list[UserAdminOut]:
+    """Список пользователей постранично (P2, таск 14).
+
+    limit/offset с верхней границей: 10k записей не отдаются одним ответом.
+    Сортировка стабильна (created_at, id), страницы не пересекаются.
+    """
+    rows = await db.execute(
+        select(User).order_by(User.created_at.desc(), User.id.desc()).limit(limit).offset(offset)
+    )
     return [_admin_out(u) for u in rows.scalars().all()]
 
 
@@ -101,6 +113,19 @@ async def update_user(
     target = await db.get(User, user_id)
     if target is None:
         raise raise_error("USER_NOT_FOUND", request=request)
+
+    # R04i (таск 03): срез привилегированных ролей до изменения — для аудита
+    # выдачи/отзыва. Прямой SQL по user_roles: identity-map после raw DML ниже
+    # отдаёт stale-объект, поэтому срез делаем заранее тем же путём.
+    _privileged = set(PRIVILEGED_ROLE_SLUGS)
+    old_privileged: set[str] = set()
+    if payload.roles:
+        old_rows = await db.execute(
+            select(Role.slug)
+            .join(user_roles_tbl, user_roles_tbl.c.role_id == Role.id)
+            .where(user_roles_tbl.c.user_id == target.id)
+        )
+        old_privileged = set(old_rows.scalars().all()) & _privileged
 
     if payload.roles:
         roles = (
@@ -140,6 +165,28 @@ async def update_user(
             },
         )
     )
+    # R04i (таск 03): выдача/отзыв привилегированной роли — отдельными
+    # append-only записями, чтобы аудит отвечал «кто кому выдал/снял».
+    if payload.roles:
+        new_privileged = set(payload.roles) & _privileged
+        for slug in sorted(new_privileged - old_privileged):
+            db.add(
+                AuditTrailEntry(
+                    project_id=None,
+                    user_id=user.id,
+                    action="user.role.granted",
+                    details={"target_user_id": target.id, "role": slug},
+                )
+            )
+        for slug in sorted(old_privileged - new_privileged):
+            db.add(
+                AuditTrailEntry(
+                    project_id=None,
+                    user_id=user.id,
+                    action="user.role.revoked",
+                    details={"target_user_id": target.id, "role": slug},
+                )
+            )
     await db.commit()
     # Роли могли быть изменены напрямую (raw DML) — перечитываем свежим запросом,
     # обходя identity-map (populate_existing), иначе вернётся старый объект.

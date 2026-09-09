@@ -6,22 +6,40 @@ import uuid
 
 from fastapi.testclient import TestClient
 
-from tests.support import priority_share_sig
+from tests.support import priority_share_sig, register_test_user
 
 
 def _register(client: TestClient, role: str = "gk_customer") -> str:
+    # R04i (таск 03): привилегированные роли (auditor/regulating_organization)
+    # выдаёт только администратор — provision через tests.support (БД-зеркало
+    # PATCH /users/{id}), непривилегированные — как раньше через HTTP.
     email = f"cp-{uuid.uuid4().hex[:8]}@example.com"
-    response = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": email,
-            "password": "Probe12345",
-            "full_name": f"CP {role}",
-            "role_slug": role,
-        },
+    data = register_test_user(
+        client, email=email, full_name=f"CP {role}", role_slug=role
     )
-    assert response.status_code == 201, response.text
-    return response.json()["access_token"]
+    return data["access_token"]
+
+
+def _join_as_active(
+    client: TestClient, owner_token: str, project_id: int, member_token: str,
+    role_in_project: str,
+) -> None:
+    detail = client.get(
+        f"/api/v1/projects/{project_id}", headers=_auth(owner_token)
+    )
+    assert detail.status_code == 200, detail.text
+    join_token = detail.json()["project"]["join_token"]
+    joined = client.post(
+        "/api/v1/projects/join",
+        json={
+            "token": join_token,
+            "role_in_project": role_in_project,
+            "share_sig": priority_share_sig(client, owner_token, project_id),
+        },
+        headers=_auth(member_token),
+    )
+    assert joined.status_code == 200, joined.text
+    assert joined.json()["status"] == "active"
 
 
 def _auth(token: str) -> dict[str, str]:
@@ -55,6 +73,10 @@ def test_expert_can_decide_control_point(client: TestClient) -> None:
     owner_token = _register(client)
     expert_token = _register(client, "regulating_organization")
     project_id = _create_project(client, owner_token)
+    # R04i: верификатор решает только назначенный проект (активное участие).
+    _join_as_active(
+        client, owner_token, project_id, expert_token, "regulating_organization"
+    )
 
     detail = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))
     cp = detail.json()["control_points"][0]
@@ -108,6 +130,8 @@ def test_auditor_go_no_go_on_kt1(client: TestClient) -> None:
     owner_token = _register(client)
     auditor_token = _register(client, "auditor")
     project_id = _create_project(client, owner_token)
+    # R04i: аудитор решает только назначенный проект (активное участие).
+    _join_as_active(client, owner_token, project_id, auditor_token, "auditor")
 
     detail = client.get(f"/api/v1/projects/{project_id}", headers=_auth(owner_token))
     kt1 = next(p for p in detail.json()["control_points"] if "КТ-1" in p["title"])

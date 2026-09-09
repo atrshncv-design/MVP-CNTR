@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Query, Request, Response, status
 from sqlalchemy import Select, and_, func, or_, select
 
+from app.api.v1.nioktr import enforce_registry_limit
 from app.core.deps import (
     CurrentUser,
     CurrentUserOptional,
@@ -226,6 +227,7 @@ async def list_projects(db: DBSession, user: CurrentUser) -> list[ProjectOut]:
 
 @router.get("/registry", response_model=list[RegistryProjectOut])
 async def project_registry(
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
     ugt_min: int | None = Query(None, ge=1, le=9),
@@ -237,6 +239,7 @@ async def project_registry(
     limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[RegistryProjectOut]:
     """Общий реестр проектов (только is_public). ?ugt_min=7 — реестр технологий."""
+    await enforce_registry_limit(request, user)
     stmt = (
         select(Project, User.organization)
         .outerjoin(User, Project.created_by == User.id)
@@ -659,17 +662,25 @@ async def decide_control_point(
     db: DBSession,
     user: CurrentUser,
 ) -> ControlPointOut:
-    """Решение по контрольной точке: эксперт УГТ (верификация) или аудитор (КТ-1 Go/No-Go)."""
-    await get_project_or_404(db, project_id, request)  # проверка существования проекта
-    is_verifier = (
-        user.is_superuser
-        or is_cntr_staff(user)
-        or has_role(user, "regulating_organization", "auditor")
-    )
-    if not is_verifier:
-        # Обычные роли — только участники проекта (иначе 404)
-        await require_project_access(db, project_id, user, request)
-        raise raise_error("PROJECT_KT_FORBIDDEN", request=request)
+    """Решение по контрольной точке: верификатор проекта или персонал ЦНТР.
+
+    R04i (таск 03, история 7): роль auditor/regulating_organization сама по себе
+    не открывает чужие проекты — нужно назначение (активное участие в проекте).
+    Персонал ЦНТР и суперпользователь решают любые КТ; владелец без назначения
+    свой КТ-1 не решает (самоверификация запрещена).
+    """
+    project = await get_project_or_404(db, project_id, request)
+    if not (user.is_superuser or is_cntr_staff(user)):
+        # Посторонним — 404 (не раскрываем существование проекта, как в
+        # can_access_project/require_project_access).
+        if not await can_access_project(db, project, user):
+            raise raise_error("PROJECT_NOT_FOUND", request=request)
+        # Свой КТ аудитором/верификатором без назначения — запрет: владелец,
+        # даже с привилегированной ролью, сам себе не верифицирует.
+        if project.created_by == user.id:
+            raise raise_error("PROJECT_KT_FORBIDDEN", request=request)
+        if not has_role(user, "regulating_organization", "ugt_expert", "auditor"):
+            raise raise_error("PROJECT_KT_FORBIDDEN", request=request)
 
     cp = await db.get(ControlPoint, cp_id)
     if cp is None or cp.project_id != project_id:

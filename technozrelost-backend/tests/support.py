@@ -1,7 +1,8 @@
 """Test-only account provisioning helpers.
 
-Central staff roles are not self-registerable. Tests provision those roles
-through the database, mirroring an administrator assigning the role.
+Privileged roles (R04i, task 03) are not self-registerable. Tests provision
+those roles through the database, mirroring an administrator assigning the
+role via PATCH /users/{id}. Unprivileged roles register over HTTP as usual.
 """
 
 from __future__ import annotations
@@ -12,6 +13,16 @@ import psycopg
 from fastapi.testclient import TestClient
 
 CNTR_STAFF_SLUGS = {"cntr_admin", "cntr_manager"}
+# R04i (таск 03): привилегии выдаёт только администратор — в тестах их
+# назначаем через БД (зеркало PATCH /users/{id}), а не через /auth/register.
+ADMIN_ASSIGNED_SLUGS = {
+    "cntr_admin",
+    "cntr_manager",
+    "auditor",
+    "regulating_organization",
+    "ugt_expert",
+    "investor",
+}
 PASSWORD = "Probe12345"
 
 
@@ -30,16 +41,16 @@ def register_test_user(
             "password": PASSWORD,
             "full_name": full_name,
             "organization": organization,
-            "role_slug": "gk_customer" if role_slug in CNTR_STAFF_SLUGS else role_slug,
+            "role_slug": "gk_customer" if role_slug in ADMIN_ASSIGNED_SLUGS else role_slug,
         },
     )
     assert response.status_code == 201, response.text
     data = response.json()
 
-    if role_slug not in CNTR_STAFF_SLUGS:
+    if role_slug not in ADMIN_ASSIGNED_SLUGS:
         return data
 
-    _assign_staff_role(data["user"]["id"], role_slug)
+    _assign_role(data["user"]["id"], role_slug)
     login = client.post(
         "/api/v1/auth/login",
         json={"email": email, "password": PASSWORD},
@@ -62,7 +73,7 @@ def priority_share_sig(client: TestClient, token: str, project_id: int) -> str:
     return response.json()["share_sig"]
 
 
-def _assign_staff_role(user_id: int, role_slug: str) -> None:
+def _assign_role(user_id: int, role_slug: str) -> None:
     conn = psycopg.connect(
         host=os.environ.get("POSTGRES_HOST", "127.0.0.1"),
         port=int(os.environ.get("POSTGRES_PORT", "5432")),
@@ -72,6 +83,8 @@ def _assign_staff_role(user_id: int, role_slug: str) -> None:
         autocommit=True,
     )
     try:
+        # Зеркало администратора: снять всё выданное при регистрации и выдать
+        # назначенную роль как primary (как PATCH /users/{id} с одной ролью).
         conn.execute("DELETE FROM public.user_roles WHERE user_id = %s", (user_id,))
         conn.execute(
             """
@@ -82,3 +95,6 @@ def _assign_staff_role(user_id: int, role_slug: str) -> None:
         )
     finally:
         conn.close()
+
+
+_assign_staff_role = _assign_role  # backward-compat alias
