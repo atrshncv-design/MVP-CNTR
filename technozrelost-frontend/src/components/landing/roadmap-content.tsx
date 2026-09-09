@@ -275,7 +275,7 @@ function DocumentCard({
       </div>
       <button
         type="button"
-        onClick={() => alert(t("templateAlert") ?? "Template will be available in next version")}
+        onClick={() => alert(t("templateAlert"))}
         className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all hover:scale-[1.02]"
         style={{ background: `${accentColor}1A`, color: accentColor }}
       >
