@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import LocaleToggle from "@/i18n/LocaleToggle";
 
 type Status = "idle" | "loading" | "error";
 
@@ -122,6 +123,9 @@ export default function LoginPage() {
 
       <section className="flex items-center justify-center px-5 py-12 sm:px-10">
         <div className="w-full max-w-md">
+          <div className="mb-6 flex justify-end">
+            <LocaleToggle />
+          </div>
           <h2 className="tz-page-title text-tz-fg">
             {t("loginTitle")}
           </h2>

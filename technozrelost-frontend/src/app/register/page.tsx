@@ -31,6 +31,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import LocaleToggle from "@/i18n/LocaleToggle";
 import { ROLES, getRoleName } from "@/lib/roles";
 import { CLIENT_API_BASE } from "@/lib/public-api";
 
@@ -130,6 +131,9 @@ export default function RegisterPage() {
 
       <section className="flex items-center justify-center px-5 pb-6 pt-3 sm:px-10">
         <div className="w-full max-w-md">
+          <div className="mb-6 flex justify-end">
+            <LocaleToggle />
+          </div>
           <div className="mb-5 lg:hidden">
             <div className="font-extrabold tracking-[0.08em] text-tz-fg">{t("brandMobile")}</div>
             {/* legacy маркер: ТЕХНОЗРЕЛОСТЬ */}
