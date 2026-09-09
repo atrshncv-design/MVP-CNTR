@@ -179,3 +179,91 @@ test("locale-zh: переводчик резолвит zh на контентн�
   assert.equal(typeof miss, "string");
   assert.ok(miss.length > 0, "недостающий ключ дал пустое место");
 });
+
+test("locale-zh-final: ключи витрины showcaseEmpty*/emptyRegistry*/loadError*/liveDesc переведены (T19)", () => {
+  // Ключей витрины не было на момент T17; собираем из свежего EN —
+  // будущие рассинхроны EN→zh ловятся здесь же, а не молчаливым fallback.
+  const pats = ["showcaseEmpty", "emptyRegistry", "loadError", "liveDesc"];
+  const mirrors = [
+    ["src/messages/en.json", "src/messages/zh.json"],
+    ["messages/en.json", "messages/zh.json"],
+  ];
+  let pinned = 0;
+  for (const [enPath, zhPath] of mirrors) {
+    const en = leaves(JSON.parse(read(enPath)));
+    const zh = leaves(JSON.parse(read(zhPath)));
+    const keys = Object.keys(en).filter((k) => pats.some((s) => k.includes(s)));
+    assert.ok(keys.length >= 8, `${enPath}: ожидалось 8+ ключей витрины, сейчас ${keys.length}`);
+    if (enPath.startsWith("src/")) pinned = keys.length;
+    for (const k of keys) {
+      const zv = zh[k];
+      assert.equal(typeof zv, "string", `${zhPath}: нет перевода ${k}`);
+      assert.ok(zv.length > 0, `${zhPath}: ${k} пуст`);
+      assert.notEqual(zv, en[k], `${zhPath}: ${k} — fallback на EN`);
+      assert.doesNotMatch(en[k], /[А-Яа-яЁё]/, `${enPath}: ${k} с кириллицей`);
+    }
+  }
+  assert.ok(pinned >= 8, `пинов витрины меньше 8: ${pinned}`);
+});
+
+test("locale-zh-final: живой рендер методологии/уровней/лендинга/roadmap без английских строк", () => {
+  // Интерфейс — 100% zh: после вычета плейсхолдеров и устоявшихся кодов
+  // (TRL/MRL/IRL/SRL, GOST, CNTR, AI, TRL-шкала) латиницы быть не должно.
+  const zh = JSON.parse(read("src/messages/zh.json"));
+  const en = JSON.parse(read("src/messages/en.json"));
+  const strip = (s) =>
+    s
+      .replace(/\{[^}]*\}/g, "")
+      .replace(
+        /\b(TRL|MRL|IRL|SRL|GOST|CNTR|UGT|UGP|UGI|UGS|AI|R&D|DT&E|OT&E|CTE|UD|KT|ID|API|LPWAN|PVA|ML|LLM|ISO)\b/g,
+        "",
+      )
+      .replace(/[0-9]/g, "");
+  for (const ns of ["methodology", "levels", "landing", "roadmap"]) {
+    const enLeaves = leaves(en[ns] ?? {});
+    const zhLeaves = leaves(zh[ns] ?? {});
+    assert.deepEqual(
+      Object.keys(zhLeaves).sort(),
+      Object.keys(enLeaves).sort(),
+      `${ns}: ключи zh расходятся со свежим EN`,
+    );
+    for (const [k, v] of Object.entries(zhLeaves)) {
+      if (typeof v !== "string" || v.trim() === "") continue;
+      const lat = strip(v).match(/[A-Za-z]{2,}/g) || [];
+      assert.deepEqual(lat, [], `${ns}.${k}: английские строки при zh: ${lat.slice(0, 3).join(", ")}`);
+    }
+  }
+});
+
+test("locale-zh-final: данные пользователей на языке ввода — карточка витрины не пустует", async () => {
+  // Решение заказчика 2026-09-09 (как в EN): интерфейс — 100% zh, а
+  // названия/тексты из БД остаются на языке ввода — карточка показывает
+  // исходный текст, а не пустоту и не выдуманный перевод.
+  const { toShowcaseCard } = await import("../src/lib/landing-registry.ts");
+  const apiItem = {
+    id: 7,
+    name: "Стенд испытаний",
+    category: "Промышленные технологии",
+    current_level: 5,
+    preliminary_level: null,
+    target_level: 7,
+    budget: null,
+    organization: "Завод",
+    is_public: true,
+    show_preliminary: false,
+    published_at: "2026-09-01T00:00:00",
+    created_at: "2026-08-01T00:00:00",
+  };
+  const card = toShowcaseCard(apiItem);
+  assert.equal(card.name, "Стенд испытаний", "имя проекта обязано остаться на языке ввода");
+  assert.equal(card.org, "Завод", "организация обязана остаться на языке ввода");
+  assert.equal(card.description, null, "описания нет в API — null, а не пустота и не выдумка");
+  assert.ok(
+    String(card.name).length > 0 && String(card.org).length > 0,
+    "карточка не должна пустовать при zh",
+  );
+  // Рамка вокруг данных при этом китайская (значения — из глоссария таска).
+  const { translatorFor } = await import("../src/lib/translators.ts");
+  assert.equal(translatorFor("projectsShowcase", "zh")("title"), "项目展示");
+  assert.equal(translatorFor("projectsLanding", "zh")("emptyRegistryTitle"), "暂无已发布的项目");
+});
