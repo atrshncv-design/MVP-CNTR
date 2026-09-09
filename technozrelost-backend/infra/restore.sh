@@ -42,8 +42,83 @@ MINIO_URL="${MINIO_URL:-http://$MINIO_ENDPOINT}"
 MINIO_BUCKET="${MINIO_BUCKET:-technozrelost}"
 MC_HOST_URL_SCRIPT="${MC_HOST_URL_SCRIPT:-$(dirname "$0")/mc-host-url.py}"
 
+# R06i группа F (таск 16): восстановление только по полному снимку в пустую БД.
+# Все проверки ниже — до любых изменений (fail-closed): при неполном или
+# двусмысленном снимке и при непустой целевой БД скрипт падает до pg_restore
+# и до зеркалирования MinIO, не оставляя чужих объектов.
+require_empty_database() {
+  # Пустая БД = нет пользовательских таблиц вне pg_catalog/information_schema.
+  # Любая строка означает эволюционировавшую БД: restore отказался бы оставить
+  # чужие объекты после pg_restore --clean, поэтому требуем пустоту заранее.
+  empty_query="SELECT 1 FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema') LIMIT 1;"
+  if command -v psql >/dev/null 2>&1; then
+    query_out="$(printf '%s\n' "$empty_query" | PGPASSWORD="$DB_PASSWORD" psql -X -w -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -Atq 2>/dev/null || true)"
+    # Непроверяемая БД = непустая для fail-closed: без доказательства пустоты
+    # восстановление запрещено, иначе чужие объекты останутся молча.
+    if [ -z "${query_out:-}" ]; then
+      # psql мог упасть (нет связи) либо БД действительно пуста. Различаем по
+      # коду: повтор с проверкой доступности.
+      if ! printf '%s\n' "$empty_query" | PGPASSWORD="$DB_PASSWORD" psql -X -w -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -Atq >/dev/null 2>&1; then
+        echo "[restore] ОШИБКА: не могу проверить пустоту БД — restore запрещён" >&2
+        return 1
+      fi
+      return 0
+    fi
+    if printf '%s' "$query_out" | grep -q "1"; then
+      echo "[restore] ОШИБКА: целевая БД не пуста — restore только в пустую БД" >&2
+      return 1
+    fi
+    return 0
+  elif command -v docker >/dev/null 2>&1; then
+    query_out="$(printf '%s\n' "$empty_query" | docker exec -i "${PG_CONTAINER:-tz-prod-db-primary}" sh -c 'PGPASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD обязателен}" psql -X -w -U "$1" -d "$2" -Atq' sh "$DB_USER" "$DB_NAME" 2>/dev/null || true)"
+    if [ -z "${query_out:-}" ]; then
+      if ! printf '%s\n' "$empty_query" | docker exec -i "${PG_CONTAINER:-tz-prod-db-primary}" sh -c 'PGPASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD обязателен}" psql -X -w -U "$1" -d "$2" -Atq' sh "$DB_USER" "$DB_NAME" >/dev/null 2>&1; then
+        echo "[restore] ОШИБКА: не могу проверить пустоту БД — restore запрещён" >&2
+        return 1
+      fi
+      return 0
+    fi
+    if printf '%s' "$query_out" | grep -q "1"; then
+      echo "[restore] ОШИБКА: целевая БД не пуста — restore только в пустую БД" >&2
+      return 1
+    fi
+    return 0
+  else
+    echo "[restore] ОШИБКА: psql и docker недоступны — не могу проверить пустоту БД" >&2
+    return 1
+  fi
+}
+
 if [ ! -d "$SNAPSHOT/minio" ]; then
   echo "[restore] ОШИБКА: $SNAPSHOT/minio не найден — exact MinIO restore невозможен" >&2
+  exit 2
+fi
+
+# Полнота снимка до любых изменений: ровно один logical dump и physical base.
+# Ноль дампов = неполный снимок (раньше молча пропускался); больше одного =
+# двусмысленный снимок (раньше молча брался первый). Оба случая — отказ.
+DUMP_COUNT="$(find "$SNAPSHOT" -maxdepth 1 -name 'pg_primary_*.dump' 2>/dev/null | wc -l | tr -d '[:space:]')"
+case "$DUMP_COUNT" in
+  ''|*[!0-9]*)
+    echo "[restore] ОШИБКА: не могу подсчитать дампы снимка" >&2
+    exit 2
+    ;;
+esac
+if [ "$DUMP_COUNT" -eq 0 ]; then
+  echo "[restore] ОШИБКА: неполный снимок — pg_primary_*.dump не найден" >&2
+  exit 2
+fi
+if [ "$DUMP_COUNT" -gt 1 ]; then
+  echo "[restore] ОШИБКА: двусмысленный снимок — найдено $DUMP_COUNT дампов pg_primary_*.dump" >&2
+  exit 2
+fi
+if [ ! -s "$SNAPSHOT/pg_basebackup/PG_VERSION" ]; then
+  echo "[restore] ОШИБКА: неполный снимок — pg_basebackup/PG_VERSION отсутствует" >&2
+  exit 2
+fi
+
+# Пустота целевой БД — до контрольных сумм и до любых изменений.
+if ! require_empty_database; then
   exit 2
 fi
 
@@ -70,7 +145,12 @@ if [ "${RESTORE_CONFIRM:-0}" != "1" ]; then
 fi
 
 # ── 1. PostgreSQL Primary ─────────────────────────────────────────────────────
+# Снимок уже проверен выше: ровно один dump, поэтому head -1 детерминирован.
 PG_FILE="$(find "$SNAPSHOT" -maxdepth 1 -name 'pg_primary_*.dump' 2>/dev/null | head -1 || true)"
+if [ -z "$PG_FILE" ]; then
+  echo "[restore] ОШИБКА: неполный снимок — pg_primary_*.dump исчез после проверки" >&2
+  exit 2
+fi
 if [ -n "$PG_FILE" ]; then
   echo "[restore] PostgreSQL: восстанавливаю из $PG_FILE"
   if command -v pg_restore >/dev/null 2>&1; then
@@ -87,7 +167,8 @@ if [ -n "$PG_FILE" ]; then
   fi
   echo "[restore] PostgreSQL: готово"
 else
-  echo "[restore] PG-дамп не найден — пропускаю PostgreSQL"
+  echo "[restore] ОШИБКА: неполный снимок — pg_primary_*.dump не найден" >&2
+  exit 2
 fi
 
 # ── 2. MinIO ──────────────────────────────────────────────────────────────────

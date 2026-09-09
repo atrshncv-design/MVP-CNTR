@@ -138,6 +138,13 @@ recreate; production default отсутствует и переменная об
 ./infra/deploy.sh rollback previous`. Команда не удаляет named volumes и не
 пропускает строгую проверку пароля Grafana.
 
+Откат с учётом БД: rollback перевыкатывает только образы backend/frontend и
+снова проходит health-gate (включая счётчик реплик `BACKEND_EXPECTED_REPLICAS=2`);
+миграции Alembic вперёд-совместимы и вниз не откатываются, данные в named volumes
+сохраняются. Если выкладка успела применить миграцию, ломающую схему, отката образов
+недостаточно — восстанавливайте данные из снапшота по RUNBOOK-DATA.md P2 (только
+в пустую БД, с проверкой SHA256SUMS до любых изменений) либо выполняйте PITR по P3.
+
 Operational scripts для rollback монтируются из `infra/` read-only; перед
 откатом checkout и `.env.production` должны соответствовать текущему runbook.
 Это не mount исходников приложения.

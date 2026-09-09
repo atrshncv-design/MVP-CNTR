@@ -1,9 +1,13 @@
-# Prometheus — сбор метрик платформы «Технозрелость» (тикет 20).
+# Prometheus — сбор метрик платформы «Технозрелость» (тикет 20, R06i группа F + T02 per-instance).
 # Эндпоинт: GET /api/v1/metrics (Prometheus text exposition, см. app/api/v1/metrics.py).
 #
-# Примечание: при deploy.replicas: 2 Docker DNS резолвит `backend` в оба
-# контейнера; Prometheus обращается по имени сервиса и получает метрики
-# реплик вперемешку (достаточно для rate()-агрегатов на дашборде).
+# R06i группа F / T02: per-instance скрап двух реплик backend через DNS-SD.
+# При deploy.replicas: 2 Docker DNS отдаёт оба IP сервиса backend; static-цель
+# backend:8000 ходила бы по round-robin и смешивала серии вперемешку, а
+# dns_sd резолвит все A-записи и скрапит каждую реплику отдельной целью.
+# Instance различает сам Prometheus по цели (__address__/instance); приложение
+# app-level instance-меток не ставит (см. test_two_replicas_scrape_as_separate_instances).
+# Агрегаты сходятся суммой по инстансам: sum(rate(...)) по двум целям = общий RPS.
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -11,7 +15,8 @@ global:
 scrape_configs:
   - job_name: technozrelost-backend
     metrics_path: /api/v1/metrics
-    static_configs:
-      - targets: ["backend:8000"]
-        labels:
-          service: technozrelost-backend
+    dns_sd_configs:
+      - names: ["backend"]
+        type: A
+        port: 8000
+        refresh_interval: 30s

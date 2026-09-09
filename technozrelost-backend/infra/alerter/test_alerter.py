@@ -430,3 +430,47 @@ def test_replica_probe_uses_columns_available_in_postgres(monkeypatch, tmp_path)
         ("replication_slot", "ok"),
         ("replica_lag", "ok"),
     ]
+def test_wal_archive_staleness_is_critical_when_sync_marker_is_ok(tmp_path):
+    # R06i группа F: «синк отработал» (маркер ok свежий) != «текущий WAL защищён».
+    # Остановленная архивация (новейший сегмент старше порога) обязана дать
+    # critical, даже если циклы синка успешны.
+    import time
+
+    from alerter import check_wal_archive
+
+    archive = tmp_path / "wal-archive"
+    archive.mkdir()
+    fresh = archive / "000000010000000000000001"
+    fresh.write_bytes(b"wal")
+    # Свежий сегмент: только что записан — ok при пороге 300с.
+    assert check_wal_archive(archive, max_age_seconds=300).state == "ok"
+
+    # Состариваем единственный сегмент на 2 часа — архивация встала.
+    old_time = time.time() - 2 * 3600
+    import os
+
+    os.utime(fresh, (old_time, old_time))
+    stale = check_wal_archive(archive, max_age_seconds=300)
+    assert stale.state == "critical"
+    assert stale.name == "wal_archive"
+def test_warning_does_not_suppress_subsequent_critical():
+    # R06i группа F: эскалация warning -> critical обязана дать новый alert,
+    # а не утонуть в дедупликации активного инцидента.
+    from alerter import process_checks
+
+    warning = [CheckResult("disk", "warning", "path=/backups=85.0%")]
+    critical = [CheckResult("disk", "critical", "path=/backups=95.0%")]
+    sent: list[str] = []
+
+    state, event = process_checks(
+        warning, AlertState(), True, lambda message: sent.append(message) or True
+    )
+    assert event == "alert"
+    assert len(sent) == 1
+
+    state, event = process_checks(
+        critical, state, True, lambda message: sent.append(message) or True
+    )
+    assert event == "alert"
+    assert len(sent) == 2
+    assert "CRITICAL" in sent[-1]

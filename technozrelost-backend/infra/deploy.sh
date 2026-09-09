@@ -8,6 +8,10 @@ cd "$(dirname "$0")"
 ENV_FILE="${ENV_FILE:-.env.production}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 HEALTH_TIMEOUT_SECONDS="${DEPLOY_HEALTH_TIMEOUT_SECONDS:-300}"
+# R06i группа F (таск 16): ожидаемое число здоровых реплик backend для health-gate.
+# При deploy.replicas: 2 недостающая реплика обязана ронять гейт, а не молча
+# проходить с одной живой репликой.
+BACKEND_EXPECTED_REPLICAS="${BACKEND_EXPECTED_REPLICAS:-2}"
 BACKEND_IMAGE="technozrelost-backend"
 FRONTEND_IMAGE="technozrelost-frontend"
 HEALTH_SERVICES=(db db-replica minio clamav redis backend backup-timer wal-offsite alerter frontend nginx prometheus grafana)
@@ -17,10 +21,25 @@ usage() {
 Использование:
   ./deploy.sh                 собрать и выкатить текущий git SHA
   ./deploy.sh rollback TAG    вручную выкатить сохранённый TAG (например previous)
+  ./deploy.sh check-env       проверить/генерировать секреты окружения без выкладки
+  ./deploy.sh --help          показать помощь без изменения конфигурации
 
-Переменные оператора: ENV_FILE, DEPLOY_HEALTH_TIMEOUT_SECONDS.
+Переменные оператора: ENV_FILE, DEPLOY_HEALTH_TIMEOUT_SECONDS, BACKEND_EXPECTED_REPLICAS.
 EOF
 }
+
+# R06i группа F: --help чистый — без требования ENV_FILE и без изменения
+# конфигурации (раньше prepare_environment мутировал файл даже на --help).
+case "${1:-deploy}" in
+  -h|--help)
+    if [ "$#" -gt 1 ]; then
+      usage >&2
+      exit 2
+    fi
+    usage
+    exit 0
+    ;;
+esac
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "Нет файла $ENV_FILE. Создайте его из .env.production.example:"
@@ -242,8 +261,22 @@ readiness_ok() {
   curl -kfsS --max-time 5 -o /dev/null https://localhost/api/v1/ready
 }
 
+validate_replicas() {
+  case "$BACKEND_EXPECTED_REPLICAS" in
+    ''|*[!0-9]*)
+      echo "ОШИБКА: BACKEND_EXPECTED_REPLICAS должен быть целым числом." >&2
+      return 1
+      ;;
+  esac
+  if [ "$BACKEND_EXPECTED_REPLICAS" -lt 1 ]; then
+    echo "ОШИБКА: BACKEND_EXPECTED_REPLICAS должен быть положительным." >&2
+    return 1
+  fi
+}
+
 wait_for_healthy() {
-  local deadline now service ids id status all_healthy
+  local deadline now service ids id status all_healthy backend_ids backend_healthy
+  validate_replicas || return 1
   deadline=$(( $(date +%s) + HEALTH_TIMEOUT_SECONDS ))
   while :; do
     all_healthy=1
@@ -260,6 +293,18 @@ wait_for_healthy() {
         fi
       done
     done
+    # Гейт считает реплики backend отдельно: одного healthy из двух мало.
+    backend_ids="$(compose ps -q backend 2>/dev/null || true)"
+    backend_healthy=0
+    for id in $backend_ids; do
+      status="$(docker inspect -f '{{.State.Health.Status}}' "$id" 2>/dev/null || true)"
+      if [ "$status" = "healthy" ]; then
+        backend_healthy=$((backend_healthy + 1))
+      fi
+    done
+    if [ "$backend_healthy" -ne "$BACKEND_EXPECTED_REPLICAS" ]; then
+      all_healthy=0
+    fi
     if [ "$all_healthy" -eq 1 ] && readiness_ok; then
       return 0
     fi
@@ -314,15 +359,15 @@ validate_timeout() {
   fi
 }
 
-prepare_environment
-
 case "${1:-deploy}" in
   deploy)
     if [ "$#" -gt 1 ]; then
       usage >&2
       exit 2
     fi
+    prepare_environment
     validate_timeout
+    validate_replicas
     IMAGE_TAG="$(git rev-parse --short=12 HEAD 2>/dev/null)" || {
       echo "ОШИБКА: не удалось определить git SHA для image tag." >&2
       exit 1
@@ -359,11 +404,20 @@ case "${1:-deploy}" in
       usage >&2
       exit 2
     fi
+    prepare_environment
     validate_timeout
+    validate_replicas
     rollback_to_tag "$2"
     ;;
-  -h|--help)
-    usage
+  check-env)
+    if [ "$#" -ne 1 ]; then
+      usage >&2
+      exit 2
+    fi
+    validate_timeout
+    validate_replicas
+    prepare_environment
+    echo "Окружение проверено: секреты на месте."
     ;;
   *)
     usage >&2

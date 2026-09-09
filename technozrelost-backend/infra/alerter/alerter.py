@@ -44,6 +44,10 @@ class CheckResult:
 class AlertState:
     active: bool = False
     notification_sent: bool = False
+    # R06i группа F: тяжесть последнего уведомлённого инцидента.
+    # Нужна, чтобы warning не подавлял последующий critical: эскалация
+    # warning -> critical даёт новый alert, повтор той же тяжести — нет.
+    severity: str = "ok"
 
 
 @dataclass(frozen=True)
@@ -76,6 +80,11 @@ class AlerterConfig:
     clamav_port: int = 3310
     wal_offsite_marker: Path = Path("/backups/.wal-offsite-status")
     wal_offsite_max_age_seconds: float = 300.0
+    # R06i группа F (таск 16): свежесть локального WAL-архива отдельно от свежести
+    # offsite-маркера. Синк может успешно копировать старые сегменты, пока
+    # архивация стоит — тогда маркер ok, а текущий WAL не защищён.
+    wal_archive_dir: Path = Path("/wal-archive")
+    wal_archive_max_age_seconds: float = 300.0
     # L-03: синхронизировано с app/core/config.py cvd_max_age_seconds (env CVD_MAX_AGE_SECONDS)
     cvd_max_age_seconds: float = CVD_MAX_AGE_SECONDS
 
@@ -134,6 +143,8 @@ class AlerterConfig:
                 os.getenv("WAL_OFFSITE_MARKER", "/backups/.wal-offsite-status")
             ),
             wal_offsite_max_age_seconds=_env_float("WAL_OFFSITE_MAX_AGE_SECONDS", 300.0),
+            wal_archive_dir=Path(os.getenv("WAL_ARCHIVE_DIR", "/wal-archive")),
+            wal_archive_max_age_seconds=_env_float("WAL_ARCHIVE_MAX_AGE_SECONDS", 300.0),
             cvd_max_age_seconds=_env_float("CVD_MAX_AGE_SECONDS", CVD_MAX_AGE_SECONDS),
         )
 
@@ -270,6 +281,63 @@ def check_wal_offsite(
         max_age_seconds=max_age_seconds,
         now=now,
     )
+
+
+def check_wal_archive(
+    archive_dir: Path | str,
+    max_age_seconds: float = 300.0,
+    now: datetime | None = None,
+) -> CheckResult:
+    """R06i группа F: отличает «синк отработал» от «текущий WAL защищён».
+
+    Сканирует только завершённые объекты (WAL-сегменты из 24 hex и history
+    из 8 hex + .history — та же маска, что у wal-offsite-sync.sh): скрытые,
+    временные и частичные файлы игнорируются. Новейший mtime старше порога
+    либо отсутствие завершённых объектов — critical (архивация стоит), даже
+    если offsite-маркер свежий ok.
+    """
+    import re
+
+    directory = Path(archive_dir)
+    if not math.isfinite(max_age_seconds) or max_age_seconds < 0:
+        return CheckResult("wal_archive", CRITICAL, "invalid age threshold")
+    try:
+        entries = list(directory.iterdir())
+    except OSError:
+        return CheckResult("wal_archive", CRITICAL, "archive unavailable")
+    segment_re = re.compile(r"^[0-9A-Fa-f]{24}$")
+    history_re = re.compile(r"^[0-9A-Fa-f]{8}\.history$")
+    newest_mtime: float | None = None
+    for entry in entries:
+        try:
+            if not entry.is_file():
+                continue
+        except OSError:
+            continue
+        name = entry.name
+        if not (segment_re.match(name) or history_re.match(name)):
+            continue
+        try:
+            mtime = entry.stat().st_mtime
+        except OSError:
+            continue
+        if not math.isfinite(mtime):
+            continue
+        if newest_mtime is None or mtime > newest_mtime:
+            newest_mtime = mtime
+    if newest_mtime is None:
+        return CheckResult("wal_archive", CRITICAL, "no archived segments")
+    current = _utc(now or datetime.now(UTC)).timestamp()
+    age_seconds = current - newest_mtime
+    if age_seconds < 0:
+        return CheckResult("wal_archive", CRITICAL, "timestamp in future")
+    if age_seconds > max_age_seconds:
+        return CheckResult(
+            "wal_archive",
+            CRITICAL,
+            f"age={age_seconds:.0f}s exceeds {max_age_seconds:.0f}s",
+        )
+    return CheckResult("wal_archive", OK, f"newest age={age_seconds:.0f}s")
 
 
 def check_disk_usage(
@@ -602,20 +670,42 @@ def format_message(checks: Sequence[CheckResult], recovery: bool = False) -> str
     return "\n".join(lines)
 
 
+_SEVERITY_ORDER = {"ok": 0, "warning": 1, "critical": 2}
+
+
+def _severity_rank(state: str) -> int:
+    return _SEVERITY_ORDER.get(state, 0)
+
+
 def process_checks(
     checks: Sequence[CheckResult],
     previous: AlertState,
     telegram_configured: bool,
     send: Callable[[str], bool] | None = None,
 ) -> tuple[AlertState, str | None]:
-    """Возвращает новое состояние и событие, не повторяя активную аварию."""
+    """Возвращает новое состояние и событие, не повторяя активную аварию.
+
+    Дедупликация — по тяжести: повтор той же тяжести молчит, эскалация
+    warning -> critical уведомляет заново. Понижение critical -> warning
+    остаётся активным инцидентом без нового шторма.
+    """
     current_state = aggregate_state(checks)
     event = notification_event(previous, current_state)
     next_state = previous
 
     if current_state != OK:
-        next_state = AlertState(active=True, notification_sent=previous.notification_sent)
+        previous_severity = getattr(previous, "severity", "ok")
+        escalated = _severity_rank(current_state) > _severity_rank(previous_severity)
+        next_state = AlertState(
+            active=True,
+            notification_sent=previous.notification_sent,
+            severity=previous_severity if previous.active else "ok",
+        )
         if previous.active and not previous.notification_sent and telegram_configured:
+            event = "alert"
+        elif previous.active and escalated:
+            # Эскалация после уже отправленного warning обязана уведомить:
+            # иначе critical утонет в дедупликации и оператор его не увидит.
             event = "alert"
         if (
             event == "alert"
@@ -623,7 +713,21 @@ def process_checks(
             and send is not None
             and send(format_message(checks))
         ):
-            next_state = AlertState(active=True, notification_sent=True)
+            next_state = AlertState(active=True, notification_sent=True, severity=current_state)
+        elif event == "alert" and telegram_configured and send is None:
+            # Телеграм настроен, но sender не передан (сухой прогон): фиксируем
+            # тяжесть, чтобы повтор той же тяжести молчал, а эскалация — нет.
+            next_state = AlertState(
+                active=True, notification_sent=False, severity=current_state
+            )
+        elif previous.active and previous.notification_sent and escalated:
+            # Отправка не удалась либо sender отсутствует, но тяжесть выросла:
+            # запоминаем новую тяжесть, чтобы не слать critical в цикле.
+            next_state = AlertState(
+                active=True,
+                notification_sent=previous.notification_sent,
+                severity=current_state,
+            )
         return next_state, event
 
     if previous.active:
@@ -644,10 +748,15 @@ def load_state(path: Path) -> AlertState:
     except (OSError, UnicodeError, ValueError, TypeError):
         LOGGER.warning("alerter state is unreadable; starting without active incident")
         return AlertState()
-    return AlertState(
-        active=bool(data.get("active", False)),
-        notification_sent=bool(data.get("notification_sent", False)),
-    )
+    active = bool(data.get("active", False))
+    sent = bool(data.get("notification_sent", False))
+    severity = str(data.get("severity", ""))
+    if severity not in {"ok", "warning", "critical"}:
+        # Старые файлы без severity: fail-safe — считаем warning при активном
+        # инциденте, чтобы последующий critical гарантированно эскалировал,
+        # а не подавился. Неактивный инцидент — ok.
+        severity = "warning" if (active and sent) else "ok"
+    return AlertState(active=active, notification_sent=sent, severity=severity)
 
 
 def save_state(path: Path, state: AlertState) -> None:
@@ -658,6 +767,7 @@ def save_state(path: Path, state: AlertState) -> None:
             {
                 "active": state.active,
                 "notification_sent": state.notification_sent,
+                "severity": getattr(state, "severity", "ok"),
             },
             sort_keys=True,
         )
@@ -747,6 +857,10 @@ async def collect_checks(config: AlerterConfig) -> list[CheckResult]:
         check_wal_offsite(
             config.wal_offsite_marker,
             config.wal_offsite_max_age_seconds,
+        ),
+        check_wal_archive(
+            config.wal_archive_dir,
+            config.wal_archive_max_age_seconds,
         ),
         check_disk_usage(
             config.disk_paths,
