@@ -12,7 +12,7 @@ from sqlalchemy import func, or_, select, true
 from app.core.config import settings
 from app.core.deps import CurrentUserOptional, ReadDBSession
 from app.core.errors import raise_error
-from app.db.models import NioktrCard, Organization
+from app.db.models import NioktrCard, Organization, User
 from app.schemas import NioktrCardOut, OrganizationDetailOut, OrgCardOut
 
 router = APIRouter(prefix="/nioktr", tags=["nioktr"])
@@ -65,13 +65,17 @@ def _registry_source(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-async def _enforce_registry_limit(request: Request) -> None:
+async def enforce_registry_limit(request: Request, user: User | None = None) -> None:
     """Проверка лимита; при превышении — 429. Redis fixed window, fallback LRU.
 
     Redis-часть async via to_thread — sync redis не блокирует event loop (H-02a, SPEC-02).
+
+    Классификация — по валидированному пользователю (CurrentUserOptional уже
+    проверил подпись/срок/активность), а не по наличию заголовка Authorization:
+    поддельный заголовок оставляет anon-лимит (R05i, история 9).
     """
     # Аутентифицированный запрос (loadtest) — лимит выше
-    is_authed = bool(request.headers.get("authorization"))
+    is_authed = user is not None
     limit = settings.registry_auth_limit if is_authed else settings.registry_anon_limit
     ip = _registry_source(request)
     kind = "auth" if is_authed else "anon"
@@ -114,6 +118,10 @@ async def _enforce_registry_limit(request: Request) -> None:
     stamps.append(now)
     while len(_registry_attempts) > settings.registry_max_entries:
         _registry_attempts.popitem(last=False)
+
+
+# Приватный алиас для обратной совместимости внутренних вызовов.
+_enforce_registry_limit = enforce_registry_limit
 
 
 def _card_out(card: NioktrCard) -> NioktrCardOut:
@@ -164,7 +172,7 @@ async def list_nioktr_cards(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[NioktrCardOut]:
-    await _enforce_registry_limit(request)
+    await enforce_registry_limit(request, user)
     stmt = select(NioktrCard).order_by(
         NioktrCard.created_date.desc().nullslast(), NioktrCard.id.desc()
     )
@@ -190,7 +198,7 @@ async def list_organizations(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> list[OrgCardOut]:
-    await _enforce_registry_limit(request)
+    await enforce_registry_limit(request, user)
     # P-06: LATERAL вместо коррелированного scalar_subquery O(N) —
     # один проход по индексу ix_nioktr_cards_organization_id.
     card_count_lateral = (
@@ -232,7 +240,7 @@ async def get_organization(
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> OrganizationDetailOut:
-    await _enforce_registry_limit(request)
+    await enforce_registry_limit(request, user)
     org = await db.scalar(select(Organization).where(Organization.ogrn == ogrn))
     if org is None:
         raise raise_error("ORG_NOT_FOUND", request=request)
@@ -268,7 +276,7 @@ async def get_nioktr_card(
     db: ReadDBSession,
     user: CurrentUserOptional,
 ) -> NioktrCardOut:
-    await _enforce_registry_limit(request)
+    await enforce_registry_limit(request, user)
     card = await db.scalar(
         select(NioktrCard).where(NioktrCard.registration_number == registration_number)
     )

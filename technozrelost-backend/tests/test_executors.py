@@ -45,13 +45,15 @@ def _verify_profile(client: TestClient, mgr_token: str, user_token: str) -> None
 def test_executors_keyset_limit_20(client: TestClient) -> None:
     """DB keyset: LIMIT 20 и after_id отдают следующий чанк без O(N) Python slice."""
     mgr_token, _ = _register(client, "cntr_manager")
-    # создаём 25 верифицированных исполнителей с детерминированными именами для сортировки по full_name
+    # создаём 25 верифицированных исполнителей
+    # с детерминированными именами для сортировки по full_name
     tokens: list[str] = []
     ids: list[int] = []
-    for i in range(25):
+    for _ in range(25):
         token, uid = _register(client, "rd_executor")
         # переопределяем full_name чтобы гарантировать порядок по имени
-        # патчим профиль headline + верифицируем, но full_name остаётся из регистрации — уже уникален, но для сортировки равные префиксы
+        # патчим профиль headline + верифицируем,
+        # но full_name остаётся из регистрации — уже уникален
         _verify_profile(client, mgr_token, token)
         tokens.append(token)
         ids.append(uid)
@@ -81,7 +83,8 @@ def test_executors_keyset_limit_20(client: TestClient) -> None:
     all_names = names + [e["full_name"] for e in data_second]
     assert all_names == sorted(all_names), "глобальный порядок нарушен"
 
-    # fallback по несуществующему id: after_id не найден -> фильтр id > after_id (как в старом except StopIteration)
+    # fallback по несуществующему id:
+    # after_id не найден -> фильтр id > after_id
     # для after_id очень большой — вторая страница пустая
     empty = client.get("/api/v1/executors?after_id=9999999&limit=20", headers=_auth(tokens[0]))
     assert empty.status_code == 200
@@ -91,7 +94,26 @@ def test_executors_keyset_limit_20(client: TestClient) -> None:
     orgs_first = client.get("/api/v1/executors/organizations", headers=_auth(tokens[0]))
     assert orgs_first.status_code == 200
 
-    # специалисты без лимита — не обрезает до 20
-    specialists = client.get("/api/v1/executors/specialists", headers=_auth(tokens[0]))
-    assert specialists.status_code == 200
-    assert len(specialists.json()) >= 25
+    # специалисты — постранично (таск 05, R05i): без массового дампа ПДн
+    first_page = client.get("/api/v1/executors/specialists", headers=_auth(tokens[0]))
+    assert first_page.status_code == 200
+    assert len(first_page.json()) == 20
+    after = first_page.json()[-1]["id"]
+    second_page = client.get(
+        f"/api/v1/executors/specialists?after_id={after}", headers=_auth(tokens[0])
+    )
+    assert second_page.status_code == 200
+    assert len(second_page.json()) == 5
+    first_ids = {e["id"] for e in first_page.json()}
+    second_ids = {e["id"] for e in second_page.json()}
+    assert first_ids.isdisjoint(second_ids)
+    # явный limit=100 отдаёт всех разом, больше 100 — 422
+    all_spec = client.get(
+        "/api/v1/executors/specialists?limit=100", headers=_auth(tokens[0])
+    )
+    assert all_spec.status_code == 200
+    assert len(all_spec.json()) == 25
+    capped = client.get(
+        "/api/v1/executors/specialists?limit=101", headers=_auth(tokens[0])
+    )
+    assert capped.status_code == 422

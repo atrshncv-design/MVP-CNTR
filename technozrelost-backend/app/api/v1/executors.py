@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from sqlalchemy import and_, func, or_, select, text
 
+from app.api.v1.nioktr import enforce_registry_limit
 from app.core.deps import CurrentUserOptional, DBSession, ReadDBSession
 from app.db.models import (
     Organization,
@@ -38,6 +39,7 @@ async def _users_as_executors(
     after_id: int | None = None,
     limit: int | None = None,
     role_slug: str | None = None,
+    org: str | None = None,
 ) -> list[ExecutorOut]:
     role_subq = (
         select(
@@ -90,6 +92,8 @@ async def _users_as_executors(
     )
     if role_slug:
         stmt = stmt.where(role_subq.c.role_slug == role_slug)
+    if org:
+        stmt = stmt.where(User.organization.ilike(f"%{org}%"))
     # P-08 DB keyset: WHERE full_name > after_cursor ORDER BY full_name LIMIT 20 (или id).
     # Композитный курсор (full_name, id) для детерминизма при одинаковых именах.
     if cursor_full_name is not None and cursor_id is not None:
@@ -192,6 +196,7 @@ async def _organizations_as_executors(
 
 @router.get("", response_model=list[ExecutorOut])
 async def list_executors(
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
     role: str | None = Query(None),
@@ -199,6 +204,7 @@ async def list_executors(
     limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[ExecutorOut]:
     """Каталог исполнителей. DB keyset WHERE full_name>cursor ORDER BY full_name LIMIT 20."""
+    await enforce_registry_limit(request, user)
     cursor_full_name: str | None = None
     cursor_id: int | None = None
     if after_id is not None:
@@ -245,37 +251,64 @@ async def list_executors(
 
 @router.get("/specialists", response_model=list[ExecutorOut])
 async def list_specialists(
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
     role: str | None = Query(
         None, description="Роль: rd_executor | scientific_org | serial_manufacturer"
     ),
     org: str | None = Query(None, description="Подстрока организации"),
+    after_id: int | None = Query(None, description="Keyset курсор"),
+    limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[ExecutorOut]:
-    """Реестр специалистов: только verified-профили, отдельные фильтры (тикет 11)."""
-    # Без курсора — всех verified; DB-limit не применяется.
-    executors = await _users_as_executors(db, role_slug=role)
-    if org:
-        lowered = org.lower()
-        executors = [
-            e for e in executors if e.organization and lowered in e.organization.lower()
-        ]
-    return executors
+    """Реестр специалистов: только verified-профили, отдельные фильтры (тикет 11).
+
+    ПДн без массового дампа: страница не более 100 записей, keyset-пагинация
+    и общий rate-limit реестра (R05i, история 11 — аноним режется anon-лимитом).
+    """
+    await enforce_registry_limit(request, user)
+    cursor_full_name: str | None = None
+    cursor_id: int | None = None
+    if after_id is not None and after_id > 0:
+        cursor_user = await db.get(User, after_id)
+        if cursor_user is not None:
+            cursor_full_name = cursor_user.full_name
+            cursor_id = cursor_user.id
+    if cursor_full_name is not None:
+        return await _users_as_executors(
+            db,
+            cursor_full_name=cursor_full_name,
+            cursor_id=cursor_id,
+            limit=limit,
+            role_slug=role,
+            org=org,
+        )
+    return await _users_as_executors(
+        db, after_id=after_id, limit=limit, role_slug=role, org=org
+    )
 
 
 @router.get("/organizations", response_model=list[ExecutorOut])
 async def list_org_catalog(
+    request: Request,
     db: ReadDBSession,
     user: CurrentUserOptional,
     type: str | None = Query(None, description="Тип организации"),
     region: str | None = Query(None, description="Регион"),
+    limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
+    offset: int = Query(0, ge=0),
 ) -> list[ExecutorOut]:
-    """Реестр организаций: отдельные поля и фильтры (тикет 11)."""
+    """Реестр организаций: отдельные поля и фильтры (тикет 11).
+
+    Без unbounded-выборки: страница не более 100 записей + rate-limit реестра.
+    """
+    await enforce_registry_limit(request, user)
     stmt = select(Organization).order_by(Organization.projects_count.desc())
     if type:
         stmt = stmt.where(Organization.org_type == type)
     if region:
         stmt = stmt.where(Organization.region == region)
+    stmt = stmt.limit(limit).offset(offset)
     rows = await db.execute(stmt)
     result: list[ExecutorOut] = []
     for org in rows.scalars().all():
