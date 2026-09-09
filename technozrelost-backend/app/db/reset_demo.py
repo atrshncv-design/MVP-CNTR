@@ -165,34 +165,49 @@ async def reset_database() -> None:
 
 
 async def seed_users() -> None:
-    """Демо-пользователи всех ролей (идемпотентно по email)."""
+    """Демо-пользователи всех ролей (идемпотентный UPSERT по email).
+
+    Тикет 21 (BUG-1): существующих демо-пользователей приводит к сидам
+    (пароль/активность/профиль + ровно одна primary-роль из сидов), остальных
+    пользователей и данных не трогает — только INSERT/UPSERT пяти demo-емейлов.
+    """
     async with SessionLocal() as db:
         for spec in DEMO_USERS:
-            existing = await db.scalar(select(User).where(User.email == spec["email"]))
-            if existing is not None:
-                continue
             role_row = await db.scalar(select(Role).where(Role.slug == spec["role_slug"]))
             if role_row is None:
                 raise SystemExit(
                     f"Роль '{spec['role_slug']}' не найдена — примените миграции "
                     "(uv run alembic upgrade head)."
                 )
-            user = User(
-                email=spec["email"],
-                password_hash=hash_password(DEMO_PASSWORD),
-                full_name=spec["full_name"],
-                organization=spec["organization"],
-                is_active=True,
+            existing = await db.scalar(select(User).where(User.email == spec["email"]))
+            if existing is not None:
+                # Reseed поверх существующих данных: чиним только эту учётку.
+                existing.password_hash = hash_password(DEMO_PASSWORD)
+                existing.is_active = True
+                existing.full_name = spec["full_name"]
+                existing.organization = spec["organization"]
+                target_id = existing.id
+            else:
+                user = User(
+                    email=spec["email"],
+                    password_hash=hash_password(DEMO_PASSWORD),
+                    full_name=spec["full_name"],
+                    organization=spec["organization"],
+                    is_active=True,
+                )
+                db.add(user)
+                await db.flush()
+                target_id = user.id
+            # user_roles имеет UNIQUE на primary-роль — удаляем старые
+            # назначения только этой учётки, затем вставляем ровно одну
+            # primary-роль из сидов (паттерн tests/support.py).
+            await db.execute(
+                delete(user_roles_tbl).where(user_roles_tbl.c.user_id == target_id)
             )
-            db.add(user)
-            await db.flush()
-            # user_roles имеет UNIQUE на primary-роль — удаляем возможные старые
-            # назначения, затем вставляем ровно одну primary-роль (паттерн tests/support.py).
-            await db.execute(delete(user_roles_tbl).where(user_roles_tbl.c.user_id == user.id))
             await db.execute(
                 insert(user_roles_tbl).from_select(
                     ["user_id", "role_id", "is_primary"],
-                    select(literal(user.id), Role.id, literal(True)).where(
+                    select(literal(target_id), Role.id, literal(True)).where(
                         Role.slug == spec["role_slug"]
                     ),
                 )
