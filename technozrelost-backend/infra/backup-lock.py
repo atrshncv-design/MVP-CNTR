@@ -5,6 +5,19 @@
 запуск не ждёт освобождения lock и потому не превращается в последовательный
 дубликат снапшота. Для pre-migration дополнительно сохраняется marker image run,
 чтобы реплика, которая стартовала позже, не повторила backup первой реплики.
+
+Коды возврата (контракт fail-closed, история 17):
+  0 — готово: снапшот создан либо pre-migration дедуп (маркер доказывает,
+      что backup для этого image run уже выполнен первой репликой);
+  3 — занято: другой бэкап удерживает advisory lock; pre-migration обязан
+      блокировать миграции, а не трактовать занятость как готовность;
+  1 — ошибка: БД/ lock/ дочерний backup.sh упал либо маркер не опубликован;
+  2 — usage: нет скрипта, нет файла, недопустимый BACKUP_RUN_ID.
+
+Ручной бэкап по ранбуку (P1) всегда делает новый снимок: вызов
+`backup-lock.py --manual <скрипт>` (или `BACKUP_FORCE=1`) обходит оба
+deploy-маркера (BACKUP_RUN_ID и BACKUP_SKIP_IF_MARKER_AFTER_NS) и не трогает
+pre-migration маркер, но по-прежнему требует свободный lock (занято → 3).
 """
 
 from __future__ import annotations
@@ -18,6 +31,27 @@ from tempfile import NamedTemporaryFile
 
 BACKUP_LOCK_ID = 732019
 RUN_ID_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
+
+EXIT_OK = 0
+EXIT_ERROR = 1
+EXIT_USAGE = 2
+EXIT_BUSY = 3
+
+MANUAL_FLAGS = frozenset({"--manual", "--force", "-f"})
+
+
+def is_manual_mode(argv: list[str]) -> bool:
+    if os.getenv("BACKUP_FORCE", "0") == "1":
+        return True
+    if os.getenv("BACKUP_MANUAL", "0") == "1":
+        return True
+    return any(arg in MANUAL_FLAGS for arg in argv[1:])
+
+
+def split_manual_args(argv: list[str]) -> tuple[bool, list[str]]:
+    manual = is_manual_mode(argv)
+    rest = [arg for arg in argv[1:] if arg not in MANUAL_FLAGS]
+    return manual, rest
 
 
 def marker_written_after_start() -> bool:
@@ -85,24 +119,31 @@ def mark_migration_backup_done() -> bool:
 
 
 async def main(argv: list[str]) -> int:
-    if len(argv) < 2:
-        print("usage: backup-lock.py <backup-script> [args...]", file=sys.stderr)
-        return 2
+    manual, rest = split_manual_args(argv)
+    if not rest:
+        print("usage: backup-lock.py [--manual] <backup-script> [args...]", file=sys.stderr)
+        return EXIT_USAGE
 
-    script = Path(argv[1])
+    for arg in rest[:1]:
+        if arg.startswith("-") and arg not in MANUAL_FLAGS:
+            print(f"[backup-lock] unknown option: {arg}", file=sys.stderr)
+            return EXIT_USAGE
+
+    script = Path(rest[0])
+    script_args = rest[1:]
     if not script.is_file():
         print(f"[backup-lock] script not found: {script}", file=sys.stderr)
-        return 2
+        return EXIT_USAGE
     run_id = os.getenv("BACKUP_RUN_ID", "").strip()
     if run_id and any(character not in RUN_ID_CHARS for character in run_id):
         print("[backup-lock] invalid backup run id", file=sys.stderr)
-        return 2
+        return EXIT_USAGE
 
     try:
         import asyncpg
     except ImportError:
         print("[backup-lock] asyncpg is unavailable; backup is not run unlocked", file=sys.stderr)
-        return 1
+        return EXIT_ERROR
 
     try:
         connection = await asyncpg.connect(
@@ -115,7 +156,7 @@ async def main(argv: list[str]) -> int:
         )
     except Exception:  # noqa: BLE001 - do not expose connection details or env values
         print("[backup-lock] database lock connection failed", file=sys.stderr)
-        return 1
+        return EXIT_ERROR
 
     acquired = False
     try:
@@ -125,17 +166,22 @@ async def main(argv: list[str]) -> int:
             )
         except Exception:  # noqa: BLE001 - database errors must not reveal env values
             print("[backup-lock] advisory lock failed", file=sys.stderr)
-            return 1
+            return EXIT_ERROR
 
         if not acquired:
-            print("[backup-lock] another backup is running; skip")
-            return 0
-        if migration_backup_already_done():
-            print("[backup-lock] pre-migration backup already completed for this image; skip")
-            return 0
-        if marker_written_after_start():
-            print("[backup-lock] pre-migration backup already completed; skip")
-            return 0
+            print(
+                "[backup-lock] another backup is running; "
+                "fail-closed: migrations blocked (exit 3)",
+                file=sys.stderr,
+            )
+            return EXIT_BUSY
+        if not manual:
+            if migration_backup_already_done():
+                print("[backup-lock] pre-migration backup already completed for this image; skip")
+                return EXIT_OK
+            if marker_written_after_start():
+                print("[backup-lock] pre-migration backup already completed; skip")
+                return EXIT_OK
 
         child_env = os.environ.copy()
         child_env["BACKUP_LOCK_HELD"] = "1"
@@ -143,16 +189,16 @@ async def main(argv: list[str]) -> int:
             process = await asyncio.create_subprocess_exec(
                 "/bin/sh",
                 str(script),
-                *argv[2:],
+                *script_args,
                 env=child_env,
             )
             return_code = await process.wait()
         except OSError:
             print("[backup-lock] backup process failed to start", file=sys.stderr)
-            return 1
-        if return_code == 0 and not mark_migration_backup_done():
+            return EXIT_ERROR
+        if return_code == 0 and not manual and not mark_migration_backup_done():
             print("[backup-lock] could not publish backup run marker", file=sys.stderr)
-            return 1
+            return EXIT_ERROR
         return return_code
     finally:
         if acquired:

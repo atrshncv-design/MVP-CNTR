@@ -159,11 +159,18 @@ docker compose -f infra/docker-compose.yml up -d --force-recreate pg-primary pg-
 
 ### P1. Ручной бэкап (вне расписания)
 ```bash
-docker exec <backend-контейнер> python /app/infra/backup-lock.py /app/backup.sh  # в проде
+docker exec <backend-контейнер> python /app/infra/backup-lock.py --manual /app/backup.sh  # в проде
+# альтернатива без изменения argv: BACKUP_FORCE=1 python /app/infra/backup-lock.py /app/backup.sh
 # либо с хоста: BACKUP_DIR=/path PG_CONTAINER=<primary> sh infra/backup.sh
 cat $BACKUP_DIR/.backup-freshness                              # проверить маркер
 test -s <BACKUP_DIR>/<UTC-TIMESTAMP>/pg_basebackup/PG_VERSION  # проверить physical base
 ```
+
+Ручной режим `--manual` (или `BACKUP_FORCE=1`) всегда создаёт новый снимок:
+он обходит deploy-маркеры (`BACKUP_RUN_ID`, `BACKUP_SKIP_IF_MARKER_AFTER_NS`)
+и не трогает pre-migration маркер, но по-прежнему требует свободный lock.
+Занятый lock возвращает код 3 (fail-closed), а не «успех без работы».
+Коды `backup-lock.py`: 0 — готово, 3 — занято, 1 — ошибка, 2 — usage.
 
 `backup.sh` сначала создаёт logical `pg_primary_*.dump`, затем обязательный
 `pg_basebackup` в `pg_basebackup/` ролью `REPL_USER`. При отсутствии
@@ -194,6 +201,12 @@ test -s <BACKUP_DIR>/<UTC-TIMESTAMP>/pg_basebackup/PG_VERSION  # провери�
 Локальный ориентир времени: минуты (размер дампа ~десятки МБ); production RTO нужно
 измерить отдельно на фактическом объёме и целевой capacity.
 
+`restore.sh` (R06i группа F) принимает только полный валидный снимок в пустую
+БД с проверкой до любых изменений: ровно один `pg_primary_*.dump`, непустой
+`pg_basebackup/PG_VERSION`, каталог `minio/` и `SHA256SUMS`; ноль или больше одного
+дампа, отсутствующий basebackup либо непустая целевая БД (есть пользовательские
+таблицы) — отказ с кодом 2 до `pg_restore` и до зеркалирования MinIO. Пустота БД
+проверяется запросом к `pg_tables` (fail-closed: непроверяемая БД = запрет).
 `restore.sh` намеренно применяет logical `pg_primary_*.dump` к уже выбранной
 БД. MinIO restore сначала создаёт отсутствующий бакет, затем применяет exact
 semantics: удаляет объекты, которых нет в snapshot, и загружает snapshot (в том

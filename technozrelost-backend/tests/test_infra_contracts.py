@@ -853,7 +853,7 @@ def test_deploy_generates_256_bit_auth_secrets_without_logging_them(tmp_path):
     env["ENV_FILE"] = str(env_file)
 
     result = subprocess.run(
-        ["/bin/bash", str(INFRA_ROOT / "deploy.sh"), "--help"],
+        ["/bin/bash", str(INFRA_ROOT / "deploy.sh"), "check-env"],
         cwd=INFRA_ROOT,
         env=env,
         check=False,
@@ -884,7 +884,7 @@ def test_deploy_rejects_weak_operator_auth_secrets_without_echoing_them(tmp_path
     env[key] = weak_value
 
     result = subprocess.run(
-        ["/bin/bash", str(INFRA_ROOT / "deploy.sh"), "--help"],
+        ["/bin/bash", str(INFRA_ROOT / "deploy.sh"), "check-env"],
         cwd=INFRA_ROOT,
         env=env,
         check=False,
@@ -1539,8 +1539,16 @@ def test_digest_pinned():
     compose = read_text(INFRA_ROOT / "docker-compose.prod.yml")
 
     assert compose.count("@sha256:") >= 2
-    assert "clamav/clamav:1.4.3@sha256:75fb5fd95fcbe1d7e6d240c369c1572b686ee2c95949d1042b5148de8eddebb4" in compose
-    assert "minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e" in compose
+    clamav_digest = (
+        "clamav/clamav:1.4.3"
+        "@sha256:75fb5fd95fcbe1d7e6d240c369c1572b686ee2c95949d1042b5148de8eddebb4"
+    )
+    assert clamav_digest in compose
+    minio_digest = (
+        "minio/minio:RELEASE.2025-04-22T22-12-26Z"
+        "@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e"
+    )
+    assert minio_digest in compose
     # placeholder mkodockx не должен остаться
     assert "mkodockx/docker-clamav:1.4.3-r0-alpine@sha256:b443" not in compose
 
@@ -1554,3 +1562,384 @@ def test_cvd_const_single_source():
     assert "CVD_MAX_AGE_SECONDS=604800" in env_example
     assert "cvd_max_age_seconds" in config
     assert "CVD_MAX_AGE_SECONDS" in alerter
+def _write_fake_asyncpg_lock_stub(fake_py: Path) -> None:
+    (fake_py / "asyncpg.py").write_text(
+        "import os\n"
+        "class _FakeConnection:\n"
+        "    async def fetchval(self, *args, **kwargs):\n"
+        "        return False if os.getenv(\"FAKE_LOCK_BUSY\") == \"1\" else True\n"
+        "    async def execute(self, *args, **kwargs):\n"
+        "        return \"UNLOCK\"\n"
+        "    async def close(self):\n"
+        "        return None\n"
+        "async def connect(**kwargs):\n"
+        "    if os.getenv(\"FAKE_CONNECT_FAIL\") == \"1\":\n"
+        "        raise ConnectionError(\"fake connect failed\")\n"
+        "    return _FakeConnection()\n",
+        encoding="ascii",
+    )
+
+
+def _backup_lock_env(tmp_path: Path, fake_py: Path, stub_script: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(fake_py) + (os.pathsep + existing if existing else "")
+    env.update(
+        {
+            "POSTGRES_HOST": "fake-db",
+            "POSTGRES_PORT": "5432",
+            "POSTGRES_USER": "technoz",
+            "POSTGRES_PASSWORD": "fake",
+            "POSTGRES_DB": "technozrelost",
+            "BACKUP_FRESHNESS_MARKER": str(tmp_path / "freshness"),
+            "BACKUP_PRE_MIGRATION_MARKER": str(tmp_path / "pre-migration-backup"),
+            "BACKUP_RUN_ID": "test-image-09",
+        }
+    )
+    return env
+
+
+def test_backup_lock_busy_blocks_migrations_fail_closed(tmp_path):
+    fake_py = tmp_path / "fakepy"
+    fake_py.mkdir()
+    _write_fake_asyncpg_lock_stub(fake_py)
+    sentinel = tmp_path / "snapshot-done"
+    stub = tmp_path / "fake-backup.sh"
+    stub.write_text(
+        "#!/bin/sh\ntest -n \"$SENTINEL\" && touch \"$SENTINEL\"\nexit 0\n",
+        encoding="ascii",
+    )
+    stub.chmod(0o755)
+    env = _backup_lock_env(tmp_path, fake_py, stub)
+    env.update({"FAKE_LOCK_BUSY": "1", "SENTINEL": str(sentinel)})
+
+    result = subprocess.run(
+        [sys.executable, str(INFRA_ROOT / "backup-lock.py"), str(stub)],
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 3, result.stderr + result.stdout
+    assert not sentinel.exists()
+    combined = result.stdout + result.stderr
+    assert "another backup is running" in combined
+    # Гейт миграций обязан блокировать старт при занятом lock (fail-closed).
+    entrypoint = read_text(INFRA_ROOT / "backend-entrypoint.sh")
+    assert "backup-lock занят" in entrypoint
+    assert "fail-closed" in entrypoint
+    assert "backup_rc == 3" in entrypoint or "backup_rc==3" in entrypoint
+    # Таймер трактует занятость как benign skip, а не как успех/аварию.
+    timer = read_text(INFRA_ROOT / "cron" / "backup-timer.sh")
+    assert "lock_rc" in timer
+    assert "-eq 3" in timer
+    assert "fail-closed" in timer
+    # Коды различают готово/занято/ошибку.
+    lock_source = read_text(INFRA_ROOT / "backup-lock.py")
+    assert "EXIT_BUSY = 3" in lock_source
+    assert "EXIT_OK = 0" in lock_source
+def test_backup_lock_manual_after_deploy_creates_new_snapshot(tmp_path):
+    fake_py = tmp_path / "fakepy2"
+    fake_py.mkdir()
+    _write_fake_asyncpg_lock_stub(fake_py)
+
+    def run_lock(extra_env: dict[str, str], extra_args: list[str]):
+        sentinel = tmp_path / f"sentinel-{len(list(tmp_path.glob('sentinel-*')))}"
+        stub = tmp_path / f"fake-backup-{sentinel.name}.sh"
+        stub.write_text(
+            "#!/bin/sh\ntest -n \"$SENTINEL\" && touch \"$SENTINEL\"\nexit 0\n",
+            encoding="ascii",
+        )
+        stub.chmod(0o755)
+        env = _backup_lock_env(tmp_path, fake_py, stub)
+        marker = Path(env["BACKUP_PRE_MIGRATION_MARKER"])
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(env["BACKUP_RUN_ID"] + "\n", encoding="ascii")
+        env.update({"SENTINEL": str(sentinel), **extra_env})
+        result = subprocess.run(
+            [sys.executable, str(INFRA_ROOT / "backup-lock.py"), *extra_args, str(stub)],
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        return result, sentinel
+
+    # Без флага deploy-маркер означает дедуп: успех без работы (exit 0, без снимка).
+    plain_result, plain_sentinel = run_lock({}, [])
+    assert plain_result.returncode == 0, plain_result.stderr + plain_result.stdout
+    assert not plain_sentinel.exists()
+
+    # Ручной запуск по ранбуку обязан сделать новый снимок, а не «успех без работы».
+    manual_result, manual_sentinel = run_lock({}, ["--manual"])
+    assert manual_result.returncode == 0, manual_result.stderr + manual_result.stdout
+    assert manual_sentinel.exists()
+
+    # Тот же эффект через env для docker exec без изменения argv.
+    force_result, force_sentinel = run_lock({"BACKUP_FORCE": "1"}, [])
+    assert force_result.returncode == 0, force_result.stderr + force_result.stdout
+    assert force_sentinel.exists()
+
+    # Ранбук документирует ручной режим.
+    runbook = read_text(INFRA_ROOT / "RUNBOOK-DATA.md")
+    assert "--manual" in runbook
+    assert "BACKUP_FORCE" in runbook or "--manual" in runbook
+# ── Task 16 (P3 infra, R06i группа F): restore fail-closed ───────────────────
+
+def _write_restore_stubs(fake_bin: Path, log: Path) -> None:
+    write_executable(
+        fake_bin / "pg_restore",
+        "#!/bin/sh\n"
+        "echo pg_restore-called >> \"$RESTORE_CALL_LOG\"\n"
+        "exit 0\n",
+    )
+    write_executable(
+        fake_bin / "psql",
+        "#!/bin/sh\n"
+        "cat >/dev/null\n"
+        "# Пустая БД по умолчанию: ни одной строки.\n"
+        "exit 0\n",
+    )
+    write_executable(
+        fake_bin / "mc",
+        "#!/bin/sh\n"
+        "echo mc-called-$1-$2 >> \"$RESTORE_CALL_LOG\"\n"
+        "exit 0\n",
+    )
+
+
+def _make_snapshot(snapshot: Path, *, dumps: int = 1, with_basebackup: bool = True) -> None:
+    import hashlib
+
+    (snapshot / "minio").mkdir(parents=True, exist_ok=True)
+    (snapshot / "minio" / "obj.txt").write_bytes(b"data")
+    if with_basebackup:
+        (snapshot / "pg_basebackup").mkdir(parents=True, exist_ok=True)
+        (snapshot / "pg_basebackup" / "PG_VERSION").write_bytes(b"16\n")
+    for index in range(dumps):
+        if dumps == 1:
+            name = "pg_primary_20260827T120000Z.dump"
+        else:
+            name = f"pg_primary_2026082{index}T120000Z.dump"
+        (snapshot / name).write_bytes(b"dump-%d" % index)
+    lines = []
+    for path in sorted(snapshot.rglob("*")):
+        if path.is_file() and path.name != "SHA256SUMS":
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            rel = path.relative_to(snapshot)
+            lines.append(f"{digest}  ./{rel}\n")
+    (snapshot / "SHA256SUMS").write_text("".join(lines), encoding="ascii")
+
+
+def _restore_env(tmp_path: Path, fake_bin: Path, snapshot: Path, log: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{fake_bin}:{os.defpath}",
+            "POSTGRES_HOST": "db",
+            "POSTGRES_PORT": "5432",
+            "POSTGRES_USER": "technoz",
+            "POSTGRES_PASSWORD": "db-password",
+            "POSTGRES_DB": "technozrelost",
+            "MINIO_ENDPOINT": "minio:9000",
+            "MINIO_URL": "http://minio:9000",
+            "MINIO_ACCESS_KEY": "access-key",
+            "MINIO_SECRET_KEY": "secret-key",
+            "MINIO_BUCKET": "technozrelost",
+            "RESTORE_CONFIRM": "1",
+            "RESTORE_CALL_LOG": str(log),
+            "MC_HOST_URL_SCRIPT": str(tmp_path / "missing-mc-host-url.py"),
+        }
+    )
+    return env
+
+
+def _run_restore(snapshot: Path, env: dict[str, str]):
+    return subprocess.run(
+        ["/bin/sh", str(INFRA_ROOT / "restore.sh"), str(snapshot)],
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_restore_incomplete_snapshot_without_dump_fails_before_changes(tmp_path):
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    log = tmp_path / "calls.log"
+    log.write_text("", encoding="ascii")
+    _write_restore_stubs(fake_bin, log)
+    snapshot = tmp_path / "snap"
+    snapshot.mkdir()
+    _make_snapshot(snapshot, dumps=0)
+    result = _run_restore(snapshot, _restore_env(tmp_path, fake_bin, snapshot, log))
+
+    assert result.returncode != 0
+    combined = result.stdout + result.stderr
+    assert "неполный" in combined.lower() or "pg" in combined.lower()
+    assert "pg_restore" not in log.read_text(encoding="ascii")
+    assert "mc mirror" not in log.read_text(encoding="ascii")
+def test_restore_ambiguous_snapshot_with_two_dumps_fails_before_changes(tmp_path):
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    log = tmp_path / "calls.log"
+    log.write_text("", encoding="ascii")
+    _write_restore_stubs(fake_bin, log)
+    snapshot = tmp_path / "snap"
+    snapshot.mkdir()
+    _make_snapshot(snapshot, dumps=2)
+    result = _run_restore(snapshot, _restore_env(tmp_path, fake_bin, snapshot, log))
+
+    assert result.returncode != 0
+    combined = result.stdout + result.stderr
+    assert "двусмыслен" in combined.lower()
+    assert "pg_restore-called" not in log.read_text(encoding="ascii")
+
+
+def test_restore_without_basebackup_fails_before_changes(tmp_path):
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    log = tmp_path / "calls.log"
+    log.write_text("", encoding="ascii")
+    _write_restore_stubs(fake_bin, log)
+    snapshot = tmp_path / "snap"
+    snapshot.mkdir()
+    _make_snapshot(snapshot, dumps=1, with_basebackup=False)
+    result = _run_restore(snapshot, _restore_env(tmp_path, fake_bin, snapshot, log))
+
+    assert result.returncode != 0
+    combined = result.stdout + result.stderr
+    assert "неполный" in combined.lower()
+    assert "pg_restore-called" not in log.read_text(encoding="ascii")
+
+
+def test_restore_into_nonempty_database_fails_without_leaving_objects(tmp_path):
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    log = tmp_path / "calls.log"
+    log.write_text("", encoding="ascii")
+    # Непустая БД: psql возвращает одну строку "1".
+    write_executable(fake_bin / "pg_restore", "echo pg_restore-called >> \"$RESTORE_CALL_LOG\"\n")
+    write_executable(
+        fake_bin / "psql",
+        "#!/bin/sh\ncat >/dev/null\nprintf '1\\n'\n",
+    )
+    write_executable(fake_bin / "mc", "echo mc-called-$1-$2 >> \"$RESTORE_CALL_LOG\"\n")
+    snapshot = tmp_path / "snap"
+    snapshot.mkdir()
+    _make_snapshot(snapshot, dumps=1)
+    result = _run_restore(snapshot, _restore_env(tmp_path, fake_bin, snapshot, log))
+
+    assert result.returncode != 0
+    combined = result.stdout + result.stderr
+    assert "не пуста" in combined.lower() or "пустую" in combined.lower()
+    content = log.read_text(encoding="ascii")
+    assert "pg_restore-called" not in content
+    assert "mc-called-mirror" not in content
+
+
+def test_restore_happy_path_uses_single_dump_and_exact_minio(tmp_path):
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    log = tmp_path / "calls.log"
+    log.write_text("", encoding="ascii")
+    _write_restore_stubs(fake_bin, log)
+    snapshot = tmp_path / "snap"
+    snapshot.mkdir()
+    _make_snapshot(snapshot, dumps=1)
+    result = _run_restore(snapshot, _restore_env(tmp_path, fake_bin, snapshot, log))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    content = log.read_text(encoding="ascii")
+    assert "pg_restore-called" in content
+    assert "restore" in (result.stdout + result.stderr).lower()
+def test_alerter_starts_without_healthy_dependencies_and_reports_them(tmp_path):
+    # R06i группа F: алертер стартует при лежащих зависимостях и сообщает о них,
+    # а не блокируется в depends_on service_healthy.
+    compose = read_text(INFRA_ROOT / "docker-compose.prod.yml")
+    block = compose.split("  alerter:", 1)[1].split("\n  frontend:", 1)[0]
+    assert "condition: service_healthy" not in block
+
+    # Падение зависимостей обязано давать critical, а не исключение.
+    import runpy
+
+    namespace = runpy.run_path(str(INFRA_ROOT / "alerter" / "alerter.py"))
+    check_readiness = namespace["check_readiness"]
+    check_minio = namespace["check_minio_health"]
+    criticals = [
+        check_readiness("http://127.0.0.1:9/api/v1/ready", timeout_seconds=0.1),
+        check_minio("http://127.0.0.1:9/minio/health/live", timeout_seconds=0.1),
+    ]
+    assert all(result.state == "critical" for result in criticals)
+    assert namespace["aggregate_state"](criticals) == "critical"
+def test_prometheus_uses_dns_sd_for_per_instance_scrape():
+    # R06i группа F + T02 per-instance: backend-агрегаты сходятся по двум
+    # инстансам через dns_sd в prometheus.yml; Prometheus видит обе реплики
+    # раздельно (instance-метку ставит сам Prometheus по цели скрапа).
+    prometheus = read_text(INFRA_ROOT / "prometheus" / "prometheus.yml")
+    assert "dns_sd_configs" in prometheus
+    assert "backend" in prometheus
+    assert "8000" in prometheus
+    assert "/api/v1/metrics" in prometheus
+    # Одна static-цель backend:8000 давала бы метрики вперемешку по round-robin;
+    # per-instance требует discovery, а не единственного static-адреса.
+    assert "static_configs" not in prometheus
+
+
+def test_grafana_provisioning_wires_datasource_and_dashboard_on_clean_volume():
+    # R06i группа F: чистый Grafana получает datasource и дашборд без ручных шагов.
+    import json
+
+    compose = read_text(INFRA_ROOT / "docker-compose.prod.yml")
+    datasource = read_text(INFRA_ROOT / "grafana" / "provisioning" / "datasources.yml")
+    dashboards = read_text(INFRA_ROOT / "grafana" / "provisioning" / "dashboards.yml")
+    dashboard = json.loads((INFRA_ROOT / "grafana" / "dashboard.json").read_text(encoding="utf-8"))
+
+    assert "uid: prometheus" in datasource
+    assert "http://prometheus:9090" in datasource
+    assert "/var/lib/grafana/dashboards" in dashboards
+    assert "./grafana/provisioning:/etc/grafana/provisioning:ro" in compose
+    assert "./grafana/dashboard.json:/var/lib/grafana/dashboards/platform.json:ro" in compose
+    # Все панели ссылаются на provisioned uid, иначе чистый Grafana покажет No data.
+    panel_uids = {
+        panel.get("datasource", {}).get("uid")
+        for panel in dashboard.get("panels", [])
+        if isinstance(panel.get("datasource"), dict)
+    }
+    assert panel_uids == {"prometheus"}
+def test_deploy_help_does_not_modify_configuration(tmp_path):
+    # R06i группа F: --help не меняет конфигурацию (чистый usage).
+    env_file = tmp_path / "production.env"
+    before = (
+        "POSTGRES_PASSWORD=database-value-for-contract-check\n"
+        "REPL_PASSWORD=replication-value-for-contract-check\n"
+        "MINIO_SECRET_KEY=storage-value-for-contract-check\n"
+        "GRAFANA_ADMIN_PASSWORD=grafana-value-for-contract-check\n"
+        "JWT_SECRET=\nNEXTAUTH_SECRET=\n"
+    )
+    env_file.write_text(before, encoding="ascii")
+    env = __import__("os").environ.copy()
+    env.pop("JWT_SECRET", None)
+    env.pop("NEXTAUTH_SECRET", None)
+    env["ENV_FILE"] = str(env_file)
+    result = __import__("subprocess").run(
+        ["/bin/bash", str(INFRA_ROOT / "deploy.sh"), "--help"],
+        cwd=str(INFRA_ROOT),
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert env_file.read_text(encoding="ascii") == before
+
+
+def test_deploy_gate_counts_backend_replicas():
+    # R06i группа F: деплой-гейт падает при недостающей реплике backend.
+    deploy = read_text(INFRA_ROOT / "deploy.sh")
+    assert "BACKEND_EXPECTED_REPLICAS" in deploy
+    assert "replicas" in deploy.lower()
+    # Гейт считает здоровые контейнеры backend, а не довольствуется одним.
+    assert "compose ps -q" in deploy or "ps -q backend" in deploy

@@ -53,8 +53,10 @@ echo "[entrypoint] Primary готов."
 
 echo "[entrypoint] применяю миграции (advisory lock)..."
 # BACKUP_BEFORE_MIGRATIONS=1 (env, default в prod-compose) — перед alembic
-# выполняется backup-lock.py. У него отдельный try-lock: проигравшая реплика
-# пропускает backup, а не ждёт lock и не создаёт последовательный дубликат.
+# выполняется backup-lock.py. У него отдельный try-lock: занятый lock
+# блокирует миграции (fail-closed, exit 3), а не трактуется как готовность.
+# Дедуп второй реплики — только через marker image run (exit 0), а не через
+# занятость lock.
 python - <<'PY'
 import asyncio
 import os
@@ -110,6 +112,9 @@ async def main() -> int:
                 ["python", lock_script, backup_script],
                 env=backup_env,
             )
+            if backup_rc == 3:
+                print("[entrypoint] backup-lock занят (бэкап уже идёт) — миграции не применяю (fail-closed)", file=sys.stderr)
+                return backup_rc
             if backup_rc != 0:
                 print("[entrypoint] backup.sh завершился с ошибкой — миграции не применяю", file=sys.stderr)
                 return backup_rc

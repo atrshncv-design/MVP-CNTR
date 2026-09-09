@@ -115,9 +115,15 @@ while :; do
   wait_until_target "$target"
   # Провал бэкапа не убивает планировщик: следующая попытка — завтра,
   # авария фиксируется отсутствием свежего маркера (контракт алертера).
-  if python "$BACKUP_LOCK_SCRIPT" "$BACKUP_SCRIPT"; then
+  # Код 3 backup-lock.py — «занято» (бэкап уже идёт под pre-migration lock):
+  # benign skip, не ошибка; pre-migration при этом блокирует миграции (fail-closed).
+  lock_rc=0
+  python "$BACKUP_LOCK_SCRIPT" "$BACKUP_SCRIPT" || lock_rc=$?
+  if [ "$lock_rc" -eq 0 ]; then
     log "бэкап выполнен успешно"
+  elif [ "$lock_rc" -eq 3 ]; then
+    log "бэкап уже идёт — пропускаю (fail-closed, следующий запуск по расписанию)"
   else
-    log "ОШИБКА: backup runner завершился с ненулевым кодом" >&2
+    log "ОШИБКА: backup runner завершился с кодом $lock_rc" >&2
   fi
 done
