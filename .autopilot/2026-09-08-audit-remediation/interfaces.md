@@ -104,6 +104,10 @@
 
 - новых сигнатур нет; три гейта в `tests/locale-zh.test.mjs`: пины витрины, без-английский рендер 4 неймспейсов, карточка на языке ввода
 - паритет zh/EN 2614/2614, BAD 0; живой curl подтвердил zh-рендер методологии/уровней/лендинга/roadmap
+## Из таска 20 — хинди убран
+
+- локалей осталось RU/EN/ZH; hi нет в реестре, мэппингах, кнопке, fallback-ветках; запрос hi → parseLocale fail-closed к ru
+- удалены `src/messages/hi.json`, `messages/hi.json`, `tests/locale-hi.test.mjs`, `tests/locale-hi-allowlist.json`; гейт `tests/locale-hi-removed.test.mjs`
 - прецедент: ядерные ключи переводятся, длинные технические строки остаются на EN осознанно
 
 Швы для тестов — публичная HTTP-граница API плюс существующие гейты (`pytest`,
