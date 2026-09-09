@@ -19,8 +19,18 @@ jobs:
       POSTGRES_PASSWORD: change_me
       POSTGRES_DB: technozrelost
       POSTGRES_REPLICA_HOST: ""
+      REDIS_URL: redis://127.0.0.1:6379/0
       LLM_API_KEY: ""
     services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
       postgres:
         image: pgvector/pgvector:0.8.0-pg16
         env:
@@ -54,11 +64,19 @@ jobs:
       - name: Dependency audit
         run: uv run --extra dev --with pip-audit==2.9.0 pip-audit -l
       - name: Ruff
-        run: uv run ruff check app tests infra/alerter
+        run: uv run ruff check app tests infra/alerter scripts/udgu_ingest
       - name: Mypy
         run: uv run mypy app
       - name: Pytest
         run: uv run pytest -q infra/alerter/test_alerter.py tests
+      - name: Backend image build
+        run: docker build -f Dockerfile -t backend:ci .
+      - name: Prod client libs
+        run: |
+          docker run --rm backend:ci python -c "import redis, minio, asyncpg; print('client libs ok')"
+          docker run --rm backend:ci pg_dump --version
+      - name: Readiness smoke (db/cache/storage/scan)
+        run: uv run pytest -q tests/test_health.py tests/test_redis_obligatory.py tests/test_scan_failclosed.py
 
   frontend:
     name: Frontend

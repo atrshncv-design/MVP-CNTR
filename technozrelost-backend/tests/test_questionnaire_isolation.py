@@ -33,13 +33,51 @@ def test_questionnaire_per_user_read_isolation(client: TestClient) -> None:
 
     async def _create() -> int:
         async with SessionLocal() as db:
-            p = Project(name="Iso Test", description="iso", category="IT", target_level=9, current_level=0, created_by=a_id)
+            p = Project(
+                name="Iso Test",
+                description="iso",
+                category="IT",
+                target_level=9,
+                current_level=0,
+                created_by=a_id,
+            )
             db.add(p)
             await db.flush()
-            db.add(ProjectMember(project_id=p.id, user_id=a_id, role_in_project="gk_customer", status="active", is_priority=True))
-            db.add(ProjectMember(project_id=p.id, user_id=b_id, role_in_project="rd_executor", status="active"))
-            db.add(QuestionnaireResult(project_id=p.id, user_id=a_id, level_id=1, checked_items={"items": ["x"]}, percentage=90.0))
-            db.add(QuestionnaireResult(project_id=p.id, user_id=b_id, level_id=1, checked_items={"items": ["y"]}, percentage=30.0))
+            db.add(
+                ProjectMember(
+                    project_id=p.id,
+                    user_id=a_id,
+                    role_in_project="gk_customer",
+                    status="active",
+                    is_priority=True,
+                )
+            )
+            db.add(
+                ProjectMember(
+                    project_id=p.id,
+                    user_id=b_id,
+                    role_in_project="rd_executor",
+                    status="active",
+                )
+            )
+            db.add(
+                QuestionnaireResult(
+                    project_id=p.id,
+                    user_id=a_id,
+                    level_id=1,
+                    checked_items={"items": ["x"]},
+                    percentage=90.0,
+                )
+            )
+            db.add(
+                QuestionnaireResult(
+                    project_id=p.id,
+                    user_id=b_id,
+                    level_id=1,
+                    checked_items={"items": ["y"]},
+                    percentage=30.0,
+                )
+            )
             await db.commit()
             await db.refresh(p)
             return p.id
@@ -88,12 +126,18 @@ def test_performance_indexes(client: TestClient) -> None:  # noqa: ARG001
     )
     try:
         row = conn.execute(
-            "SELECT 1 FROM pg_indexes WHERE schemaname='public' AND tablename='questionnaire_results' AND indexname='ix_questionnaire_results_user_id'"
+            "SELECT 1 FROM pg_indexes WHERE schemaname='public' "
+            "AND tablename='questionnaire_results' "
+            "AND indexname='ix_questionnaire_results_user_id'"
         ).fetchone()
         assert row is not None, "нет индекса ix_questionnaire_results_user_id"
         row2 = conn.execute(
-            "SELECT is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='questionnaire_results' AND column_name='user_id'"
+            "SELECT is_nullable FROM information_schema.columns "
+            "WHERE table_schema='public' "
+            "AND table_name='questionnaire_results' AND column_name='user_id'"
         ).fetchone()
-        assert row2 is not None and row2[0] == "NO", f"user_id должен быть NOT NULL, получил {row2}"
+        assert row2 is not None and row2[0] == "NO", (
+            f"user_id должен быть NOT NULL, получил {row2}"
+        )
     finally:
         conn.close()

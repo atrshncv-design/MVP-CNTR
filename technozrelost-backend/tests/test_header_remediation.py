@@ -37,7 +37,9 @@ def _create_project(client: TestClient, token: str) -> int:
 
 def test_download_crlf_escaped(client: TestClient) -> None:
     """Content-Disposition без CRLF и кавычек даже при зловредном имени."""
-    data = register_test_user(client, email=_email(), full_name="Header User", role_slug="gk_customer")
+    data = register_test_user(
+        client, email=_email(), full_name="Header User", role_slug="gk_customer"
+    )
     token = data["access_token"]
     pid = _create_project(client, token)
 
@@ -61,7 +63,10 @@ def test_download_crlf_escaped(client: TestClient) -> None:
         autocommit=True,
     )
     try:
-        conn.execute("UPDATE public.project_documents SET file_name=%s WHERE id=%s", (malicious, fid))
+        conn.execute(
+            "UPDATE public.project_documents SET file_name=%s WHERE id=%s",
+            (malicious, fid),
+        )
     finally:
         conn.close()
 
@@ -100,7 +105,7 @@ def test_request_id_crlf_generates(client: TestClient) -> None:
     assert len(req_id) == 32
     assert all(c in "0123456789abcdefABCDEF" for c in req_id)
     # второй заголовок не просочился
-    assert "x-injected" not in {k.lower() for k in resp.headers.keys()}
+    assert "x-injected" not in {k.lower() for k in resp.headers}
     for v in resp.headers.values():
         assert "X-Injected" not in v
 

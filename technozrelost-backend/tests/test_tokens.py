@@ -23,7 +23,12 @@ def _register_token_pair(client: TestClient) -> dict:
     email = _email("tok")
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "Probe12345", "full_name": "Tok", "role_slug": "gk_customer"},
+        json={
+            "email": email,
+            "password": "Probe12345",
+            "full_name": "Tok",
+            "role_slug": "gk_customer",
+        },
     )
     assert resp.status_code == 201, resp.text
     return resp.json()
@@ -34,7 +39,12 @@ def _make_valid_docx() -> bytes:
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(
             "[Content_Types].xml",
-            '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+            '<?xml version="1.0"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Override PartName="/word/document.xml"'
+            ' ContentType="application/vnd.openxmlformats-officedocument'
+            '.wordprocessingml.document.main+xml"/>'
+            "</Types>",
         )
         zf.writestr("word/document.xml", "<w:document/>")
         zf.writestr("_rels/.rels", "<Relationships/>")
@@ -66,7 +76,9 @@ def test_n09_reuse_revoked_revokes_family(client: TestClient) -> None:
 
 def test_n10_metrics_without_user_id(client: TestClient) -> None:
     """N-10: /chat/metrics/ai не отдаёт карту requests_by_user."""
-    token = register_test_user(client, email=_email("n10"), full_name="N10", role_slug="gk_customer")["access_token"]
+    token = register_test_user(
+        client, email=_email("n10"), full_name="N10", role_slug="gk_customer"
+    )["access_token"]
     # сделаем чат-запрос чтобы был трафик
     client.post("/api/v1/chat", headers=_auth(token), json={"message": "привет"})
     resp = client.get("/api/v1/chat/metrics/ai", headers=_auth(token))
@@ -74,7 +86,7 @@ def test_n10_metrics_without_user_id(client: TestClient) -> None:
     data = resp.json()
     assert "requests_by_user" not in data
     # дополнительно: ни один ключ не должен быть похож на user_id
-    for k in data.keys():
+    for k in data:
         assert k != "requests_by_user"
 
 
@@ -82,12 +94,19 @@ def test_n11_ooxml_requires_content_types(client: TestClient) -> None:
     """N-11: ZIP без [Content_Types].xml → 422; валидный OOXML → 201."""
     from tests.support import register_test_user as reg
 
-    token = reg(client, email=_email("n11"), full_name="N11", role_slug="gk_customer")["access_token"]
+    token = reg(
+        client, email=_email("n11"), full_name="N11", role_slug="gk_customer"
+    )["access_token"]
     # создать проект
     proj = client.post(
         "/api/v1/assessments",
         headers=_auth(token),
-        json={"name": "N11", "questionnaire_results": [{"level_id": 1, "checked_items": ["Идея"], "percentage": 100}]},
+        json={
+            "name": "N11",
+            "questionnaire_results": [
+                {"level_id": 1, "checked_items": ["Идея"], "percentage": 100}
+            ],
+        },
     )
     assert proj.status_code == 201, proj.text
     pid = proj.json()["id"]
@@ -111,7 +130,9 @@ def test_n11_ooxml_requires_content_types(client: TestClient) -> None:
 
 def test_n12_news_content_max_length(client: TestClient) -> None:
     """N-12: NewsCreateIn.content max_length 20000 → превышение 422."""
-    admin = register_test_user(client, email=_email("n12a"), full_name="Admin", role_slug="cntr_admin")["access_token"]
+    admin = register_test_user(
+        client, email=_email("n12a"), full_name="Admin", role_slug="cntr_admin"
+    )["access_token"]
     long_content = "x" * 20001
     resp = client.post(
         "/api/v1/news",

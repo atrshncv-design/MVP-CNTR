@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import io
 import uuid
 from unittest.mock import patch
@@ -38,7 +39,9 @@ def _create_project(client: TestClient, token: str) -> int:
 
 def test_verification_doc_uses_threadpool(client: TestClient) -> None:
     """upload_verification_doc и download делегируют storage.get в to_thread."""
-    data = register_test_user(client, email=_email(), full_name="Store User", role_slug="gk_customer")
+    data = register_test_user(
+        client, email=_email(), full_name="Store User", role_slug="gk_customer"
+    )
     token = data["access_token"]
     pid = _create_project(client, token)
 
@@ -49,8 +52,12 @@ def test_verification_doc_uses_threadpool(client: TestClient) -> None:
     files_path = pathlib.Path(__file__).parent.parent / "app" / "api" / "v1" / "files.py"
     proj_src = proj_path.read_text(encoding="utf-8")
     files_src = files_path.read_text(encoding="utf-8")
-    assert "to_thread" in proj_src and "storage.get" in proj_src, "projects.py должен использовать to_thread(storage.get)"
-    assert "to_thread" in files_src and "read_stored_file" in files_src, "files.py должен использовать to_thread(read_stored_file)"
+    assert "to_thread" in proj_src and "storage.get" in proj_src, (
+        "projects.py должен использовать to_thread(storage.get)"
+    )
+    assert "to_thread" in files_src and "read_stored_file" in files_src, (
+        "files.py должен использовать to_thread(read_stored_file)"
+    )
 
     # 2) мок storage.get → проверка что endpoint вызывает его через to_thread и не падает
     import time
@@ -60,8 +67,10 @@ def test_verification_doc_uses_threadpool(client: TestClient) -> None:
         raise FileStorageError("not found mocked")
 
     # патчим именно storage.get в projects, и перехватываем to_thread
-    with patch("app.api.v1.projects.storage.get", side_effect=slow_get) as mock_get:
-        with patch("app.api.v1.projects.asyncio.to_thread", wraps=asyncio.to_thread) as mock_thread:
+    with (
+        patch("app.api.v1.projects.storage.get", side_effect=slow_get) as mock_get,
+        patch("app.api.v1.projects.asyncio.to_thread", wraps=asyncio.to_thread) as mock_thread,
+    ):
             resp = client.post(
                 f"/api/v1/projects/{pid}/verification-docs",
                 json={"title": "Проверка threadpool", "file_ref": "evil-threadpool-test"},
@@ -97,8 +106,10 @@ def test_verification_doc_uses_threadpool(client: TestClient) -> None:
         time.sleep(0.15)
         return pdf
 
-    with patch("app.api.v1.files.read_stored_file", side_effect=slow_read) as mock_read:
-        with patch("app.api.v1.files.asyncio.to_thread", wraps=asyncio.to_thread) as mock_thread2:
+    with (
+        patch("app.api.v1.files.read_stored_file", side_effect=slow_read) as mock_read,
+        patch("app.api.v1.files.asyncio.to_thread", wraps=asyncio.to_thread) as mock_thread2,
+    ):
             dl = client.get(f"/api/v1/files/{fid}/download", headers=_auth(token))
             assert dl.status_code == 200
             assert mock_read.called
@@ -110,10 +121,8 @@ def test_verification_doc_uses_threadpool(client: TestClient) -> None:
         # патчим внутри async контекста через patch, но asyncio.to_thread уже проверен выше
         # просто проверяем что 5 gather с slow_get через to_thread укладываются <1s
         async def call_via_to_thread() -> None:
-            try:
+            with contextlib.suppress(FileStorageError):
                 await asyncio.to_thread(slow_get, "concurrent-key")
-            except FileStorageError:
-                pass
 
         import time as _time
 

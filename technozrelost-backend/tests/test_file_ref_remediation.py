@@ -38,7 +38,9 @@ def _create_project(client: TestClient, token: str) -> int:
 
 def test_file_ref_rejects_non_slash_missing(client: TestClient) -> None:
     """Любой непустой file_ref без слэша без allowlist → 404."""
-    data = register_test_user(client, email=_email(), full_name="FileRef A", role_slug="gk_customer")
+    data = register_test_user(
+        client, email=_email(), full_name="FileRef A", role_slug="gk_customer"
+    )
     token = data["access_token"]
     pid = _create_project(client, token)
 
@@ -61,7 +63,9 @@ def test_file_ref_rejects_non_slash_missing(client: TestClient) -> None:
 
 def test_file_ref_allows_legacy(client: TestClient) -> None:
     """Легаси allowlist ref-1 / ref-2 → 201 без проверки MinIO."""
-    data = register_test_user(client, email=_email(), full_name="FileRef Legacy", role_slug="gk_customer")
+    data = register_test_user(
+        client, email=_email(), full_name="FileRef Legacy", role_slug="gk_customer"
+    )
     token = data["access_token"]
     pid = _create_project(client, token)
 
@@ -92,7 +96,9 @@ def test_file_ref_allows_legacy(client: TestClient) -> None:
 
 def test_file_ref_allows_real_key(client: TestClient) -> None:
     """Реальный storage_key (ProjectDocument) → 201."""
-    data = register_test_user(client, email=_email(), full_name="FileRef Real", role_slug="gk_customer")
+    data = register_test_user(
+        client, email=_email(), full_name="FileRef Real", role_slug="gk_customer"
+    )
     token = data["access_token"]
     pid = _create_project(client, token)
 

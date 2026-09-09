@@ -51,15 +51,23 @@ def test_auth_throttle_async_not_blocking(client: TestClient) -> None:  # noqa: 
         # limit до 10, но is_blocked при count=None → не блок
         async def run_is_blocked() -> float:
             start = time.monotonic()
-            await asyncio.gather(*[auth_throttle.is_blocked(f"user{i}-{uuid.uuid4().hex[:4]}@example.com", "127.0.0.1") for i in range(20)])
+            mails = [f"user{i}-{uuid.uuid4().hex[:4]}@example.com" for i in range(20)]
+            await asyncio.gather(
+                *[auth_throttle.is_blocked(m, "127.0.0.1") for m in mails]
+            )
             return time.monotonic() - start
 
         elapsed = asyncio.run(run_is_blocked())
-        assert elapsed < 2.0, f"is_blocked блокирует loop: {elapsed:.2f}s (ожидалось <2s с to_thread)"
+        assert elapsed < 2.0, (
+            f"is_blocked блокирует loop: {elapsed:.2f}s (ожидалось <2s)"
+        )
 
         async def run_record_failure() -> float:
             start = time.monotonic()
-            await asyncio.gather(*[auth_throttle.record_failure(f"rf-{i}@example.com", "127.0.0.1") for i in range(20)])
+            await asyncio.gather(
+                *[auth_throttle.record_failure(f"rf-{i}@example.com", "127.0.0.1")
+                  for i in range(20)]
+            )
             return time.monotonic() - start
 
         elapsed2 = asyncio.run(run_record_failure())
@@ -72,7 +80,10 @@ def test_auth_throttle_async_not_blocking(client: TestClient) -> None:  # noqa: 
         async def run_lru() -> None:
             # 20 параллельных record_failure в LRU должны быть мгновенны
             start = time.monotonic()
-            await asyncio.gather(*[auth_throttle.record_failure(f"lru-{i}@example.com", "10.0.0.1") for i in range(20)])
+            await asyncio.gather(
+                *[auth_throttle.record_failure(f"lru-{i}@example.com", "10.0.0.1")
+                  for i in range(20)]
+            )
             elapsed = time.monotonic() - start
             assert elapsed < 0.5, f"LRU блокирует: {elapsed:.2f}s"
             # и is_blocked

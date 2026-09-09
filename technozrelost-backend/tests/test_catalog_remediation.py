@@ -30,7 +30,9 @@ def test_catalog_vary_and_private(client: TestClient) -> None:
     etag_anon = anon.headers["ETag"]
 
     # auth → private
-    tok = register_test_user(client, email=_email(), full_name="Cat User", role_slug="gk_customer")["access_token"]
+    tok = register_test_user(
+        client, email=_email(), full_name="Cat User", role_slug="gk_customer"
+    )["access_token"]
     authed = client.get("/api/v1/achievements/catalog", headers=_auth(tok))
     assert authed.headers.get("vary") == "Accept-Encoding"
     assert authed.headers.get("cache-control") == "private, max-age=300"
@@ -74,7 +76,9 @@ def test_catalog_etag_sort_order(client: TestClient) -> None:
     conn = psycopg.connect(**dsn)
     try:
         conn.execute(
-            "INSERT INTO public.achievements (slug, title, description, \"group\", rarity, sort_order, icon_key) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+            "INSERT INTO public.achievements "
+            '(slug, title, description, "group", rarity, sort_order, icon_key) '
+            "VALUES (%s,%s,%s,%s,%s,%s,%s)",
             (slug, "Sort Test", "desc", "documents", "common", 1, slug),
         )
     finally:
@@ -88,7 +92,11 @@ def test_catalog_etag_sort_order(client: TestClient) -> None:
     # меняем sort_order
     conn = psycopg.connect(**dsn)
     try:
-        conn.execute("UPDATE public.achievements SET sort_order=999, updated_at=now() WHERE slug=%s", (slug,))
+        conn.execute(
+            "UPDATE public.achievements SET sort_order=999, "
+            "updated_at=now() WHERE slug=%s",
+            (slug,),
+        )
     finally:
         conn.close()
 
@@ -109,7 +117,9 @@ def test_catalog_etag_sort_order(client: TestClient) -> None:
 
     # technologies — если роут существует, тоже ETag+Vary+private/public
     # создаём технологию напрямую чтобы тест был детерминирован
-    tok = register_test_user(client, email=_email(), full_name="Tech User", role_slug="gk_customer")["access_token"]
+    tok = register_test_user(
+        client, email=_email(), full_name="Tech User", role_slug="gk_customer"
+    )["access_token"]
     # технологий может не быть, проверяем что эндпоинт требует auth и отдаёт ETag
     tech_resp = client.get("/api/v1/technologies", headers=_auth(tok))
     assert tech_resp.status_code == 200
@@ -117,7 +127,9 @@ def test_catalog_etag_sort_order(client: TestClient) -> None:
     assert tech_resp.headers.get("cache-control") == "private, max-age=300"
     assert "ETag" in tech_resp.headers
     tech_etag = tech_resp.headers["ETag"]
-    tech_304 = client.get("/api/v1/technologies", headers={**_auth(tok), "If-None-Match": tech_etag})
+    tech_304 = client.get(
+        "/api/v1/technologies", headers={**_auth(tok), "If-None-Match": tech_etag}
+    )
     assert tech_304.status_code == 304
 
     # чистим тестовую медаль
