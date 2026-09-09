@@ -33,7 +33,11 @@ from app.schemas import (
     StageRequirementOut,
 )
 from app.services.achievements import award_document
-from app.services.ai_assistant import ask_llm
+from app.services.ai_assistant import (
+    PROMPT_ISOLATION_RULE,
+    ask_llm,
+    wrap_untrusted,
+)
 from app.services.file_storage import (
     FileSizeExceeded,
     FileStorageError,
@@ -106,6 +110,24 @@ async def _stage_reqs_with_status(
     ]
 
 
+def _parse_stage_success(answer: str) -> bool:
+    """Строгий шаблон первой строки: вердикт-токен SUCCESS (иначе False).
+
+    R05i (таск 11): подстрока («not a SUCCESS case») успехом не считается —
+    первая непустая строка должна начинаться токеном SUCCESS с границей слова
+    (конец строки или разделитель «:;,.!—–-»/пробел). Fail-closed: неизвестный
+    формат — False, заявка не уходит менеджеру.
+    """
+    import re as _re
+
+    for line in answer.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        return _re.match(r"SUCCESS(?=[\s:;,.!\-\u2014\u2013]|$)", stripped.upper()) is not None
+    return False
+
+
 async def _evaluate(
     project: Project, stage: StageRequirement, docs: list[ProjectDocument]
 ) -> tuple[bool | None, list[str], str]:
@@ -123,12 +145,13 @@ async def _evaluate(
         "FAIL — если не хватает материалов;\n"
         "первая строка: SUCCESS или FAIL;\n"
         "затем строка SUMMARY: краткое заключение;\n"
-        "затем строки MISSING: <чего не хватает> (по одной)."
+        "затем строки MISSING: <чего не хватает> (по одной).\n"
+        + PROMPT_ISOLATION_RULE
     )
     user_msg = (
         f"Проект: {project.name}.\n"
         f"Требование этапа УГТ {stage.from_level}→{stage.to_level}: {stage.title}.\n"
-        f"Загруженные документы:\n{docs_text}"
+        f"Загруженные документы:\n{wrap_untrusted(docs_text)}"
     )
 
     answer = await ask_llm(system, user_msg)
@@ -136,7 +159,7 @@ async def _evaluate(
         # LLM недоступна — не пропускаем молча
         return None, [], "Оценка недоступна: языковая модель не настроена."
 
-    success = "SUCCESS" in answer.upper()
+    success = _parse_stage_success(answer)
     missing = [
         line[8:].strip()
         for line in answer.splitlines()
