@@ -9,7 +9,6 @@ import { LOCALE_COOKIE, parseLocale } from "@/i18n/config";
 import enMessages from "@/messages/en.json";
 import ruMessages from "@/messages/ru.json";
 import zhMessages from "@/messages/zh.json";
-import hiMessages from "@/messages/hi.json";
 
 const manrope = Manrope({
   subsets: ["latin", "cyrillic"],
@@ -43,7 +42,7 @@ export default async function RootLayout({
   const store = await cookies();
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
   const messages =
-    locale === "hi" ? hiMessages : locale === "zh" ? zhMessages : locale === "en" ? enMessages : ruMessages;
+    locale === "zh" ? zhMessages : locale === "en" ? enMessages : ruMessages;
   const t = await getTranslations("a11y");
 
   // lang="ru" — дефолт для wcag теста, фактический lang задаётся через {locale} (i18n)

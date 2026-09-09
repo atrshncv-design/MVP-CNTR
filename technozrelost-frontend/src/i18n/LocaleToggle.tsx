@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { LOCALE_COOKIE, type Locale, parseLocale } from "./config";
 
 /**
- * Тумблер RU/EN/ZH/HI в топбаре — R01 (T17: +ZH, T18: +HI аддитивно, default RU прежний).
+ * Тумблер RU/EN/ZH в топбаре — R01 (T17: +ZH аддитивно; T20: HI удалён по отмене, default RU прежний).
  * Почему client: читает document.cookie, пишет cookie и перезагружает без потери страницы.
  * Хранит locale в cookie (NEXT_LOCALE), default RU, перезагрузка через window.location.reload().
  * Доступность: role group, aria-pressed, aria-label, клавиатура.
@@ -42,7 +42,6 @@ export default function LocaleToggle() {
   const isRu = locale === "ru";
   const isEn = locale === "en";
   const isZh = locale === "zh";
-  const isHi = locale === "hi";
 
   return (
     <div
@@ -87,18 +86,6 @@ export default function LocaleToggle() {
         }`}
       >
         ZH
-      </button>
-      <button
-        type="button"
-        aria-pressed={isHi}
-        aria-label="हिन्दी (Hindi)"
-        data-testid="locale-hi"
-        onClick={() => switchLocale("hi")}
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-          isHi ? "bg-tz-accent text-white shadow" : "text-tz-muted hover:text-tz-fg"
-        }`}
-      >
-        HI
       </button>
     </div>
   );

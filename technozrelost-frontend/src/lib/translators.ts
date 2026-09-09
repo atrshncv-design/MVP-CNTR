@@ -11,21 +11,20 @@ import { LOCALE_COOKIE, parseLocale } from "../i18n/config.ts";
 import ruMessages from "../messages/ru.json" with { type: "json" };
 import enMessages from "../messages/en.json" with { type: "json" };
 import zhMessages from "../messages/zh.json" with { type: "json" };
-import hiMessages from "../messages/hi.json" with { type: "json" };
 
-export type AppLocale = "ru" | "en" | "zh" | "hi";
+export type AppLocale = "ru" | "en" | "zh";
 export type ContentNamespace = "ugt" | "showcase" | "taxonomy";
 
-const catalogMessages = { ru: ruMessages, en: enMessages, zh: zhMessages, hi: hiMessages } as const;
+const catalogMessages = { ru: ruMessages, en: enMessages, zh: zhMessages } as const;
 
 /** Standard next-intl translator scoped to a content namespace and locale. */
 export function translatorFor(namespace: ContentNamespace, locale: AppLocale): TranslateFn {
   const messages = catalogMessages[locale] ?? enMessages;
   const t = createTranslator({ locale, namespace, messages }) as unknown as TranslateFn;
-  // T17: fallback zh -> en; T18: то же для hi — недостающий ключ отдаёт
+  // T17: fallback zh -> en (T20: hi-ветка удалена) — недостающий ключ отдаёт
   // английскую строку (или эхо ключа, если нет и в EN), а не пустое место.
   const enT =
-    locale === "zh" || locale === "hi"
+    locale === "zh"
       ? (createTranslator({ locale: "en", namespace, messages: enMessages }) as unknown as TranslateFn)
       : null;
   const fn: TranslateFn = (key, params) => {
@@ -54,7 +53,6 @@ export function translatorFor(namespace: ContentNamespace, locale: AppLocale): T
  */
 export function contentMessages(locale: AppLocale): unknown {
   if (locale === "zh") return zhMessages;
-  if (locale === "hi") return hiMessages;
   return locale === "ru" ? ruMessages : enMessages;
 }
 
@@ -65,7 +63,7 @@ export function contentMessages(locale: AppLocale): unknown {
  */
 export function shimLocale(): AppLocale {
   if (typeof document !== "undefined") {
-    const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE}=(ru|en|zh|hi)`));
+    const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE}=(ru|en|zh)`));
     if (match) return match[1] as AppLocale;
   }
   return parseLocale(undefined);
