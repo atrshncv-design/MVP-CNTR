@@ -108,6 +108,13 @@
 
 - локалей осталось RU/EN/ZH; hi нет в реестре, мэппингах, кнопке, fallback-ветках; запрос hi → parseLocale fail-closed к ru
 - удалены `src/messages/hi.json`, `messages/hi.json`, `tests/locale-hi.test.mjs`, `tests/locale-hi-allowlist.json`; гейт `tests/locale-hi-removed.test.mjs`
+## Из таска 21 — досев демо
+
+- `seed_users()` — идемпотентный UPSERT пяти demo-учёток (роли и пароль по `DEMO_PASSWORD`); швы без изменений: `POST /auth/login`, `POST /auth/register`
+
+## Из таска 22 — тоггл на входе
+
+- Переиспользован `LocaleToggle` на /login и /register (шапка dashboard уже содержала); новых сигнатур нет, hi не возвращён
 - прецедент: ядерные ключи переводятся, длинные технические строки остаются на EN осознанно
 
 Швы для тестов — публичная HTTP-граница API плюс существующие гейты (`pytest`,

@@ -11,20 +11,20 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-09-08T08:43:09+04:00",
-  "updatedAt": "2026-09-09T11:02:39+04:00",
-  "finishedAt": "2026-09-09T11:02:39+04:00",
+  "updatedAt": "2026-09-09T11:24:13+04:00",
+  "finishedAt": "2026-09-09T11:24:13+04:00",
   "stages": [
     { "id": "preflight", "status": "done", "startedAt": "2026-09-08T08:43:09+04:00", "finishedAt": "2026-09-08T08:44:00+04:00" },
     { "id": "manifest", "status": "done", "startedAt": "2026-09-08T08:44:00+04:00", "finishedAt": "2026-09-08T08:46:49+04:00", "note": "7 требований" },
     { "id": "briefing", "status": "done", "startedAt": "2026-09-08T08:44:00+04:00", "finishedAt": "2026-09-08T08:46:49+04:00", "note": "охват: всё + приоритеты" },
     { "id": "spec", "status": "done", "startedAt": "2026-09-08T08:46:49+04:00", "finishedAt": "2026-09-08T08:49:05+04:00", "note": "G2 pass" },
     { "id": "plan", "status": "done", "startedAt": "2026-09-08T08:49:05+04:00", "finishedAt": "2026-09-08T08:51:41+04:00", "note": "16 тасков, ярус T3" },
-    { "id": "build", "status": "done", "startedAt": "2026-09-09T10:55:43+04:00", "finishedAt": "2026-09-09T11:02:39+04:00", "note": "таск 20 готов" },
-    { "id": "review", "status": "done", "startedAt": "2026-09-09T11:02:39+04:00", "finishedAt": "2026-09-09T11:02:39+04:00", "note": "проверен таск 20, блокеров нет" },
-    { "id": "final", "status": "done", "startedAt": "2026-09-09T11:02:39+04:00", "finishedAt": "2026-09-09T11:02:39+04:00", "note": "приёмка hi-removal pass" }
+    { "id": "build", "status": "done", "startedAt": "2026-09-09T11:11:42+04:00", "finishedAt": "2026-09-09T11:24:13+04:00", "note": "таски 21, 22 готовы" },
+    { "id": "review", "status": "done", "startedAt": "2026-09-09T11:24:13+04:00", "finishedAt": "2026-09-09T11:24:13+04:00", "note": "проверены 21, 22, блокеров нет" },
+    { "id": "final", "status": "done", "startedAt": "2026-09-09T11:24:13+04:00", "finishedAt": "2026-09-09T11:24:13+04:00", "note": "приёмка входов и тоггла pass" }
   ],
   "requirements": {
-    "total": 10, "done": 6, "inTicket": 0, "inSpec": 2,
+    "total": 12, "done": 8, "inTicket": 0, "inSpec": 2,
     "placeholder": 0, "deferred": 0, "dropped": 2
   },
   "tickets": [
@@ -47,7 +47,9 @@ window.STATE =
     { "id": "17", "title": "Локализация интерфейса на китайский", "requirements": ["G01"], "blockedBy": [], "wave": 4, "zone": ["frontend/i18n"], "status": "done", "startedAt": "2026-09-08T10:41:29+04:00", "finishedAt": "2026-09-09T09:19:39+04:00", "retries": 0, "repairs": 1, "handoffs": 0, "tests": { "passed": 6, "failed": 0 }, "commit": "e3244b3", "repairFindings": ["контент методологии оставался английским: переведены все неймспейсы, EN-хардкод убран в словарь"] },
     { "id": "18", "title": "Локализация интерфейса на хинди", "requirements": ["G02"], "blockedBy": ["17"], "wave": 5, "zone": ["frontend/i18n"], "status": "done", "startedAt": "2026-09-08T10:47:57+04:00", "finishedAt": "2026-09-09T09:19:39+04:00", "retries": 0, "repairs": 1, "handoffs": 0, "tests": { "passed": 7, "failed": 0 }, "commit": "43c38ae", "repairFindings": ["контент методологии оставался английским: полный перевод + allowlist пинов"] },
     { "id": "19", "title": "Китайский до конца: ноль fallback, паритет текущих ключей", "requirements": ["G01"], "blockedBy": [], "wave": 6, "zone": ["frontend/i18n"], "status": "done", "startedAt": "2026-09-09T09:57:06+04:00", "finishedAt": "2026-09-09T10:09:04+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 11, "failed": 0 }, "commit": "5b1e63e" },
-    { "id": "20", "title": "Убрать хинди из доступных языков", "requirements": ["G03"], "blockedBy": [], "wave": 7, "zone": ["frontend/i18n"], "status": "done", "startedAt": "2026-09-09T10:55:43+04:00", "finishedAt": "2026-09-09T11:02:39+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 4, "failed": 0 }, "commit": "b6e2366" }
+    { "id": "20", "title": "Убрать хинди из доступных языков", "requirements": ["G03"], "blockedBy": [], "wave": 7, "zone": ["frontend/i18n"], "status": "done", "startedAt": "2026-09-09T10:55:43+04:00", "finishedAt": "2026-09-09T11:02:39+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 4, "failed": 0 }, "commit": "b6e2366" },
+    { "id": "21", "title": "Досев демо-учёток без затирания стенда", "requirements": ["BUG-1"], "blockedBy": [], "wave": 8, "zone": ["backend/seeds"], "status": "done", "startedAt": "2026-09-09T11:11:42+04:00", "finishedAt": "2026-09-09T11:24:13+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 3, "failed": 0 }, "commit": "37288c0" },
+    { "id": "22", "title": "Переключатель языка на входе и в ЛК", "requirements": ["G04"], "blockedBy": [], "wave": 8, "zone": ["frontend/shell"], "status": "done", "startedAt": "2026-09-09T11:11:42+04:00", "finishedAt": "2026-09-09T11:24:13+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 182, "failed": 0 }, "commit": "f0a1e27" }
   ],
   "singlePass": null,
   "tests": null,
@@ -75,12 +77,13 @@ window.STATE =
     "ru/en +12 ключей витрины без синхронного zh/hi (покрыто EN-fallback)",
     "clamav-контейнер unhealthy на демо-стенде — вне объёма прогона, чинить отдельно",
     "zh-тест живого рендера грепает словарь, второй список акронимов дублирует TERMS (T19)",
-    "hi-removed: два импорта node:fs, проверка удалением по подстрокам исходников, порядок локалей зафиксирован тестом (T20)"
+    "hi-removed: два импорта node:fs, проверка удалением по подстрокам исходников, порядок локалей зафиксирован тестом (T20)",
+    "reseed-тест без зачистки и двойной источник пятёрки учёток; тоггл-тест грепает исходники (T21/T22)"
   ],
   "reviewers": { "manifestSpec": "ses_f805caf87ffe7VZYPKHzOp56Vn", "craft": "ses_f805caf73ffe2mPQX0k2JN1mKZ" },
   "blind": {
     "status": "pass",
-    "summary": "G03: hi удалён (живой тоггл без hi, запрос hi → ru), ru/en/zh ок; расхождений нет",
+    "summary": "BUG-1/G04: тоггл есть; живые 5/5 — 200 (верификация рестарта); 0/5 слепой приёмки — артефакт её пустого окружения (пустой пароль → честный 401), не дрейф",
     "open": []
   }
 }
