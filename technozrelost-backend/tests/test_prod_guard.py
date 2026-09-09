@@ -21,8 +21,14 @@ def test_production_rejects_empty_jwt_secret() -> None:
 
 
 def test_production_accepts_real_secret() -> None:
+    # Таск 01 (R03i): прод-контракт — настоящий JWT-секрет ПЛЮС REDIS_URL.
     settings = Settings(
-        app_env="production", jwt_secret="x" * 48, _env_file=None
+        app_env="production",
+        jwt_secret="x" * 48,
+        redis_url="redis://redis:6379/0",
+        postgres_password="p" * 16,
+        minio_secret_key="s" * 16,
+        _env_file=None,
     )
     assert settings.jwt_secret == "x" * 48
 

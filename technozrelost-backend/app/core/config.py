@@ -108,6 +108,28 @@ class Settings(BaseSettings):
                 "jwt_secret: в production требуется настоящий секрет "
                 "(задайте JWT_SECRET в окружении, дефолтное значение запрещено)"
             )
+        # R03i (таск 01): Redis — обязательная прод-зависимость. Без него
+        # rate-limit и SSE молча деградируют до in-memory fallback: две реплики
+        # удваивают лимиты и теряют события. Поэтому прод без REDIS_URL падает
+        # на старте с понятной ошибкой, а не снимает лимиты (fail-fast).
+        # В dev/test fallback разрешён — локалка чинится им, а не ломается.
+        if self.app_env == "production" and not self.redis_url:
+            raise ValueError(
+                "redis_url: в production требуется доступный Redis "
+                "(задайте REDIS_URL в окружении, in-memory fallback в проде запрещён)"
+            )
+        # P2 (таск 14): dev-дефолты change_me из docker-compose.yml запрещено
+        # переносить в прод — прод-валидация их отклоняет (имя поля в ошибке).
+        if self.app_env == "production" and self.postgres_password in ("", "change_me"):
+            raise ValueError(
+                "postgres_password: в production требуется настоящий пароль БД "
+                "(задайте POSTGRES_PASSWORD в окружении, dev-дефолт change_me запрещён)"
+            )
+        if self.app_env == "production" and self.minio_secret_key in ("", "change_me"):
+            raise ValueError(
+                "minio_secret_key: в production требуется настоящий секрет MinIO "
+                "(задайте MINIO_SECRET_KEY в окружении, dev-дефолт change_me запрещён)"
+            )
         return self
 
     @property

@@ -35,6 +35,9 @@ def test_ready_reports_checked_database_roles(monkeypatch) -> None:
     assert response.json() == {
         "status": "ready",
         "databases": {"primary": "ok", "replica": "not_configured"},
+        "redis": "not_configured",
+        "storage": "ok",
+        "clamav": "disabled",
     }
 
 
@@ -50,4 +53,7 @@ def test_ready_fails_closed_when_database_check_fails(monkeypatch) -> None:
     assert response.json()["detail"] == {
         "status": "not_ready",
         "databases": {"primary": "unavailable", "replica": "not_configured"},
+        "redis": "not_configured",
+        "storage": "ok",
+        "clamav": "disabled",
     }

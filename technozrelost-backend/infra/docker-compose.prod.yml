@@ -158,7 +158,9 @@ services:
     networks:
       - tz-app-db
 
-  # ── Redis (зарезервирован: кэш/очереди/rate limiting; спека §7.4) ─────────
+  # ── Redis (обязательная прод-зависимость, таск 01/R03i: rate-limit + SSE) ──
+  # Без здорового Redis backend не стартует (config guard fail-fast) и не
+  # проходит readiness (503 -> алерт); depends_on ниже — fail-closed гейт.
   redis:
     image: redis:7-alpine
     container_name: tz-prod-redis
@@ -397,17 +399,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    depends_on:
-      db:
-        condition: service_healthy
-      db-replica:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      clamav:
-        condition: service_healthy
+    # R06i группа F (таск 16): у алертера нет жёстких depends_on. Он обязан
+    # стартовать при лежащих зависимостях и сообщать о них critical-статусом,
+    # а не блокироваться в ожидании service_healthy (иначе авария БД/бэкенда
+    # гасит и наблюдаемость). Проверки collect_checks fail-closed already.
     environment:
       ALERTER_READINESS_URL: ${ALERTER_READINESS_URL:-http://backend:8000/api/v1/ready}
       ALERTER_MINIO_HEALTH_URL: ${ALERTER_MINIO_HEALTH_URL:-http://minio:9000/minio/health/live}
@@ -435,6 +430,8 @@ services:
       BACKUP_OFFSITE_MARKER: ${BACKUP_OFFSITE_MARKER:-/backups/.offsite-status}
       WAL_OFFSITE_MARKER: ${WAL_OFFSITE_MARKER:-/backups/.wal-offsite-status}
       WAL_OFFSITE_MAX_AGE_SECONDS: ${WAL_OFFSITE_MAX_AGE_SECONDS:-300}
+      WAL_ARCHIVE_DIR: /wal-archive
+      WAL_ARCHIVE_MAX_AGE_SECONDS: ${WAL_ARCHIVE_MAX_AGE_SECONDS:-300}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     volumes:
