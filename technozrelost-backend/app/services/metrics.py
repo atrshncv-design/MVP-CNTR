@@ -23,10 +23,20 @@ from app.core.database import engine, read_engine
 
 _MAX_SAMPLES_PER_ROUTE = 500
 
+# Bounded-метка для несопоставленных путей (спека §2): сырой path никогда
+# не попадает в метки, иначе кардинальность растёт от входных данных.
+UNMATCHED_ROUTE = "unmatched"
+
 _http_total: dict[tuple[str, str, str], int] = defaultdict(int)
 _http_duration_samples: dict[tuple[str, str], deque[float]] = defaultdict(
     lambda: deque(maxlen=_MAX_SAMPLES_PER_ROUTE)
 )
+# Cumulative-счётчики латентности: deque обрезается окном 500 сэмплов для
+# квантилей, а _count/_sum обязаны оставаться монотонными — иначе rate() и
+# среднее sum/count на дашбордах врут после окна, а агрегаты двух реплик
+# не сходятся.
+_http_duration_count: dict[tuple[str, str], int] = defaultdict(int)
+_http_duration_sum: dict[tuple[str, str], float] = defaultdict(float)
 _db_queries_total = 0
 _db_query_errors_total = 0
 _lock = threading.Lock()
@@ -39,6 +49,8 @@ def reset() -> None:
     with _lock:
         _http_total.clear()
         _http_duration_samples.clear()
+        _http_duration_count.clear()
+        _http_duration_sum.clear()
         globals().update(_db_queries_total=0, _db_query_errors_total=0)
 
 
@@ -46,6 +58,8 @@ def observe_http(method: str, route: str, status: int, duration_seconds: float) 
     with _lock:
         _http_total[(method, route, str(status))] += 1
         _http_duration_samples[(method, route)].append(duration_seconds)
+        _http_duration_count[(method, route)] += 1
+        _http_duration_sum[(method, route)] += duration_seconds
 
 
 def db_query_observed() -> None:
@@ -68,6 +82,48 @@ def _fmt(value: float) -> str:
     return f"{value:.6f}"
 
 
+def escape_label_value(value: str) -> str:
+    """Экранирует значение метки по Prometheus exposition format 0.0.4.
+
+    Почему отдельная функция: сырой путь с кавычкой/бэкслэшем/переводом
+    строки ломает разбор всего /metrics до рестарта процесса.
+    """
+    return value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
+
+
+def build_route_templates(routes: Any) -> dict[int, str]:
+    """Строит карту id(endpoint) -> шаблон пути для меток (спека, §2).
+
+    Почему обходом effective-контекстов, а не app.routes напрямую: FastAPI
+    держит включённые роутеры ленивыми заглушками в app.routes, поэтому
+    прямой обход видел только /docs и все метки вырождались в bounded
+    "unmatched". Duck-typing по effective_route_contexts вместо импорта
+    приватного класса — чтобы не привязываться к версии FastAPI; у
+    контекста берём .path (полный шаблон с префиксом) и .endpoint (тот же
+    объект, что роутер кладёт в scope и видит middleware).
+    """
+    templates: dict[int, str] = {}
+    for route in routes or []:
+        contexts_fn = getattr(route, "effective_route_contexts", None)
+        if callable(contexts_fn):
+            for ctx in contexts_fn():
+                endpoint = getattr(ctx, "endpoint", None)
+                if endpoint is None:
+                    original = getattr(ctx, "original_route", None)
+                    endpoint = getattr(original, "endpoint", None)
+                path = getattr(ctx, "path", None) or getattr(
+                    getattr(ctx, "starlette_route", None), "path", None
+                )
+                if endpoint is not None and path:
+                    templates.setdefault(id(endpoint), path)
+            continue
+        endpoint = getattr(route, "endpoint", None)
+        path = getattr(route, "path", None)
+        if endpoint is not None and path:
+            templates.setdefault(id(endpoint), path)
+    return templates
+
+
 def render(
     queue_pending: int = 0,
     storage_up: int = 0,
@@ -88,6 +144,8 @@ def render(
         duration_snapshots = {
             key: sorted(samples) for key, samples in _http_duration_samples.items()
         }
+        duration_totals = dict(_http_duration_count)
+        duration_sums = dict(_http_duration_sum)
         db_queries_total = _db_queries_total
         db_query_errors_total = _db_query_errors_total
 
@@ -98,9 +156,10 @@ def render(
     )
     lines.append("# TYPE technozrelost_http_requests_total counter")
     for (method, route, status), count in http_total:
+        route_esc = escape_label_value(route)
         lines.append(
             f'technozrelost_http_requests_total{{method="{method}",'
-            f'route="{route}",status="{status}"}} {count}'
+            f'route="{route_esc}",status="{status}"}} {count}'
         )
 
     lines.append(
@@ -109,22 +168,25 @@ def render(
     )
     lines.append("# TYPE technozrelost_http_request_duration_seconds summary")
     for (method, route), samples in sorted(duration_snapshots.items()):
-        sample_sum = sum(samples)
+        route_esc = escape_label_value(route)
+        # _count/_sum — cumulative (не len(samples): окно квантилей обрезано).
+        total_count = duration_totals.get((method, route), len(samples))
+        total_sum = duration_sums.get((method, route), sum(samples))
         lines.append(
             f'technozrelost_http_request_duration_seconds{{method="{method}",'
-            f'route="{route}",quantile="0.5"}} {_fmt(_quantile(samples, 0.5))}'
+            f'route="{route_esc}",quantile="0.5"}} {_fmt(_quantile(samples, 0.5))}'
         )
         lines.append(
             f'technozrelost_http_request_duration_seconds{{method="{method}",'
-            f'route="{route}",quantile="0.95"}} {_fmt(_quantile(samples, 0.95))}'
+            f'route="{route_esc}",quantile="0.95"}} {_fmt(_quantile(samples, 0.95))}'
         )
         lines.append(
             f'technozrelost_http_request_duration_seconds_sum{{method="{method}",'
-            f'route="{route}"}} {_fmt(sample_sum)}'
+            f'route="{route_esc}"}} {_fmt(total_sum)}'
         )
         lines.append(
             f'technozrelost_http_request_duration_seconds_count{{method="{method}",'
-            f'route="{route}"}} {len(samples)}'
+            f'route="{route_esc}"}} {total_count}'
         )
 
     lines.append("# HELP technozrelost_db_queries_total SQL-запросы к БД (Primary).")
@@ -175,33 +237,57 @@ class PrometheusMetricsMiddleware:
 
     Чистая ASGI (не BaseHTTPMiddleware) — не буферизует стримы (SSE) и
     не вмешивается в ответы. Route-шаблон берётся из маппинга endpoint → путь
-    (Starlette кладёт endpoint в scope при роутинге); для не-роутed путей
-    (404 и т.п.) используется сырой path.
+    (Starlette кладёт endpoint в scope при роутинге); для несопоставленных
+    путей (404 и т.п.) — одна bounded-метка UNMATCHED_ROUTE, сырой path
+    в метки не попадает никогда.
     """
 
     def __init__(self, app: Any, route_templates: dict[int, str] | None = None) -> None:
         self.app = app
         self.route_templates = route_templates or {}
 
+    def _resolve_route(self, scope: dict[str, Any]) -> str:
+        """Шаблон пути по endpoint из scope; unknown → bounded-метка.
+
+        Почему лениво (в момент ответа, а не входа): middleware стоит снаружи
+        роутера, и на входе scope ещё не содержит endpoint — резолв на входе
+        всегда давал бы сырой path и неограниченную кардинальность.
+        """
+        endpoint = scope.get("endpoint")
+        if endpoint is not None:
+            template = self.route_templates.get(id(endpoint))
+            if template is not None:
+                return template
+        return UNMATCHED_ROUTE
+
     async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
         if scope.get("type") != "http":
             await self.app(scope, receive, send)
             return
         method = scope.get("method", "GET")
-        route = self.route_templates.get(id(scope.get("endpoint")), scope.get("path", "") or "")
         started = time.perf_counter()
         status = {"code": 500}
 
         async def wrapped_send(message: dict[str, Any]) -> None:
             if message.get("type") == "http.response.start":
                 status["code"] = int(message.get("status", 500))
-                observe_http(method, route, status["code"], time.perf_counter() - started)
+                observe_http(
+                    method,
+                    self._resolve_route(scope),
+                    status["code"],
+                    time.perf_counter() - started,
+                )
             await send(message)
 
         try:
             await self.app(scope, receive, wrapped_send)
         except Exception:
-            observe_http(method, route, status["code"], time.perf_counter() - started)
+            observe_http(
+                method,
+                self._resolve_route(scope),
+                status["code"],
+                time.perf_counter() - started,
+            )
             raise
 
 

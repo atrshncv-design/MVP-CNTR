@@ -45,11 +45,138 @@ def test_http_counter_uses_route_template(client: TestClient) -> None:
     assert _metric_value(body, "technozrelost_http_requests_total") >= 1
 
 
-def test_http_unknown_path_falls_back_to_raw_path(client: TestClient) -> None:
+def test_unique_ids_do_not_explode_cardinality(client: TestClient) -> None:
+    """R03i/история 5: 1000 запросов с уникальными ID не растят число серий.
+
+    Шов HTTP: дергаем параметризованный роут с уникальными ID и пачку
+    неизвестных путей, затем считаем DISTINCT значений метки route= в
+    exposition /metrics. Ожидаем: шаблон /api/v1/news/{news_id} + одна
+    bounded-метка для несопоставленных + служебные — не более 5 значений,
+    сырых ID в теле нет.
+    """
+    metrics.reset()
+    for i in range(1000):
+        # несуществующий int-ID: роут сматчен, handler отдаёт 404
+        assert client.get(f"/api/v1/news/{900000 + i}").status_code == 404
+    for i in range(200):
+        assert client.get(f"/api/v1/no-such-endpoint-{i}").status_code == 404
+    body = client.get("/api/v1/metrics").text
+    routes = set(
+        re.findall(r'^technozrelost_http_requests_total\{[^}]*route="([^"]*)"', body, re.M)
+    )
+    assert '/api/v1/news/{news_id}' in routes
+    assert len(routes) <= 5, f"кардинальность взорвалась: {sorted(routes)}"
+    assert "no-such-endpoint-" not in body
+
+
+def test_http_unknown_path_uses_bounded_label(client: TestClient) -> None:
+    """R03i/история 5: несопоставленные пути — одна bounded-метка.
+
+    Сырой path в метки не попадает никогда, иначе кардинальность растёт
+    от входных данных (спека, §2).
+    """
     metrics.reset()
     assert client.get("/api/v1/no-such-endpoint").status_code == 404
     body = client.get("/api/v1/metrics").text
-    assert 'route="/api/v1/no-such-endpoint"' in body
+    assert 'route="unmatched"' in body
+    assert "no-such-endpoint" not in body
+
+
+_METRIC_LINE_RE = re.compile(r"^[a-z_:][a-z0-9_:]*(\{[^{}]*\})? [0-9eE+.\-]+$")
+
+
+def _exposition_data_lines(body: str) -> list[str]:
+    """Непустые не-комментарные строки exposition."""
+    return [ln for ln in body.splitlines() if ln and not ln.startswith("#")]
+
+
+def test_nasty_path_does_not_break_exposition(client: TestClient) -> None:
+    """R03i/история 5: путь с кавычкой/бэкслэшем не ломает разбор /metrics."""
+    metrics.reset()
+    assert client.get("/api/v1/%22quoted%22%5Cpath%0Ainjection").status_code == 404
+    response = client.get("/api/v1/metrics")
+    assert response.status_code == 200
+    body = response.text
+    assert 'route="unmatched"' in body
+    assert "quoted" not in body
+    for line in _exposition_data_lines(body):
+        assert _METRIC_LINE_RE.match(line), f"строка ломает exposition: {line!r}"
+
+
+def test_label_values_escaped_in_exposition() -> None:
+    """R03i/история 5: значения меток экранируются по exposition 0.0.4."""
+    metrics.reset()
+    metrics.observe_http("GET", '/api/v1/we"ird\\route\nx', 200, 0.01)
+    body = metrics.render()
+    assert 'route="/api/v1/we\\"ird\\\\route\\nx"' in body
+    for line in _exposition_data_lines(body):
+        assert _METRIC_LINE_RE.match(line), f"строка ломает exposition: {line!r}"
+
+
+def test_duration_count_sum_stay_cumulative_after_window(
+    client: TestClient,
+) -> None:
+    """R03i/история 5: _count/_sum монотонны после окна 500 сэмплов.
+
+    Шов HTTP: нагрузка — тем же observe_http, что зовёт middleware, чтение —
+    через GET /metrics. Дашборд считает среднее как rate(sum)/rate(count).
+    """
+    metrics.reset()
+    for _ in range(600):
+        metrics.observe_http("GET", "/api/v1/health", 200, 0.02)
+    body = client.get("/api/v1/metrics").text
+    count = re.search(
+        r'technozrelost_http_request_duration_seconds_count'
+        r'\{method="GET",route="/api/v1/health"\} (\d+)',
+        body,
+    )
+    assert count is not None, f"count-серия не найдена:\n{body}"
+    assert int(count.group(1)) == 600
+    total = re.search(
+        r'technozrelost_http_request_duration_seconds_sum'
+        r'\{method="GET",route="/api/v1/health"\} ([0-9.]+)',
+        body,
+    )
+    assert total is not None, f"sum-серия не найдена:\n{body}"
+    assert abs(float(total.group(1)) - 12.0) < 0.01
+
+
+def test_two_replicas_scrape_as_separate_instances(client: TestClient) -> None:
+    """R03i/история 5: приложение не ставит app-level instance-меток.
+
+    Инстанс различает сам Prometheus по цели скрапа; серии одноименны,
+    а счётчики двух реплик складываются (агрегаты сходятся).
+    """
+    metrics.reset()
+    body = client.get("/api/v1/metrics").text
+    assert "instance=" not in body
+    assert "pod=" not in body
+    assert "hostname=" not in body
+    metrics.reset()
+    for _ in range(3):
+        metrics.observe_http("GET", "/api/v1/health", 200, 0.01)
+    replica_a = metrics.render()
+    metrics.reset()
+    for _ in range(5):
+        metrics.observe_http("GET", "/api/v1/health", 200, 0.01)
+    replica_b = metrics.render()
+
+    def total_count(exposition: str) -> int:
+        match = re.search(
+            r'^technozrelost_http_requests_total\{method="GET",'
+            r'route="/api/v1/health",status="200"\} (\d+)$',
+            exposition,
+            re.M,
+        )
+        assert match, f"серия не найдена:\n{exposition}"
+        return int(match.group(1))
+
+    assert total_count(replica_a) == 3
+    assert total_count(replica_b) == 5
+    assert total_count(replica_a) + total_count(replica_b) == 8
+    def names(exposition: str) -> list[str]:
+        return sorted({ln.split("{")[0] for ln in _exposition_data_lines(exposition)})
+    assert names(replica_a) == names(replica_b)
 
 
 def test_db_queries_counter_increments(client: TestClient) -> None:

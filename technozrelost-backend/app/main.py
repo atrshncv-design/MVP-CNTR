@@ -49,7 +49,11 @@ from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.errors import CATALOG, get_message, locale_from_request
 from app.core.logging_config import request_id_ctx, setup_logging
-from app.services.metrics import PrometheusMetricsMiddleware, install_db_listeners
+from app.services.metrics import (
+    PrometheusMetricsMiddleware,
+    build_route_templates,
+    install_db_listeners,
+)
 from app.services.news_scheduler import (
     SCHEDULER_INTERVAL_SECONDS,
     process_scheduled_posts,
@@ -120,6 +124,13 @@ class LimitRequestBodyMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        # R04i: бесконечный SSE-стрим — мимо буферизации тела. Replay ниже
+        # синтезирует http.disconnect сразу после тела, а BaseHTTPMiddleware
+        # (security_headers) на бесконечном ответе падает с 500 до первого
+        # чанка. Стрим — GET без тела, лимит ему не нужен.
+        if scope.get("path") == "/api/v1/notifications/stream":
             await self.app(scope, receive, send)
             return
         headers = Headers(scope=scope)
@@ -283,14 +294,11 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(LimitRequestBodyMiddleware)
     app.middleware("http")(security_headers)
-    # Метрики: route-шаблоны для меток (Starlette кладёт endpoint в scope при
-    # роутинге; маппинг endpoint -> путь даёт ограниченную кардинальность).
+    # Метрики: словарь передаём по ссылке и заполняем ПОСЛЕ всех include_router
+    # (до подключения роутеров app.routes пуст и метки вырождались бы в сырые
+    # path с неограниченной кардинальностью). Starlette кладёт endpoint в scope
+    # при роутинге; middleware резолвит шаблон лениво, в момент ответа.
     route_templates: dict[int, str] = {}
-    for route in app.routes:
-        endpoint = getattr(route, "endpoint", None)
-        path = getattr(route, "path", None)
-        if endpoint is not None and path is not None:
-            route_templates[id(endpoint)] = path
     app.add_middleware(PrometheusMetricsMiddleware, route_templates=route_templates)
     # P-10: X-Request-ID — outermost, чтобы покрыть метрики и exception_handler
     app.add_middleware(RequestIDMiddleware)
@@ -324,6 +332,10 @@ def create_app() -> FastAPI:
     app.include_router(news_router, prefix="/api/v1")
     app.include_router(achievements_router, prefix="/api/v1")
     app.include_router(project_achievements_router, prefix="/api/v1")
+    # Карта шаблонов для меток (R03i/история 5): обходом effective-контекстов
+    # include-роутеров — прямой обход app.routes видит только /docs, т.к.
+    # FastAPI держит включённые роутеры ленивыми заглушками.
+    route_templates.update(build_route_templates(app.routes))
     return app
 
 
