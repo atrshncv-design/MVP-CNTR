@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Request, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select, update
 
 from app.api.v1.projects import get_project_or_404, require_project_access
 from app.core.deps import CurrentUser, DBSession, require_role
@@ -142,8 +142,6 @@ async def accept_invite(
         raise raise_error("INVITE_REVOKED", request=request)
     if invite.expires_at is not None and invite.expires_at < now:
         raise raise_error("INVITE_EXPIRED", request=request)
-    if invite.used_count >= invite.max_uses:
-        raise raise_error("INVITE_LIMIT", request=request)
     if invite.allowed_roles and payload.role_in_project not in invite.allowed_roles:
         raise raise_error(
             "INVITE_ROLE_NOT_ALLOWED",
@@ -152,9 +150,50 @@ async def accept_invite(
         )
 
     project = await get_project_or_404(db, invite.project_id)
+    pre_existing = await _membership(db, project.id, user.id)
+    if pre_existing is not None and pre_existing.status == "active":
+        raise raise_error("INVITE_ALREADY_MEMBER", request=request)
+
+    # P3 (таск 15, R06i): атомарный claim слота — одним UPDATE с условием
+    # «ещё есть свободные использования, не отозван и не истёк».
+    # Почему так: check-then-act (SELECT used_count, затем +=1) проигрывает
+    # гонку всегда — N параллельных accept видят used_count=0 и вступают все.
+    # Атомарный UPDATE берёт строковую блокировку: побеждает один (RETURNING
+    # вернул строку), остальные видят 0 строк и уходят в 409 (как refresh,
+    # таск 06: UPDATE ... WHERE revoked_at IS NULL ... RETURNING user_id).
+    claimed = await db.execute(
+        update(ProjectInvite)
+        .where(
+            ProjectInvite.id == invite.id,
+            ProjectInvite.used_count < ProjectInvite.max_uses,
+            ProjectInvite.revoked_at.is_(None),
+            or_(
+                ProjectInvite.expires_at.is_(None),
+                ProjectInvite.expires_at >= now,
+            ),
+        )
+        .values(used_count=ProjectInvite.used_count + 1)
+        .returning(ProjectInvite.id)
+    )
+    if claimed.fetchone() is None:
+        # Слот не достался: точную причину отдаём тем же швом ошибок.
+        fresh = await db.scalar(
+            select(ProjectInvite).where(ProjectInvite.token == token)
+        )
+        if fresh is None:
+            raise raise_error("INVITE_NOT_FOUND", request=request)
+        if fresh.revoked_at is not None:
+            raise raise_error("INVITE_REVOKED", request=request)
+        if fresh.expires_at is not None and fresh.expires_at < datetime.now(UTC):
+            raise raise_error("INVITE_EXPIRED", request=request)
+        raise raise_error("INVITE_LIMIT", request=request)
+
+    # Повторная проверка после claim: параллельный double-accept того же
+    # пользователя мог вступить первым — тогда слот не тратим (откат claim).
     existing = await _membership(db, project.id, user.id)
     if existing is not None:
         if existing.status == "active":
+            await db.rollback()
             raise raise_error("INVITE_ALREADY_MEMBER", request=request)
         existing.status = "active"
         existing.role_in_project = payload.role_in_project
@@ -170,7 +209,6 @@ async def accept_invite(
             )
         )
 
-    invite.used_count += 1
     await db.commit()
     return {
         "status": "active",
