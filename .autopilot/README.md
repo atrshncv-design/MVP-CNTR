@@ -30,3 +30,4 @@
 | 2026-09-07 | `2026-09-07-backend-hardcode` | сдан | Ошибки API с кодами ru/en + лимит реестра в env, 403 passed |
 | 2026-09-07 | `2026-09-07-registry-limits-env` | сдан | Лимиты реестра в env, дефолты те же, 405 passed |
 | 2026-09-08 | `2026-09-08-audit-remediation` | сдан | 22 таска: аудит-фиксы + zh до конца, hi убран, входы и тоггл починены; приёмка pass |
+| 2026-09-10 | `2026-09-10-deep-repository-audit` | сдан | Глубокий аудит: 66 находок (Critical 1, High 25), AUDIT_REPORT.md + AUDIT_FINDINGS.json, G4 pass, код не менялся |
