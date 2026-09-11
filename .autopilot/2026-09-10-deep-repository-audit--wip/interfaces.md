@@ -73,6 +73,7 @@ severity, confidence и фактов. Не создавать находку р�
 ## Из таска 06
 
 - Evidence: `evidence/06-devops-production.md`; 10 infra-кандидатов; live production drills не выполнялись.
+- Консолидация: B06-001 Medium dev-only; B06-009 Probable без load-стенда; B06-010 dedup с 07, B06-009 с 08; SHA зафиксировать e87267d; alerter строки ±10.
 
 ## Из таска 07
 
