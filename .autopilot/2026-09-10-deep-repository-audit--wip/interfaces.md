@@ -85,6 +85,11 @@ severity, confidence и фактов. Не создавать находку р�
 - Evidence: `evidence/08-performance-resilience.md`; capacity tiers только расчётные, не load-tested.
 - Консолидация: P08-03/04 dedup с DB-14/DB-03; P08-07 ссылка на B06-009; P08-06/08 dedup с T06; leak Confirmed + slope Probable; порог от 2GiB; uniform RU.
 
+## Из таска 10
+
+- Артефакты: `AUDIT_REPORT.md`, `AUDIT_FINDINGS.json` (66 ID AUD-001..066; Critical 1, High 25, Medium 35, Low 5; Confirmed 58, Probable 7, Suspicious 1); `evidence/10-consolidation.md`.
+- Инвариант: MD-таблица §9.1 == детали §8 == JSON; сводки исправлены после craft-ревью; Ruff тулинг не переносится; suites по ссылке.
+
 ## Из таска 09
 
 - Evidence: `evidence/09-business-traceability.md`; B-01..B-11, 0 новых ID, dedup к T01-T05.

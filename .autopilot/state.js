@@ -24,7 +24,7 @@ window.STATE =
     { "id": "final", "status": "pending" }
   ],
   "requirements": {
-    "total": 43, "done": 0, "inTicket": 43, "inSpec": 0,
+    "total": 43, "done": 43, "inTicket": 0, "inSpec": 0,
     "placeholder": 0, "deferred": 0, "dropped": 0
   },
   "tickets": [
@@ -36,8 +36,8 @@ window.STATE =
     { "id": "06", "title": "DevOps, production security и восстановление", "requirements": ["R24-R27", "R33", "R42i"], "blockedBy": [], "wave": 1, "zone": ["evidence/06"], "status": "done", "startedAt": "2026-09-10T09:13:13+04:00", "finishedAt": "2026-09-11T09:30:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 0, "failed": 0 }, "commit": "431625e" },
     { "id": "07", "title": "Сборка, зависимости, тесты и CI", "requirements": ["R17", "R31", "R32", "R42i"], "blockedBy": [], "wave": 1, "zone": ["evidence/07"], "status": "done", "startedAt": "2026-09-10T09:31:00+04:00", "finishedAt": "2026-09-11T09:35:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 212, "failed": 0 }, "commit": "ed1e18d" },
     { "id": "08", "title": "Производительность и масштабирование", "requirements": ["R26", "R27", "R33"], "blockedBy": [], "wave": 1, "zone": ["evidence/08"], "status": "done", "startedAt": "2026-09-10T09:31:00+04:00", "finishedAt": "2026-09-11T09:40:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 0, "failed": 0 }, "commit": "22a38e9" },
-    { "id": "09", "title": "Сквозная бизнес-трассируемость", "requirements": ["R11-R16", "R34", "R35"], "blockedBy": ["01", "02", "03", "04", "05"], "wave": 2, "zone": ["evidence/09"], "status": "done", "startedAt": "2026-09-11T11:34:58+04:00", "finishedAt": "2026-09-11T11:50:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 10, "failed": 0 }, "commit": "PENDING09" },
-    { "id": "10", "title": "Консолидация отчёта и JSON", "requirements": ["R03-R10", "R12-R16", "R36-R41"], "blockedBy": ["01", "02", "03", "04", "05", "06", "07", "08", "09"], "wave": 3, "zone": ["AUDIT_REPORT.md", "AUDIT_FINDINGS.json", "evidence/10"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 }
+    { "id": "09", "title": "Сквозная бизнес-трассируемость", "requirements": ["R11-R16", "R34", "R35"], "blockedBy": ["01", "02", "03", "04", "05"], "wave": 2, "zone": ["evidence/09"], "status": "done", "startedAt": "2026-09-11T11:34:58+04:00", "finishedAt": "2026-09-11T11:50:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 10, "failed": 0 }, "commit": "aa82ab5" },
+    { "id": "10", "title": "Консолидация отчёта и JSON", "requirements": ["R03-R10", "R12-R16", "R36-R41"], "blockedBy": ["01", "02", "03", "04", "05", "06", "07", "08", "09"], "wave": 3, "zone": ["AUDIT_REPORT.md", "AUDIT_FINDINGS.json", "evidence/10"], "status": "done", "startedAt": "2026-09-11T11:55:00+04:00", "finishedAt": "2026-09-11T12:10:00+04:00", "retries": 0, "repairs": 1, "repairFindings": ["сводные цифры приведены к таблице/JSON: High 25/Medium 35/Confirmed 58/Probable 7"], "handoffs": 0, "tests": { "passed": 66, "failed": 0 }, "commit": "PENDING10" }
   ],
   "singlePass": null,
   "tests": null,
