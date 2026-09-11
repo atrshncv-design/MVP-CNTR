@@ -78,6 +78,7 @@ severity, confidence и фактов. Не создавать находку р�
 ## Из таска 07
 
 - Evidence: `evidence/07-build-tests-dependencies.md`; install/build/frontend 182 green, mypy 2 errors, frontend audit critical/high.
+- Консолидация: Next Critical только при reachable image/AVIF, иначе High; mypy High только если gate блокирует релиз; дописать dependencies BTD07-01/03/04; ограничение: нет ASGI smoke и nginx/alembic syntax.
 
 ## Из таска 08
 
