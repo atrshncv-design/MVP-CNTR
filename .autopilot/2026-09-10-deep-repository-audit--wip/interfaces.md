@@ -83,3 +83,4 @@ severity, confidence и фактов. Не создавать находку р�
 ## Из таска 08
 
 - Evidence: `evidence/08-performance-resilience.md`; capacity tiers только расчётные, не load-tested.
+- Консолидация: P08-03/04 dedup с DB-14/DB-03; P08-07 ссылка на B06-009; P08-06/08 dedup с T06; leak Confirmed + slope Probable; порог от 2GiB; uniform RU.
