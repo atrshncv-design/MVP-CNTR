@@ -68,6 +68,7 @@ severity, confidence и фактов. Не создавать находку р�
 ## Из таска 05
 
 - Evidence: `evidence/05-ai-files-security.md`; 05-01..05-08; focused LLM 7/7 и matching 7/7.
+- Консолидация: 05-01 Critical только если ключ реально настраивался; 05-05 cost Probable без нагрузки, dedup B02-004/DB-05; 05-07/08 смаппить с T02/T04 DB-07; capture-stub тесты, не реальные провайдеры.
 
 ## Из таска 06
 
