@@ -84,3 +84,8 @@ severity, confidence и фактов. Не создавать находку р�
 
 - Evidence: `evidence/08-performance-resilience.md`; capacity tiers только расчётные, не load-tested.
 - Консолидация: P08-03/04 dedup с DB-14/DB-03; P08-07 ссылка на B06-009; P08-06/08 dedup с T06; leak Confirmed + slope Probable; порог от 2GiB; uniform RU.
+
+## Из таска 09
+
+- Evidence: `evidence/09-business-traceability.md`; B-01..B-11, 0 новых ID, dedup к T01-T05.
+- Консолидация: verdict только ok/разрыв; сводку deep states не превращать в находки; suites по ссылке метить; SHA обновить.

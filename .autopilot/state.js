@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-09-10T08:31:19+04:00",
-  "updatedAt": "2026-09-11T09:15:00+04:00",
+  "updatedAt": "2026-09-11T11:34:58+04:00",
   "finishedAt": null,
   "stages": [
     { "id": "preflight", "status": "done", "startedAt": "2026-09-10T08:31:19+04:00", "finishedAt": "2026-09-10T08:33:00+04:00" },
@@ -35,8 +35,8 @@ window.STATE =
     { "id": "05", "title": "AI, RAG и файлы", "requirements": ["R24", "R25", "R28-R30", "R34", "R35"], "blockedBy": [], "wave": 1, "zone": ["evidence/05"], "status": "done", "startedAt": "2026-09-10T09:13:13+04:00", "finishedAt": "2026-09-11T09:25:00+04:00", "retries": 1, "repairs": 0, "handoffs": 0, "tests": { "passed": 14, "failed": 0 }, "commit": "c0cc4ea" },
     { "id": "06", "title": "DevOps, production security и восстановление", "requirements": ["R24-R27", "R33", "R42i"], "blockedBy": [], "wave": 1, "zone": ["evidence/06"], "status": "done", "startedAt": "2026-09-10T09:13:13+04:00", "finishedAt": "2026-09-11T09:30:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 0, "failed": 0 }, "commit": "431625e" },
     { "id": "07", "title": "Сборка, зависимости, тесты и CI", "requirements": ["R17", "R31", "R32", "R42i"], "blockedBy": [], "wave": 1, "zone": ["evidence/07"], "status": "done", "startedAt": "2026-09-10T09:31:00+04:00", "finishedAt": "2026-09-11T09:35:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 212, "failed": 0 }, "commit": "ed1e18d" },
-    { "id": "08", "title": "Производительность и масштабирование", "requirements": ["R26", "R27", "R33"], "blockedBy": [], "wave": 1, "zone": ["evidence/08"], "status": "done", "startedAt": "2026-09-10T09:31:00+04:00", "finishedAt": "2026-09-11T09:40:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 0, "failed": 0 }, "commit": "PENDING08" },
-    { "id": "09", "title": "Сквозная бизнес-трассируемость", "requirements": ["R11-R16", "R34", "R35"], "blockedBy": ["01", "02", "03", "04", "05"], "wave": 2, "zone": ["evidence/09"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "08", "title": "Производительность и масштабирование", "requirements": ["R26", "R27", "R33"], "blockedBy": [], "wave": 1, "zone": ["evidence/08"], "status": "done", "startedAt": "2026-09-10T09:31:00+04:00", "finishedAt": "2026-09-11T09:40:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 0, "failed": 0 }, "commit": "22a38e9" },
+    { "id": "09", "title": "Сквозная бизнес-трассируемость", "requirements": ["R11-R16", "R34", "R35"], "blockedBy": ["01", "02", "03", "04", "05"], "wave": 2, "zone": ["evidence/09"], "status": "done", "startedAt": "2026-09-11T11:34:58+04:00", "finishedAt": "2026-09-11T11:50:00+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 10, "failed": 0 }, "commit": "PENDING09" },
     { "id": "10", "title": "Консолидация отчёта и JSON", "requirements": ["R03-R10", "R12-R16", "R36-R41"], "blockedBy": ["01", "02", "03", "04", "05", "06", "07", "08", "09"], "wave": 3, "zone": ["AUDIT_REPORT.md", "AUDIT_FINDINGS.json", "evidence/10"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 }
   ],
   "singlePass": null,
