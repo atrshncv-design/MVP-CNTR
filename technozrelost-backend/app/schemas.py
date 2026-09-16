@@ -17,7 +17,7 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=1, max_length=255)
     organization: str | None = None
-    role_slug: str = Field(description="slug одной из 9 ролей, например 'gk_customer'")
+    role_slug: str = Field(description="slug одной из 8 ролей, например 'gk_customer'")
 
 
 class LoginIn(BaseModel):
