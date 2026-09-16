@@ -1,27 +1,12 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
-const exists = (p) => existsSync(new URL(`../${p}`, import.meta.url));
 
-test("matching: standalone mode /dashboard/matching exists and is accessible to all 8 roles", async () => {
-  assert.ok(exists("src/app/dashboard/matching/page.tsx"), "missing /dashboard/matching/page.tsx");
-  assert.ok(exists("src/features/matching/MatchingMode.tsx"), "missing MatchingMode");
-  assert.ok(exists("src/features/matching/sanitize.ts"), "missing sanitize");
-  assert.ok(exists("src/features/matching/MatchCard.tsx"), "missing MatchCard");
-
-  const roles = read("src/lib/roles.ts");
-  assert.match(roles, /"\/dashboard\/matching":\s*ALL_ROLES/);
-
-  const layout = read("src/app/dashboard/layout.tsx");
-  assert.match(layout, /\/dashboard\/matching/);
-  // подпись пункта — через словарь dashboard в обеих локалях (таск 04)
-  const { translatorFor } = await import("../src/lib/translators.ts");
-  assert.match(layout, /navMatching/);
-  assert.equal(translatorFor("dashboard", "ru")("navMatching"), "Подбор партнёра");
-  assert.equal(translatorFor("dashboard", "en")("navMatching"), "Partner matching");
-});
+// P2-gating (таск 02, G36): маршрут/матрица/навигация matching закрыты —
+// их держит tests/p2-gating.test.mjs. Ниже — пины P3-кода (features/matching):
+// код обезличивания и состояний остаётся в дереве нетронутым до P3.
 
 test("matching: form has project select from GET /projects + idea textarea + region/sector/ugt filters + Подобрать button", () => {
   const src = read("src/features/matching/MatchingMode.tsx");
@@ -64,11 +49,12 @@ test("matching: POST /match only with clean payload {title, annotation, sector, 
   assert.match(mode, /matchOrganizations/);
   // ensure no user.email in request
   assert.match(mode, /user\.email|organization.*ПДн|ПДн/);
-  // api-client sends Bearer
+  // P2-gating (таск 02, G36): api-client не шлёт POST /match —
+  // gated-заглушка 403, шов держит tests/p2-gating.test.mjs.
   const api = read("src/lib/api-client.ts");
   assert.match(api, /matchOrganizations/);
-  assert.match(api, /\/match/);
-  assert.match(api, /Authorization.*Bearer/);
+  assert.match(api, /p2GatedMessage/);
+  assert.doesNotMatch(api, /["`]\/match["`]/);
 });
 
 test("matching: result renders ≤5 cards with reasons, score not shown numerically, only verified orgs, Предложить через ЦНТР → Notification toast", () => {

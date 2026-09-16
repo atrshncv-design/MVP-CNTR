@@ -9,8 +9,6 @@ import {
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
 import UGTInteractiveScale from "@/components/landing/ugt-interactive-scale";
-import { getPublicRegistry } from "@/lib/api-client";
-import { toShowcaseCard, type ShowcaseCard } from "@/lib/landing-registry";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("landing");
@@ -22,15 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LandingHome() {
   const t = await getTranslations("landing");
-  const tUgt = await getTranslations("ugtData");
-  // Тизер живого публичного реестра (таск 13, R06i): первые 3 проекта API.
-  // Ошибка или пустота — честный фолбэк ниже, выдуманных карточек нет.
-  let showcaseTeaser: ShowcaseCard[] = [];
-  try {
-    showcaseTeaser = (await getPublicRegistry({ limit: 3 })).map(toShowcaseCard);
-  } catch {
-    showcaseTeaser = [];
-  }
+  // P2-gating (таск 02, G04/G35): публичная витрина реестра откроется в P3 —
+  // анонимного fetch реестра нет, тизер честно пуст и ведёт в регистрацию (ЛК).
   const STEPS = [
     {
       n: "01",
@@ -153,7 +144,7 @@ export default async function LandingHome() {
         </div>
       </section>
 
-      {/* ── Витрина проектов (тизер) ─────────────────────────────── */}
+      {/* ── Витрина проектов (P2: честное пустое состояние, живые данные — в P3) ── */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <Reveal>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -161,56 +152,15 @@ export default async function LandingHome() {
               <p className="tz-eyebrow">{t("showcaseEyebrow")}</p>
               <h2 className="mt-3 max-w-xl tz-page-title">{t("showcaseTitle")}</h2>
             </div>
-            <Link href="/projects" className="tz-btn tz-btn-ghost tz-btn-sm">
-              {t("showcaseAll")} <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
           </div>
         </Reveal>
-        {showcaseTeaser.length > 0 ? (
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {showcaseTeaser.map((p, i) => (
-              <Reveal key={p.id} delay={i * 0.06}>
-                <div className="tz-card tz-card-hover flex h-full flex-col p-5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className="rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold"
-                      style={{
-                        backgroundColor: `var(--tz-ugt-${p.current_level})18`,
-                        color: `var(--tz-ugt-${p.current_level})`,
-                      }}
-                    >
-                      {(() => { try { return tUgt(`code${p.current_level}`); } catch { return t("ugtBadge", { level: p.current_level }); }})()}
-                    </span>
-                    {p.category && (
-                      <span className="font-mono text-[11px] font-medium text-tz-muted">
-                        {p.category}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="tz-card-title mt-3 leading-snug">{p.name}</h3>
-                  {p.description && (
-                    <p className="mt-2 flex-1 text-[13px] leading-relaxed text-tz-secondary">
-                      {p.description}
-                    </p>
-                  )}
-                  {p.org && (
-                    <p className="mt-3 border-t border-tz-border/60 pt-3 text-[11.5px] text-tz-muted">
-                      {p.org}
-                    </p>
-                  )}
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-10 rounded-2xl border border-dashed border-tz-border bg-tz-surface/50 px-6 py-12 text-center">
-            <h3 className="font-display text-[16px] font-bold text-tz-fg">{t("showcaseEmptyTitle")}</h3>
-            <p className="mx-auto mt-2 max-w-xl text-[13.5px] text-tz-secondary">{t("showcaseEmptyHint")}</p>
-            <Link href="/projects" className="tz-btn tz-btn-ghost tz-btn-sm mt-5">
-              {t("showcaseAll")} <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        )}
+        <div className="mt-10 rounded-2xl border border-dashed border-tz-border bg-tz-surface/50 px-6 py-12 text-center">
+          <h3 className="font-display text-[16px] font-bold text-tz-fg">{t("showcaseEmptyTitle")}</h3>
+          <p className="mx-auto mt-2 max-w-xl text-[13.5px] text-tz-secondary">{t("showcaseEmptyHint")}</p>
+          <Link href="/register" className="tz-btn tz-btn-ghost tz-btn-sm mt-5">
+            {t("finalRegister")} <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </section>
 
       {/* ── Финальный CTA ────────────────────────────────────────── */}

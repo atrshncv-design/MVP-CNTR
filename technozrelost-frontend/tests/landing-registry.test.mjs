@@ -21,41 +21,28 @@ test("landing showcase: живые данные реестра, без demo-за
   assert.doesNotMatch(src, /lib\/showcase/);
 });
 
-test("api-client: публичный реестр без токена, keyset-пагинация", () => {
+test("api-client: публичный реестр закрыт в P2 (шов в tests/p2-gating.test.mjs)", () => {
+  // P2-gating (таск 02, G04/G35): getPublicRegistry — gated-заглушка 403,
+  // анонимного fetch GET /projects/registry нет. Детали — p2-gating.test.mjs.
   const src = read("src/lib/api-client.ts");
   assert.match(src, /export function getPublicRegistry/);
-  const body = src.slice(
-    src.indexOf("export function getPublicRegistry"),
-    src.indexOf("export function getPublicRegistry") + 1200,
-  );
-  assert.match(body, /publicApiRequest/);
-  assert.match(body, /\/projects\/registry/);
-  assert.match(body, /after_id/);
-  assert.match(body, /limit/);
-  assert.match(body, /ugt_min/);
-  assert.match(body, /ugt_max/);
-  assert.doesNotMatch(body, /Authorization/);
-  const helper = src.slice(
-    src.indexOf("async function publicApiRequest"),
-    src.indexOf("async function publicApiRequest") + 500,
-  );
-  assert.doesNotMatch(helper, /Authorization/);
+  assert.match(src, /p2GatedMessage/);
 });
 
-test("landing home: тизер витрины на живых данных, без demo", () => {
+test("landing home: витрина P2 — честное пустое состояние без живого fetch (шов в p2-gating)", () => {
+  // P2-gating (таск 02, G04/G35): главную проверяет tests/p2-gating.test.mjs
+  // (нет getPublicRegistry и ссылок на /projects). Здесь — словарь фолбэка цел.
   const src = read("src/app/(landing)/page.tsx");
-  assert.match(src, /getPublicRegistry/);
   assert.match(src, /showcaseEmptyTitle/);
   assert.match(src, /showcaseEmptyHint/);
-  assert.doesNotMatch(src, /getShowcaseProjects/);
-  assert.doesNotMatch(src, /lib\/showcase/);
+  assert.doesNotMatch(src, /getPublicRegistry/);
 });
 
-test("landing projects page: SSR первой страницы реестра", () => {
+test("landing projects page: P2-плейсхолдер без SSR реестра (шов в p2-gating)", () => {
+  // P2-gating (таск 02, G04): страницу проверяет tests/p2-gating.test.mjs.
   const src = read("src/app/(landing)/projects/page.tsx");
-  assert.match(src, /getPublicRegistry/);
-  assert.match(src, /initialItems/);
-  assert.match(src, /initialError/);
+  assert.doesNotMatch(src, /getPublicRegistry/);
+  assert.match(src, /href="\/register"/);
 });
 
 test("landing showcase: пустой реестр — честное пустое состояние с CTA", () => {

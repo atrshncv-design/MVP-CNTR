@@ -24,8 +24,8 @@ const CORE_NAVIGATION = [
   { href: "/dashboard", labelKey: "navWorkspace" },
   { href: "/dashboard/projects", labelKey: "navProjects" },
   { href: "/dashboard/gk_customer/projects/new", labelKey: "navRequests" },
-  // Тикет 05: отдельный режим подбора — доступен всем 8 ролям (R23, G27).
-  { href: "/dashboard/matching", labelKey: "navMatching" },
+  // Подбор партнёра скрыт в P2 (таск 02, G36) — вернётся в P3 вместе с
+  // маршрутом /dashboard/matching и матрицей ролей.
 ] as const;
 
 /** Инициалы для аватара профиля. */
