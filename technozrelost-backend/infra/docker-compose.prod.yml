@@ -27,6 +27,13 @@ services:
     image: pgvector/pgvector:0.8.0-pg16
     container_name: tz-prod-db-primary
     restart: unless-stopped
+    # P1 (таск 04): жёсткий ресурсный конверт — сумма лимитов памяти всех
+    # сервисов не выше 8 ГиБ (см. таблицу в README-DEPLOY.md).
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1536M
     logging:
       driver: json-file
       options:
@@ -71,6 +78,11 @@ services:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     container_name: tz-prod-minio
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
     logging:
       driver: json-file
       options:
@@ -105,7 +117,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
+          cpus: '1.0'
           # P1: ClamAV 1–2 ГиБ (локальный замер 7 МиБ снят с нездорового
           # демона и нерепрезентативен).
           memory: 2G
@@ -127,12 +139,19 @@ services:
     image: redis:7-alpine
     container_name: tz-prod-redis
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD обязателен}"]
+    # P1 (таск 04): явная политика вытеснения в пределах лимита контейнера
+    # (preflight сверяет maxmemory с лимитом выше).
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD обязателен}", "--maxmemory", "${REDIS_MAXMEMORY:-200mb}", "--maxmemory-policy", "${REDIS_MAXMEMORY_POLICY:-allkeys-lru}"]
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD обязателен}
     volumes:
@@ -163,7 +182,9 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 2G
+          # P1 (таск 04): образ ~682 МБ распакованным + рабочий запас;
+          # входит в суммарный потолок 8 ГиБ.
+          memory: 1536M
     environment:
       APP_ENV: production
       # P1: единственная БД — Primary (запись и чтение, включая реестры).
@@ -249,6 +270,11 @@ services:
   backup-timer:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
     logging:
       driver: json-file
       options:
@@ -307,6 +333,11 @@ services:
   wal-offsite:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: 128M
     logging:
       driver: json-file
       options:
@@ -346,6 +377,11 @@ services:
   alerter:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
     logging:
       driver: json-file
       options:
@@ -407,6 +443,11 @@ services:
         API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000}
     container_name: tz-prod-frontend
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 768M
     logging:
       driver: json-file
       options:
@@ -438,6 +479,11 @@ services:
     image: nginx:1.27-alpine
     container_name: tz-prod-nginx
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
     logging:
       driver: json-file
       options:
@@ -468,6 +514,17 @@ services:
     image: prom/prometheus:v2.54.1
     container_name: tz-prod-prometheus
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
+    # P1 (таск 04): ограниченный ретеншн — время и размер (preflight требует оба).
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=${PROM_RETENTION_TIME:-15d}"
+      - "--storage.tsdb.retention.size=${PROM_RETENTION_SIZE:-10GB}"
     logging:
       driver: json-file
       options:
@@ -497,6 +554,11 @@ services:
     image: grafana/grafana:11.2.0
     container_name: tz-prod-grafana
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
     logging:
       driver: json-file
       options:

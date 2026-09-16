@@ -359,6 +359,15 @@ validate_timeout() {
   fi
 }
 
+run_preflight() {
+  # P1 (таск 04): ресурсный гейт ДО сборки и миграций — слабая машина
+  # отклоняется до любых изменений. Без демона Docker, без секретов в выводе.
+  if ! python3 ./preflight.py; then
+    echo "ОШИБКА: preflight не пройден — машина слабее цели 6 vCPU / 11 ГиБ / 150 ГБ либо превышен бюджет 8 ГиБ." >&2
+    return 1
+  fi
+}
+
 case "${1:-deploy}" in
   deploy)
     if [ "$#" -gt 1 ]; then
@@ -368,6 +377,7 @@ case "${1:-deploy}" in
     prepare_environment
     validate_timeout
     validate_replicas
+    run_preflight
     IMAGE_TAG="$(git rev-parse --short=12 HEAD 2>/dev/null)" || {
       echo "ОШИБКА: не удалось определить git SHA для image tag." >&2
       exit 1
@@ -409,6 +419,7 @@ case "${1:-deploy}" in
     prepare_environment
     validate_timeout
     validate_replicas
+    run_preflight
     rollback_to_tag "$2"
     ;;
   check-env)
