@@ -8,8 +8,16 @@
 ```
 technozrelost-backend/   — FastAPI + PostgreSQL (pgvector) + MinIO + ClamAV
 technozrelost-frontend/  — Next.js (App Router) + NextAuth
-docs/                    — трекеры тикетов, спека, release-отчёт (.scratch)
+docs/                    — актуальные планы, ADR, эксплуатационная документация
+docs/archive/            — история, исключённая из обычного поиска агентов
+.autopilot/              — текущий прогон и дашборд
+.autopilot/archive/      — завершённые прогоны Autopilot
+reports/                 — проверяемые отчёты и артефакты прогонов
 ```
+
+Начальная точка для агента: `AGENTS.md` → `docs/Plan.md` → нужный участок кода.
+Архивы открываются только по прямой необходимости и не являются источником
+текущего состояния.
 
 ## Быстрый старт (локально)
 

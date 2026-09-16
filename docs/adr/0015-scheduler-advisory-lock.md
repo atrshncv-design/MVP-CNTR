@@ -40,5 +40,5 @@
 - `technozrelost-backend/Dockerfile:53` `CMD ["/app/backend-entrypoint.sh"]` — без `--workers`, коммент `workers>1 forbidden per ADR-0015`
 - `technozrelost-backend/infra/backend-entrypoint.sh:4` коммент «один uvicorn-воркер на контейнер», `exec uvicorn ... --port 8000` без workers, `MIGRATION_LOCK=732018`
 - `technozrelost-backend/infra/docker-compose.prod.yml:190` `backend` `deploy.replicas: 2`, `nginx` upstream `technozrelost_api`
-- SPEC-07 `docs/remediation/specs/SPEC-07-scheduler-scale.md` (I-01, I-02, P-15), тикет `docs/remediation/tickets/TICKET-15-scheduler-adr.md`, FR-01..FR-04
+- SPEC-07 `docs/archive/remediation/audit-remediation/specs/SPEC-07-scheduler-scale.md` (I-01, I-02, P-15), тикет `docs/archive/remediation/audit-remediation/tickets/TICKET-15-scheduler-adr.md`, FR-01..FR-04
 - Альтернативы: `pg_cron` docs, Celery Beat, `infra/README-LOADTEST.md` профиль 70/20/8/2 — масштаб без дубля

@@ -1,7 +1,7 @@
 # RUNBOOK — Сохранность данных (бэкапы / WAL-PITR / offsite)
 
 Таски INF-01..INF-04 прогона m0-security-hardening. Владелец модуля `infra/data-safety`
-(границы — `.autopilot/2026-08-26-m0-security-hardening--wip/interfaces.md`).
+(границы — `.autopilot/archive/runs/2026-08-26-m0-security-hardening/interfaces.md`).
 
 ## Целевые показатели
 

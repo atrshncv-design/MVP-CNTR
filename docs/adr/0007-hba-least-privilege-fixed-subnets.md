@@ -26,7 +26,7 @@
 - *Запекание HBA в образ* — отвергнуто: правило доступа становится неизменяемым без пересборки образа, теряется возможность ротации без релиза; mount позволяет менять политику без смены артефакта.
 
 ## References
-- `.autopilot/2026-08-26-m0-security-hardening--wip/spec.md` — INF-03 (max_slot_wal_keep_size), общий принцип fail-closed; решения §пул/§WAL задают стиль least-privilege
+- `.autopilot/archive/runs/2026-08-26-m0-security-hardening/spec.md` — INF-03 (max_slot_wal_keep_size), общий принцип fail-closed; решения §пул/§WAL задают стиль least-privilege
 - `manifest.md` R09, R17i — G1 требует доказуемой изоляции контуров
 - `docs/Plan.md` §M0/DoD — prod-подобный стенд как истина, контракт-тесты как gate
 - `docs/BACKLOG.md` P-01/INF-03 — согласование пулов и защита primary от переполнения слота (контекст сетевой изоляции репликации)

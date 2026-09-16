@@ -63,8 +63,8 @@ backend, отдельный диск/бакет под MinIO и бэкапы, д
 - Состав контура и лимиты: `technozrelost-backend/infra/docker-compose.prod.yml`
 (backend cpus 1.0/memory 2G ×2, clamav 2.0/4G, сервисы db, db-replica, minio, clamav,
 redis, backend, backup-timer, wal-offsite, alerter, frontend, nginx, prometheus, grafana).
-- Методика CPU/RAM/диск/сеть/LLM и потолки 10k/500 RPS: `.autopilot/2026-08-30-server-infrastructure-requirements/spec.md`.
-- Границы модулей и швы: `.autopilot/2026-09-08-audit-remediation/interfaces.md`
+- Методика CPU/RAM/диск/сеть/LLM и потолки 10k/500 RPS: `.autopilot/archive/runs/2026-08-30-server-infrastructure-requirements/spec.md`.
+- Границы модулей и швы: `.autopilot/archive/runs/2026-09-08-audit-remediation/interfaces.md`
 (auth/registry/realtime/files/ai/frontend-auth/landing/infra-backup/infra-observe/db).
 - Роуты: `technozrelost-backend/app/main.py` (26 `include_router` под `/api/v1`).
 - Обязательный Redis в проде, `REDIS_URL`, readiness 503: таск 01 прошлого прогона.

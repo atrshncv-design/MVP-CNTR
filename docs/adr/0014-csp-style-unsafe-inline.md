@@ -31,6 +31,6 @@
 ## References
 - `technozrelost-frontend/next.config.ts:31` `style-src 'self' 'unsafe-inline'` + коммент `// ADR-0014`
 - `technozrelost-frontend/src/middleware.ts:16` CSP сборка, `html_sanitizer.py` nh3-санитизация `dangerouslySetInnerHTML`
-- SPEC-06 (M-07, L-01) — CSP фронтенд, `docs/remediation/tickets/TICKET-12-csp-style-adr.md`
+- SPEC-06 (M-07, L-01) — CSP фронтенд, `docs/archive/remediation/audit-remediation/tickets/TICKET-12-csp-style-adr.md`
 - `technozrelost-frontend/tests/security-headers.test.mjs` — ожидает `style-src` с `unsafe-inline`, `script-src` без `unsafe-inline`
 - Tailwind CSS 4 docs — inline style injection, Next.js CSP nonce docs
