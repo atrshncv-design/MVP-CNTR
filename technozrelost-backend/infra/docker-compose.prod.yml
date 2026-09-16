@@ -1,19 +1,20 @@
-# Production-контур платформы «Технозрелость» (тикет 18, масштабируемый).
-# Стек: nginx (балансировщик) + frontend (Next.js) + backend (FastAPI, 2 реплики)
-#       + PostgreSQL Primary/Replica (pgvector) + MinIO + ClamAV + Redis.
+# Production-контур платформы «Технозрелость» (P1, одноузловой).
+# Стек: nginx + frontend (Next.js) + backend (FastAPI, 1 реплика)
+#       + PostgreSQL Primary (pgvector, единственная БД) + MinIO + ClamAV + Redis.
 #
 # Запуск:   ./deploy.sh            (из infra/; читает .env.production)
-# Либо:     docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+# Либо:     docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build --remove-orphans
 # Проверка: curl -sk https://localhost/api/v1/health
-#           curl -sk https://localhost/api/v1/ready    # readiness: primary+replica
+#           curl -sk https://localhost/api/v1/ready    # readiness: primary ok, replica not_configured
 #
-# Свойства контура (спека §7.4):
-#   - app-слой stateless: backend масштабируется репликами (deploy.replicas: 2),
-#     nginx балансирует через Docker DNS (upstream backend:8000).
-#   - PostgreSQL: Primary (db) — единственная точка записи; Replica (db-replica) —
-#     hot standby для безопасных чтений (реестры). Backend читает реестры через
-#     replica при заданной DATABASE_REPLICA_URL / POSTGRES_REPLICA_HOST.
-#   - Read-after-write идёт в Primary (сессии записи — только Primary).
+# Свойства контура (P1: один узел, без SLA, вертикальное расширение):
+#   - app-слой stateless: ровно один backend (deploy.replicas: 1);
+#     nginx обращается по сервисному имени backend:8000.
+#   - PostgreSQL: только Primary (db) — запись и чтение (реестры идут в
+#     Primary). Replica нет по проекту; backend не задаёт POSTGRES_REPLICA_HOST.
+#   - Роль REPLICATION (REPL_USER/REPL_PASSWORD) сохраняется: она нужна
+#     physical pg_basebackup перед миграциями, а не стримингу — слота
+#     репликации нет (REPL_SLOT пуст, слот не создаётся).
 #   - Секреты — только через env (.env.production, в .gitignore); повторный
 #     запуск идемпотентен (миграции под advisory lock, volumes сохраняются).
 #   - Health/readiness у всех сервисов; persistent volumes для данных.
@@ -35,10 +36,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      # Учётка стриминг-репликации (создаётся init-primary.sh, см. infra/postgres/)
+      # Роль REPLICATION для physical pg_basebackup (backup.sh, таймер).
+      # Создаётся init-primary.sh; слота репликации нет (P1: REPL_SLOT пуст).
       REPL_USER: ${REPL_USER:-replicator}
       REPL_PASSWORD: ${REPL_PASSWORD:?REPL_PASSWORD обязателен}
-      REPL_SLOT: ${REPL_SLOT:-tz_replica_slot}
     volumes:
       - pg-prod-primary-data:/var/lib/postgresql/data
       - wal-archive-prod-data:/var/lib/postgresql/wal-archive
@@ -50,59 +51,18 @@ services:
       - ./postgres/ensure-replication.sh:/usr/local/bin/ensure-replication.sh:ro
       - ./postgres/check-primary-health.sh:/usr/local/bin/check-primary-health.sh:ro
       - ./alerter/postgres-primary-entrypoint.sh:/usr/local/bin/postgres-primary-entrypoint.sh:ro
-    # Точка входа идемпотентна: роль replicator и слот создаются и на пустом,
-    # и на существующем томе (аудит-тикет 05).
+    # Точка входа идемпотентна: роль replicator создаётся и на пустом,
+    # и на существующем томе (аудит-тикет 05). P1: слот репликации не
+    # создаётся — REPL_SLOT пуст (см. ensure-replication.sh).
     # start-primary.sh исторически фиксировал только базовый config_file и
     # игнорировал Compose command. Wrapper подключает базовый и PITR-профиль,
-    # сохраняя ожидание существующего тома и идемпотентный replication-slot.
+    # сохраняя ожидание существующего тома и идемпотентную роль REPLICATION.
     entrypoint: ["/bin/bash", "/usr/local/bin/postgres-primary-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "/bin/bash", "/usr/local/bin/check-primary-health.sh"]
       interval: 5s
       timeout: 5s
       retries: 20
-    networks:
-      - tz-app-db
-
-  # ── PostgreSQL Replica (чтение: реестры, каталоги) ────────────────────────
-  db-replica:
-    image: pgvector/pgvector:0.8.0-pg16
-    container_name: tz-prod-db-replica
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      PGPRIMARY_HOST: db
-      REPL_USER: ${REPL_USER:-replicator}
-      REPL_PASSWORD: ${REPL_PASSWORD:?REPL_PASSWORD обязателен}
-      REPL_SLOT: ${REPL_SLOT:-tz_replica_slot}
-    volumes:
-      - pg-prod-replica-data:/var/lib/postgresql/data
-      - ./postgres/start-replica.sh:/usr/local/bin/start-replica.sh:ro
-      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-    entrypoint: ["/bin/bash", "/usr/local/bin/start-replica.sh"]
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - >-
-          PGPASSWORD="$${POSTGRES_PASSWORD}" pg_isready -q -U "$${POSTGRES_USER}" -d
-          "$${POSTGRES_DB}" &&
-          test "$(PGPASSWORD="$${POSTGRES_PASSWORD}" psql -X -w -U "$${POSTGRES_USER}" -d
-          "$${POSTGRES_DB}" -Atqc "SELECT pg_is_in_recovery() AND EXISTS
-          (SELECT 1 FROM pg_stat_wal_receiver WHERE status = 'streaming')")" = "t"
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 30s
     networks:
       - tz-app-db
 
@@ -146,7 +106,9 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 4G
+          # P1: ClamAV 1–2 ГиБ (локальный замер 7 МиБ снят с нездорового
+          # демона и нерепрезентативен).
+          memory: 2G
     volumes:
       - clamav-prod-db:/var/lib/clamav
     healthcheck:
@@ -183,14 +145,13 @@ services:
     networks:
       - tz-app-db
 
-  # ── Backend: FastAPI, 2 реплики (stateless, масштабируется) ───────────────
+  # ── Backend: FastAPI, ровно один (P1: без второй реплики) ────────────────
   backend:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     build:
       context: ..
       dockerfile: Dockerfile
-    # container_name не задаётся: при deploy.replicas имена должны быть уникальны
-    # (technozrelost-prod-backend-1/-2); nginx обращается по сервисному имени.
+    container_name: tz-prod-backend
     restart: unless-stopped
     logging:
       driver: json-file
@@ -198,24 +159,21 @@ services:
         max-size: "10m"
         max-file: "3"
     deploy:
-      replicas: 2
+      replicas: 1
       resources:
         limits:
           cpus: '1.0'
           memory: 2G
     environment:
       APP_ENV: production
-      # Primary — запись; Replica — безопасные чтения (реестры)
+      # P1: единственная БД — Primary (запись и чтение, включая реестры).
+      # POSTGRES_REPLICA_HOST/DATABASE_REPLICA_URL не задаются: backend
+      # читает реестры через Primary, /ready отдаёт Replica not_configured.
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
-      POSTGRES_REPLICA_HOST: ${POSTGRES_REPLICA_HOST:-db-replica}
-      POSTGRES_REPLICA_PORT: ${POSTGRES_REPLICA_PORT:-5432}
-      # Альтернатива: полные DSN (приоритетнее POSTGRES_*):
-      # DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      # DATABASE_REPLICA_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-replica:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS}
       LLM_API_BASE: ${LLM_API_BASE}
@@ -250,8 +208,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      db-replica:
-        condition: service_healthy
       minio:
         condition: service_healthy
       clamav:
@@ -274,7 +230,8 @@ services:
     expose:
       - "8000"
     healthcheck:
-      # /api/v1/ready проверяет реальные соединения Primary и Replica
+      # /api/v1/ready проверяет реальное соединение Primary
+      # (Replica отдаёт not_configured на одноузловом контуре).
       test:
         [
           "CMD-SHELL",
@@ -383,7 +340,9 @@ services:
     networks:
       - tz-app-db
 
-  # ── Алертер: readiness, replica/slot, backup, disk, offsite ────────────────
+  # ── Алертер: readiness, backup, disk, offsite ─────────────────────────────
+  # P1: проверок Replica/слота нет (реплики нет по проекту) — алертер
+  # не показывает Replica-предупреждений на одноузловом контуре.
   alerter:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
@@ -414,17 +373,11 @@ services:
       ALERTER_DISK_PATHS: /backups,/wal-archive
       ALERTER_DISK_WARN_PERCENT: ${ALERTER_DISK_WARN_PERCENT:-80}
       ALERTER_DISK_CRITICAL_PERCENT: ${ALERTER_DISK_CRITICAL_PERCENT:-90}
-      ALERTER_SLOT_LAG_WARN_BYTES: ${ALERTER_SLOT_LAG_WARN_BYTES:-12884901888}
-      ALERTER_SLOT_LAG_CRITICAL_BYTES: ${ALERTER_SLOT_LAG_CRITICAL_BYTES:-16106127360}
-      ALERTER_REPLICA_LAG_CRITICAL_BYTES: ${ALERTER_REPLICA_LAG_CRITICAL_BYTES:-5368709120}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
-      POSTGRES_REPLICA_HOST: ${POSTGRES_REPLICA_HOST:-db-replica}
-      POSTGRES_REPLICA_PORT: ${POSTGRES_REPLICA_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      REPL_SLOT: ${REPL_SLOT:-tz_replica_slot}
       BACKUP_FRESHNESS_MARKER: ${BACKUP_FRESHNESS_MARKER:-/backups/.backup-freshness}
       BACKUP_MAX_AGE_HOURS: ${BACKUP_MAX_AGE_HOURS:-25}
       BACKUP_OFFSITE_MARKER: ${BACKUP_OFFSITE_MARKER:-/backups/.offsite-status}
@@ -480,7 +433,7 @@ services:
       - tz-edge
       - tz-app-db
 
-  # ── Nginx: балансировщик перед backend (реплики) и frontend ───────────────
+  # ── Nginx: вход перед backend и frontend ───────────────────────────────────
   nginx:
     image: nginx:1.27-alpine
     container_name: tz-prod-nginx
@@ -574,7 +527,6 @@ services:
 
 volumes:
   pg-prod-primary-data:
-  pg-prod-replica-data:
   wal-archive-prod-data:
   minio-prod-data:
   clamav-prod-db:

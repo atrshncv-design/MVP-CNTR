@@ -100,12 +100,14 @@ class AlerterConfig:
             ),
             primary_host=os.getenv("POSTGRES_HOST", "db"),
             primary_port=_env_int("POSTGRES_PORT", 5432),
-            replica_host=os.getenv("POSTGRES_REPLICA_HOST", "db-replica"),
+            # P1 (таск 01): одноузловой контур без Replica. Пустой хост =
+            # реплика не настроена: проверки ниже вернут ok/not_configured.
+            replica_host=os.getenv("POSTGRES_REPLICA_HOST", ""),
             replica_port=_env_int("POSTGRES_REPLICA_PORT", 5432),
             database=os.getenv("POSTGRES_DB", "technozrelost"),
             database_user=os.getenv("POSTGRES_USER", "technoz"),
             database_password=os.getenv("POSTGRES_PASSWORD", ""),
-            replication_slot=os.getenv("REPL_SLOT", "tz_replica_slot"),
+            replication_slot=os.getenv("REPL_SLOT", ""),
             freshness_marker=Path(
                 os.getenv("BACKUP_FRESHNESS_MARKER", "/backups/.backup-freshness")
             ),
@@ -511,7 +513,19 @@ def check_clamav_cvd_age(
 
 
 async def check_replica_and_slot(config: AlerterConfig) -> list[CheckResult]:
-    """Проверяет отдельным соединением реплику и слот на Primary."""
+    """Проверяет отдельным соединением реплику и слот на Primary.
+
+    P1 (таск 01): на одноузловом контуре реплика не настроена
+    (пустой replica_host) — возвращаем ok/not_configured без сетевых
+    проб, иначе алертер вечно горел бы critical там, где реплики нет
+    по проекту. Имена проверок сохранены, чтобы не ломать дашборды.
+    """
+    if not config.replica_host.strip():
+        return [
+            CheckResult("replica", OK, "not_configured"),
+            CheckResult("replication_slot", OK, "not_configured"),
+            CheckResult("replica_lag", OK, "not_configured"),
+        ]
     try:
         import asyncpg
     except ImportError:

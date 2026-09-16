@@ -1,19 +1,23 @@
 #!/bin/bash
-# Проверяет доступность primary, завершённую ротацию credential и наличие
-# именно настроенного физического слота. SQL идёт через stdin: psql подставляет
-# переменную только при таком разборе.
+# Проверяет доступность primary и завершённую ротацию credential.
+# P1 (таск 01): проверка физического слота — только при непустом REPL_SLOT
+# (HA-контур). На одноузловом контуре REPL_SLOT пуст и слот не проверяется.
+# SQL идёт через stdin: psql подставляет переменную только при таком разборе.
 set -euo pipefail
 
 POSTGRES_USER="${POSTGRES_USER:?POSTGRES_USER обязателен}"
 POSTGRES_DB="${POSTGRES_DB:?POSTGRES_DB обязателен}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD обязателен}"
-REPL_SLOT="${REPL_SLOT:?REPL_SLOT обязателен}"
+REPL_SLOT="${REPL_SLOT:-}"
 REPLICATION_READY_FILE="${REPLICATION_READY_FILE:-/tmp/technozrelost-replication-ready}"
 
 # Не позволяем значению окружения превращаться в дополнительные параметры
 # psql или в другой идентификатор слота.
 case "$REPL_SLOT" in
-  ''|*[!A-Za-z0-9._-]*)
+  '')
+    # P1: слота нет — пропускаем проверку слота.
+    ;;
+  *[!A-Za-z0-9._-]*)
     echo "[primary] ОШИБКА: недопустимое имя REPL_SLOT" >&2
     exit 2
     ;;
@@ -24,6 +28,10 @@ PGPASSWORD="$POSTGRES_PASSWORD" pg_isready -q \
   -d "$POSTGRES_DB"
 
 [ -f "$REPLICATION_READY_FILE" ]
+
+if [ -z "$REPL_SLOT" ]; then
+  exit 0
+fi
 
 result="$({
   printf '%s\n' \

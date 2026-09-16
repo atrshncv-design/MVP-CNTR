@@ -3,7 +3,8 @@
 #   пустой том       — официальный entrypoint делает initdb + initdb.d/*.sh
 #                      (там 10-init.sh вызовет ensure-replication.sh);
 #   существующий том — старт в фоне, ожидание готовности, затем идемпотентный
-#                      ensure-replication.sh: роль replicator и слот создаются,
+#                      ensure-replication.sh: роль replicator создаётся
+#                      (слот — только при непустом REPL_SLOT, P1: пуст),
 #                      даже если том создан до появления init-скрипта.
 # SIGTERM пробрасывается в postgres — корректный останов без SIGKILL.
 set -euo pipefail

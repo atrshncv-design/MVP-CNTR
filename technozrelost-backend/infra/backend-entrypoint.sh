@@ -1,9 +1,9 @@
 #!/bin/sh
-# Входная точка backend-контейнера (production-контур, тикет 18).
-#   1) ждёт Primary (asyncpg), 2) применяет миграции под pg advisory lock
-#      (несколько реплик backend не дерутся за alembic), 3) запускает uvicorn.
-# App-слой stateless: один uvicorn-воркер на контейнер, масштабирование —
-# репликами сервиса backend (deploy.replicas в docker-compose.prod.yml).
+# Входная точка backend-контейнера (production-контур P1, одноузловой).
+#   1) ждёт Primary (asyncpg), 2) применяет миграции под pg advisory lock,
+#   3) запускает uvicorn.
+# App-слой stateless: один контейнер backend (deploy.replicas: 1 в
+# docker-compose.prod.yml), один uvicorn-воркер на контейнер.
 # ADR-0015: workers>1 forbidden — scheduler advisory lock 42 дублируется внутри хоста; см. docs/adr/0015-scheduler-advisory-lock.md
 set -eu
 
@@ -55,7 +55,7 @@ echo "[entrypoint] применяю миграции (advisory lock)..."
 # BACKUP_BEFORE_MIGRATIONS=1 (env, default в prod-compose) — перед alembic
 # выполняется backup-lock.py. У него отдельный try-lock: занятый lock
 # блокирует миграции (fail-closed, exit 3), а не трактуется как готовность.
-# Дедуп второй реплики — только через marker image run (exit 0), а не через
+# Дедуп повторного backup — только через marker image run (exit 0), а не через
 # занятость lock.
 python - <<'PY'
 import asyncio
@@ -65,7 +65,7 @@ import time
 
 import asyncpg
 
-MIGRATION_LOCK = 732018  # произвольный id; общий для всех реплик backend
+MIGRATION_LOCK = 732018  # произвольный id; P1 — один backend
 
 
 async def run(cmd: list[str], env: dict[str, str] | None = None) -> int:
@@ -101,8 +101,8 @@ async def main() -> int:
         if os.environ.get("BACKUP_BEFORE_MIGRATIONS", "0") == "1":
             print("[entrypoint] резервное копирование перед миграциями...")
             backup_env = os.environ.copy()
-            # Реплика, которая стартовала позже, видит marker image run и не
-            # повторяет уже успешный backup первой реплики.
+            # Дедуп повторного backup при рестарте: marker image run от уже
+            # успешной выкладки — не повторять backup той же выкладки.
             backup_env["BACKUP_SKIP_IF_MARKER_AFTER_NS"] = str(startup_started_ns)
             backup_script = os.environ.get("BACKUP_SCRIPT", "/app/backup.sh")
             lock_script = os.environ.get(
@@ -131,5 +131,5 @@ sys.exit(asyncio.run(main()))
 PY
 echo "[entrypoint] миграции применены."
 
-# ADR-0015: workers>1 forbidden per ADR-0015 — single worker, scale via replicas (see docs/adr/0015-scheduler-advisory-lock.md)
+# ADR-0015: workers>1 forbidden per ADR-0015 — single worker, single backend (see docs/adr/0015-scheduler-advisory-lock.md)
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000

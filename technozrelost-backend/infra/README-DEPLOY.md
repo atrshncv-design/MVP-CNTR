@@ -1,28 +1,28 @@
 # Деплой платформы «Технозрелость» (production)
 
-Стек: **Docker Compose** — nginx (балансировщик), frontend (Next.js 16), backend (FastAPI, 2 реплики), PostgreSQL Primary/Replica (pgvector), MinIO, ClamAV, Redis, ежедневный backup-timer и Telegram-алертер.
+Стек: **Docker Compose** — nginx, frontend (Next.js 16), backend (FastAPI, 1 реплика), PostgreSQL Primary (pgvector, единственная БД), MinIO, ClamAV, Redis, ежедневный backup-timer и Telegram-алертер.
 
-## Масштабируемый контур (тикет 18)
+## Одноузловой контур P1
 
-`docker-compose.prod.yml` реализует production-контур по спеке §7.4:
+`docker-compose.prod.yml` реализует production-контур P1 (один узел, без SLA):
 
-- **App-слой stateless**: backend масштабируется репликами (`deploy.replicas: 2`);
-  nginx балансирует через Docker DNS (upstream `backend:8000`, round-robin).
-  Изменить число реплик: `docker compose ... up -d --scale backend=N`.
-- **Primary/Replica**: `db` (Primary) — единственная точка записи; `db-replica`
-  (hot standby) — безопасные чтения. Backend направляет реестры/каталоги
-  (`/projects/registry`, `/executors/*`, `/nioktr*`) на replica, если задан
-  `POSTGRES_REPLICA_HOST` (или полный `DATABASE_REPLICA_URL`). Read-after-write
-  (создание/мутация проекта и т.п.) всегда идёт в Primary.
+- **Один backend** (`deploy.replicas: 1`); nginx обращается по сервисному
+  имени `backend:8000`.
+- **Только Primary**: `db` — запись и чтение. Replica нет по проекту;
+  backend читает реестры/каталоги (`/projects/registry`, `/executors/*`,
+  `/nioktr*`) через Primary, `/api/v1/ready` отдаёт
+  `{"primary": "ok", "replica": "not_configured"}`.
+  Роль REPLICATION сохраняется для physical pg_basebackup; слота репликации
+  нет (REPL_SLOT пуст).
 - **Health/readiness**: healthcheck и health-gate применяются к сервисам
-  `db`, `db-replica`, `minio`, `clamav`, `redis`, `backend`, `backup-timer`,
+  `db`, `minio`, `clamav`, `redis`, `backend`, `backup-timer`,
   `wal-offsite`, `alerter`, `frontend`, `nginx`, `prometheus` и `grafana`; backend использует
-  `/api/v1/ready` — реальные соединения Primary и Replica.
+  `/api/v1/ready` — реальное соединение Primary.
 - **Миграции без гонок**: входная точка контейнера (`infra/backend-entrypoint.sh`)
-  ждёт Primary и применяет `alembic upgrade head` под pg advisory lock — при
-  старте нескольких реплик миграцию выполнит ровно один контейнер. Перед ней
-  `backup-lock.py` использует отдельный non-blocking lock, а `BACKUP_RUN_ID` из
-  image tag не даёт второй реплике повторить уже успешный pre-migration backup.
+  ждёт Primary и применяет `alembic upgrade head` под pg advisory lock.
+  Перед ней `backup-lock.py` использует отдельный non-blocking lock, а
+  `BACKUP_RUN_ID` из image tag не даёт рестарту повторить уже успешный
+  pre-migration backup той же выкладки.
 - **Секреты — только через env** (`.env.production`, в `.gitignore`); данные —
   в named volumes, повторный запуск идемпотентен.
 - **Health-gate и rollback**: backend/frontend получают тег текущего git SHA;
@@ -41,10 +41,11 @@
   скрипта и ближайший target без ожидания суток.
   Режим `BACKUP_TIMER_RUN_ONCE=1` выполняет реальный бэкап как отдельный
   smoke-тест.
-- **Наблюдаемость**: alerter проверяет readiness, Primary/Replica и replication
-  slot, health MinIO (`ALERTER_MINIO_HEALTH_URL`), PING/PONG доступность ClamAV
+- **Наблюдаемость**: alerter проверяет readiness, Primary,
+  health MinIO (`ALERTER_MINIO_HEALTH_URL`), PING/PONG доступность ClamAV
   (`ALERTER_CLAMAV_HOST`/`ALERTER_CLAMAV_PORT`), маркеры backup/offsite и
-  заполнение томов. Без `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` он пишет
+  заполнение томов. Проверок Replica/слота нет (реплики нет по проекту).
+  Без `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` он пишет
   предупреждение и безопасно работает без отправки.
 - **Rollback без текущего app source**: backup, restore, timer, WAL-offsite,
   crypt-guard, lock-runner и alerter поставляются внутри backend image и также
@@ -85,7 +86,7 @@ cp infra/.env.production.example infra/.env.production
 
 ```bash
 curl -sk https://localhost/api/v1/health       # {"status":"ok",...} (HTTP отвечает 301 → HTTPS)
-curl -sk https://localhost/api/v1/ready       # readiness: primary+replica {"status":"ready",...}
+curl -sk https://localhost/api/v1/ready       # readiness: {"status":"ready","databases":{"primary":"ok","replica":"not_configured"},...}
 docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml ps   # все сервисы health-gate healthy
 ```
 
@@ -139,7 +140,7 @@ recreate; production default отсутствует и переменная об
 пропускает строгую проверку пароля Grafana.
 
 Откат с учётом БД: rollback перевыкатывает только образы backend/frontend и
-снова проходит health-gate (включая счётчик реплик `BACKEND_EXPECTED_REPLICAS=2`);
+снова проходит health-gate (включая счётчик backend `BACKEND_EXPECTED_REPLICAS=1`);
 миграции Alembic вперёд-совместимы и вниз не откатываются, данные в named volumes
 сохраняются. Если выкладка успела применить миграцию, ломающую схему, отката образов
 недостаточно — восстанавливайте данные из снапшота по RUNBOOK-DATA.md P2 (только

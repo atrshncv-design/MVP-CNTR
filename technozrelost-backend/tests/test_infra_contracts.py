@@ -777,7 +777,9 @@ def test_production_compose_wires_replication_and_storage_probes():
 
     assert compose.count(api_internal) == 2
     assert "REPL_USER: ${REPL_USER:-replicator}" in compose
-    assert compose.count("REPL_PASSWORD: ${REPL_PASSWORD:?REPL_PASSWORD обязателен}") == 4
+    # P1: REPL_PASSWORD в db + backend + backup-timer (алертер слот не
+    # проверяет, db-replica удалена).
+    assert compose.count("REPL_PASSWORD: ${REPL_PASSWORD:?REPL_PASSWORD обязателен}") == 3
     assert compose.count('BACKUP_STRICT_MINIO: "1"') == 2
     assert "wal-offsite:" in compose
     assert "wal-archive-prod-data:/wal-archive:rw" in compose
@@ -808,8 +810,9 @@ def test_production_compose_wires_replication_and_storage_probes():
     ):
         assert mount in compose
     assert 'condition: service_healthy' in compose
-    assert "pg_is_in_recovery()" in compose
-    assert "pg_stat_wal_receiver" in compose
+    # P1: одноузловой контур — проверок streaming-реплики в prod-compose нет.
+    assert "pg_is_in_recovery()" not in compose
+    assert "pg_stat_wal_receiver" not in compose
     assert "172.30.0.0/24" in compose
 
 
@@ -901,7 +904,6 @@ def test_deploy_rejects_weak_operator_auth_secrets_without_echoing_them(tmp_path
     ("filename", "primary_service", "replica_service", "next_replica"),
     [
         ("docker-compose.yml", "pg-primary", "pg-replica", "minio"),
-        ("docker-compose.prod.yml", "db", "db-replica", "minio"),
     ],
 )
 def test_postgres_healthchecks_use_runtime_password_auth(
@@ -921,7 +923,6 @@ def test_postgres_healthchecks_use_runtime_password_auth(
     ("filename", "primary_service", "replica_service", "next_replica"),
     [
         ("docker-compose.yml", "pg-primary", "pg-replica", "minio"),
-        ("docker-compose.prod.yml", "db", "db-replica", "minio"),
     ],
 )
 def test_primary_healthchecks_parameterize_slot_over_stdin(
@@ -1221,7 +1222,8 @@ def test_production_hba_and_compose_exclude_docker_desktop_gateway():
     assert "192.168.65." not in prod_hba
     assert "192.168.65." not in prod_compose
     assert "pg_hba.dev.conf" not in prod_compose
-    assert prod_compose.count("./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro") == 2
+    # P1: pg_hba монтируется только в Primary (db-replica удалена).
+    assert prod_compose.count("./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro") == 1
     assert dev_compose.count("./postgres/pg_hba.dev.conf:/etc/postgresql/pg_hba.conf:ro") == 2
 
 
@@ -1314,17 +1316,15 @@ def test_primary_first_and_existing_volume_paths_use_password_authentication():
 
 def test_replica_uses_the_restricted_hba_policy():
     start_replica = read_text(INFRA_ROOT / "postgres" / "start-replica.sh")
-    compose_policies = {
-        "docker-compose.yml": "./postgres/pg_hba.dev.conf:/etc/postgresql/pg_hba.conf:ro",
-        "docker-compose.prod.yml": "./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro",
-    }
-    for filename, hba_mount in compose_policies.items():
-        compose = read_text(INFRA_ROOT / filename)
-        replica_service = (
-            "pg-replica" if filename == "docker-compose.yml" else "db-replica"
-        )
-        replica = compose_service_block(compose, replica_service, "minio")
-        assert hba_mount in replica
+    # Dev-контур сохраняет HA-пару для локальной проверки streaming-репликации.
+    compose = read_text(INFRA_ROOT / "docker-compose.yml")
+    replica = compose_service_block(compose, "pg-replica", "minio")
+    assert "./postgres/pg_hba.dev.conf:/etc/postgresql/pg_hba.conf:ro" in replica
+    # P1: в prod-compose сервиса реплики нет, hba остаётся только у Primary.
+    prod = read_text(INFRA_ROOT / "docker-compose.prod.yml")
+    assert "db-replica" not in prod
+    assert "pg-replica" not in prod
+    assert "./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro" in prod
     assert '-c "hba_file=/etc/postgresql/pg_hba.conf"' in start_replica
     assert "PGPASSFILE" in start_replica
 
@@ -1943,3 +1943,30 @@ def test_deploy_gate_counts_backend_replicas():
     assert "replicas" in deploy.lower()
     # Гейт считает здоровые контейнеры backend, а не довольствуется одним.
     assert "compose ps -q" in deploy or "ps -q backend" in deploy
+
+
+def test_production_compose_is_single_node_without_replica():
+    # P1 (таск 01): один PostgreSQL Primary, один backend, без Replica.
+    # Чтение реестров идёт в Primary; /ready отдаёт Replica not_configured.
+    compose = read_text(INFRA_ROOT / "docker-compose.prod.yml")
+    deploy = read_text(INFRA_ROOT / "deploy.sh")
+
+    assert "db-replica" not in compose
+    assert "pg-prod-replica-data" not in compose
+    assert "POSTGRES_REPLICA_HOST:" not in compose
+    assert "POSTGRES_REPLICA_PORT:" not in compose
+    assert "DATABASE_REPLICA_URL:" not in compose
+    assert "pg_is_in_recovery()" not in compose
+    assert "pg_stat_wal_receiver" not in compose
+
+    backend = compose.split("  backend:", 1)[1].split("  # ──", 1)[0]
+    assert "replicas: 1" in backend
+    assert "replicas: 2" not in compose
+    assert "db-replica" not in backend
+
+    assert 'BACKEND_EXPECTED_REPLICAS:-1}' in deploy
+    health_services = deploy.split("HEALTH_SERVICES=", 1)[1].split("\n", 1)[0]
+    assert "db-replica" not in health_services
+    assert " db " in health_services or "(db " in health_services
+    # Обновление не оставляет orphan-контейнеров удалённой Replica.
+    assert "--remove-orphans" in deploy

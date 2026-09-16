@@ -8,13 +8,12 @@ cd "$(dirname "$0")"
 ENV_FILE="${ENV_FILE:-.env.production}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 HEALTH_TIMEOUT_SECONDS="${DEPLOY_HEALTH_TIMEOUT_SECONDS:-300}"
-# R06i группа F (таск 16): ожидаемое число здоровых реплик backend для health-gate.
-# При deploy.replicas: 2 недостающая реплика обязана ронять гейт, а не молча
-# проходить с одной живой репликой.
-BACKEND_EXPECTED_REPLICAS="${BACKEND_EXPECTED_REPLICAS:-2}"
+# P1 (таск 01): одноузловой контур — ровно один backend. Гейт по-прежнему
+# считает здоровые контейнеры backend явно, а не довольствуется их наличием.
+BACKEND_EXPECTED_REPLICAS="${BACKEND_EXPECTED_REPLICAS:-1}"
 BACKEND_IMAGE="technozrelost-backend"
 FRONTEND_IMAGE="technozrelost-frontend"
-HEALTH_SERVICES=(db db-replica minio clamav redis backend backup-timer wal-offsite alerter frontend nginx prometheus grafana)
+HEALTH_SERVICES=(db minio clamav redis backend backup-timer wal-offsite alerter frontend nginx prometheus grafana)
 
 usage() {
   cat <<'EOF'
@@ -293,7 +292,7 @@ wait_for_healthy() {
         fi
       done
     done
-    # Гейт считает реплики backend отдельно: одного healthy из двух мало.
+    # Гейт считает backend отдельно: ноль healthy при ожидании одного роняет гейт.
     backend_ids="$(compose ps -q backend 2>/dev/null || true)"
     backend_healthy=0
     for id in $backend_ids; do
@@ -327,7 +326,8 @@ rollback_to_tag() {
   fi
   export IMAGE_TAG="$tag"
   echo "Откатываю стек на образы с тегом $tag..."
-  if ! compose up -d --no-build; then
+  # --remove-orphans: откат тоже не оставляет orphan-контейнеров (P1).
+  if ! compose up -d --no-build --remove-orphans; then
     echo "ОШИБКА: Compose не смог поднять rollback '$tag'." >&2
     return 1
   fi
@@ -385,7 +385,9 @@ case "${1:-deploy}" in
     fi
 
     echo "Собираю и поднимаю стек с image tag $IMAGE_TAG..."
-    if ! compose up -d --build; then
+    # P1: --remove-orphans убирает контейнеры удалённых сервисов (db-replica),
+    # чтобы обновление не оставляло orphan-контейнеров Replica.
+    if ! compose up -d --build --remove-orphans; then
       echo "ОШИБКА: выкладка не запустилась, выполняю rollback previous." >&2
       automatic_rollback || true
       exit 1

@@ -474,3 +474,51 @@ def test_warning_does_not_suppress_subsequent_critical():
     assert event == "alert"
     assert len(sent) == 2
     assert "CRITICAL" in sent[-1]
+
+
+def test_single_node_skips_replica_checks_without_network(monkeypatch, tmp_path):
+    # P1 (таск 01): одноузловой контур без Replica — проверки реплики и слота
+    # обязаны вернуть ok/not_configured и не ходить в сеть (иначе алертер
+    # вечно горит critical на контуре, где реплики нет по проекту).
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("single-node must not probe replica")
+
+    monkeypatch.setitem(
+        sys.modules, "asyncpg", SimpleNamespace(connect=fail_if_called)
+    )
+    config = AlerterConfig(
+        readiness_url="http://backend/ready",
+        primary_host="db",
+        primary_port=5432,
+        replica_host="",
+        replica_port=5432,
+        database="technozrelost",
+        database_user="technoz",
+        database_password="",
+        replication_slot="",
+        freshness_marker=tmp_path / "freshness",
+        max_backup_age_hours=25,
+        offsite_marker=tmp_path / "offsite",
+        disk_paths=(tmp_path,),
+        disk_warn_percent=80,
+        disk_critical_percent=90,
+        slot_lag_warn_bytes=1024,
+        slot_lag_critical_bytes=2048,
+        replica_lag_critical_bytes=4096,
+        state_file=tmp_path / "state.json",
+        interval_seconds=60,
+        probe_timeout_seconds=1,
+        telegram_bot_token="",
+        telegram_chat_id="",
+    )
+
+    results = asyncio.run(check_replica_and_slot(config))
+
+    assert [(result.name, result.state) for result in results] == [
+        ("replica", "ok"),
+        ("replication_slot", "ok"),
+        ("replica_lag", "ok"),
+    ]
+    assert all(result.detail == "not_configured" for result in results)
+    assert aggregate_state(results) == "ok"
