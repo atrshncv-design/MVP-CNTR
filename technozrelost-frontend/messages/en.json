@@ -2720,8 +2720,8 @@
     "sources": "Sources:",
     "gostSection": "GOST section",
     "ugt": "TRL {level}",
-    "bannerStrong": "GOST search temporarily unavailable.",
-    "bannerText": "Assistant answers based on general model knowledge without citing GOST sections from the platform database. Citation will be restored after embedding model connection.",
+    "bannerStrong": "Answers come from the GOST corpus with sources.",
+    "bannerText": "Only GOST fragments and an anonymized question reach the external provider — no personal data, project files or account data.",
     "inputPlaceholder": "Enter question about GOST R 58048-2017...",
     "inputPlaceholderAlt": "Send a message",
     "send": "Send"

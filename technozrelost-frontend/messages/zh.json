@@ -2720,8 +2720,8 @@
   "sources": "来源：",
   "gostSection": "GOST 章节",
   "ugt": "TRL {level}",
-  "bannerStrong": "GOST 检索暂时不可用。",
-  "bannerText": "助手基于通用模型知识回答，不引用平台数据库中的 GOST 章节。连接嵌入模型后将恢复引用。",
+  "bannerStrong": "回答来自 GOST 文库并附来源。",
+  "bannerText": "外部服务仅接收 GOST 片段与匿名问题——不含个人信息、项目文件与账户数据。",
   "inputPlaceholder": "输入关于 GOST R 58048-2017 的问题…",
   "inputPlaceholderAlt": "发送消息",
   "send": "发送"

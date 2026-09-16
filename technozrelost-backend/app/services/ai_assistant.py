@@ -16,6 +16,7 @@ import httpx
 from app.core.config import settings
 from app.core.deps import CurrentUser, DBSession
 from app.schemas import ChatIn, ChatMessage, ChatOut, RagDocumentOut, RagSearchIn
+from app.services import ai_wiring
 from app.services.rag import search_documents
 
 LLM_TIMEOUT_SECONDS = 8.0
@@ -47,10 +48,10 @@ def wrap_untrusted(text: str) -> str:
 
 def _llm_config() -> tuple[str | None, str, str]:
     base = settings.llm_api_base.rstrip("/")
-    key = settings.llm_api_key
-    if key and key.strip() and key != "change_me":
-        return key, base, settings.llm_model
-    return None, base, settings.llm_model
+    # G52/G55: значение ключа — только из окружения (настройка LLM_API_KEY
+    # либо OPENCODE_API_KEY через resolve_llm_api_key); в репо лишь имена.
+    key = ai_wiring.resolve_llm_api_key()
+    return key, base, settings.llm_model
 
 
 async def ask_llm(system_prompt: str, user_message: str) -> str | None:
@@ -140,10 +141,15 @@ async def process_chat(
     results = await search_documents(
         db, RagSearchIn(query=query, top_k=3, contour=contour)  # type: ignore[arg-type]
     )
-    rag_context = "\n\n---\n\n".join(
-        f"[{r.document.doc_type}] {r.document.title}\n{r.document.raw_text[:500]}"
+    # Локальный контекст (fallback и цитаты): все найденные документы.
+    pairs = [
+        (
+            ai_wiring.fragment_source_name(r.document.title, r.document.source_uri),
+            f"[{r.document.doc_type}] {r.document.title}\n{r.document.raw_text[:500]}",
+        )
         for r in results
-    )
+    ]
+    rag_context = "\n\n---\n\n".join(block for _, block in pairs)
     sources = [
         RagDocumentOut(
             id=r.document.id,
@@ -167,13 +173,21 @@ async def process_chat(
         + PROMPT_ISOLATION_RULE
     )
 
-    if rag_context:
+    # Наружу (G56): только обезличенный вопрос + allowlist-фрагменты
+    # корпуса ГОСТов (гейт таска 06, deny-by-default). Сырой query
+    # с возможными ПДн и внутренние документы по HTTP не уходят.
+    safe_query = ai_wiring.sanitize_question_for_external(query)
+    external_context = "\n\n---\n\n".join(
+        block for _, block in ai_wiring.select_external_fragments(pairs)
+    )
+
+    if external_context:
         user_message = (
-            f"Контекст из базы знаний платформы:\n{wrap_untrusted(rag_context)}\n\n"
-            f"Вопрос пользователя: {query}"
+            f"Контекст из базы знаний платформы:\n{wrap_untrusted(external_context)}\n\n"
+            f"Вопрос пользователя: {safe_query}"
         )
     else:
-        user_message = query
+        user_message = safe_query
 
     from app.services import ai_metrics
 
@@ -186,7 +200,8 @@ async def process_chat(
     if rag_context:
         fallback = (
             f"Нашёл в базе знаний следующие документы по вашему запросу:\n\n{rag_context}\n\n"
-            "Для более точного ответа подключите API (установите LLM_API_KEY в .env)."
+            "Для более точного ответа подключите API (задайте LLM_API_KEY "
+            "или OPENCODE_API_KEY в окружении, значение — вне репозитория)."
         )
     else:
         fallback = (

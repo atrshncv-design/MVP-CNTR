@@ -26,6 +26,7 @@ from app.core.deps import DBSession
 from app.core.embeddings import expanded_terms
 from app.db.models import Organization
 from app.schemas import MatchCandidate, MatchIn, MatchOut
+from app.services.ai_wiring import resolve_llm_api_key
 
 
 def _tokenize(text: str) -> set[str]:
@@ -198,7 +199,7 @@ async def match_organizations(db: DBSession, payload: MatchIn) -> MatchOut:
 
     # LLM rerank (только при включённом гейтвее, обезличенно, contour=tuno)
     method = "script"
-    if settings.llm_gateway_enabled and settings.llm_api_key:
+    if settings.llm_gateway_enabled and resolve_llm_api_key():
         # Попытка LLM rerank: формируем промпт только из 5 полей без PII
         try:
             from app.services.ai_assistant import ask_llm
