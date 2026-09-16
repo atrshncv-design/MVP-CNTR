@@ -1,9 +1,17 @@
-"""Профиль пользователя и администрирование (RBAC) — тикет 15.
+"""Профиль пользователя и администрирование (RBAC) — тикет 15 + таск 03 (G46/G39).
 
 - PATCH  /users/me          — профиль (ФИО, организация)
 - POST   /users/me/password — смена пароля (проверка старого)
-- GET    /users             — список пользователей (админ ЦНТР)
-- PATCH  /users/{id}        — роли и активность (админ ЦНТР)
+- GET    /users             — список пользователей (персонал ЦНТР)
+- PATCH  /users/{id}        — роли и активность (персонал ЦНТР;
+  роль cntr_admin выдаёт/трогает только cntr_admin)
+- POST   /users/{id}/reset-password — ручной сброс пароля персоналом (G39).
+
+Ручная процедура сброса (подтверждения email и автовосстановления нет,
+SMTP не используется): пользователь обращается к персоналу ЦНТР по
+доверенному каналу, сотрудник проверяет личность, задаёт новый пароль
+этим эндпоинтом и сообщает его пользователю; все сессии пользователя
+при этом отзываются, событие пишется в аудит (user.password.reset).
 """
 
 from __future__ import annotations
@@ -17,12 +25,19 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from app.api.v1.auth import _user_out
-from app.core.deps import PRIVILEGED_ROLE_SLUGS, CurrentUser, DBSession, require_role
+from app.core.deps import (
+    PRIVILEGED_ROLE_SLUGS,
+    CurrentUser,
+    DBSession,
+    has_role,
+    require_role,
+)
 from app.core.errors import raise_error
 from app.core.security import hash_password, verify_password
 from app.db.models import AuditTrailEntry, RefreshToken, Role, User, user_roles_tbl
 from app.schemas import (
     PasswordChangeIn,
+    PasswordResetIn,
     RoleOut,
     UserAdminOut,
     UserOut,
@@ -33,6 +48,9 @@ from app.schemas import (
 router = APIRouter(prefix="/users", tags=["users"])
 
 AdminUser = Annotated[User, Depends(require_role("cntr_admin"))]
+# G46 (таск 03): привилегии выдают cntr_admin и cntr_manager; остальным —
+# 403. Роль cntr_admin внутри выдаёт только cntr_admin (см. update_user).
+StaffUser = Annotated[User, Depends(require_role("cntr_admin", "cntr_manager"))]
 
 
 def _admin_out(user: User) -> UserAdminOut:
@@ -87,7 +105,7 @@ async def change_password(
 @router.get("", response_model=list[UserAdminOut])
 async def list_users(
     db: DBSession,
-    user: AdminUser,
+    user: StaffUser,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
 ) -> list[UserAdminOut]:
@@ -108,11 +126,25 @@ async def update_user(
     payload: UserRoleUpdateIn,
     request: Request,
     db: DBSession,
-    user: AdminUser,
+    user: StaffUser,
 ) -> UserAdminOut:
     target = await db.get(User, user_id)
     if target is None:
         raise raise_error("USER_NOT_FOUND", request=request)
+
+    # G46 (таск 03): менеджер выдаёт привилегии, кроме роли cntr_admin —
+    # её выдаёт/снимает и её носителей трогает только cntr_admin.
+    actor_is_admin = has_role(user, "cntr_admin")
+    if not actor_is_admin and payload.roles is not None and "cntr_admin" in payload.roles:
+        raise raise_error("AUTH_FORBIDDEN", request=request)
+    if not actor_is_admin and payload.roles:
+        target_rows = await db.execute(
+            select(Role.slug)
+            .join(user_roles_tbl, user_roles_tbl.c.role_id == Role.id)
+            .where(user_roles_tbl.c.user_id == target.id)
+        )
+        if "cntr_admin" in set(target_rows.scalars().all()):
+            raise raise_error("AUTH_FORBIDDEN", request=request)
 
     # R04i (таск 03): срез привилегированных ролей до изменения — для аудита
     # выдачи/отзыва. Прямой SQL по user_roles: identity-map после raw DML ниже
@@ -198,3 +230,42 @@ async def update_user(
     )
     fresh = result.scalar_one()
     return _admin_out(fresh)
+
+
+@router.post("/{user_id}/reset-password", response_model=UserAdminOut)
+async def reset_password(
+    user_id: int,
+    payload: PasswordResetIn,
+    request: Request,
+    db: DBSession,
+    user: StaffUser,
+) -> UserAdminOut:
+    """Ручной сброс пароля персоналом (G39/G39.1): писем и автовосстановления
+    нет — новый пароль задаёт сотрудник и сообщает его пользователю по
+    доверенному каналу. Все сессии пользователя отзываются, событие пишется
+    в аудит (user.password.reset)."""
+    target = await db.get(User, user_id)
+    if target is None:
+        raise raise_error("USER_NOT_FOUND", request=request)
+    target.password_hash = await asyncio.to_thread(hash_password, payload.new_password)
+    await db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == target.id, RefreshToken.revoked_at.is_(None))
+        .values(revoked_at=datetime.now(UTC))
+    )
+    db.add(
+        AuditTrailEntry(
+            project_id=None,
+            user_id=user.id,
+            action="user.password.reset",
+            details={"target_user_id": target.id},
+        )
+    )
+    await db.commit()
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.roles))
+        .where(User.id == user_id)
+        .execution_options(populate_existing=True)
+    )
+    return _admin_out(result.scalar_one())

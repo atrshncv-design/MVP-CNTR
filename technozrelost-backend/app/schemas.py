@@ -72,6 +72,13 @@ class UserRoleUpdateIn(BaseModel):
     is_active: bool | None = None
 
 
+class PasswordResetIn(BaseModel):
+    """Ручной сброс пароля персоналом (G39): писем нет, новый пароль
+    сообщает пользователю персонал по доверенному каналу."""
+
+    new_password: str = Field(min_length=8, max_length=128)
+
+
 # ─── Project & Questionnaire ─────────────────────────────────────────────────
 
 class ProjectOut(BaseModel):
