@@ -195,9 +195,17 @@ run_tls_gate() {
   # Таск 07 (G40/G41): строгий TLS-гейт ДО сборки — localhost/HTTP-URL,
   # SAN-несоответствие и скорая экспирация роняют деплой вместо молчаливого
   # самоподписанного fallback. Лимиты и preflight таска 04 не трогаем.
-  local nextauth cors
+  local nextauth cors tls_cert tls_key tls_min_validity
   nextauth="$(effective_env_value NEXTAUTH_URL)"
   cors="$(effective_env_value CORS_ORIGINS)"
+  tls_cert="$(effective_env_value TLS_CERT_FILE)"
+  tls_key="$(effective_env_value TLS_KEY_FILE)"
+  tls_min_validity="$(effective_env_value TLS_MIN_VALIDITY_DAYS)"
+  # Экспорт только заданных оператором значений: пустые не затирают дефолты
+  # гейта (nginx/certs, 14 дней), заданные доходят до гейта как есть.
+  if [ -n "$tls_cert" ]; then export TLS_CERT_FILE="$tls_cert"; fi
+  if [ -n "$tls_key" ]; then export TLS_KEY_FILE="$tls_key"; fi
+  if [ -n "$tls_min_validity" ]; then export TLS_MIN_VALIDITY_DAYS="$tls_min_validity"; fi
   PUBLIC_HOST="$PUBLIC_HOST" NEXTAUTH_URL="$nextauth" CORS_ORIGINS="$cors" \
     python3 ./tls_deploy_gate.py || return 1
 }

@@ -48,7 +48,7 @@ def test_gate_rejects_localhost_nextauth_url(tmp_path: Path) -> None:
         }
     )
     assert result.returncode == 1
-    assert "localhost" in result.stderr
+    assert "NEXTAUTH_URL не соответствует PUBLIC_HOST (https://localhost)" in result.stderr
 
 
 def test_gate_rejects_http_nextauth_url(tmp_path: Path) -> None:
@@ -177,6 +177,13 @@ def test_deploy_health_gate_uses_verified_public_host() -> None:
     deploy = _infrasource("deploy.sh")
     assert "PUBLIC_HOST" in deploy
     assert "--cacert" in deploy or "curl -fsS" in deploy
+
+
+def test_deploy_forwards_tls_inputs_to_gate() -> None:
+    deploy = _infrasource("deploy.sh")
+    assert "TLS_CERT_FILE" in deploy
+    assert "TLS_KEY_FILE" in deploy
+    assert "TLS_MIN_VALIDITY_DAYS" in deploy
 
 
 def test_nginx_serves_acme_challenge_and_redirects_rest() -> None:

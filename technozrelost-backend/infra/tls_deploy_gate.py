@@ -84,13 +84,13 @@ def check_nextauth_url(errors: list[str], host: str) -> None:
         errors.append(f"TLS-GATE: NEXTAUTH_URL не https ({parsed.scheme or 'без схемы'})")
         return
     if (parsed.hostname or "").lower() != host.lower():
-        errors.append("TLS-GATE: NEXTAUTH_URL не соответствует PUBLIC_HOST")
+        errors.append(f"TLS-GATE: NEXTAUTH_URL не соответствует PUBLIC_HOST ({raw})")
         return
     if parsed.port not in (None, 443):
         errors.append("TLS-GATE: NEXTAUTH_URL с нестандартным портом запрещён")
         return
     if any(token in raw.lower() for token in LOCAL_TOKENS):
-        errors.append("TLS-GATE: NEXTAUTH_URL указывает на локальный адрес")
+        errors.append(f"TLS-GATE: NEXTAUTH_URL указывает на локальный адрес ({raw})")
 
 
 def check_cors(errors: list[str], host: str) -> None:
