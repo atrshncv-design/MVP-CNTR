@@ -31,10 +31,29 @@ env_value() {
 PUBLIC_HOST="${PUBLIC_HOST:-$(env_value PUBLIC_HOST)}"
 ACME_EMAIL="${ACME_EMAIL:-$(env_value ACME_EMAIL)}"
 
-if [[ ! "$PUBLIC_HOST" =~ ^[0-9]{1,3}([-.])[0-9]{1,3}\1[0-9]{1,3}\1[0-9]{1,3}\.sslip\.io$ ]]; then
+# Правило: разделители октетов единообразны — либо все точки, либо все дефисы (ERE без обратных ссылок).
+_sslip_ok=0
+if [[ "$PUBLIC_HOST" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}\.sslip\.io$ || "$PUBLIC_HOST" =~ ^[0-9]{1,3}(-[0-9]{1,3}){3}\.sslip\.io$ ]]; then
+  _ip_part="${PUBLIC_HOST%.sslip.io}"
+  _ip_part="${_ip_part//-/.}"
+  IFS='.' read -r _o1 _o2 _o3 _o4 _rest <<< "$_ip_part"
+  if [ -z "${_rest:-}" ]; then
+    _sslip_ok=1
+    for _octet in "$_o1" "$_o2" "$_o3" "$_o4"; do
+      if [[ ! "$_octet" =~ ^[0-9]+$ ]] || (( 10#$_octet > 255 )); then
+        _sslip_ok=0
+        break
+      fi
+    done
+  fi
+fi
+unset _ip_part _o1 _o2 _o3 _o4 _rest _octet
+if [ "$_sslip_ok" != "1" ]; then
   echo "ОШИБКА: PUBLIC_HOST должен быть техническим именем <ipv4>.sslip.io." >&2
+  unset _sslip_ok
   exit 1
 fi
+unset _sslip_ok
 if [ -z "$ACME_EMAIL" ]; then
   echo "ОШИБКА: ACME_EMAIL пуст — нужен для уведомлений об экспирации." >&2
   exit 1
