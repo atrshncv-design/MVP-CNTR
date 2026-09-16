@@ -1544,8 +1544,10 @@ def test_digest_pinned():
         "@sha256:75fb5fd95fcbe1d7e6d240c369c1572b686ee2c95949d1042b5148de8eddebb4"
     )
     assert clamav_digest in compose
+    # Docker Hub репозитория minio/minio больше нет (MinIO переехал на Quay):
+    # прод-образ тянется с quay.io, дайджест манифест-листа тот же (Quay API).
     minio_digest = (
-        "minio/minio:RELEASE.2025-04-22T22-12-26Z"
+        "quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z"
         "@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e"
     )
     assert minio_digest in compose
