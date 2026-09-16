@@ -117,10 +117,13 @@ cp infra/.env.production.example infra/.env.production
 ## Проверка
 
 ```bash
-curl -sk https://localhost/api/v1/health       # {"status":"ok",...} (HTTP отвечает 301 → HTTPS)
-curl -sk https://localhost/api/v1/ready       # readiness: {"status":"ready","databases":{"primary":"ok","replica":"not_configured"},...}
+curl https://1-2-3-4.sslip.io/api/v1/health       # {"status":"ok",...} (HTTP отвечает 301 → HTTPS)
+curl https://1-2-3-4.sslip.io/api/v1/ready       # readiness: {"status":"ready","databases":{"primary":"ok","replica":"not_configured"},...}
 docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml ps   # все сервисы health-gate healthy
 ```
+
+Проверка идёт верифицированным HTTPS публичного хоста (без `-k`);
+`1-2-3-4.sslip.io` — пример, подставьте `PUBLIC_HOST` сервера.
 
 Требуемые свободные порты хоста: **80, 443** (nginx). БД, MinIO, Prometheus и
 Grafana наружу не публикуются — только внутри сети compose. Production Compose
@@ -261,14 +264,36 @@ docker compose --env-file infra/.env.production -f infra/docker-compose.prod.yml
 - `seed_nioktr` — НИОКТР из `data/nioktr_all.json` (копируется в образ, см. Dockerfile)
 - `seed_templates` — шаблоны документов ТЗ/Паспорт/ТЭО
 
-## HTTPS
+## HTTPS через sslip.io (таск 07, G40/G41)
 
-По умолчанию deploy.sh генерирует **самоподписанный** сертификат. Для настоящего HTTPS:
+Постоянного домена нет: публичный MVP живёт на техническом имени
+`<ipv4>.sslip.io` (пример: `1-2-3-4.sslip.io`) с доверенным ACME-сертификатом.
+HTTP редиректит на HTTPS (кроме `/.well-known/acme-challenge/` и `/healthz`).
 
-1. Настроить DNS: A-запись домена на IP сервера.
-2. Выпустить сертификат (certbot в docker или на хосте) для `NEXTAUTH_URL`.
-3. Положить `fullchain.pem` / `privkey.pem` в `infra/nginx/certs/`.
-4. `docker compose -f infra/docker-compose.prod.yml restart nginx`
+```bash
+# 0. На сервере заполнить PUBLIC_HOST и ACME_EMAIL в infra/.env.production
+# 1. Первичный выпуск (порт 80 свободен, nginx ещё не поднят):
+./infra/tls_issue.sh
+# 2. Деплой: TLS-гейт (SAN, годность, https-URL, CORS) проходит до сборки,
+#    финальный health-гейт — верифицированным HTTPS без -k:
+./infra/deploy.sh
+# Проверка:
+curl https://1-2-3-4.sslip.io/api/v1/health
+curl https://1-2-3-4.sslip.io/api/v1/ready
+```
+
+Строгий гейт `infra/tls_deploy_gate.py` роняет выкладку (вместо молчаливого
+самоподписанного fallback) при: localhost в `PUBLIC_HOST`/`NEXTAUTH_URL`/`CORS_ORIGINS`,
+`NEXTAUTH_URL` не `https://<PUBLIC_HOST>`, отсутствии `https://<PUBLIC_HOST>`
+в `CORS_ORIGINS` или http-ориджинах, отсутствии файлов сертификата,
+SAN без `PUBLIC_HOST`, самоподписанном сертификате, годности менее
+`TLS_MIN_VALIDITY_DAYS` (дефолт 14 дней; менее 30 дней — предупреждение).
+
+Продление без просадки readiness — `infra/tls_renew.sh` (webroot, nginx
+перезагружается reload только при смене пары, затем гейт и верифицированный
+проб). Dry-run для приёмки: `./infra/tls_renew.sh --dry-run`. На сервере —
+ежедневный cron: `0 4 * * * cd <repo>/technozrelost-backend/infra && ./tls_renew.sh`.
+Состояние ACME — в docker volume `tz-prod-certbot-conf` (ключи не в git).
 
 ## Секреты и безопасность
 

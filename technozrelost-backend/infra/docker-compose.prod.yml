@@ -495,6 +495,9 @@ services:
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+      # Таск 07 (G40/G41): webroot для ACME HTTP-01 (tls_renew.sh без
+      # остановки nginx). Только challenges, секретов нет.
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
       frontend:
         condition: service_healthy

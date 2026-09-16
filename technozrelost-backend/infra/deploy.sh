@@ -171,15 +171,35 @@ require_strong_auth_secret() {
   fi
 }
 
-warn_placeholder() {
-  local key="$1"
-  local value
-  value="$(env_value "$key")"
-  case "$value" in
-    ""|change_me*|*"localhost"*|*"127.0.0.1"*|*"0.0.0.0"*)
-      echo "ВНИМАНИЕ: $key оставлен заглушкой ($value) — перед production-деплоем заполните реальным доменом."
+require_public_host() {
+  # Таск 07 (G40/G41): публичный MVP только на техническом имени
+  # <ipv4>.sslip.io — localhost отклоняется здесь, а не в проде.
+  PUBLIC_HOST="$(effective_env_value PUBLIC_HOST)"
+  case "$PUBLIC_HOST" in
+    ""|*"localhost"*|*"127.0.0.1"*|*"0.0.0.0"*)
+      echo "ОШИБКА: PUBLIC_HOST должен быть техническим именем <ipv4>.sslip.io, а не локальным адресом." >&2
+      return 1
       ;;
   esac
+  case "$PUBLIC_HOST" in
+    *.sslip.io) ;;
+    *)
+      echo "ОШИБКА: PUBLIC_HOST должен быть техническим именем <ipv4>.sslip.io." >&2
+      return 1
+      ;;
+  esac
+  export PUBLIC_HOST
+}
+
+run_tls_gate() {
+  # Таск 07 (G40/G41): строгий TLS-гейт ДО сборки — localhost/HTTP-URL,
+  # SAN-несоответствие и скорая экспирация роняют деплой вместо молчаливого
+  # самоподписанного fallback. Лимиты и preflight таска 04 не трогаем.
+  local nextauth cors
+  nextauth="$(effective_env_value NEXTAUTH_URL)"
+  cors="$(effective_env_value CORS_ORIGINS)"
+  PUBLIC_HOST="$PUBLIC_HOST" NEXTAUTH_URL="$nextauth" CORS_ORIGINS="$cors" \
+    python3 ./tls_deploy_gate.py || return 1
 }
 
 prepare_environment() {
@@ -196,8 +216,6 @@ prepare_environment() {
   require_grafana_password
   require_replication_password
 
-  warn_placeholder NEXTAUTH_URL
-  warn_placeholder CORS_ORIGINS
   if [ -z "$(env_value LLM_API_KEY)" ]; then
     echo "ИНФОРМАЦИЯ: LLM_API_KEY пуст — AI-функции будут недоступны (не блокирует запуск)."
   fi
@@ -257,7 +275,11 @@ save_previous_images() {
 }
 
 readiness_ok() {
-  curl -kfsS --max-time 5 -o /dev/null https://localhost/api/v1/ready
+  # Таск 07 (G41): финальный health-гейт идёт по верифицированному HTTPS
+  # публичного хоста — без отключения проверки сертификата (-k запрещён).
+  # Успех доказывает сразу три приёмки: имя резолвится, цепочка доверенная,
+  # readiness отвечает.
+  curl -fsS --max-time 5 -o /dev/null "https://$PUBLIC_HOST/api/v1/ready"
 }
 
 validate_replicas() {
@@ -375,9 +397,11 @@ case "${1:-deploy}" in
       exit 2
     fi
     prepare_environment
+    require_public_host
     validate_timeout
     validate_replicas
     run_preflight
+    run_tls_gate
     IMAGE_TAG="$(git rev-parse --short=12 HEAD 2>/dev/null)" || {
       echo "ОШИБКА: не удалось определить git SHA для image tag." >&2
       exit 1
@@ -386,13 +410,7 @@ case "${1:-deploy}" in
     export IMAGE_TAG
     save_previous_images
 
-    mkdir -p nginx/certs
-    if [ ! -f nginx/certs/fullchain.pem ]; then
-      echo "ИНФОРМАЦИЯ: генерирую самоподписанный сертификат (замените на Let's Encrypt)."
-      openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
-        -keyout nginx/certs/privkey.pem -out nginx/certs/fullchain.pem \
-        -subj "/CN=technozrelost" >/dev/null 2>&1
-    fi
+    mkdir -p nginx/certs certbot/www
 
     echo "Собираю и поднимаю стек с image tag $IMAGE_TAG..."
     # P1: --remove-orphans убирает контейнеры удалённых сервисов (db-replica),
@@ -408,8 +426,8 @@ case "${1:-deploy}" in
       exit 1
     fi
     echo "Выкладка $IMAGE_TAG прошла health-gate."
-    echo "Проверка: curl -sk https://localhost/api/v1/health"
-    echo "Для настоящего HTTPS замените сертификаты в infra/nginx/certs/."
+    echo "Проверка: curl https://$PUBLIC_HOST/api/v1/health"
+    echo "Сертификат: выпуск — ./tls_issue.sh, продление — ./tls_renew.sh."
     ;;
   rollback)
     if [ "$#" -ne 2 ]; then
@@ -417,9 +435,11 @@ case "${1:-deploy}" in
       exit 2
     fi
     prepare_environment
+    require_public_host
     validate_timeout
     validate_replicas
     run_preflight
+    run_tls_gate
     rollback_to_tag "$2"
     ;;
   check-env)
