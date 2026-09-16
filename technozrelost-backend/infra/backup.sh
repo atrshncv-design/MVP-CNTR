@@ -8,7 +8,7 @@
 #   3) MinIO — зеркалирование бакета в <BACKUP_DIR>/<TS>/minio/
 #      (предпочитается `mc mirror`, иначе python-клиент minio из venv проекта);
 #   4) контрольные суммы SHA256 всех файлов снапшота — SHA256SUMS;
-#   5) ротация: хранятся BACKUP_KEEP последних снапшотов (по умолчанию 14).
+#   5) ротация: хранятся BACKUP_KEEP последних снапшотов (по умолчанию 7).
 #
 # Переменные окружения:
 #   POSTGRES_HOST/POSTGRES_PORT/POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB
@@ -20,7 +20,7 @@
 #   MINIO_ENDPOINT (или MINIO_URL с схемой), MINIO_ACCESS_KEY, MINIO_SECRET_KEY,
 #   MINIO_BUCKET — объектное хранилище.
 #   BACKUP_DIR — каталог снапшотов (по умолчанию /backups).
-#   BACKUP_KEEP — сколько снапшотов хранить (по умолчанию 14).
+#   BACKUP_KEEP — сколько снапшотов хранить (по умолчанию 7).
 #   BACKUP_STRICT_MINIO=1 — падать, если MinIO не скопирован (значение по умолчанию);
 #                          0 разрешён только для локальной диагностики.
 #   PG_CONTAINER — имя контейнера Primary для docker-фолбэка (по умолчанию tz-prod-db-primary).
@@ -48,7 +48,7 @@ set -eu
 umask 077
 
 BACKUP_DIR="${BACKUP_DIR:-/backups}"
-KEEP="${BACKUP_KEEP:-14}"
+KEEP="${BACKUP_KEEP:-7}"
 case "$KEEP" in
   ''|*[!0-9]*)
     echo "[backup] ОШИБКА: BACKUP_KEEP должен быть целым числом" >&2

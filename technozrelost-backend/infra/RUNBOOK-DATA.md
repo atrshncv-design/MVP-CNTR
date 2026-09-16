@@ -71,7 +71,7 @@ pre-migration backup.
 | Переменная | Назначение |
 |---|---|
 | `BACKUP_AT` | время ежедневного запуска `ЧЧ:ММ` (TZ контейнера таймера; задаётся TZ=UTC), по умолчанию `03:15` |
-| `BACKUP_KEEP` | retention: сколько локальных снапшотов хранить (по умолчанию 14) |
+| `BACKUP_KEEP` | retention: сколько локальных снапшотов хранить (по умолчанию 7 — верх бюджета 3–7 полных копий, таск 10) |
 | `BACKUP_FRESHNESS_MARKER` / `BACKUP_OFFSITE_MARKER` | пути маркеров (см. контракт выше) |
 | `WAL_OFFSITE_MARKER` / `WAL_OFFSITE_INTERVAL_SECONDS` / `WAL_OFFSITE_MAX_AGE_SECONDS` | маркер, период синхронизации WAL и допустимый возраст (по умолчанию 60 / 300 секунд) |
 | `WAL_ARCHIVE_KEEP_DAYS` | положительное число суток хранения локальных WAL и timeline history-файлов после успешной отправки (по умолчанию 7) |
