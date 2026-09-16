@@ -26,13 +26,14 @@ export default function LandingNav({
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
-  // P2-gating (таск 02, G06/G35): публичные реестры откроются в P3 —
-  // навигация P2 идёт «инфоконтур → ЛК» и в реестры не ведёт.
+  // P3 (таск 09, G06/G49): реестры открыты — порядок
+  // «инфоконтур → ЛК → реестры» завершён, навигация постоянно ведёт в /projects.
   const primaryLinks = [
     { href: "/", label: t("home") },
     { href: "/about", label: t("aboutCenter") },
     { href: "/methodology", label: t("methodology") },
     { href: "/levels", label: t("levels") },
+    { href: "/projects", label: t("projects") },
     { href: "/roadmap", label: t("roadmap") },
   ];
 

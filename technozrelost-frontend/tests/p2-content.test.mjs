@@ -100,9 +100,10 @@ test("p2-content: файлы 25МБ + антивирус с видимым ре�
   assert.match(feed, /markNotificationRead/);
 });
 
-// G07: инфоконтур — главная, о платформе, методология, уровни, roadmap,
-// новости, вход, регистрация. Навигация P2 не ведёт в реестры (G06).
-test("p2-content: инфоконтур доступен без входа и не ведёт в реестры", () => {
+// G07 → P3 (таск 09): инфоконтур — главная, о платформе, методология, уровни,
+// roadmap, новости, вход, регистрация. P3 открывает реестры (G06):
+// навигация ведёт в /projects; supersedes P2-гейт «навигация не ведёт».
+test("p3-open: инфоконтур доступен без входа и ведёт в реестры (P2-гейт снят)", () => {
   for (const page of [
     "src/app/(landing)/page.tsx",
     "src/app/(landing)/about/page.tsx",
@@ -116,8 +117,10 @@ test("p2-content: инфоконтур доступен без входа и н�
     assert.ok(read(page).length > 0, `${page}: страница инфоконтура отсутствует`);
   }
   const nav = read("src/components/landing/landing-nav.tsx");
-  assert.doesNotMatch(nav, /\/projects/);
+  assert.match(nav, /\/projects/);
   const home = read("src/app/(landing)/page.tsx");
+  assert.match(home, /fetchPublicRegistryPage/);
+  assert.match(home, /href="\/projects"/);
   assert.doesNotMatch(home, /getPublicRegistry/);
 });
 

@@ -38,11 +38,15 @@ test("landing home: витрина P2 — честное пустое состо
   assert.doesNotMatch(src, /getPublicRegistry/);
 });
 
-test("landing projects page: P2-плейсхолдер без SSR реестра (шов в p2-gating)", () => {
-  // P2-gating (таск 02, G04): страницу проверяет tests/p2-gating.test.mjs.
+test("landing projects page: P3 — SSR первой страницы реестра (шов release-p3)", () => {
+  // P3 (таск 09, G04/G49) supersedes P2-плейсхолдер: страница читает первую
+  // страницу реестра сервером анонимно через отдельный P3-модуль (gated-
+  // заглушка api-client таска 02 не тронута); CTA в регистрацию — в Showcase.
   const src = read("src/app/(landing)/projects/page.tsx");
-  assert.doesNotMatch(src, /getPublicRegistry/);
-  assert.match(src, /href="\/register"/);
+  assert.match(src, /fetchPublicRegistryPage/);
+  assert.match(src, /ProjectsShowcase/);
+  assert.doesNotMatch(src, /api-client/);
+  assert.doesNotMatch(src, /Bearer/);
 });
 
 test("landing showcase: пустой реестр — честное пустое состояние с CTA", () => {

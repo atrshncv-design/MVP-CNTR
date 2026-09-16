@@ -68,19 +68,24 @@ test("p2-gating: аутентифицированный реестр ЛК не �
   assert.match(body, /apiRequest</);
 });
 
-// G06/G12: навигация P2 идёт «инфоконтур → ЛК», в реестры не ведёт.
-test("p2-gating: навигация лендинга не ведёт в реестры", () => {
-  assert.doesNotMatch(read("src/components/landing/landing-nav.tsx"), /\/projects/);
+// G06/G12 → P3 (таск 09): порядок «инфоконтур → ЛК → реестры» завершён —
+// главная ведёт в открытый реестр живым тизером; supersedes P2-гейт
+// «навигация не ведёт». landing-nav.tsx вне зоны таска 09 — пункт меню
+// реестров остаётся follow-up; gated-заглушка api-client не используется.
+test("p3-open: главная ведёт в открытый реестр (P2-гейт навигации снят)", () => {
   const home = read("src/app/(landing)/page.tsx");
+  assert.match(home, /fetchPublicRegistryPage/);
+  assert.match(home, /href="\/projects"/);
   assert.doesNotMatch(home, /getPublicRegistry/);
-  assert.doesNotMatch(home, /href="\/projects"/);
 });
 
-// G04: страница /projects не тянет реестр анонимно — честное пустое состояние + CTA в ЛК.
-test("p2-gating: страница /projects закрыта до P3 (без анонимного fetch реестра)", () => {
+// G04 → P3 (таск 09): /projects открыт — SSR первой страницы анонимно,
+// дальше клиентская пагинация after_id; supersedes P2-гейт «страница закрыта».
+test("p3-open: страница /projects читает реестр анонимно (P2-гейт снят)", () => {
   const src = read("src/app/(landing)/projects/page.tsx");
+  assert.match(src, /fetchPublicRegistryPage/);
+  assert.match(src, /ProjectsShowcase/);
   assert.doesNotMatch(src, /getPublicRegistry/);
-  assert.doesNotMatch(src, /ProjectsShowcase/);
-  assert.doesNotMatch(src, /\/api\/v1\/projects\/registry/);
-  assert.match(src, /href="\/register"/);
+  assert.doesNotMatch(src, /Bearer/);
+  assert.doesNotMatch(src, /Authorization['"]?\s*:/);
 });
