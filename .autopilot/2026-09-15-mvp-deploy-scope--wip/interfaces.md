@@ -4,19 +4,70 @@
 
 | Модуль | Владеет | Выставляет | Прячет |
 |---|---|---|---|
-| `sizing` | минимум vCPU/RAM/диск/сеть и потолок пилота | таблица минимума + формула сложения | черновые замеры |
-| `scope-day1` | перечень Day-1 и статус готовности | список модулей со швами проверки | детали ручек |
-| `backlog` | очередь второго этапа | список с триггерами возврата | приоритизацию внутри этапа |
+| `infra-single` | одноузловой контур, лимиты, TLS, бэкапы, мониторинг | готовность `/ready`, публичный HTTPS, свежесть бэкапа | репликацию, число реплик, ACME-детали |
+| `release-p2` | инфоконтур, ЛК, роли, gating реестров и matching | страницы, кабинеты, ролевые действия | скрытые маршруты, внутренние флаги |
+| `ai-rag` | корпус ГОСТов, импорт, поиск, чат с цитатами | ответ с источниками, поисковые фрагменты | промпты, чанки, ключ провайдера |
+| `release-p3` | публичные реестры и витрина | анонимное чтение проверенных данных | внутренние очереди модерации |
+| `acceptance` | нагрузочные и боевые гейты | вердикт pass/fail по каждому пакету | сценарии нагрузки внутри |
 
-Швы для тестов — те же публичные границы продукта, через которые проверяется готовность Day-1: `GET /api/v1/health`, `GET /api/v1/ready`, публичный `GET /projects/registry` без Authorization, `POST /notifications/sse-ticket` + `GET /notifications/stream?ticket=`, `POST /rag/search`. Новых швов не вводим.
+Швы для тестов — публичные границы продукта: `GET /api/v1/health`, `GET /api/v1/ready`, публичные страницы по HTTPS, вход и саморегистрация базовых ролей, ролевые кабинеты, загрузка файла с антивирусом, SSE по ticket, RAG-поиск и чат с цитатами, свежесть бэкапа, доставка алерта. Новых швов не вводим.
 
-## Правила прогона (ярус T0 — без разбивки на таски)
+## Из таска 01 — одноузловая топология
 
-- Стек: Next.js 16 + FastAPI + PostgreSQL 16/pgvector + MinIO/ClamAV/Redis/nginx; прод-контур — `technozrelost-backend/infra/docker-compose.prod.yml`.
-- Команды проверки (только чтение, код не меняем): `cd technozrelost-backend && uv run pytest -q`, `cd technozrelost-frontend && npm test`.
-- Не трогать: прод-сиды, `docker-compose.prod.yml`, секреты (только имена, never значения).
+- `/ready` без изменений: Primary `ok`, Replica `not_configured` при пустом `POSTGRES_REPLICA_HOST`
+- alerter `check_replica_and_slot` → `ok`/`not_configured` без сети при пустом `replica_host`; пустой `REPL_SLOT` = слот не создаётся и не проверяется
+- ClamAV снижен 4G→2G; полная таблица лимитов ≤8 ГиБ — зона таска 04
+
+## Из таска 02 — gating P2
+
+- `P2_PUBLIC_REGISTRIES_ENABLED=false`, `P2_MATCHING_ENABLED=false`, `P2_GATED`, `p2GatedMessage(feature)→string` (`technozrelost-frontend/src/lib/release.ts`)
+- `matchOrganizations/postMatch/getPublicRegistry` сохраняют сигнатуры, при выключенном флаге бросают `ApiError` 403 `BLOCKED`
+- P3-код matching и витрины оставлен в дереве без роутов и ссылок (включает таск 09)
+
+## Из таска 03 — роли и регистрация
+
+- `POST /users/{id}/reset-password` (staff, body `{new_password}`, ревок сессий, аудит `user.password.reset`)
+- `PATCH /users/{id}` и `GET /users` — только staff (`cntr_admin`, `cntr_manager`); схема `PasswordResetIn`
+- В живой БД 8 ролей; `ugt_expert` существует только в downgrade 0010
+
+## Из таска 06 — RAG-импорт
+
+- `is_allowed_corpus_file(path)→bool`; `scan_corpus_dir(dir)→CorpusScan`; `build_manifest/read_manifest/write_manifest`; `plan_import/diff_manifests→ImportPlan`; `ensure_allowed_for_external(name)` бросает `ValueError`
+- CLI `scripts/rag_import --corpus-dir/--manifest/--dry-run`; повтор без изменений — no-op
+
+## Из таска 04 — ресурсный конверт
+
+- `infra/preflight.py` (env `PREFLIGHT_CPUS/MEM_TOTAL_KB/DISK_AVAIL_KB/DISK_PATH/COMPOSE_FILE`; exit 0/1/2, причины в stderr); `deploy.sh` вызывает preflight до сборки
+- Redis `--maxmemory/--maxmemory-policy`, Prometheus `--storage.tsdb.retention.time/size`
+- Окно обслуживания вписано в runbook; норматив пилота — README-DEPLOY.md
+
+## Из таска 07 — TLS и гейт деплоя
+
+- `infra/tls_deploy_gate.py` (env `PUBLIC_HOST/NEXTAUTH_URL/CORS_ORIGINS/TLS_CERT_FILE/TLS_KEY_FILE/TLS_MIN_VALIDITY_DAYS`; exit 0/1/2 + stderr)
+- `infra/tls_issue.sh` (первичный ACME/standalone); `infra/tls_renew.sh [--dry-run]` (webroot + reload + гейт)
+- readiness в deploy — верифицированный `curl https://$PUBLIC_HOST` без `-k`
+
+## Из таска 08 — AI-обвязка
+
+- `ai_wiring.resolve_llm_api_key()→str|None`; `sanitize_question_for_external(str)→str`; `fragment_source_name(title,source_uri)→str`; `select_external_fragments(list)→list`
+- `OPENCODE_API_KEY_ENV="OPENCODE_API_KEY"`; маркеры `REDACTED_EMAIL/REDACTED_PHONE`
+
+## Из таска 09 — P3 реестры
+
+- `fetchPublicRegistryPage(afterId?) → {items: RegistryProjectOut[], failed, status}`; анонимный `GET /projects/registry?limit=&after_id=` без Authorization; `SHOWCASE_TEASER_SIZE=3`
+- Навигация ведёт в /projects при любом состоянии реестра; gated-заглушки api-client таска 02 не тронуты (matching остаётся закрыт)
+
+## Из таска 10 — приёмка
+
+- `acceptance_load.py run(argv)/verdict()/percentile()/THRESHOLDS` (exit 0/1/2 + JSON-отчёт); `acceptance_alert_dryrun.py run()` (DRY-RUN без сети/секретов)
+- `BACKUP_KEEP` 14→7; отчёт переписан (6/11/150, P1/P2/P3, трассировка); `docs/СЕРВЕР-ТРЕБОВАНИЯ.md` помечен отозванным
+
+## Правила прогона (ярус T3 — 10 тасков, 4 волны)
+
+- Стек: Next.js 16 + FastAPI + PostgreSQL 16/pgvector + MinIO/ClamAV/Redis/nginx; прод-контур — одноузловой, без Replica.
+- Фактический сервер: 6 vCPU, 11 ГиБ RAM, 150 ГБ SSD; суммарный лимит контейнеров не выше 8 ГиБ.
+- Команды проверки: backend-тесты из `technozrelost-backend`, frontend-тесты из `technozrelost-frontend`; RAG-импорт только из allowlist `ГОСТ*.pdf`.
+- Не трогать: прод-сиды и демоданные, секреты (только имена, never значения), файл доступов в worktree, исходные PDF корпуса (не коммитить).
 - Отсутствующая зависимость → `BLOCKED: <имя>` + причина, молча не ставить.
-## Из прогона — отчёт (T0, код не менялся)
-
-- `work/report.md` — минимум (4 vCPU/16 ГБ/120 ГБ/100 Мбит/с, комфорт 6–8/16–24/200), потолок (~50 concurrent/~10–20 RPS), Day-1 (всё без Replica) со швами проверки, backlog B1–B7 с триггерами
-- Ревью T0 (self, inline): Manifest — R01–R04i done, сужений нет, цен-оценки помечены; Spec — истории 1–9 и покрытие закрыты, extra-поверхности нет; Craft — секреты только именами, пути трассировки существуют
+- Работа строго в изолированном worktree; ветку `main` не ломать; каждый коммит пушить в `origin`.
+- Внешнему AI — только фрагменты корпуса ГОСТов и обезличенные вопросы; ПДн, файлы проектов и данные ЛК запрещены.

@@ -27,15 +27,28 @@
 ```
 
 <!-- autopilot:start -->
-# Платформа «Технозрелость» — памятка агенту (tier T3, верифицировано 2026-09-09)
-Память из кода + `.autopilot/2026-09-08-audit-remediation/interfaces.md`, не из spec/tickets/manifest; стек Next.js 16 + FastAPI + PostgreSQL 16/pgvector + MinIO/ClamAV/Redis/nginx; УдГУ CLI офлайн без БД.
+# Платформа «Технозрелость» — памятка агенту (tier T3, верифицировано 2026-09-16)
+Память из кода; стек Next.js 16 + FastAPI + PostgreSQL 16/pgvector + MinIO/ClamAV/Redis/nginx; УдГУ CLI офлайн без БД.
 ## Заголовок и строка
-Tier T3, slug `audit-remediation`; 10 границ (auth/registry/realtime/files/ai/frontend-auth/landing/infra-backup/infra-observe/db); швы — публичная HTTP-граница API + `pytest`/`npm test`/линт/сборки.
+Tier T3; швы — публичная HTTP-граница API + `pytest`/`npm test`/линт/сборки; границы из кода: auth/registry/realtime/files/ai/frontend-auth/landing/infra-backup/infra-observe/db.
 ## Команды
-- Полные сюиты (верифицировано 2026-09-09): `cd technozrelost-backend && uv run pytest -q` → 489 passed; `cd technozrelost-frontend && npm test` → 180 passed, `npm run build` → success; `uv run ruff check app tests infra/alerter scripts/udgu_ingest` → чисто.
-- Один файл backend: `cd technozrelost-backend && uv run pytest tests/test_ci_gates.py -q` → 5 passed.
-- Один файл frontend: `cd technozrelost-frontend && node --test tests/offline.test.mjs` → 10 passed.
+- Полные сюиты (оркестратор 2026-09-16, установкой не перепроверялось): `cd technozrelost-backend && uv run pytest -q` → 507 passed; `cd technozrelost-frontend && npm test` → 202 passed, `npm run build` → success.
+- Линт/типы backend: `uv run ruff check app tests infra/alerter scripts/udgu_ingest`, `uv run mypy app`; CI-образец — `.github/workflows/ci.yml` (`uv sync --locked --extra dev`, `pip-audit`, `npm audit`, docker-сборка).
+- Один файл backend: `cd technozrelost-backend && uv run pytest tests/test_ci_gates.py -q`; один файл frontend: `cd technozrelost-frontend && node --test tests/offline.test.mjs`.
 - Голый `uv sync` без `--extra dev` сносит dev-зависимости — запрещён; `python` может отсутствовать — использовать `uv run python` или `python3`.
+## Структура
+- `technozrelost-backend/app/main.py` — композиция FastAPI, middleware, роутеры `/api/v1`.
+- `technozrelost-backend/app/api/v1/` — доменные роутеры: auth/projects/nioktr/executors/files/realtime/health/metrics и др.
+- `technozrelost-backend/app/core/` — config/database/errors/security/deps/embeddings.
+- `technozrelost-backend/app/services/` — metrics/ai_assistant/matching/file_storage/rag/notifications.
+- `technozrelost-backend/alembic/versions/` — линейные ревизии `0001_init_schemas.py` → `0037_status_checks.py`.
+- `technozrelost-backend/scripts/` + `technozrelost-backend/scripts/udgu_ingest/` — rag_import/reindex/security/loadtest/ingest.
+- `technozrelost-backend/infra/` — compose dev/prod, nginx/postgres/prometheus/grafana, alerter, backup/restore/deploy.
+- `technozrelost-frontend/src/app/` — App Router: landing/dashboard/login/register/join/assessment/api.
+- `technozrelost-frontend/src/lib/` — public-api/api-client/roles/landing-registry/translators/release.
+- `technozrelost-frontend/src/features/` — analytics/dashboard/matching/notifications/offline/project/registry.
+- `technozrelost-frontend/src/i18n/` + `technozrelost-frontend/messages/` — next-intl `ru/en/zh`, middleware-гейт по ролям.
+- `.github/workflows/ci.yml` — джобы backend и frontend.
 ## Ключевые файлы
 - Точка входа: `technozrelost-backend/app/main.py`; конфиг-гард: `technozrelost-backend/app/core/config.py`; Primary/Replica: `technozrelost-backend/app/core/database.py`.
 - Каталог ошибок: `technozrelost-backend/app/core/errors.py` (`ERROR_HEADER="X-Error-Code"`, `CATALOG` ru/en, `raise_error`).
@@ -45,8 +58,8 @@ Tier T3, slug `audit-remediation`; 10 границ (auth/registry/realtime/files
 - Инфра: `technozrelost-backend/infra/nginx/nginx.prod.conf`, `technozrelost-backend/infra/docker-compose.yml`, `technozrelost-backend/infra/docker-compose.prod.yml`, `technozrelost-backend/infra/backup-lock.py`, `technozrelost-backend/infra/alerter/alerter.py`, `technozrelost-backend/infra/prometheus/prometheus.yml`; CI: `.github/workflows/ci.yml`.
 - Фронт: `technozrelost-frontend/next.config.ts`, `technozrelost-frontend/src/lib/landing-registry.ts` (`SHOWCASE_PAGE_SIZE=9`), `technozrelost-frontend/src/lib/translators.ts` (`translatorFor`), `technozrelost-frontend/src/lib/public-api.ts`, `technozrelost-frontend/src/lib/api-client.ts`, `technozrelost-frontend/src/features/offline/queue.ts` (`sanitizeOfflineHeaders`, `syncOfflineQueue`).
 ## Архитектура
-- Поток: browser → nginx `:443` → `frontend:3000` / `backend:8000` (×2 реплики, Docker DNS + `resolver 127.0.0.11`); запись Primary `get_db`, чтение Replica `get_read_db` (`technozrelost-backend/app/core/database.py`).
-- Auth: JWT HS256 + NextAuth Credentials; `POST /auth/register` — allowlist непривилегированных, иначе 403 `AUTH_PRIVILEGED_ROLE_FORBIDDEN`; `PATCH /users/{id}` и `PATCH /projects/{id}/control-points/{cp_id}` — staff-bypass, чужим 404/403.
+- Поток: browser → nginx `:443` → `frontend:3000` / `backend:8000` (prod backend ×1, Docker DNS + `resolver 127.0.0.11`); запись Primary `get_db`, чтение Replica `get_read_db` с fallback на Primary (`technozrelost-backend/app/core/database.py`).
+- Auth: JWT HS256 + NextAuth Credentials (`technozrelost-frontend/src/auth.config.ts` → `POST /auth/login`, refresh за 5 мин до истечения); `POST /auth/register` — allowlist непривилегированных, иначе 403 `AUTH_PRIVILEGED_ROLE_FORBIDDEN`.
 - Refresh: атомарный `UPDATE ... WHERE revoked_at IS NULL AND expires_at >= now()` в `technozrelost-backend/app/api/v1/auth.py`; троттлинг входа/регистрации через Redis с in-memory fallback.
 - Registry: `enforce_registry_limit` в `technozrelost-backend/app/api/v1/nioktr.py` (anon `registry_anon_limit`, auth `registry_auth_limit`, окно `registry_window_seconds`, LRU `registry_max_entries`); `/executors/specialists` limit 20≤100 + after_id, `/executors/organizations` limit + offset; nginx zone registry 100r/s + auth 10r/s.
 - Realtime: `POST /notifications/sse-ticket` → одноразовый ticket TTL 30с, `GET /notifications/stream?ticket=`; токен в query → 400 `SSE_TOKEN_IN_URL`, чужой/used/expired → 401 `SSE_TICKET_INVALID`; Redis pubsub + in-memory fallback; nginx пишет SSE отдельным логом без query.
@@ -54,10 +67,10 @@ Tier T3, slug `audit-remediation`; 10 границ (auth/registry/realtime/files
 - Ready: `GET /ready` в `technozrelost-backend/app/api/v1/health.py` → `{status,databases,redis,storage,clamav}`, 503 при любом unavailable; Redis prod обязателен (fail-fast в `technozrelost-backend/app/core/config.py`), dev/test `not_configured`.
 - Observe: метки `(method,route,status)`, несопоставленное → `route="unmatched"` bounded + экранирование (`technozrelost-backend/app/services/metrics.py`); тело 32m (`client_max_body_size 32m` == `max_request_body_mb`), файл 25МБ.
 - Backup: `technozrelost-backend/infra/backup-lock.py` коды 0 готово/дедуп, 3 занято (блокирует alembic), 1 ошибка, 2 usage; `--manual`/`--force`/`BACKUP_FORCE=1` обходят deploy-маркеры.
-- AI: `wrap_untrusted` + `UNTRUSTED_BEGIN/END`, `LLM_TIMEOUT_SECONDS=8.0`, `LLM_QUEUE_TIMEOUT_SECONDS=2.0`, `LLM_MAX_CONCURRENCY=4`; `_parse_stage_success` — первая непустая строка с токеном SUCCESS и границей слова; семантика офлайн 1536 (синонимы техдомена, без внешних API) + `reindex_all`.
-- Frontend-auth: очередь `technozrelost-frontend/src/features/offline/queue.ts` хранит действия без Authorization, токен инжектится в момент отправки.
-- Landing: `getPublicRegistry` → `GET /projects/registry` без Authorization, `mergeRegistryPage/buildPublicRegistryQuery` в `technozrelost-frontend/src/lib/landing-registry.ts`.
-- DB: линейные ревизии alembic с upgrade/downgrade; P2 CHECK статусов + prod-guard отклоняет `change_me` пароли БД/MinIO.
+- AI: `wrap_untrusted` + `UNTRUSTED_BEGIN/END`, `LLM_TIMEOUT_SECONDS=8.0`, `LLM_QUEUE_TIMEOUT_SECONDS=2.0`, `LLM_MAX_CONCURRENCY=4`; семантика офлайн 1536 (`EMBEDDING_MODEL=semantic-ru-v2`) + `reindex_all`.
+- Frontend-auth: очередь `technozrelost-frontend/src/features/offline/queue.ts` хранит действия без Authorization, токен инжектится в момент отправки; middleware fail-closed (нет записи в матрице → 403 `/forbidden`), CSP nonce per-request.
+- Landing: `fetchPublicRegistryPage` в `technozrelost-frontend/src/app/(landing)/public-registry.ts` читает `GET /projects/registry` без Authorization; `getPublicRegistry`/matching в `api-client.ts` — P2-заглушки 403 `p2GatedMessage`; `mergeRegistryPage/buildPublicRegistryQuery` в `technozrelost-frontend/src/lib/landing-registry.ts`.
+- DB: линейные ревизии alembic с upgrade/downgrade; prod-guard отклоняет dev-дефолты паролей БД/MinIO; новости — фон-цикл с `pg_try_advisory_lock(42)` (`technozrelost-backend/app/main.py`).
 ## Соглашения кода
 - Линт `technozrelost-backend/pyproject.toml`: ruff `E,F,I,UP,B,SIM` line-length 100, `mypy --strict`, `pytest asyncio_mode=auto pythonpath=[.]`.
 - Только ORM SQLAlchemy; `Serial/BigSerial`, Hash для exact, B-Tree default/range; раздельные схемы `public`/`test`.
@@ -66,18 +79,18 @@ Tier T3, slug `audit-remediation`; 10 границ (auth/registry/realtime/files
 - Работа в изолированном worktree, `main` не ломать; прод-сиды и `technozrelost-backend/infra/docker-compose.prod.yml` вне своего таска не трогать.
 ## Окружение
 - Backend (`technozrelost-backend/.env.example` + `technozrelost-backend/app/core/config.py`): `APP_ENV/APP_NAME/APP_HOST/APP_PORT/LOG_LEVEL`, `POSTGRES_USER/PASSWORD/DB/HOST/PORT`, `POSTGRES_REPLICA_HOST/PORT`, `DATABASE_URL/DATABASE_REPLICA_URL`, `DB_SCHEMA_PUBLIC/DB_SCHEMA_TEST`, `DB_POOL_SIZE/DB_MAX_OVERFLOW/DB_APP_REPLICAS/DB_MAX_CONNECTIONS/DB_CONNECTIONS_RESERVE`, `VECTOR_DIMENSION`, `JWT_SECRET/JWT_ALGORITHM/ACCESS_TOKEN_TTL_MINUTES/REFRESH_TOKEN_TTL_DAYS/CORS_ORIGINS`, `REDIS_URL/SSE_TICKET_TTL_SECONDS`, `REGISTRY_ANON_LIMIT/REGISTRY_AUTH_LIMIT/REGISTRY_WINDOW_SECONDS/REGISTRY_MAX_ENTRIES`, `LLM_API_BASE/LLM_API_KEY/LLM_MODEL/LLM_GATEWAY_ENABLED`, `MINIO_ENDPOINT/ACCESS_KEY/SECRET_KEY/BUCKET/SECURE`, `CLAMAV_HOST/PORT/CLAMAV_ENABLED/CVD_MAX_AGE_SECONDS`, `MAX_FILE_SIZE_MB/MAX_REQUEST_BODY_MB`.
-- Frontend (`technozrelost-frontend/.env.example`): `AUTH_SECRET/AUTH_URL`, `API_URL_INTERNAL`, `NEXT_PUBLIC_API_URL`.
+- Frontend (`technozrelost-frontend/.env.example`): `AUTH_SECRET/AUTH_URL`, `API_URL_INTERNAL`, `NEXT_PUBLIC_API_URL`, `LLM_API_BASE/LLM_API_KEY/LLM_MODEL` (+ `NEXT_PUBLIC_` варианты).
 - Prod (`technozrelost-backend/infra/.env.production.example`): `REPL_USER/REPL_PASSWORD/REPL_SLOT`, `GRAFANA_ADMIN_USER/GRAFANA_ADMIN_PASSWORD`, `BACKUP_*`, `WAL_*`, `ALERTER_*`, `TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID`.
 ## Тесты
 - Backend `technozrelost-backend/tests/test_*.py`: один файл `cd technozrelost-backend && uv run pytest tests/test_ci_gates.py -q`; УдГУ-четвёрка без БД, остальные требуют тестовую БД. Общая тестовая БД одна на всех — короткие файлы, при дедлоке подождать и повторить.
-- Фронт `technozrelost-frontend/tests/*.test.mjs`: один файл `cd technozrelost-frontend && node --test tests/offline.test.mjs`; локали `locale-zh/locale-hi`, витрина `landing-registry`, офлайн `offline`.
+- Фронт `technozrelost-frontend/tests/*.test.mjs`: один файл `cd technozrelost-frontend && node --test tests/offline.test.mjs`; локали `locale-zh/locale-hi-removed`, витрина `landing-registry`, офлайн `offline`.
 - Гейты: `technozrelost-backend/tests/test_ci_gates.py` сверяет текст `.github/workflows/ci.yml`; `technozrelost-backend/tests/test_nginx_body_size.py` сверяет равенство 32m.
 ## Подводные камни
 - SSE ticket в access-логе отсутствует осознанно (отдельный лог без query); JWT в query запрещён.
 - Метки метрик никогда не содержат сырой path (кардинальность); per-instance скрап требует dns_sd в `technozrelost-backend/infra/prometheus/prometheus.yml`.
-- Sentinel пустого раздела УдГУ — `нет данных` в первом столбце; `__MACOSX`/`__*` вне `raw_refs`; `00_опись.pdf` только placeholder.
+- Sentinel пустого раздела УдГУ — `нет данных` в первом столбце; `__MACOSX`/`__*` вне `raw_refs`; `00_опись.xlsx` только placeholder.
 - Demo-guard: не перезапускать `next dev :3000`, `uvicorn :8000`, docker-контейнеры; не занимать их порты; миграции/сиды только на тестовой БД.
-- Prod-guard падает на `change_me`/пустых секретах и пустом `REDIS_URL`; dev-дефолт `http://127.0.0.1:8000` только для dev (`technozrelost-frontend/next.config.ts`).
+- Prod-guard падает на dev-дефолтах/пустых секретах и пустом `REDIS_URL`; dev-дефолт локального API только для dev (`technozrelost-frontend/next.config.ts`).
 - CSP/nonce и security-заголовки — источник nginx, дубли upstream вырезаются `proxy_hide_header`.
 - Флейки общей тестовой БД под параллельными прогонами лечатся повтором.
 ## Как здесь работает Autopilot
