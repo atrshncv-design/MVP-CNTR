@@ -99,13 +99,13 @@ def _allowed_by_corpus_gate(name: str) -> bool:
 def select_external_fragments(pairs: list[tuple[str, str]]) -> list[tuple[str, str]]:
     """Отбор фрагментов для внешнего промпта (deny-by-default).
 
-    Файлоподобные источники (имя с суффиксом) проходят гейт корпуса
-    таска 06; платформенные документы без файлового имени (методология,
-    шаблоны — vetted на staff-границе записи) идут как есть.
+    Каждый фрагмент проходит гейт корпуса таска 06
+    (`ensure_allowed_for_external`): не-allowlist — включая источники
+    без файлового имени — никогда не уходит наружу, без исключений.
     """
     selected: list[tuple[str, str]] = []
     for name, text in pairs:
-        if Path(name).suffix and not _allowed_by_corpus_gate(name):
+        if not _allowed_by_corpus_gate(name):
             continue
         selected.append((name, text))
     return selected

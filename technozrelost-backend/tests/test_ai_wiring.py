@@ -157,6 +157,21 @@ def test_non_allowlist_fragment_never_goes_external(client, monkeypatch) -> None
         _gateway_off(old)
 
 
+def test_suffixless_fragment_never_goes_external() -> None:
+    """№53/deny-by-default: фрагмент без файлового имени тоже идёт через гейт."""
+    from app.services.ai_wiring import select_external_fragments
+
+    selected = select_external_fragments(
+        [
+            ("методология", "СЕКРЕТ-БЕЗ-СУФФИКСА внутренний шаблон"),
+            ("ГОСТ Р 58048-2017.pdf", "ГОСТ-МАРКЕР уровни готовности"),
+        ]
+    )
+    names = [name for name, _ in selected]
+    assert "методология" not in names
+    assert "ГОСТ Р 58048-2017.pdf" in names
+
+
 def test_opencode_key_env_maps_to_llm_settings(monkeypatch) -> None:
     """G52/G55: значение ключа — только из окружения (`OPENCODE_API_KEY`).
 
