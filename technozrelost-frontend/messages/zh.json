@@ -491,7 +491,16 @@
   "uiProgressLabel": "进度 {value}%",
   "uiSearchLabel": "搜索",
   "uiLoading": "加载中…",
-  "uiUgtBadge": "TRL {level}"
+  "uiUgtBadge": "TRL {level}",
+  "orgHintChecking": "正在检查您的组织状态…",
+  "orgHintTitle": "组织状态",
+  "orgHintNoOrg": "您尚未加入任何组织。您仍可创建项目（将保存为草稿），但需在个人资料中完成组织认证后才能发布到登记册。",
+  "orgHintUnverified": "组织“{name}”尚未通过认证（状态：{state}）。您仍可创建项目；发布到登记册需按常规审核规则进行。",
+  "orgHintVerified": "组织“{name}”已通过认证——创建与发布均按常规规则进行（TRL 1–2自动发布，TRL 3–9需经经理审核）。",
+  "orgHintLoadFailed": "无法检查您的组织状态。您仍可创建项目；若无法发布，项目卡片上会显示提示。",
+  "orgHintProfileLink": "前往个人资料",
+  "publishRulesTitle": "发布流程说明",
+  "publishRulesText": "TRL 1–2项目在快速评估后自动发布，TRL 3–9项目需经CNTR经理审核。已发布的项目将进入公开登记册。"
  },
  "auth": {
   "title": "登录",

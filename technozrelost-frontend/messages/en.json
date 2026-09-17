@@ -491,7 +491,16 @@
     "uiProgressLabel": "Progress {value}%",
     "uiSearchLabel": "Search",
     "uiLoading": "Loading…",
-    "uiUgtBadge": "TRL {level}"
+    "uiUgtBadge": "TRL {level}",
+    "orgHintChecking": "Checking your organization status…",
+    "orgHintTitle": "Organization status",
+    "orgHintNoOrg": "You are not a member of any organization yet. You can still create a project — it will be saved as a draft — but confirm your organization in your profile to publish it to the registry.",
+    "orgHintUnverified": "The organization “{name}” is not verified yet (status: {state}). You can still create a project; publishing to the registry follows the standard moderation rules.",
+    "orgHintVerified": "The organization “{name}” is verified — creation and publishing follow the standard rules (TRL 1–2 automatically, TRL 3–9 via a manager).",
+    "orgHintLoadFailed": "Could not check your organization status. You can still create a project; if publishing is unavailable, a hint will appear on the project card.",
+    "orgHintProfileLink": "Open profile",
+    "publishRulesTitle": "How publishing works",
+    "publishRulesText": "TRL 1–2 projects are published automatically after the express assessment, TRL 3–9 require a CNTR manager decision. A published project appears in the public registry."
   },
   "auth": {
     "title": "Sign in",

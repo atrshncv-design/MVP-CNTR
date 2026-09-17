@@ -90,6 +90,12 @@ export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
     "cntr_admin",
     "cntr_manager",
   ],
+  // Страницы создания проекта в кабинетах исполнителей (таск 01, R02.1):
+  // та же анкета УГТ, каждая — только своей роли, как и сам кабинет.
+  // Универсальный опросник заказчика выше остаётся доступен всем ролям.
+  "/dashboard/rd_executor/projects/new": ["rd_executor"],
+  "/dashboard/scientific_org/projects/new": ["scientific_org"],
+  "/dashboard/serial_manufacturer/projects/new": ["serial_manufacturer"],
   "/dashboard/projects": [
     "gk_customer",
     "rd_executor",

@@ -64,7 +64,7 @@ const ROLE_META: Record<
     icon: FlaskConical,
     tabs: [
       { key: "tabProjects", href: "/dashboard/rd_executor" },
-      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabNewRequest", href: "/dashboard/rd_executor/projects/new" },
       { key: "tabTechRegistry", href: "/dashboard/technologies" },
       { key: "tabExecutors", href: "/dashboard/executors" },
     ],
@@ -75,7 +75,7 @@ const ROLE_META: Record<
     icon: GraduationCap,
     tabs: [
       { key: "tabProjects", href: "/dashboard/scientific_org" },
-      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabNewRequest", href: "/dashboard/scientific_org/projects/new" },
       { key: "tabTechRegistry", href: "/dashboard/technologies" },
       { key: "tabExecutors", href: "/dashboard/executors" },
     ],
@@ -86,7 +86,7 @@ const ROLE_META: Record<
     icon: Factory,
     tabs: [
       { key: "tabProjects", href: "/dashboard/serial_manufacturer" },
-      { key: "tabNewRequest", href: "/dashboard/gk_customer/projects/new" },
+      { key: "tabNewRequest", href: "/dashboard/serial_manufacturer/projects/new" },
       { key: "tabTechRegistry", href: "/dashboard/technologies" },
       { key: "tabExecutors", href: "/dashboard/executors" },
     ],
@@ -145,6 +145,24 @@ const ROLE_META: Record<
     ],
   },
 };
+
+/**
+ * Страница создания проекта для роли (таск 01, R02.1): у трёх ролей
+ * исполнителей — собственная страница в своём кабинете, у остальных —
+ * универсальный опросник заказчика (доступен всем ролям по матрице).
+ */
+export function getNewRequestHref(role: RoleSlug): string {
+  switch (role) {
+    case 'rd_executor':
+      return '/dashboard/rd_executor/projects/new';
+    case 'scientific_org':
+      return '/dashboard/scientific_org/projects/new';
+    case 'serial_manufacturer':
+      return '/dashboard/serial_manufacturer/projects/new';
+    default:
+      return '/dashboard/gk_customer/projects/new';
+  }
+}
 
 function useFavorites() {
   const [favorites, setFavorites] = useState<Set<number>>(() => {
@@ -281,6 +299,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const meta = ROLE_META[role];
+  const newRequestHref = getNewRequestHref(role);
   const Icon = meta.icon;
   const displayName = session?.user?.name ?? session?.user?.email ?? t("defaultUser");
   const { toggle, isFavorite } = useFavorites();
@@ -391,7 +410,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
         {/* Кнопки в шапке — G51: без Cmd+K, без FAB */}
         <div className="ml-auto hidden items-center gap-2 sm:flex">
           <Link
-            href="/dashboard/gk_customer/projects/new"
+            href={newRequestHref}
             className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--tz-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
           >
             <PlusCircle size={16} />
@@ -485,7 +504,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-3">
           <Link
-            href="/dashboard/gk_customer/projects/new"
+            href={newRequestHref}
             className="inline-flex items-center gap-2 rounded-xl bg-[var(--tz-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--tz-accent-hover)]"
           >
             <PlusCircle size={16} />
@@ -553,7 +572,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
               </p>
               {!showFavoritesOnly && (
                 <Link
-                  href="/dashboard/gk_customer/projects/new"
+                  href={newRequestHref}
                   className="mt-7 inline-flex rounded-lg bg-[var(--tz-accent)] px-5 py-3 font-bold text-white transition hover:bg-[var(--tz-accent-hover)]"
                 >
                   {t("createFirst")}
@@ -686,7 +705,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
           {/* Мобильные кнопки в шапке дублируются как карточки — G51: кнопки в шапке, на мобилке — внутри колонки */}
           <div className="grid gap-3 sm:hidden">
             <Link
-              href="/dashboard/gk_customer/projects/new"
+              href={newRequestHref}
               className="flex items-center justify-between rounded-2xl border border-tz-card-border bg-tz-surface p-5 transition hover:border-[var(--tz-accent)]"
             >
               <span className="flex items-center gap-3">
@@ -706,7 +725,7 @@ export default function RoleDashboardShell({ role }: RoleDashboardShellProps) {
             <h4 className="font-semibold text-tz-fg">{t("quickActions")}</h4>
             <div className="mt-3 grid gap-2">
               <Link
-                href="/dashboard/gk_customer/projects/new"
+                href={newRequestHref}
                 className="flex items-center justify-between rounded-xl bg-tz-soft px-4 py-3 text-sm font-medium text-tz-fg transition hover:bg-[var(--tz-accent-soft)] hover:text-[var(--tz-accent)]"
               >
                 <span className="flex items-center gap-2">
