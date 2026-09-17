@@ -201,6 +201,23 @@ render_legacy_redirect() {
   fi
 }
 
+run_routing_gate() {
+  # REPAIR 2026-09-17: гейт маршрутизации ДО переключения — ловит 301-петлю
+  # (legacy-блок первым на порту + основные без default_server: неизвестное
+  # SNI/Host, включая новое каноническое имя, уходило в legacy-301 на само
+  # себя). Проверяет склейку целиком (nginx.prod.conf + сгенерированный
+  # legacy-файл) в обоих порядках инклудов. Секреты не читает и не печатает
+  # (только публичные имена DNS). Вызывается в deploy И rollback: откат идёт
+  # тем же путём, а конфиг на диске уже новый — без гейта петля прошла бы.
+  if ! PUBLIC_HOST="$PUBLIC_HOST" LEGACY_PUBLIC_HOST="${LEGACY_PUBLIC_HOST:-}" \
+    NGINX_PROD_CONF="${NGINX_PROD_CONF:-nginx/nginx.prod.conf}" \
+    LEGACY_REDIRECT_FILE="${LEGACY_REDIRECT_OUT:-nginx/legacy/redirect.conf}" \
+    python3 ./nginx_routing_gate.py; then
+    echo "ОШИБКА: маршрутизация nginx ведёт в 301-петлю — выкладка остановлена до переключения." >&2
+    return 1
+  fi
+}
+
 run_tls_gate() {
   # Таск 07 (G40/G41): строгий TLS-гейт ДО сборки — localhost/HTTP-URL,
   # SAN-несоответствие и скорая экспирация роняют деплой вместо молчаливого
@@ -424,6 +441,7 @@ case "${1:-deploy}" in
     run_preflight
     run_tls_gate
     render_legacy_redirect
+    run_routing_gate
     IMAGE_TAG="$(git rev-parse --short=12 HEAD 2>/dev/null)" || {
       echo "ОШИБКА: не удалось определить git SHA для image tag." >&2
       exit 1
@@ -463,6 +481,7 @@ case "${1:-deploy}" in
     run_preflight
     run_tls_gate
     render_legacy_redirect
+    run_routing_gate
     rollback_to_tag "$2"
     ;;
   check-env)
