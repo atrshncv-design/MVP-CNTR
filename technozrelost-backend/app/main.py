@@ -91,6 +91,10 @@ async def _news_scheduler_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # R02 (таск 01): стартовая проба ключа синтеза — факт наличия, не значение.
+    from app.services.ai_assistant import log_llm_startup_status
+
+    log_llm_startup_status()
     scheduler_task: asyncio.Task[None] | None = None
     if settings.app_env != "test":
         # В тестах фоновый цикл не запускаем: обработчик вызывается напрямую.

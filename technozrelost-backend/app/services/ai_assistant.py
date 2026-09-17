@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import cast
 
 import httpx
@@ -18,6 +19,8 @@ from app.core.deps import CurrentUser, DBSession
 from app.schemas import ChatIn, ChatMessage, ChatOut, RagDocumentOut, RagSearchIn
 from app.services import ai_wiring
 from app.services.rag import search_documents
+
+logger = logging.getLogger(__name__)
 
 LLM_TIMEOUT_SECONDS = 8.0
 # R05i (таск 11): синхронный путь не удерживает соединения дольше ~10с
@@ -44,6 +47,82 @@ PROMPT_ISOLATION_RULE = (
 def wrap_untrusted(text: str) -> str:
     """Обернуть недоверенный контент разделителями (изоляция промпта)."""
     return f"{UNTRUSTED_BEGIN}\n{text}\n{UNTRUSTED_END}"
+
+
+# R01/R02 (таск 01): человеческие ветки фолбэка. В пользовательских текстах —
+# никаких имён переменных окружения и секретов: они остаются только в
+# серверных логах и комментариях, наружу не уходят.
+NO_SYNTHESIS_LEAD = (
+    "Умный синтез выключен. "
+    "Нашёл в базе знаний следующие выдержки по вашему запросу:"
+)
+LLM_DOWN_LEAD = (
+    "Не удалось подготовить синтезированный ответ. "
+    "Нашёл в базе знаний следующие выдержки по вашему запросу:"
+)
+NO_SYNTHESIS_PREFIX = "Умный синтез выключен. "
+NO_DOCS_TEXT = (
+    "К сожалению, по вашему запросу ничего не найдено в базе знаний. "
+    "Попробуйте переформулировать вопрос или обратиться к документации ГОСТ Р 58048-2017."
+)
+
+
+def is_synthesis_available() -> bool:
+    """Синтез доступен: гейт включён флагом и ключ реально задан (R02)."""
+    if not settings.llm_gateway_enabled:
+        return False
+    return ai_wiring.resolve_llm_api_key() is not None
+
+
+def get_llm_status() -> dict[str, object]:
+    """Состояние синтеза для стартовой пробы: только факты, не значения.
+
+    Значение ключа сюда не попадает — только факт наличия.
+    """
+    return {
+        "gateway_enabled": bool(settings.llm_gateway_enabled),
+        "key_present": ai_wiring.resolve_llm_api_key() is not None,
+        "model": settings.llm_model,
+    }
+
+
+def log_llm_startup_status() -> dict[str, object]:
+    """Стартовая проба ключа (R02): факт наличия, не значение.
+
+    Вызывается из lifespan при старте приложения; молчаливый «выкл»
+    становится видимым в логах, значение ключа в логи не попадает.
+    """
+    status = get_llm_status()
+    if status["gateway_enabled"] and status["key_present"]:
+        logger.info("LLM synthesis enabled (model=%s, key_present=True)", status["model"])
+    elif status["gateway_enabled"]:
+        logger.warning(
+            "LLM synthesis unavailable: gateway enabled but no key present (model=%s)",
+            status["model"],
+        )
+    else:
+        logger.info(
+            "LLM synthesis disabled: serving honest excerpts "
+            "(gateway_enabled=False, key_present=%s)",
+            status["key_present"],
+        )
+    return status
+
+
+def format_excerpt_quotes(
+    items: list[tuple[str | None, str | None]], limit: int = 3
+) -> str:
+    """Человеческие выдержки с цитатами для честного фолбэка (R01/R02).
+
+    Сырые куски не отдаём: каждая выдержка — ужатая цитата (≤500 символов,
+    схлопнутые пробелы) с указанием источника.
+    """
+    lines = []
+    for i, (title, text) in enumerate(items[:limit], start=1):
+        excerpt = " ".join((text or "").split())[:500].rstrip()
+        source = (title or "").strip() or "без названия"
+        lines.append(f"{i}. «{excerpt}» — {source}")
+    return "\n\n".join(lines)
 
 
 def _llm_config() -> tuple[str | None, str, str]:
@@ -149,7 +228,6 @@ async def process_chat(
         )
         for r in results
     ]
-    rag_context = "\n\n---\n\n".join(block for _, block in pairs)
     sources = [
         RagDocumentOut(
             id=r.document.id,
@@ -197,15 +275,20 @@ async def process_chat(
         return ChatOut(reply=ChatMessage(role="assistant", content=llm_reply), sources=sources)
     ai_metrics.METRICS["fallbacks_total"] += 1
 
-    if rag_context:
-        fallback = (
-            f"Нашёл в базе знаний следующие документы по вашему запросу:\n\n{rag_context}\n\n"
-            "Для более точного ответа подключите API (задайте LLM_API_KEY "
-            "или OPENCODE_API_KEY в окружении, значение — вне репозитория)."
+    # R01/R02 (таск 01): честный фолбэк — человеческие выдержки с цитатами,
+    # код 200. Отдельная ветка «нет синтеза» (гейт выключен или ключа нет),
+    # отдельная — «модель легла». Служебных имён переменных/секретов
+    # в пользовательских ветках нет.
+    if results:
+        quotes = format_excerpt_quotes(
+            [(r.document.title, r.document.raw_text) for r in results]
         )
+        if is_synthesis_available():
+            fallback = f"{LLM_DOWN_LEAD}\n\n{quotes}"
+        else:
+            fallback = f"{NO_SYNTHESIS_LEAD}\n\n{quotes}"
+    elif is_synthesis_available():
+        fallback = NO_DOCS_TEXT
     else:
-        fallback = (
-            "К сожалению, по вашему запросу ничего не найдено в базе знаний. "
-            "Попробуйте переформулировать вопрос или обратиться к документации ГОСТ Р 58048-2017."
-        )
+        fallback = f"{NO_SYNTHESIS_PREFIX}{NO_DOCS_TEXT}"
     return ChatOut(reply=ChatMessage(role="assistant", content=fallback), sources=sources)
