@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
@@ -197,7 +197,7 @@ function MetricCard({ label, value, hint, color }: { label: string; value: strin
   );
 }
 
-export default function QuestionnaireWizardClient() {
+export default function QuestionnaireWizardClient({ topSlot }: { topSlot?: ReactNode }) {
   const t = useTranslations("questionnaire");
   const tU = useTranslations("ugt");
   // Уровни для опций/шагов — резолвером текущей локали (шим UGT_LEVELS удалён в таске 05).
@@ -355,7 +355,9 @@ export default function QuestionnaireWizardClient() {
 
   return (
     <div className="min-h-screen bg-tz-bg pb-20">
-      <header className="px-4 pb-10 pt-28 text-white sm:px-8" style={{ background: "var(--tz-hero-bg)" }}>
+      {/* pt-10, а не pt-28: визард живёт внутри dashboard-layout (sticky-шапка + main.py-8),
+          запаса под фиксированный лендинг-нав здесь нет — 112px давили hero на соседние блоки. */}
+      <header className="px-4 pb-10 pt-10 text-white sm:px-8" style={{ background: "var(--tz-hero-bg)" }}>
         <div className="mx-auto max-w-6xl">
           <p className="mb-3 text-sm text-tz-muted">{t("breadcrumb")}</p>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t("title")}</h1>
@@ -365,7 +367,11 @@ export default function QuestionnaireWizardClient() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pt-8 sm:px-8">
+      {/* div, а не main: страница уже внутри <main id="main-content"> dashboard-layout,
+          вложенный landmark ломал a11y-дерево. topSlot (статус организации/публикация)
+          рендерится здесь — под hero, над формой, с гарантированным отступом. */}
+      <div className="mx-auto max-w-6xl px-4 pt-8 sm:px-8">
+        {topSlot ? <div className="mb-6 grid gap-3">{topSlot}</div> : null}
         {step === 'info' && (
           <section className="mx-auto max-w-3xl rounded-3xl border border-tz-border bg-tz-surface p-6 shadow-sm sm:p-10">
             <div className="mb-8 flex items-start gap-4"><div className="rounded-2xl bg-tz-accent-soft p-3 text-tz-accent"><Target /></div><div><p className="text-sm font-semibold uppercase tracking-wide text-tz-accent">{t("step1.eyebrow")}</p><h2 className="mt-1 text-3xl font-bold text-tz-fg">{t("step1.title")}</h2><p className="mt-2 leading-6 text-tz-muted">{t("step1.desc")}</p></div></div>
@@ -403,7 +409,7 @@ export default function QuestionnaireWizardClient() {
             <div className="mt-6 flex justify-center"><button onClick={() => setStep(9)} className="inline-flex items-center gap-2 text-sm font-semibold text-tz-accent hover:text-tz-accent-hover"><ChevronLeft size={16} />{t("results.backToLast")}</button></div>
           </section>
         )}
-      </main>
+      </div>
     </div>
   );
 }

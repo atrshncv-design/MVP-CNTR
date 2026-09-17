@@ -8,14 +8,13 @@ import { OrgVerificationHint, PublishRulesNote } from '@/components/project-crea
  */
 export default function NewSerialManufacturerProjectPage() {
   return (
-    <>
-      <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-8">
-        <div className="grid gap-3">
+    <QuestionnaireWizardClient
+      topSlot={
+        <>
           <OrgVerificationHint />
           <PublishRulesNote />
-        </div>
-      </div>
-      <QuestionnaireWizardClient />
-    </>
+        </>
+      }
+    />
   );
 }
