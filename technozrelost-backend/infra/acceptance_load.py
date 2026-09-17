@@ -231,7 +231,7 @@ def _register_one(api_url: str, index: int, stamp: str, timeout_s: float) -> str
     ловит 409. Если 409 всё же случился (гонка прогонов) — fallback
     на login той же парой, чужие учётки не трогаем.
     """
-    email = f"acceptance-load-{stamp}-{index}@load.local"
+    email = f"acceptance-load-{stamp}-{index}@example.com"
     password = f"Acceptance-Load-{stamp}-{index}-pass"
     payload = {
         "email": email,
@@ -299,7 +299,7 @@ def provision_auth_tokens(api_url: str, count: int, timeout_s: float) -> list[st
     Ошибка любой регистрации — RuntimeError (run() превращает в код 2:
     непонятное состояние — не PASS). Пароли синтетические, в отчёт и
     stdout не попадают; после прогона оператор удаляет учётки
-    ``acceptance-load-*@load.local`` (см. README-ACCEPTANCE.md).
+    ``acceptance-load-*@example.com`` (см. README-ACCEPTANCE.md).
     """
     stamp = f"{os.getpid()}-{int(time.time())}"
     interval = 1.0 / PROVISION_RATE_PER_S

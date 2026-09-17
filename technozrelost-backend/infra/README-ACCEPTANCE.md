@@ -34,7 +34,7 @@ API p95 0.3с PASS, RAM 22% PASS. Разбор:
 - **Auth-прогон (гейтовый):** `--auth-users N` — harness регистрирует N
   тестовых пользователей (`POST /api/v1/auth/register`, роль
   `gk_customer` из allowlist саморегистрации, синтетические email
-  `acceptance-load-*@load.local`) и раздаёт воркерам Bearer round-robin;
+  `acceptance-load-*@example.com`) и раздаёт воркерам Bearer round-robin;
   пробы реестра идут аутентифицированными под высокий auth-лимит
   (`registry_auth_limit=10000/60с`). Любой 429 здесь — провал.
   Именно auth-прогон закрывает четыре порога.
@@ -73,7 +73,7 @@ python3 infra/acceptance_load.py \
   --report reports/acceptance-load-beget-anon.json
 # Ожидание: ACCEPTANCE PASS в обоих прогонах; иначе — отчёт в work/report.md
 # не закрывать, контур не открывать (история 44/G47: нагрузка только по порогам).
-# После auth-прогона удалить синтетических учёток acceptance-load-*@load.local.
+# После auth-прогона удалить синтетических учёток acceptance-load-*@example.com.
 ```
 
 `<PUBLIC_HOST>` — техническое имя вида `1-2-3-4.sslip.io` (таск 07)

@@ -395,3 +395,31 @@ def test_register_no_retry_on_non_retryable_error(monkeypatch: pytest.MonkeyPatc
         load._register_one_with_retry("http://127.0.0.1:9", 0, "stamp", 1.0)
     assert len(calls) == 1
     assert sleeps == []
+
+
+def test_synthetic_email_uses_reserved_example_com_domain(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Прод 2026-09-17: `@load.local` — special-use, pydantic EmailStr
+    отвечает 422 и provisioning падает. Синтетика — на зарезервированном
+    `@example.com` (валидацию проходит, очевидно тестовая), уникальность
+    через stamp сохранена."""
+    load = load_module("acceptance_load_email", INFRA_ROOT / "acceptance_load.py")
+
+    captured: dict = {}
+
+    def _fake_post(url: str, payload: dict, timeout: float) -> dict:
+        captured.update(payload)
+        return {"access_token": "tok", "token_type": "bearer"}
+
+    monkeypatch.setattr(load, "post_json", _fake_post)
+
+    assert load._register_one("http://127.0.0.1:9", 7, "999-111", 1.0) == "tok"
+    email = captured["email"]
+    assert email == "acceptance-load-999-111-7@example.com"
+    assert email.endswith("@example.com")
+    assert ".local" not in email
+
+    captured.clear()
+    load._register_one("http://127.0.0.1:9", 8, "999-111", 1.0)
+    assert captured["email"] == "acceptance-load-999-111-8@example.com"
