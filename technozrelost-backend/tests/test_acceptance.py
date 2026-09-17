@@ -18,6 +18,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import pytest
+
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 INFRA_ROOT = BACKEND_ROOT / "infra"
 
@@ -291,3 +293,105 @@ def test_alert_dryrun_sends_nothing_and_names_no_values(tmp_path: Path):
     assert "synthetic-token-value" not in result.stdout + result.stderr
     assert "synthetic-chat-value" not in result.stdout + result.stderr
     assert "api.telegram.org" not in result.stdout + result.stderr
+
+
+def test_provision_paces_registrations_sequentially_below_nginx_auth_limit(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Продакшен 2026-09-17: burst 50 учёток упирался в зону nginx auth
+    10r/s burst 10 → 503. Provisioning идёт последовательно ~8/с."""
+    load = load_module("acceptance_load_pacing", INFRA_ROOT / "acceptance_load.py")
+
+    # Запас под зону 10r/s: темп не выше 8/с, иначе тест ловит регресс.
+    assert load.PROVISION_RATE_PER_S <= 8.0
+    assert load.PROVISION_MAX_ATTEMPTS == 5
+    assert 429 in load.RETRYABLE_REGISTER_STATUSES
+    assert 503 in load.RETRYABLE_REGISTER_STATUSES
+    assert len(load.RETRYABLE_REGISTER_STATUSES) == 2
+
+    seen: list[int] = []
+    sleeps: list[float] = []
+
+    def _fake_register(api: str, i: int, stamp: str, t: float) -> str:
+        seen.append(i)
+        return f"tok-{i}"
+
+    monkeypatch.setattr(load, "_register_one", _fake_register)
+    monkeypatch.setattr(load.time, "sleep", lambda s: sleeps.append(s))
+
+    def _no_pool(*args, **kwargs):
+        raise AssertionError("provisioning должен быть последовательным, без пула")
+
+    monkeypatch.setattr(load.concurrent.futures, "ThreadPoolExecutor", _no_pool)
+
+    tokens = load.provision_auth_tokens("http://127.0.0.1:9", 5, 1.0)
+
+    assert tokens == [f"tok-{i}" for i in range(5)]
+    assert seen == [0, 1, 2, 3, 4]
+    expected_interval = 1.0 / load.PROVISION_RATE_PER_S
+    assert len(sleeps) == 4
+    for slept in sleeps:
+        assert slept == pytest.approx(expected_interval)
+
+
+@pytest.mark.parametrize("status", [429, 503])
+def test_register_retries_backoff_on_429_503_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch, status: int
+):
+    load = load_module("acceptance_load_retry", INFRA_ROOT / "acceptance_load.py")
+
+    calls: list[int] = []
+    sleeps: list[float] = []
+
+    def _flaky(api, i, stamp, t):
+        calls.append(len(calls))
+        if len(calls) < 3:
+            raise RuntimeError(f"POST http://x/register -> HTTP {status}")
+        return "tok-ok"
+
+    monkeypatch.setattr(load, "_register_one", _flaky)
+    monkeypatch.setattr(load.time, "sleep", lambda s: sleeps.append(s))
+
+    assert load._register_one_with_retry("http://127.0.0.1:9", 0, "stamp", 1.0) == "tok-ok"
+    assert len(calls) == 3
+    base = load.PROVISION_BACKOFF_BASE_S
+    assert sleeps == pytest.approx([base, base * 2])
+
+
+def test_register_retry_exhausts_after_5_attempts(monkeypatch: pytest.MonkeyPatch):
+    load = load_module("acceptance_load_exhaust", INFRA_ROOT / "acceptance_load.py")
+
+    calls: list[int] = []
+    sleeps: list[float] = []
+
+    def _always_limited(*args: object) -> str:
+        calls.append(1)
+        raise RuntimeError("POST http://x/register -> HTTP 503")
+
+    monkeypatch.setattr(load, "_register_one", _always_limited)
+    monkeypatch.setattr(load.time, "sleep", lambda s: sleeps.append(s))
+
+    with pytest.raises(RuntimeError, match="HTTP 503"):
+        load._register_one_with_retry("http://127.0.0.1:9", 0, "stamp", 1.0)
+    assert len(calls) == 5
+    base = load.PROVISION_BACKOFF_BASE_S
+    assert sleeps == pytest.approx([base, base * 2, base * 4, base * 8])
+
+
+def test_register_no_retry_on_non_retryable_error(monkeypatch: pytest.MonkeyPatch):
+    load = load_module("acceptance_load_noretry", INFRA_ROOT / "acceptance_load.py")
+
+    calls: list[int] = []
+    sleeps: list[float] = []
+
+    def _bad_request(*args: object) -> str:
+        calls.append(1)
+        raise RuntimeError("POST http://x/register -> HTTP 400")
+
+    monkeypatch.setattr(load, "_register_one", _bad_request)
+    monkeypatch.setattr(load.time, "sleep", lambda s: sleeps.append(s))
+
+    with pytest.raises(RuntimeError, match="HTTP 400"):
+        load._register_one_with_retry("http://127.0.0.1:9", 0, "stamp", 1.0)
+    assert len(calls) == 1
+    assert sleeps == []

@@ -75,6 +75,15 @@ LOGIN_PATH = "/api/v1/auth/login"
 # (app/core/deps.py SELF_REGISTER_ALLOWED_SLUGS): иначе 403.
 LOADTEST_ROLE_SLUG = "gk_customer"
 
+# Provisioning auth-режима под зону nginx auth (10r/s burst 10, nodelay;
+# см. infra/nginx/nginx.prod.conf, INF-12): зону ослаблять запрещено,
+# поэтому регистрация идёт последовательно темпом ~8/с (запас под джиттер
+# и фоновые /login), а ответы 429/503 дожимаются ретраями с backoff.
+PROVISION_RATE_PER_S = 8.0
+PROVISION_MAX_ATTEMPTS = 5
+PROVISION_BACKOFF_BASE_S = 0.5
+RETRYABLE_REGISTER_STATUSES = frozenset({429, 503})
+
 # Категории ответа пробы: ok (2xx), expected_limited (ожидаемый 429 защиты
 # в anon-режиме), failed (всё остальное, включая 429 в auth-режиме).
 OK = "ok"
@@ -246,23 +255,60 @@ def _register_one(api_url: str, index: int, stamp: str, timeout_s: float) -> str
     return token
 
 
+def _register_status_from_error(exc: Exception) -> int | None:
+    """HTTP-статус из RuntimeError post_json; None — не HTTP-ошибка."""
+    match = re.search(r"HTTP (\d+)", str(exc))
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def _is_retryable_register_error(exc: Exception) -> bool:
+    """Ретраить только перегрузку/лимит (429/503); остальное — сразу наружу."""
+    return _register_status_from_error(exc) in RETRYABLE_REGISTER_STATUSES
+
+
+def _register_one_with_retry(api_url: str, index: int, stamp: str, timeout_s: float) -> str:
+    """Одна учётка с ретраями 429/503 (до PROVISION_MAX_ATTEMPTS попыток).
+
+    Backoff экспоненциальный от PROVISION_BACKOFF_BASE_S: 0.5/1/2/4с.
+    Не-retryable (409→login внутри _register_one, 400/403/4xx, транспорт)
+    пробрасывается сразу без повторов.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(1, PROVISION_MAX_ATTEMPTS + 1):
+        try:
+            return _register_one(api_url, index, stamp, timeout_s)
+        except RuntimeError as exc:
+            last_exc = exc
+            if not _is_retryable_register_error(exc) or attempt >= PROVISION_MAX_ATTEMPTS:
+                raise
+            time.sleep(PROVISION_BACKOFF_BASE_S * (2 ** (attempt - 1)))
+    raise last_exc if last_exc is not None else RuntimeError("register retry exhausted")
+
+
 def provision_auth_tokens(api_url: str, count: int, timeout_s: float) -> list[str]:
     """Регистрация ``count`` тестовых пользователей; Bearer round-robin ниже.
 
+    Последовательно темпом PROVISION_RATE_PER_S (~8/с): запас под зону
+    nginx auth 10r/s burst 10, которую ослаблять запрещено. Каждая учётка
+    дожимается ретраями 429/503 с backoff (_register_one_with_retry).
     Ошибка любой регистрации — RuntimeError (run() превращает в код 2:
     непонятное состояние — не PASS). Пароли синтетические, в отчёт и
     stdout не попадают; после прогона оператор удаляет учётки
     ``acceptance-load-*@load.local`` (см. README-ACCEPTANCE.md).
     """
     stamp = f"{os.getpid()}-{int(time.time())}"
-    workers = max(1, min(8, count))
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        return list(
-            pool.map(
-                lambda index: _register_one(api_url, index, stamp, timeout_s),
-                range(count),
-            )
-        )
+    interval = 1.0 / PROVISION_RATE_PER_S
+    tokens: list[str] = []
+    for index in range(count):
+        if index > 0:
+            time.sleep(interval)
+        tokens.append(_register_one_with_retry(api_url, index, stamp, timeout_s))
+    return tokens
 
 
 def auth_headers(token: str | None) -> dict[str, str]:
