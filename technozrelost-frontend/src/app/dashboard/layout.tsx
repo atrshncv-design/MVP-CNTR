@@ -7,6 +7,7 @@ import HeaderNav from "@/components/dashboard/header-nav";
 import MobileNav from "@/components/dashboard/mobile-nav";
 import { SessionExpiredModal } from "@/features/notifications/SessionExpiredModal";
 import LocaleToggle from "@/i18n/LocaleToggle";
+import { P2_MATCHING_ENABLED } from "@/lib/release";
 
 // Перейти к основному содержимому — keep literal for wcag test static analysis (translated via next-intl at runtime)
 
@@ -24,8 +25,9 @@ const CORE_NAVIGATION = [
   { href: "/dashboard", labelKey: "navWorkspace" },
   { href: "/dashboard/projects", labelKey: "navProjects" },
   { href: "/dashboard/gk_customer/projects/new", labelKey: "navRequests" },
-  // Подбор партнёра скрыт в P2 (таск 02, G36) — вернётся в P3 вместе с
-  // маршрутом /dashboard/matching и матрицей ролей.
+  // Подбор партнёра открыт таском 04 (R04, G36) — флаг P2_MATCHING_ENABLED
+  // (подпись navMatching уже есть в словарях ru/en/zh).
+  ...(P2_MATCHING_ENABLED ? [{ href: "/dashboard/matching", labelKey: "navMatching" }] : []),
 ] as const;
 
 /** Инициалы для аватара профиля. */

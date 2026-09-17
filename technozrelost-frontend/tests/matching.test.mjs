@@ -4,9 +4,9 @@ import test from "node:test";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
-// P2-gating (таск 02, G36): маршрут/матрица/навигация matching закрыты —
-// их держит tests/p2-gating.test.mjs. Ниже — пины P3-кода (features/matching):
-// код обезличивания и состояний остаётся в дереве нетронутым до P3.
+// Таск 04 (R04, G36): matching открыт — маршрут/матрица/навигация/API
+// держит tests/p2-gating.test.mjs. Ниже — пины P3-кода (features/matching):
+// код обезличивания и состояний остаётся в дереве нетронутым.
 
 test("matching: form has project select from GET /projects + idea textarea + region/sector/ugt filters + Подобрать button", () => {
   const src = read("src/features/matching/MatchingMode.tsx");
@@ -49,12 +49,33 @@ test("matching: POST /match only with clean payload {title, annotation, sector, 
   assert.match(mode, /matchOrganizations/);
   // ensure no user.email in request
   assert.match(mode, /user\.email|organization.*ПДн|ПДн/);
-  // P2-gating (таск 02, G36): api-client не шлёт POST /match —
-  // gated-заглушка 403, шов держит tests/p2-gating.test.mjs.
+  // Таск 04 (R04): кнопка зовёт реальный эндпоинт — api-client шлёт
+  // POST /match через matchOrganizations, заглушки 403 больше нет.
   const api = read("src/lib/api-client.ts");
   assert.match(api, /matchOrganizations/);
-  assert.match(api, /p2GatedMessage/);
-  assert.doesNotMatch(api, /["`]\/match["`]/);
+  assert.match(api, /["`]\/match["`]/);
+  const at = api.indexOf("function matchOrganizations");
+  assert.notEqual(at, -1);
+  assert.doesNotMatch(api.slice(at, at + 500), /p2GatedMessage/);
+  assert.match(api.slice(at, at + 500), /method:\s*"POST"/);
+});
+
+test("matching: ошибка сети — читаемый текст + ретрай (повторный вызов)", () => {
+  const mode = read("src/features/matching/MatchingMode.tsx");
+  assert.match(mode, /matching-error/);
+  assert.match(mode, /matching-retry/);
+  assert.match(mode, /errorTitle/);
+  assert.match(mode, /retry/);
+});
+
+test("matching: без LLM-ключа — скриптовый режим без запроса (не падение)", () => {
+  const llm = read("src/features/matching/llm.ts");
+  assert.match(llm, /getLlmKey/);
+  assert.match(llm, /if\s*\(!apiKey\)/);
+  const at = llm.indexOf("if (!apiKey)");
+  assert.notEqual(at, -1);
+  assert.match(llm.slice(at, at + 600), /method:\s*"script"/);
+  assert.match(llm.slice(at, at + 600), /slice\(0,\s*5\)/);
 });
 
 test("matching: result renders ≤5 cards with reasons, score not shown numerically, only verified orgs, Предложить через ЦНТР → Notification toast", () => {

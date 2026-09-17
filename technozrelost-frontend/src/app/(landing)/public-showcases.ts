@@ -3,8 +3,8 @@
  * Почему отдельный модуль в src/app: ручки GET /executors/specialists,
  * GET /executors/organizations и GET /nioktr уже анонимны (CurrentUserOptional
  * на бэке) — серверный компонент читает проверенные данные без токена;
- * gated-заглушки getPublicRegistry/matchOrganizations в api-client (P2)
- * не тронуты. Authorization не отправляется по построению — приватные поля
+ * gated-заглушка getPublicRegistry в api-client (P2) не тронута
+ * (matchOrganizations открыт таском 04 — реальный POST /match). Authorization не отправляется по построению — приватные поля
  * и действия (контакты, вступление, модерация) анонимно недоступны.
  */
 

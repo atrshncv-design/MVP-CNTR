@@ -2,9 +2,9 @@
  * P3: публичные реестры открыты (таск 09, G04/G06/G49/G59).
  * Шов release-p3: анонимное чтение проверенных данных (без Authorization,
  * limit + keyset after_id), витрина на живых данных с честным пустым
- * состоянием, приватные поля недоступны. Gated-заглушки api-client таска 02
- * (matching + getPublicRegistry) намеренно НЕ тронуты — их держит
- * tests/p2-gating.test.mjs.
+ * состоянием, приватные поля недоступны. Gated-заглушка getPublicRegistry
+ * таска 02 намеренно НЕ тронута — её держит tests/p2-gating.test.mjs
+ * (заглушка matchOrganizations открыта таском 04 — реальный POST /match).
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";

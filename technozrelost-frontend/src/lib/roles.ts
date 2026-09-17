@@ -170,8 +170,10 @@ export const ROUTE_ALLOWED_ROLES: Record<string, RoleSlug[]> = {
   "/dashboard/organizations": ALL_ROLES,
   // Профиль пользователя — общий раздел (FE-01).
   "/dashboard/profile": ALL_ROLES,
-  // Подбор партнёра СКРЫТ в P2 (таск 02, G36): записи нет — fail-closed,
-  // allowedRolesFor → null → middleware перепишет на /forbidden. Вернёт P3.
+  // Подбор исполнителей (таск 04, R04): экран /dashboard/matching.
+  "/dashboard/matching": ALL_ROLES,
+  // Подбор партнёра ОТКРЫТ таском 04 (R04, G36): бэк POST /match доступен
+  // любому аутентифицированному пользователю, поэтому — все роли.
   // Уведомления (тикет 07, R26.1, G43): колокольчик + страница — доступны всем ролям, как и профиль
   "/dashboard/notifications": ALL_ROLES,
 };

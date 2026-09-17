@@ -8,43 +8,52 @@ import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import { allowedRolesFor } from "../src/lib/roles.ts";
+import { P2_MATCHING_ENABLED } from "../src/lib/release.ts";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const exists = (p) => existsSync(new URL(`../${p}`, import.meta.url));
 
-// G36: matching скрыт на уровне роутов — маршрута нет, вернуть его может только P3.
-test("p2-gating: маршрута /dashboard/matching нет в дереве (matching — P3)", () => {
+// G36 → открыт таском 04 (R04): маршрут /dashboard/matching существует
+// и рендерит экран подбора (MatchingMode).
+test("p2-gating: маршрут /dashboard/matching существует (matching открыт таском 04)", () => {
   assert.equal(
     exists("src/app/dashboard/matching/page.tsx"),
-    false,
-    "P2 не содержит /dashboard/matching: удалён до P3",
+    true,
+    "таск 04 возвращает /dashboard/matching: страница обязана существовать",
   );
+  assert.match(read("src/app/dashboard/matching/page.tsx"), /MatchingMode/);
 });
 
-// G36 + критерий «матрица не даёт доступа»: записи нет → null → middleware в /forbidden.
-test("p2-gating: ролевая матрица не даёт доступа к matching (fail-closed)", () => {
-  assert.equal(allowedRolesFor("/dashboard/matching"), null);
-  assert.doesNotMatch(read("src/lib/roles.ts"), /\/dashboard\/matching/);
+// G36 → открыт таском 04: матрица даёт доступ к matching (fail-closed
+// для непокрытых маршрутов сохраняется — см. routes-matrix).
+test("p2-gating: ролевая матрица даёт доступ к matching", () => {
+  const roles = allowedRolesFor("/dashboard/matching");
+  assert.ok(Array.isArray(roles) && roles.length > 0);
+  assert.match(read("src/lib/roles.ts"), /\/dashboard\/matching/);
 });
 
-// G36: matching скрыт на уровне навигации ЛК — ни одной ссылки (комментарии не в счёт).
-test("p2-gating: навигация ЛК не ведёт в matching", () => {
-  assert.doesNotMatch(read("src/app/dashboard/layout.tsx"), /href: "\/dashboard\/matching"/);
+// G36 → открыт таском 04: навигация ЛК ведёт в matching (флаг P2_MATCHING_ENABLED).
+test("p2-gating: навигация ЛК ведёт в matching", () => {
+  assert.equal(P2_MATCHING_ENABLED, true);
+  assert.match(read("src/app/dashboard/layout.tsx"), /href: "\/dashboard\/matching"/);
 });
 
-// G36: matching не рекламируется API-клиентом — ни одного вызова POST /match.
-test("p2-gating: api-client не шлёт POST /match (matching закрыт до P3)", () => {
+// G36 → открыт таском 04: api-client шлёт реальный POST /match.
+test("p2-gating: api-client шлёт POST /match (matching открыт таском 04)", () => {
   const api = read("src/lib/api-client.ts");
-  assert.doesNotMatch(api, /["`]\/match["`]/);
+  assert.match(api, /["`]\/match["`]/);
   for (const fn of ["matchOrganizations", "postMatch"]) {
     const at = api.indexOf(`function ${fn}`);
-    assert.notEqual(at, -1, `${fn} обязан остаться gated-заглушкой до P3`);
-    assert.match(
+    assert.notEqual(at, -1, `${fn} обязан существовать`);
+    assert.doesNotMatch(
       api.slice(at, at + 400),
-      /P2_GATED|p2GatedMessage/,
-      `${fn} обязан бросать P2-gate, а не ходить в сеть`,
+      /p2GatedMessage/,
+      `${fn} обязан ходить в сеть, а не бросать P2-gate`,
     );
   }
+  const at = api.indexOf("function matchOrganizations");
+  assert.match(api.slice(at, at + 500), /apiRequest</);
+  assert.match(api.slice(at, at + 500), /method:\s*"POST"/);
 });
 
 // G04/G35: анонимный доступ к реестрам закрыт — лендинг не тянет реестр без токена.

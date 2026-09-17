@@ -303,24 +303,28 @@ export function decideManagerOrg(
   });
 }
 
-// ─── Мэтчинг — СКРЫТ в P2 (таск 02, G36), откроется в P3 ────────────────
-// Почему заглушки, а не удаление: сигнатуры держат сборку P3-кода из
-// features, но ни один вызов не уходит в сеть — интерфейс и роуты matching
-// Маяк для P3-поиска: P2_GATED в src/lib/release.ts.
+// ─── Мэтчинг — ОТКРЫТ таском 04 (R04, G36) ─────────────────────────────
+// Почему здесь: единый fetch-слой, бэк — POST /match (MatchIn → MatchOut,
+// топ-5). Без LLM-ключа бэк отвечает скриптовым режимом 200, не падением.
+// Маяк gated-заглушек P2_GATED остался только у getPublicRegistry.
 
 export function matchOrganizations(
-  _payload: MatchingIn,
-  _accessToken: string,
+  payload: MatchingIn,
+  accessToken: string,
 ): Promise<MatchOut> {
-  return Promise.reject(new ApiError(p2GatedMessage("matching"), 403));
+  return apiRequest<MatchOut>("/match", accessToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 }
 
-// Generic matching — закрыт вместе с matchOrganizations (см. выше).
+// Generic matching — топ-5 кандидатов из того же POST /match.
 export function postMatch(
-  _payload: MatchingIn,
-  _accessToken: string,
+  payload: MatchingIn,
+  accessToken: string,
 ): Promise<MatchCandidate[]> {
-  return Promise.reject(new ApiError(p2GatedMessage("matching"), 403));
+  return matchOrganizations(payload, accessToken).then((out) => out.results ?? []);
 }
 
 // ─── Stage Requirements / ГОСТ (тикет 03, G18-G20) ──────────────────────────
