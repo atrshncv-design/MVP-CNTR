@@ -248,16 +248,29 @@ def test_categories_shape_matches_news_types(client: TestClient) -> None:
 
 
 def test_achievements_catalog_shape(client: TestClient, seeded_catalog) -> None:
-    """GET /achievements/catalog → [{...66 медалей}] с точным набором полей."""
+    """GET /achievements/catalog → [{...60 открытых медалей}] с точным набором полей.
+
+    Тикет 06: 6 секретных медалей (secret=True) скрыты до получения.
+    """
     response = client.get("/api/v1/achievements/catalog")
     assert response.status_code == 200, response.text
     items = response.json()
-    assert len(items) == 66, f"каталог должен содержать 66 медалей, получено {len(items)}"
+    assert len(items) == 60, f"каталог должен содержать 60 открытых медалей, получено {len(items)}"
     for item in items:
         assert set(item) == ACHIEVEMENT_KEYS, set(item)
     slugs = [a["slug"] for a in items]
     assert len(slugs) == len(set(slugs)), "slug каталога уникальны"
     assert all(a["icon_key"] == a["slug"] for a in items), "slug = icon_key"
+    secret_slugs = {
+        "s-ghost",
+        "s-comet",
+        "s-pioneer",
+        "s-phoenix",
+        "s-epic-collection",
+        "s-legend",
+    }
+    assert not (set(slugs) & secret_slugs), "секретные медали скрыты в каталоге"
+    assert all(a["secret"] is False for a in items), "каталог отдаёт только открытые медали"
 
 
 def test_mine_shape_matches_frontend_interface(client: TestClient) -> None:
