@@ -19,15 +19,15 @@ test("executor-create: в кабинете исполнителя есть ст�
   for (const page of EXECUTOR_NEW_PAGES) {
     const src = read(page);
     assert.match(src, /QuestionnaireWizardClient/, `${page}: нет анкеты УГТ`);
-    assert.match(src, /OrgVerificationHint/, `${page}: нет подсказки про организацию`);
-    assert.match(src, /PublishRulesNote/, `${page}: нет правил публикации`);
+    assert.doesNotMatch(src, /OrgVerificationHint/, `${page}: подсказка про организацию должна быть убрана`);
+    assert.doesNotMatch(src, /PublishRulesNote/, `${page}: правила публикации должны быть убраны`);
     assert.doesNotMatch(src, /gk_customer/, `${page}: страница исполнителя ведёт в чужой кабинет`);
   }
-  // Кабинет заказчика не сломан: та же анкета + те же подсказки.
+  // Кабинет заказчика не сломан: та же анкета, подсказки убраны (решение владельца).
   const gk = read("src/app/dashboard/gk_customer/projects/new/page.tsx");
   assert.match(gk, /QuestionnaireWizardClient/);
-  assert.match(gk, /OrgVerificationHint/);
-  assert.match(gk, /PublishRulesNote/);
+  assert.doesNotMatch(gk, /OrgVerificationHint/);
+  assert.doesNotMatch(gk, /PublishRulesNote/);
 });
 
 test("executor-create: матрица ролей покрывает новые маршруты, чужим закрыто", async () => {
