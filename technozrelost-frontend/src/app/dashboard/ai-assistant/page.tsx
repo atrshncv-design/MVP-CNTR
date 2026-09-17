@@ -203,11 +203,11 @@ export default function AiAssistantPage() {
         )}
         <div ref={bottomRef} />
       </div>
-      <div className="mx-4 mb-3 rounded-lg border border-tz-warning/30 bg-tz-warning-soft px-4 py-2.5 text-sm text-tz-fg">
+      <div className="mx-4 mb-3 mt-3 shrink-0 rounded-lg border border-tz-warning/30 bg-tz-warning-soft px-4 py-2.5 text-sm text-tz-fg">
         <strong>{t("bannerStrong")}</strong> {t("bannerText")}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="flex shrink-0 gap-2">
         <input
           type="text"
           value={input}

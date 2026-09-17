@@ -62,7 +62,7 @@ export default function HeaderNav({
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   active
                     ? "bg-tz-accent-soft text-tz-accent"
                     : "text-tz-secondary hover:bg-tz-surface-2 hover:text-tz-fg"
