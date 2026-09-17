@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# Первичный выпуск TLS-сертификата через ACME для технического имени
-# `<ipv4>.sslip.io` (таск 07, G40/G41: публичный MVP без покупки домена).
+# Первичный выпуск TLS-сертификата через ACME (таск 07, G40/G41 + R08).
+# PUBLIC_HOST — техническое имя `<ipv4>.sslip.io` ИЛИ собственный домен
+# (проверка формата — infra/host_names.sh, оба типа строгие).
+# Переезд на свой домен (R08: репутационные фильтры мобильных операторов
+# к wildcard-DNS): сертификат выпускается ТЕМ ЖЕ процессом на новое имя;
+# старое имя из LEGACY_PUBLIC_HOST (опционально) добавляется вторым SAN,
+# чтобы 301 со старого по HTTPS не упирался в чужой сертификат.
+# vash-domen.ru — плейсхолдер из документации, выпуск на него запрещён.
 #
 # Выполняется ОПЕРАТОРОМ НА СЕРВЕРЕ до первого ./deploy.sh (к живому серверу
 # из worktree не подключаться — здесь только код). Standalone-режим: порт 80
@@ -10,6 +16,9 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
+
+# shellcheck source=host_names.sh
+. ./host_names.sh
 
 ENV_FILE="${ENV_FILE:-.env.production}"
 CERTBOT_IMAGE="${CERTBOT_IMAGE:-certbot/certbot:v2.11.0}"
@@ -29,31 +38,17 @@ env_value() {
 }
 
 PUBLIC_HOST="${PUBLIC_HOST:-$(env_value PUBLIC_HOST)}"
-ACME_EMAIL="${ACME_EMAIL:-$(env_value ACME_EMAIL)}"
+LEGACY_PUBLIC_HOST="${LEGACY_PUBLIC_HOST:-$(env_value LEGACY_PUBLIC_HOST)}"
 
-# Правило: разделители октетов единообразны — либо все точки, либо все дефисы (ERE без обратных ссылок).
-_sslip_ok=0
-if [[ "$PUBLIC_HOST" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}\.sslip\.io$ || "$PUBLIC_HOST" =~ ^[0-9]{1,3}(-[0-9]{1,3}){3}\.sslip\.io$ ]]; then
-  _ip_part="${PUBLIC_HOST%.sslip.io}"
-  _ip_part="${_ip_part//-/.}"
-  IFS='.' read -r _o1 _o2 _o3 _o4 _rest <<< "$_ip_part"
-  if [ -z "${_rest:-}" ]; then
-    _sslip_ok=1
-    for _octet in "$_o1" "$_o2" "$_o3" "$_o4"; do
-      if [[ ! "$_octet" =~ ^[0-9]+$ ]] || (( 10#$_octet > 255 )); then
-        _sslip_ok=0
-        break
-      fi
-    done
+host_require_valid "PUBLIC_HOST" "$PUBLIC_HOST" || exit 1
+if [ -n "$LEGACY_PUBLIC_HOST" ]; then
+  host_require_valid "LEGACY_PUBLIC_HOST" "$LEGACY_PUBLIC_HOST" || exit 1
+  if [ "$(_host_lower "$LEGACY_PUBLIC_HOST")" = "$(_host_lower "$PUBLIC_HOST")" ]; then
+    echo "ОШИБКА: LEGACY_PUBLIC_HOST совпадает с PUBLIC_HOST." >&2
+    exit 1
   fi
 fi
-unset _ip_part _o1 _o2 _o3 _o4 _rest _octet
-if [ "$_sslip_ok" != "1" ]; then
-  echo "ОШИБКА: PUBLIC_HOST должен быть техническим именем <ipv4>.sslip.io." >&2
-  unset _sslip_ok
-  exit 1
-fi
-unset _sslip_ok
+ACME_EMAIL="${ACME_EMAIL:-$(env_value ACME_EMAIL)}"
 if [ -z "$ACME_EMAIL" ]; then
   echo "ОШИБКА: ACME_EMAIL пуст — нужен для уведомлений об экспирации." >&2
   exit 1
@@ -66,11 +61,18 @@ if [ "${TLS_STAGING:-0}" = "1" ]; then
 fi
 
 docker volume create "$CONF_VOLUME" >/dev/null
+# Старое имя (если задано) — вторым SAN того же сертификата: 301 со старого
+# по HTTPS иначе упрётся в чужой SAN. Массив всегда непуст (минимум -d нового),
+# поэтому раскрытие безопасно и под set -u на старых bash.
+CERT_DOMAINS=(-d "$PUBLIC_HOST")
+if [ -n "$LEGACY_PUBLIC_HOST" ]; then
+  CERT_DOMAINS+=(-d "$LEGACY_PUBLIC_HOST")
+fi
 docker run --rm \
   -p 80:80 \
   -v "$CONF_VOLUME:/etc/letsencrypt" \
   "$CERTBOT_IMAGE" certonly --standalone \
-  -d "$PUBLIC_HOST" --email "$ACME_EMAIL" --agree-tos --non-interactive \
+  "${CERT_DOMAINS[@]}" --email "$ACME_EMAIL" --agree-tos --non-interactive \
   "${STAGING_ARGS[@]}"
 
 mkdir -p nginx/certs

@@ -5,13 +5,18 @@
 #   ./tls_renew.sh             webroot-обновление + reload nginx при смене пары
 #
 # Webroot-режим: nginx уже поднят и отдаёт /.well-known/acme-challenge/ из
-# certbot/www, остановка не нужна. nginx перезагружается (reload, не restart)
+# certbot/www, остановка не нужна. R08: сертификат на оба имени (новое +
+# старое из LEGACY) продлевается той же командой renew — lineage certbot
+# хранит оба SAN, копия берётся из live/$PUBLIC_HOST. nginx перезагружается (reload, не restart)
 # только если пара реально сменилась; затем TLS-гейт и верифицированный
 # readiness-проб без отключения проверки сертификата. Для cron на сервере:
 # `0 4 * * * cd <repo>/technozrelost-backend/infra && ./tls_renew.sh`.
 set -euo pipefail
 
 cd "$(dirname "$0")"
+
+# shellcheck source=host_names.sh
+. ./host_names.sh
 
 ENV_FILE="${ENV_FILE:-.env.production}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
@@ -31,10 +36,9 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 PUBLIC_HOST="${PUBLIC_HOST:-$(env_value PUBLIC_HOST)}"
-if [ -z "$PUBLIC_HOST" ]; then
-  echo "ОШИБКА: PUBLIC_HOST пуст." >&2
-  exit 1
-fi
+# R08: имя уже может быть собственным доменом — тот же строгий формат,
+# что при выпуске (fail-fast до любых действий с сертификатом).
+host_require_valid "PUBLIC_HOST" "$PUBLIC_HOST" || exit 1
 
 certbot_run() {
   docker run --rm \

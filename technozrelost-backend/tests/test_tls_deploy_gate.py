@@ -1,4 +1,4 @@
-"""Таск 07 (G02/G40/G41): TLS sslip.io и строгий гейт деплоя.
+"""Таск 07 (G02/G40/G41 + R08): TLS sslip.io/свой домен и строгий гейт деплоя.
 
 Швы — публичные границы `infra-single`/`acceptance`: публичный HTTPS,
 готовность /ready без отключения проверки сертификата, свежесть сертификата.
@@ -13,15 +13,22 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 INFRA_ROOT = BACKEND_ROOT / "infra"
 GATE = INFRA_ROOT / "tls_deploy_gate.py"
 
 # Ручные значения, не из кода под тестом: валидный технический хост и
-# заведомо мусорные.
+# заведомо мусорные. R08: плюс собственный домен (фильтры операторов
+# к wildcard-DNS) и старое имя переходного периода под 301.
 PUBLIC_HOST = "1-2-3-4.sslip.io"
 FOREIGN_HOST = "9-9-9-9.sslip.io"
-_GATE_ENV_KEYS = ("PUBLIC_HOST", "NEXTAUTH_URL", "CORS_ORIGINS")
+OWN_HOST = "cntr-prod.ru"
+OWN_FOREIGN_HOST = "someone-else.example.com"
+LEGACY_SSLIP_HOST = "5-6-7-8.sslip.io"
+PLACEHOLDER_HOST = "vash-domen.ru"
+_GATE_ENV_KEYS = ("PUBLIC_HOST", "LEGACY_PUBLIC_HOST", "NEXTAUTH_URL", "CORS_ORIGINS")
 
 
 def run_gate(extra_env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -105,12 +112,17 @@ def _make_ca(work: Path) -> tuple[Path, Path]:
 
 
 def _make_leaf(work: Path, host: str, days: str) -> tuple[Path, Path]:
+    return _make_leaf_multi(work, (host,), days)
+
+
+def _make_leaf_multi(work: Path, hosts: tuple[str, ...], days: str) -> tuple[Path, Path]:
     ca_key, ca_crt = _make_ca(work)
     key, csr, crt = work / "leaf.key", work / "leaf.csr", work / "leaf.crt"
     ext = work / "ext.cnf"
-    ext.write_text(f"subjectAltName=DNS:{host}\n", encoding="ascii")
+    san = ",".join(f"DNS:{item}" for item in hosts)
+    ext.write_text(f"subjectAltName={san}\n", encoding="ascii")
     _openssl("req", "-newkey", "rsa:2048", "-nodes",
-             "-keyout", str(key), "-out", str(csr), "-subj", f"/CN={host}")
+             "-keyout", str(key), "-out", str(csr), "-subj", f"/CN={hosts[0]}")
     _openssl("x509", "-req", "-in", str(csr), "-CA", str(ca_crt), "-CAkey", str(ca_key),
              "-CAcreateserial", "-out", str(crt), "-days", days, "-extfile", str(ext))
     return key, crt
@@ -211,3 +223,182 @@ def test_acme_scripts_cover_issue_dryrun_and_reload() -> None:
     assert "--dry-run" in renew
     assert "nginx -s reload" in renew
     assert "tls_deploy_gate.py" in renew
+
+
+# ── R08: свой домен + 301 со старого (оба формата имён) ──────────────────────
+
+OWN_VALID_HOSTS = [
+    "cntr-prod.ru",
+    "my-centre.example.com",
+    "domen.xn--p1ai",
+]
+
+OWN_INVALID_HOSTS = [
+    "-bad.ru",
+    "bad-.ru",
+    "bad_.ru",
+    "bad..ru",
+    "bad.r",
+    "good.123",
+    "192.168.0.1",
+    "1.2-3.4.sslip.io",
+]
+
+
+def _own_env(
+    tmp_path: Path, key: Path, crt: Path, legacy: str | None = None
+) -> dict[str, str]:
+    env = {
+        "PUBLIC_HOST": OWN_HOST,
+        "NEXTAUTH_URL": f"https://{OWN_HOST}",
+        "CORS_ORIGINS": f"https://{OWN_HOST}",
+        "TLS_CERT_FILE": str(crt),
+        "TLS_KEY_FILE": str(key),
+    }
+    if legacy is not None:
+        env["LEGACY_PUBLIC_HOST"] = legacy
+    return env
+
+
+@pytest.mark.parametrize("host", OWN_VALID_HOSTS)
+def test_gate_accepts_own_domain_formats(
+    tmp_path: Path, host: str
+) -> None:
+    key, crt = _make_leaf(tmp_path, host, "90")
+    result = run_gate(
+        {
+            "PUBLIC_HOST": host,
+            "NEXTAUTH_URL": f"https://{host}",
+            "CORS_ORIGINS": f"https://{host}",
+            "TLS_CERT_FILE": str(crt),
+            "TLS_KEY_FILE": str(key),
+        }
+    )
+    assert result.returncode == 0
+    assert "TLS-GATE OK" in result.stdout
+
+
+@pytest.mark.parametrize("host", OWN_INVALID_HOSTS)
+def test_gate_rejects_bad_own_domain_format(tmp_path: Path, host: str) -> None:
+    result = run_gate(
+        {
+            "PUBLIC_HOST": host,
+            "NEXTAUTH_URL": f"https://{host}",
+            "CORS_ORIGINS": f"https://{host}",
+            "TLS_CERT_FILE": str(tmp_path / "missing.pem"),
+            "TLS_KEY_FILE": str(tmp_path / "missing-key.pem"),
+        }
+    )
+    assert result.returncode == 1
+    assert "PUBLIC_HOST" in result.stderr
+
+
+def test_gate_rejects_placeholder_host(tmp_path: Path) -> None:
+    result = run_gate(
+        {
+            "PUBLIC_HOST": PLACEHOLDER_HOST,
+            "NEXTAUTH_URL": f"https://{PLACEHOLDER_HOST}",
+            "CORS_ORIGINS": f"https://{PLACEHOLDER_HOST}",
+            "TLS_CERT_FILE": str(tmp_path / "missing.pem"),
+            "TLS_KEY_FILE": str(tmp_path / "missing-key.pem"),
+        }
+    )
+    assert result.returncode == 1
+    assert "плейсхолдер" in result.stderr
+
+
+def test_gate_rejects_certificate_for_foreign_own_domain(tmp_path: Path) -> None:
+    key, crt = _make_leaf(tmp_path, OWN_FOREIGN_HOST, "90")
+    result = run_gate(_own_env(tmp_path, key, crt))
+    assert result.returncode == 1
+    assert "SAN" in result.stderr
+
+
+def test_gate_accepts_legacy_pair_with_both_names_in_san(tmp_path: Path) -> None:
+    key, crt = _make_leaf_multi(tmp_path, (OWN_HOST, PUBLIC_HOST), "90")
+    result = run_gate(_own_env(tmp_path, key, crt, legacy=PUBLIC_HOST))
+    assert result.returncode == 0
+    assert PUBLIC_HOST in result.stdout
+
+
+def test_gate_accepts_legacy_pair_between_two_sslip_names(tmp_path: Path) -> None:
+    key, crt = _make_leaf_multi(tmp_path, (LEGACY_SSLIP_HOST, PUBLIC_HOST), "90")
+    result = run_gate(
+        {
+            "PUBLIC_HOST": LEGACY_SSLIP_HOST,
+            "NEXTAUTH_URL": f"https://{LEGACY_SSLIP_HOST}",
+            "CORS_ORIGINS": f"https://{LEGACY_SSLIP_HOST}",
+            "TLS_CERT_FILE": str(crt),
+            "TLS_KEY_FILE": str(key),
+            "LEGACY_PUBLIC_HOST": PUBLIC_HOST,
+        }
+    )
+    assert result.returncode == 0
+    assert "TLS-GATE OK" in result.stdout
+
+
+def test_gate_rejects_certificate_missing_legacy_san(tmp_path: Path) -> None:
+    key, crt = _make_leaf(tmp_path, OWN_HOST, "90")
+    result = run_gate(_own_env(tmp_path, key, crt, legacy=PUBLIC_HOST))
+    assert result.returncode == 1
+    assert "LEGACY_PUBLIC_HOST" in result.stderr
+
+
+def test_gate_rejects_legacy_equal_to_public(tmp_path: Path) -> None:
+    key, crt = _make_leaf(tmp_path, OWN_HOST, "90")
+    result = run_gate(_own_env(tmp_path, key, crt, legacy=OWN_HOST))
+    assert result.returncode == 1
+    assert "совпадает" in result.stderr
+
+
+def test_gate_rejects_bad_legacy_format(tmp_path: Path) -> None:
+    key, crt = _make_leaf(tmp_path, OWN_HOST, "90")
+    result = run_gate(_own_env(tmp_path, key, crt, legacy="-bad.ru"))
+    assert result.returncode == 1
+    assert "LEGACY_PUBLIC_HOST" in result.stderr
+
+
+def test_gate_rejects_placeholder_legacy(tmp_path: Path) -> None:
+    key, crt = _make_leaf(tmp_path, OWN_HOST, "90")
+    result = run_gate(_own_env(tmp_path, key, crt, legacy=PLACEHOLDER_HOST))
+    assert result.returncode == 1
+    assert "плейсхолдер" in result.stderr
+
+
+def test_nginx_includes_generated_legacy_redirect() -> None:
+    nginx = _infrasource("nginx/nginx.prod.conf")
+    assert "include /etc/nginx/legacy/*.conf;" in nginx
+    assert "return 301 https://$host$request_uri;" in nginx
+    assert "client_max_body_size 32m;" in nginx
+
+
+def test_compose_mounts_legacy_redirect_dir() -> None:
+    compose = _infrasource("docker-compose.prod.yml")
+    assert "./nginx/legacy:/etc/nginx/legacy" in compose
+    assert "./certbot/www:/var/www/certbot" in compose
+
+
+def test_production_env_example_names_legacy_input() -> None:
+    example = _infrasource(".env.production.example")
+    assert "LEGACY_PUBLIC_HOST=" in example
+    assert "vash-domen.ru" in example
+
+
+def test_deploy_renders_legacy_redirect_after_gate() -> None:
+    deploy = _infrasource("deploy.sh")
+    assert "render_legacy_redirect.sh" in deploy
+    assert "LEGACY_PUBLIC_HOST" in deploy
+    # Порядок вызовов — в финальном диспетче deploy/rollback (в файле два
+    # case: ранний --help и финальный; берём последний).
+    dispatch = deploy.rsplit('case "${1:-deploy}" in', 1)[1]
+    assert dispatch.index("run_tls_gate") < dispatch.index("render_legacy_redirect")
+
+
+def test_owner_instruction_covers_buy_write_report_restart() -> None:
+    doc = _infrasource("README-OWN-DOMAIN.md")
+    lowered = doc.lower()
+    assert "купить" in lowered
+    assert "LEGACY_PUBLIC_HOST" in doc
+    assert "tls_issue.sh" in doc
+    assert "301" in doc
+    assert "vash-domen.ru" in doc

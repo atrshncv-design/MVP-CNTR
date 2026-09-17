@@ -5,6 +5,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# shellcheck source=host_names.sh
+. ./host_names.sh
+
 ENV_FILE="${ENV_FILE:-.env.production}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 HEALTH_TIMEOUT_SECONDS="${DEPLOY_HEALTH_TIMEOUT_SECONDS:-300}"
@@ -172,37 +175,47 @@ require_strong_auth_secret() {
 }
 
 require_public_host() {
-  # Таск 07 (G40/G41): публичный MVP только на техническом имени
-  # <ipv4>.sslip.io — localhost отклоняется здесь, а не в проде.
+  # Таск 07 (G40/G41 + R08): публичный контур — техническое имя
+  # <ipv4>.sslip.io ИЛИ собственный домен; localhost отклоняется здесь,
+  # а не в проде. LEGACY_PUBLIC_HOST (опционально) — старое имя
+  # переходного периода: 301 на новое, формат так же строг.
   PUBLIC_HOST="$(effective_env_value PUBLIC_HOST)"
-  case "$PUBLIC_HOST" in
-    ""|*"localhost"*|*"127.0.0.1"*|*"0.0.0.0"*)
-      echo "ОШИБКА: PUBLIC_HOST должен быть техническим именем <ipv4>.sslip.io, а не локальным адресом." >&2
+  host_require_valid "PUBLIC_HOST" "$PUBLIC_HOST" || return 1
+  LEGACY_PUBLIC_HOST="$(effective_env_value LEGACY_PUBLIC_HOST)"
+  if [ -n "$LEGACY_PUBLIC_HOST" ]; then
+    host_require_valid "LEGACY_PUBLIC_HOST" "$LEGACY_PUBLIC_HOST" || return 1
+    if [ "$(_host_lower "$LEGACY_PUBLIC_HOST")" = "$(_host_lower "$PUBLIC_HOST")" ]; then
+      echo "ОШИБКА: LEGACY_PUBLIC_HOST совпадает с PUBLIC_HOST." >&2
       return 1
-      ;;
-  esac
-  case "$PUBLIC_HOST" in
-    *.sslip.io) ;;
-    *)
-      echo "ОШИБКА: PUBLIC_HOST должен быть техническим именем <ipv4>.sslip.io." >&2
-      return 1
-      ;;
-  esac
-  export PUBLIC_HOST
+    fi
+  fi
+  export PUBLIC_HOST LEGACY_PUBLIC_HOST
+}
+
+render_legacy_redirect() {
+  # Таск 07 (R08): nginx-инклуд 301 legacy→canonical из env, без правок кода.
+  # Идёт после TLS-гейта (имена уже строгие); рендер проверяет снова.
+  if ! ./render_legacy_redirect.sh; then
+    echo "ОШИБКА: не сформирован 301-редирект со старого имени." >&2
+    return 1
+  fi
 }
 
 run_tls_gate() {
   # Таск 07 (G40/G41): строгий TLS-гейт ДО сборки — localhost/HTTP-URL,
   # SAN-несоответствие и скорая экспирация роняют деплой вместо молчаливого
   # самоподписанного fallback. Лимиты и preflight таска 04 не трогаем.
-  local nextauth cors tls_cert tls_key tls_min_validity
+  local nextauth cors tls_cert tls_key tls_min_validity legacy
   nextauth="$(effective_env_value NEXTAUTH_URL)"
   cors="$(effective_env_value CORS_ORIGINS)"
+  legacy="$(effective_env_value LEGACY_PUBLIC_HOST)"
   tls_cert="$(effective_env_value TLS_CERT_FILE)"
   tls_key="$(effective_env_value TLS_KEY_FILE)"
   tls_min_validity="$(effective_env_value TLS_MIN_VALIDITY_DAYS)"
   # Экспорт только заданных оператором значений: пустые не затирают дефолты
-  # гейта (nginx/certs, 14 дней), заданные доходят до гейта как есть.
+  # гейта (nginx/certs, 14 дней; отсутствие LEGACY = редирект выключен),
+  # заданные доходят до гейта как есть.
+  if [ -n "$legacy" ]; then export LEGACY_PUBLIC_HOST="$legacy"; fi
   if [ -n "$tls_cert" ]; then export TLS_CERT_FILE="$tls_cert"; fi
   if [ -n "$tls_key" ]; then export TLS_KEY_FILE="$tls_key"; fi
   if [ -n "$tls_min_validity" ]; then export TLS_MIN_VALIDITY_DAYS="$tls_min_validity"; fi
@@ -410,6 +423,7 @@ case "${1:-deploy}" in
     validate_replicas
     run_preflight
     run_tls_gate
+    render_legacy_redirect
     IMAGE_TAG="$(git rev-parse --short=12 HEAD 2>/dev/null)" || {
       echo "ОШИБКА: не удалось определить git SHA для image tag." >&2
       exit 1
@@ -418,7 +432,7 @@ case "${1:-deploy}" in
     export IMAGE_TAG
     save_previous_images
 
-    mkdir -p nginx/certs certbot/www
+    mkdir -p nginx/certs certbot/www nginx/legacy
 
     echo "Собираю и поднимаю стек с image tag $IMAGE_TAG..."
     # P1: --remove-orphans убирает контейнеры удалённых сервисов (db-replica),
@@ -448,6 +462,7 @@ case "${1:-deploy}" in
     validate_replicas
     run_preflight
     run_tls_gate
+    render_legacy_redirect
     rollback_to_tag "$2"
     ;;
   check-env)

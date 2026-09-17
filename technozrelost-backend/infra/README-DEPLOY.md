@@ -295,6 +295,33 @@ SAN без `PUBLIC_HOST`, самоподписанном сертификате,
 ежедневный cron: `0 4 * * * cd <repo>/technozrelost-backend/infra && ./tls_renew.sh`.
 Состояние ACME — в docker volume `tz-prod-certbot-conf` (ключи не в git).
 
+### Свой домен вместо sslip.io (R08, таск 07)
+
+Причина: репутационные фильтры мобильных операторов к wildcard-DNS —
+с телефонов платформа без VPN открывается только на собственном имени.
+Покупка имени — за владельцем; полная инструкция для него (купить →
+вписать → сообщить → перезапуск) — `infra/README-OWN-DOMAIN.md`.
+Операторская часть — тем же процессом, без правок кода:
+
+```bash
+# .env.production уже заполнен владельцем: PUBLIC_HOST=<новое имя>,
+# NEXTAUTH_URL/CORS_ORIGINS — то же имя, LEGACY_PUBLIC_HOST=<старое имя>
+./infra/tls_issue.sh   # сертификат сразу на оба имени (SAN новое + старое)
+./infra/deploy.sh      # гейт обоих имён → рендер 301 → health-гейт
+# Проверка:
+curl https://<новое-имя>/api/v1/health
+curl -I https://<старое-имя>/api/v1/health   # 301 Location: https://<новое-имя>/...
+```
+
+Переключение адресов — значением `PUBLIC_HOST` (плюс те же имя
+в `NEXTAUTH_URL`/`CORS_ORIGINS`); `deploy.sh` после гейта генерирует
+`nginx/legacy/redirect.conf` (301 со старого на новое, HTTP и HTTPS;
+HTTP-01 challenges старого имени продолжают отдаваться для продления).
+Гейт принимает оба формата имён, плейсхолдер `vash-domen.ru` отклоняет,
+SAN без старого имени при заданном `LEGACY_PUBLIC_HOST` — провал
+вместо предупреждения браузера о чужом сертификате. Когда старое имя
+больше не нужно — убрать `LEGACY_PUBLIC_HOST` и перезапустить.
+
 ## Секреты и безопасность
 
 - `JWT_SECRET`, `NEXTAUTH_SECRET` — при пустом значении или `change_me*` генерируются
