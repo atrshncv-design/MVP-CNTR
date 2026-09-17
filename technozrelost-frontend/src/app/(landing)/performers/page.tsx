@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight, FlaskConical, Factory, Landmark, Rocket } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
+import PerformersShowcase from "@/components/landing/performers-showcase";
+import { fetchPublicSpecialistsPage } from "../public-showcases";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("landing");
@@ -12,8 +14,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/**
+ * Таск 02 (R01/R03): живой каталог специалистов поверх маркетинга.
+ * Первая страница читается сервером анонимно (без Authorization, keyset
+ * after_id); дальше браузер дотягивает страницы сам через rewrites.
+ * Пустой каталог — честное пустое состояние, сбой — ошибка с ретраем.
+ * Статичные карточки ниже — описание возможностей платформы, а не
+ * подмена живых данных: они не выдают себя за людей из реестра.
+ */
 export default async function PerformersPage() {
   const t = await getTranslations("performers");
+  const te = await getTranslations("executors");
+  const { items, failed, status } = await fetchPublicSpecialistsPage();
+  const initialError = failed ? te("errorLoad") : null;
   const PERFORMERS = [
     {
       icon: FlaskConical,
@@ -52,6 +65,16 @@ export default async function PerformersPage() {
           {t("lead")}
         </p>
       </Reveal>
+
+      {/* Живой реестр специалистов — данные публичного каталога */}
+      <section aria-label={te("tabSpecialists")} className="mt-12">
+        <Reveal>
+          <h2 className="tz-section-title">{te("tabSpecialists")}</h2>
+        </Reveal>
+        <div className="mt-6">
+          <PerformersShowcase initialItems={items} initialError={initialError} initialStatus={status} />
+        </div>
+      </section>
 
       <div className="mt-12 grid gap-5 md:grid-cols-2">
         {PERFORMERS.map((p, i) => (

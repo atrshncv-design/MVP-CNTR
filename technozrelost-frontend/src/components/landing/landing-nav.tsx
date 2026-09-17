@@ -39,6 +39,7 @@ export default function LandingNav({
 
   const moreLinks = [
     { href: "/news", label: t("news") },
+    { href: "/nioktr", label: t("nioktr") },
     { href: "/customers", label: t("customers") },
     { href: "/performers", label: t("performers") },
   ];

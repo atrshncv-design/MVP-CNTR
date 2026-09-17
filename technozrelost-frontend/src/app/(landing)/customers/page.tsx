@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight, Building2, Landmark, Factory, TrendingUp } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Reveal from "@/components/landing/reveal";
+import CustomersShowcase from "@/components/landing/customers-showcase";
+import { fetchPublicOrganizationsPage } from "../public-showcases";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("landing");
@@ -12,8 +14,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/**
+ * Таск 02 (R01/R03): живой каталог организаций поверх маркетинга.
+ * Первая страница читается сервером анонимно (без Authorization,
+ * limit/offset); дальше браузер дотягивает страницы сам через rewrites.
+ * Пустой каталог — честное пустое состояние, сбой — ошибка с ретраем.
+ * Статичные карточки ниже — описание возможностей платформы, а не
+ * подмена живых данных: они не выдают себя за организации из реестра.
+ */
 export default async function CustomersPage() {
   const t = await getTranslations("customers");
+  const te = await getTranslations("executors");
+  const { items, failed, status } = await fetchPublicOrganizationsPage();
+  const initialError = failed ? te("errorLoad") : null;
   const CUSTOMERS = [
     {
       icon: Building2,
@@ -52,6 +65,16 @@ export default async function CustomersPage() {
           {t("lead")}
         </p>
       </Reveal>
+
+      {/* Живой реестр организаций — данные публичного каталога */}
+      <section aria-label={te("tabOrganizations")} className="mt-12">
+        <Reveal>
+          <h2 className="tz-section-title">{te("tabOrganizations")}</h2>
+        </Reveal>
+        <div className="mt-6">
+          <CustomersShowcase initialItems={items} initialError={initialError} initialStatus={status} />
+        </div>
+      </section>
 
       <div className="mt-12 space-y-5">
         {CUSTOMERS.map((c, i) => (
