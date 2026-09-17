@@ -2926,7 +2926,17 @@
     "fileListAria": "Список документов",
     "countBadge": "{count}",
     "unsupportedType": "Тип файла .{ext} не поддерживается",
-    "chooseFile": "Выберите файл"
+    "chooseFile": "Выберите файл",
+    "generationTitle": "Генерация документов",
+    "generationAria": "Генерация документов проекта",
+    "generationDesc": "Создайте ТЗ, паспорт или ТЭО по данным проекта. Документ сохраняется как черновик и скачивается.",
+    "generateTz": "Сгенерировать ТЗ",
+    "generatePassport": "Сгенерировать паспорт",
+    "generateTeo": "Сгенерировать ТЭО",
+    "generating": "Генерация…",
+    "generationDone": "«{title}» создан и сохранён как черновик",
+    "generationNotFound": "Проект недоступен или не найден",
+    "generationFailed": "Не удалось сгенерировать документ (ошибка {status})"
   },
   "team": {
     "title": "Команда проекта",

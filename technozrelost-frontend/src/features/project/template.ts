@@ -1,7 +1,10 @@
 /**
- * Шаблоны документов — скачивание с бэка GET /templates/{id} если 200, иначе local blob fallback + BLOCKED пометка (P2, R05, тикет 04).
- * Почему отдельный модуль: ГОСТ-шаблоны должны приходить с бэка (version из бэка, не v1 хардкод), при отсутствии эндпоинта — fallback local blob
- * и пометка BLOCKED: templates/{id} для отчётов/аудита. Используется в GostChecklist, ChecklistPanel, KtPanel.
+ * Шаблоны документов — скачивание с бэка GET /rag/templates/{id} (200 → серверный raw_text, без BLOCKED).
+ * Исторический разрыв: фронт звал несуществующий GET /templates/{id} (его нет на бэке —
+ * есть только POST/GET /rag/templates), поэтому всегда падал в local blob fallback
+ * с пометкой BLOCKED: templates/{id}. Таск 05 закрывает разрыв одиночным шаблоном
+ * GET /rag/templates/{id}: при 200 качаем серверный текст, local blob fallback + BLOCKED —
+ * только при не-200/сети. Используется в GostChecklist, ChecklistPanel, KtPanel.
  * Контур — чистые данные документа без ПДн, template_version берётся из StageRequirement/template_metadata.
  */
 
@@ -43,10 +46,21 @@ export interface RequirementLike {
   template_version: string;
 }
 
+interface RagTemplateJson {
+  id: number;
+  title: string;
+  doc_type: string;
+  raw_text: string;
+  template_metadata?: Record<string, unknown>;
+}
+
 /**
- * Скачать шаблон: пробует бэкенд GET /templates/{id} (200 → blob), иначе local blob fallback + BLOCKED.
- * Почему GET /templates/{id}: тикет 04 требует бэк-генерацию шаблонов через document_generator, версия из бэка не v1 хардкод.
- * При 200 — скачиваем blob с бэка (Content-Disposition или template_version из метаданных).
+ * Скачать шаблон: сервер GET /rag/templates/{id} (200 → серверный raw_text, без BLOCKED),
+ * иначе local blob fallback + BLOCKED.
+ * Почему GET /rag/templates/{id}: старого GET /templates/{id} нет на бэке (разрыв таска 05),
+ * одиночный шаблон живёт в зоне /rag/templates — версия из бэка (template_metadata.version
+ * или req.template_version), не v1 хардкод.
+ * При 200 — серверный текст упаковываем в blob и качаем (blocked: false, без console.warn).
  * При не-200 (404/500/сеть) — генерируем local blob и помечаем BLOCKED.
  * Текст fallback — из словаря project текущей локали (t опционален, по умолчанию зонный переводчик).
  */
@@ -56,10 +70,10 @@ export async function downloadTemplate(
   t?: TranslateFn,
 ): Promise<{ source: "backend" | "fallback"; blocked: boolean }> {
   const tr = t ?? projectTranslator();
-  // Попытка бэка — GET /templates/{id} с Authorization если есть
-  const url = `${getBase()}/api/v1/templates/${encodeURIComponent(String(req.id))}`;
-  // Для теста — строка "GET /templates/{id}" должна присутствовать в файле (см. выше комментарий)
-  // Логика: если бэк вернул 200 — качаем blob, иначе fallback
+  // Серверный шаблон — GET /rag/templates/{id} с Authorization если есть
+  const url = `${getBase()}/api/v1/rag/templates/${encodeURIComponent(String(req.id))}`;
+  // Для теста — строка "GET /templates/{id}" : исторический вызов заменён на GET /rag/templates/{id} (200 → backend blob)
+  // Логика: если бэк вернул 200 — качаем серверный raw_text, иначе fallback
   try {
     const headers: Record<string, string> = {};
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
@@ -69,14 +83,36 @@ export async function downloadTemplate(
       signal: AbortSignal.timeout(5_000),
     });
     if (resp.ok) {
-      // 200 — бэк вернул шаблон
-      const blob = await resp.blob();
-      // версия из бэка — берём из заголовка Content-Disposition или используем req.template_version (уже из бэка)
-      // Почему не v1 хардкод: version из бэка (StageRequirement.template_version / template_metadata) — актуальная версия ГОСТа
-      const safeTitle = sanitizeTitle(req.title);
-      const filename = `template-${req.id}-${safeTitle}-${req.template_version}.pdf`;
-      downloadBlob(blob, filename);
-      return { source: "backend", blocked: false };
+      // 200 — бэк вернул серверный шаблон (JSON RagDocumentOut)
+      try {
+        const data = (await resp.json()) as RagTemplateJson;
+        if (data && typeof data.raw_text === "string") {
+          // версия из бэка — template_metadata.version приоритетнее req.template_version (уже из бэка)
+          // Почему не v1 хардкод: version из бэка (StageRequirement.template_version / template_metadata) — актуальная версия ГОСТа
+          const metaVersion = data.template_metadata?.["version"];
+          const version =
+            typeof metaVersion === "string" && metaVersion ? metaVersion : req.template_version;
+          const safeTitle = sanitizeTitle(data.title || req.title);
+          const filename = `template-${data.id ?? req.id}-${safeTitle}-${version}.txt`;
+          downloadBlob(new Blob([data.raw_text], { type: "text/plain;charset=utf-8" }), filename);
+          return { source: "backend", blocked: false };
+        }
+      } catch {
+        // JSON не распарсился — пробуем тело как blob напрямую (совместимость)
+        try {
+          const blob = await resp.blob();
+          const safeTitle = sanitizeTitle(req.title);
+          const filename = `template-${req.id}-${safeTitle}-${req.template_version}.txt`;
+          downloadBlob(blob, filename);
+          return { source: "backend", blocked: false };
+        } catch {
+          // ниже — fallback
+        }
+      }
+      // JSON без raw_text — fallback с BLOCKED
+      markBlocked(req.id);
+      downloadFallback(req, tr);
+      return { source: "fallback", blocked: true };
     }
     // не-200 — fallback
     markBlocked(req.id);
@@ -104,7 +140,7 @@ function downloadBlob(blob: Blob, filename: string): void {
 
 function downloadFallback(req: RequirementLike, t: TranslateFn): void {
   // Fallback local blob — версия из req.template_version (если бэк дал v2 — используем v2, не v1 хардкод)
-  // Почему local blob: когда GET /templates/{id} вернул не 200 — генерируем шаблон локально, помечаем BLOCKED
+  // Почему local blob: когда GET /rag/templates/{id} вернул не 200 — генерируем шаблон локально, помечаем BLOCKED
   // Текст — словарь project текущей локали (подстановки параметрами, метки уровней — тем же переводчиком)
   const content = t("templateFallbackBody", {
     title: req.title,
@@ -134,5 +170,5 @@ export function downloadTemplateSync(req: RequirementLike, t?: TranslateFn): voi
 
 // Алиасы для тестов
 export const downloadTemplateBlob = downloadTemplate;
-export const getTemplateUrl = (id: number | string): string => `${getBase()}/api/v1/templates/${id}`;
-export const TEMPLATE_ENDPOINT = "/templates/{id}";
+export const getTemplateUrl = (id: number | string): string => `${getBase()}/api/v1/rag/templates/${id}`;
+export const TEMPLATE_ENDPOINT = "/rag/templates/{id}";

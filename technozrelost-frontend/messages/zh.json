@@ -2926,7 +2926,17 @@
   "fileListAria": "文件列表",
   "countBadge": "{count}",
   "unsupportedType": "不支持 .{ext} 文件类型",
-  "chooseFile": "选择文件"
+  "chooseFile": "选择文件",
+  "generationTitle": "文档生成",
+  "generationAria": "项目文档生成",
+  "generationDesc": "根据项目数据生成任务书、护照或可行性研究报告。文档将保存为草稿并下载。",
+  "generateTz": "生成任务书",
+  "generatePassport": "生成护照",
+  "generateTeo": "生成可行性研究报告",
+  "generating": "生成中…",
+  "generationDone": "“{title}”已创建并保存为草稿",
+  "generationNotFound": "项目不可用或未找到",
+  "generationFailed": "文档生成失败（错误 {status}）"
  },
  "team": {
   "title": "项目团队",

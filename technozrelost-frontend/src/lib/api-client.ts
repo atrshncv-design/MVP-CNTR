@@ -499,27 +499,97 @@ export const decideControlPointGoNoGo = decideControlPoint;
 export const patchControlPoint = decideControlPoint;
 export const updateControlPoint = decideControlPoint;
 
-// ─── Шаблоны документов — GET /templates/{id} с fallback local blob (P2, R05) ──
-// Почему здесь: шаблон скачивается с бэка если 200, иначе local blob fallback + BLOCKED пометка
-// GET /templates/{id} — бэкенд document_generator / rag templates, version из бэка не v1 хардкод
+// ─── Генерация документов ТЗ/Паспорт/ТЭО (R05, таск 05) ────────────────────
+// Почему здесь: единый fetch-слой, бэк — POST /projects/{id}/generate/{doc}
+// (создатель/участник/staff, черновик + аудит document.generated, чужой → 404).
+
+export type GeneratedDocType = "tz" | "passport" | "teo";
+
+export interface GeneratedDocumentOut {
+  doc_type: string;
+  title: string;
+  content: string;
+  template_id: number | null;
+  variables: Record<string, string>;
+  document_id: number | null;
+}
+
+export function generateProjectDocument(
+  projectId: number | string,
+  docType: GeneratedDocType,
+  accessToken: string,
+): Promise<GeneratedDocumentOut> {
+  return apiRequest<GeneratedDocumentOut>(
+    `/projects/${projectId}/generate/${docType}`,
+    accessToken,
+    { method: "POST" },
+  );
+}
+
+// Алиасы для кнопок панели генерации
+export const generateTzDocument = (projectId: number | string, accessToken: string) =>
+  generateProjectDocument(projectId, "tz", accessToken);
+export const generatePassportDocument = (projectId: number | string, accessToken: string) =>
+  generateProjectDocument(projectId, "passport", accessToken);
+export const generateTeoDocument = (projectId: number | string, accessToken: string) =>
+  generateProjectDocument(projectId, "teo", accessToken);
+
+// ─── Шаблоны документов — GET /rag/templates/{id} (R05, таск 05) ─────────────
+// Почему /rag/templates: несуществующего GET /templates/{id} на бэке нет
+// (есть только POST/GET /rag/templates) — разрыв закрыт одиночным шаблоном
+// GET /rag/templates/{id}, скачивание серверного raw_text без BLOCKED-пометки.
 
 export async function getTemplateBlob(
   templateId: number | string,
   accessToken: string,
 ): Promise<Blob> {
-  const response = await fetch(`${getBaseUrl()}/api/v1/templates/${encodeURIComponent(String(templateId))}`, {
+  const response = await fetch(`${getBaseUrl()}/api/v1/rag/templates/${encodeURIComponent(String(templateId))}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
     signal: AbortSignal.timeout(5_000),
   });
   if (!response.ok) throw new ApiError(`API request failed: ${response.status}`, response.status);
+  // Сервер отдаёт JSON RagDocumentOut — упаковываем raw_text в скачиваемый Blob.
+  // Ветка blob() — совместимость со старыми моками без json().
+  if (typeof (response as Response).json === "function") {
+    try {
+      const data = (await response.json()) as { raw_text?: unknown };
+      if (data && typeof data.raw_text === "string") {
+        return new Blob([data.raw_text], { type: "text/plain;charset=utf-8" });
+      }
+    } catch {
+      // тело уже прочитано как JSON неудачно — ниже blob() не сработает,
+      // поэтому бросаем как ошибку шаблона для fallback через BLOCKED
+      throw new ApiError("API request failed: 502", 502);
+    }
+  }
   return response.blob();
 }
 
-// GET /templates/{id} — если 200 возвращаем blob, иначе бросаем для fallback + BLOCKED
+// GET /rag/templates/{id} — если 200 возвращаем blob из серверного raw_text,
+// иначе бросаем для fallback + BLOCKED
 export const getTemplate = getTemplateBlob;
 export const fetchTemplate = getTemplateBlob;
 export const downloadTemplateBlob = getTemplateBlob;
+
+export interface RagTemplateOut {
+  id: number;
+  title: string;
+  doc_type: string;
+  ugt_level: number | null;
+  raw_text: string;
+  source_uri: string | null;
+  template_metadata: Record<string, unknown>;
+  contour?: string;
+}
+
+/** Одиночный серверный шаблон GET /rag/templates/{id} (JSON, без blob-упаковки). */
+export function getRagTemplate(
+  templateId: number | string,
+  accessToken: string,
+): Promise<RagTemplateOut> {
+  return apiRequest<RagTemplateOut>(`/rag/templates/${encodeURIComponent(String(templateId))}`, accessToken);
+}
 
 // ─── Сохранённые фильтры (P2, R02) ─────────────────────────────────────────
 // Почему единый модуль api-client: пробует бэкенд GET/POST/DELETE /filters/saved,

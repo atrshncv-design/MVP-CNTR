@@ -2926,7 +2926,17 @@
     "fileListAria": "Document list",
     "countBadge": "{count}",
     "unsupportedType": "File type .{ext} not supported",
-    "chooseFile": "Choose file"
+    "chooseFile": "Choose file",
+    "generationTitle": "Document generation",
+    "generationAria": "Project document generation",
+    "generationDesc": "Generate a SoW, passport or feasibility study from project data. The document is saved as a draft and downloaded.",
+    "generateTz": "Generate SoW",
+    "generatePassport": "Generate passport",
+    "generateTeo": "Generate feasibility study",
+    "generating": "Generating…",
+    "generationDone": "\"{title}\" created and saved as a draft",
+    "generationNotFound": "Project is unavailable or not found",
+    "generationFailed": "Failed to generate the document (error {status})"
   },
   "team": {
     "title": "Project team",

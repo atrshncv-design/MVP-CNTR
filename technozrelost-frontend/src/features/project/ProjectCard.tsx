@@ -9,6 +9,7 @@ import { ChecklistPanel } from "@/features/docs/GostChecklist";
 import { KtPanel } from "./KtPanel";
 import { CanvasBlocks, type CanvasValue } from "./CanvasBlocks";
 import { DocsPanel } from "@/features/docs/DocsPanel";
+import { GenerationPanel } from "./GenerationPanel";
 import { AiDocConsultant } from "@/features/docs/AiDocConsultant";
 import { TeamPanel } from "./TeamPanel";
 import { ActionsPanel } from "./ActionsPanel";
@@ -209,6 +210,9 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
         value={canvasValue}
         onChange={setCanvasValue}
       />
+
+      {/* Генерация ТЗ/Паспорт/ТЭО — реальный POST /projects/{id}/generate/{doc}, скачивание (R05) */}
+      <GenerationPanel projectId={project.id} />
 
       {/* DocsPanel унифицирован — один блок вместо 3 дублей, drag-n-drop + прогресс, только скачать */}
       <DocsPanel

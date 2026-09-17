@@ -6,6 +6,7 @@ export { downloadTemplate, BLOCKED_REASON as TEMPLATE_BLOCKED_REASON, TEMPLATE_B
 export { CanvasBlocks } from "./CanvasBlocks";
 export type { CanvasValue } from "./CanvasBlocks";
 export { DocsPanel } from "@/features/docs/DocsPanel";
+export { GenerationPanel } from "./GenerationPanel";
 export { AiDocConsultant } from "@/features/docs/AiDocConsultant";
 export { TeamPanel } from "./TeamPanel";
 export { ActionsPanel } from "./ActionsPanel";

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query, Request, status
 
 from app.core.deps import CurrentUser, DBSession
 from app.core.errors import raise_error
+from app.db.models import RagDocument
 from app.schemas import RagDocumentIn, RagDocumentOut, RagSearchIn, RagSearchResult
 from app.services.rag import list_templates, search_documents, upsert_document
 
@@ -63,3 +64,30 @@ async def get_templates(
         )
         for d in docs
     ]
+
+
+@router.get("/templates/{template_id}", response_model=RagDocumentOut)
+async def get_template_by_id(
+    template_id: int,
+    request: Request,
+    db: DBSession,
+    user: CurrentUser,
+) -> RagDocumentOut:
+    # R05: одиночный шаблон для скачивания из UI. Раньше фронт звал
+    # несуществующий GET /api/v1/templates/{id} и всегда падал в local blob
+    # fallback; теперь разрыв закрыт существующей зоной /rag/templates.
+    doc = await db.get(RagDocument, template_id)
+    if doc is None:
+        raise raise_error(
+            "DOC_TEMPLATE_MISSING", {"doc_type": str(template_id)}, request=request
+        )
+    return RagDocumentOut(
+        id=doc.id,
+        title=doc.title,
+        doc_type=doc.doc_type,
+        ugt_level=doc.ugt_level,
+        raw_text=doc.raw_text,
+        source_uri=doc.source_uri,
+        template_metadata=doc.template_metadata,
+        contour=getattr(doc, "contour", "tuno") or "tuno",
+    )
