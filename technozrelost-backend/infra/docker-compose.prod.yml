@@ -273,7 +273,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          # Таск 08 (приёмка 2026-09-17): донор CPU для фронта — спит до
+          # BACKUP_AT вне пика, в окне нагрузки простаивает.
+          cpus: '0.10'
           memory: 128M
     logging:
       driver: json-file
@@ -336,7 +338,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.15'
+          # Таск 08 (приёмка 2026-09-17): донор CPU для фронта — цикл
+          # каждые 60с, копии WAL килобайтные, вне горячего пути запросов.
+          cpus: '0.10'
           memory: 128M
     logging:
       driver: json-file
@@ -380,7 +384,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.1'
+          # Таск 08 (приёмка 2026-09-17): донор CPU для фронта — пробы
+          # раз в 60с, миллисекундные, вне горячего пути запросов.
+          cpus: '0.05'
           memory: 128M
     logging:
       driver: json-file
@@ -446,7 +452,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'
+          # Таск 08 (приёмка 2026-09-17): поднят с 0.75 — SSR страниц
+          # упирался в CPU (page p95 3.06–3.5с при 50 concurrent против
+          # гейта 2с); доноры — простаивающие sidecar (см. их пометки).
+          # Сумма лимитов CPU контура неизменна: 6.0 vCPU.
+          cpus: '1.25'
           memory: 768M
     logging:
       driver: json-file
@@ -523,7 +533,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          # Таск 08 (приёмка 2026-09-17): донор CPU для фронта — в окне
+          # нагрузки только скрап раз в 15с, запросов к UI нет.
+          cpus: '0.4'
           memory: 384M
     # P1 (таск 04): ограниченный ретеншн — время и размер (preflight требует оба).
     command:
@@ -563,7 +575,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          # Таск 08 (приёмка 2026-09-17): донор CPU для фронта — UI только
+          # по SSH-туннелю, в окне нагрузки простаивает.
+          cpus: '0.10'
           memory: 256M
     logging:
       driver: json-file

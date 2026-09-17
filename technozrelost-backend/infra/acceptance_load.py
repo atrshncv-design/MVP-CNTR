@@ -1,15 +1,31 @@
 #!/usr/bin/env python3
-"""Лёгкий нагрузочный harness приёмки P1 (таск 10, истории 3/9, G47).
+"""Лёгкий нагрузочный harness приёмки P1 (таск 10, истории 3/9, G47; методика — таск 08).
 
 Проверяет пороги брифа 2026-09-16 против ЛОКАЛЬНОГО стенда:
   success_rate >= 99%, API p95 <= 1с, страницы p95 <= 2с, RAM < 80%.
 Только stdlib (urllib + threads): dev-зависимости не нужны.
 
+Методика (таск 08, диагноз продакшена 2026-09-17): hammer с одного IP
+упирается в анонимный лимит реестра (registry_anon_limit=120/60с) — это
+срабатывание защиты от накруток, а не деградация сервиса, поэтому лимиты
+НЕ ослабляются, а измерение идёт распределёнными пользователями:
+
+* auth-режим (``--auth-users N``, N>0): harness регистрирует N тестовых
+  пользователей ``POST /api/v1/auth/register`` и раздаёт воркерам Bearer
+  round-robin; пробы реестра идут аутентифицированными под высокий
+  auth-лимит (registry_auth_limit=10000/60с). Любой 429 здесь — провал.
+  Именно auth-прогон закрывает гейтовые пороги.
+* anon-режим (``--auth-users 0``, дефолт): пробы без Authorization —
+  проверка защиты: ожидаемый 429 с главой ``X-Error-Code:
+  REGISTRY_RATE_LIMITED`` провалом НЕ считается (исключён из неуспеха),
+  429 без главы или с чужой главой — провал.
+
 Шов: код возврата + stdout + JSON-отчёт.
   0 — ACCEPTANCE PASS (все четыре порога);
   1 — ACCEPTANCE FAIL (порог не пройден, какой — в отчёте);
-  2 — внутренняя ошибка (стенд недоступен, нет замера RAM не роняет,
-      но помечает RAM как unknown → FAIL, fail-closed).
+  2 — внутренняя ошибка (стенд недоступен, не поднялись тестовые
+      пользователи, нет замера RAM не роняет, но помечает RAM как
+      unknown → FAIL, fail-closed).
 
 Против боевого сервера Beget скрипт сам НЕ запускается: точную команду
 для оператора см. в `infra/README-ACCEPTANCE.md` (раздел 1).
@@ -21,6 +37,7 @@ import argparse
 import concurrent.futures
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -41,6 +58,28 @@ THRESHOLDS = {
 DEFAULT_CONCURRENCY = 50  # история 9/G03: прогон на 50 concurrent.
 DEFAULT_REQUESTS = 500
 DEFAULT_TIMEOUT_S = 10.0
+DEFAULT_AUTH_USERS = 0  # 0 — anon-режим (проверка защиты); >0 — auth-режим.
+
+# Ожидаемый ответ защиты реестра: статус и глава каталога ошибок
+# (app/core/errors.py: REGISTRY_RATE_LIMITED; лимиты в app/core/config.py:
+# anon registry_anon_limit=120/60с, auth registry_auth_limit=10000/60с).
+# Защита от накруток не ослабляется — harness обходит её честными
+# учётками, а не поднятием лимитов.
+EXPECTED_RATE_LIMIT_STATUS = 429
+EXPECTED_RATE_LIMIT_CODE = "REGISTRY_RATE_LIMITED"
+ERROR_CODE_HEADER = "X-Error-Code"
+
+REGISTER_PATH = "/api/v1/auth/register"
+LOGIN_PATH = "/api/v1/auth/login"
+# Роль тестовых учёток — из allowlist саморегистрации
+# (app/core/deps.py SELF_REGISTER_ALLOWED_SLUGS): иначе 403.
+LOADTEST_ROLE_SLUG = "gk_customer"
+
+# Категории ответа пробы: ok (2xx), expected_limited (ожидаемый 429 защиты
+# в anon-режиме), failed (всё остальное, включая 429 в auth-режиме).
+OK = "ok"
+EXPECTED_LIMITED = "expected_limited"
+FAILED = "failed"
 
 
 def percentile(samples: list[float], pct: float) -> float:
@@ -50,6 +89,25 @@ def percentile(samples: list[float], pct: float) -> float:
     ordered = sorted(samples)
     rank = math.ceil(pct / 100.0 * len(ordered)) - 1
     return ordered[max(0, min(rank, len(ordered) - 1))]
+
+
+def classify(status: int, error_code: str | None, authed: bool) -> str:
+    """Категория ответа пробы.
+
+    Ожидаемый 429 защиты (статус + глава каталога) — не провал только
+    в anon-режиме: там он доказывает, что защита от накруток сработала.
+    В auth-режиме любой 429 — провал: честные учётки под высоким
+    auth-лимитом ограничиваться не должны.
+    """
+    if 200 <= status < 300:
+        return OK
+    if (
+        not authed
+        and status == EXPECTED_RATE_LIMIT_STATUS
+        and (error_code or "") == EXPECTED_RATE_LIMIT_CODE
+    ):
+        return EXPECTED_LIMITED
+    return FAILED
 
 
 def read_ram_used_percent() -> float | None:
@@ -112,54 +170,180 @@ def _ram_from_sysctl() -> float | None:
         return None
 
 
-def fetch(url: str, timeout_s: float) -> tuple[bool, float]:
-    """Один GET: (успех = HTTP 2xx, латентность в секундах)."""
+def fetch(
+    url: str, timeout_s: float, headers: dict[str, str] | None = None
+) -> tuple[int, float, str | None]:
+    """Один GET: (HTTP-статус, латентность в секундах, глава X-Error-Code).
+
+    Транспортная ошибка — статус 0 без главы (fail-closed: это провал,
+    а не «ожидаемый лимит»).
+    """
     started = time.monotonic()
     try:
-        request = urllib.request.Request(url, method="GET")
+        request = urllib.request.Request(url, method="GET", headers=headers or {})
         with urllib.request.urlopen(request, timeout=timeout_s) as response:
-            ok = 200 <= response.status < 300
+            status = int(response.status)
+            error_code = response.headers.get(ERROR_CODE_HEADER)
             response.read()
+    except urllib.error.HTTPError as exc:
+        status = int(exc.code)
+        try:
+            error_code = exc.headers.get(ERROR_CODE_HEADER) if exc.headers else None
+        except (AttributeError, ValueError):
+            error_code = None
     except (urllib.error.URLError, OSError, TimeoutError, ValueError):
-        ok = False
-    return ok, time.monotonic() - started
+        status, error_code = 0, None
+    return status, time.monotonic() - started, error_code
 
 
-def one_iteration(api_url: str, page_url: str, timeout_s: float) -> list[tuple[str, bool, float]]:
+def post_json(url: str, payload: dict[str, object], timeout_s: float) -> dict:
+    """Один POST JSON; возвращает разобранное тело. Ошибки — RuntimeError.
+
+    Значения payload (пароли) в сообщениях не отражаются — только статус
+    и короткий класс причины.
+    """
+    body = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(
+        url, data=body, method="POST", headers={"Content-Type": "application/json"}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"POST {url} -> HTTP {int(exc.code)}") from exc
+    except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
+        raise RuntimeError(f"POST {url} -> {type(exc).__name__}") from exc
+
+
+def _register_one(api_url: str, index: int, stamp: str, timeout_s: float) -> str:
+    """Регистрация одной тестовой учётки; возвращает access_token.
+
+    Email уникален на прогон (stamp pid+время): повторный прогон не
+    ловит 409. Если 409 всё же случился (гонка прогонов) — fallback
+    на login той же парой, чужие учётки не трогаем.
+    """
+    email = f"acceptance-load-{stamp}-{index}@load.local"
+    password = f"Acceptance-Load-{stamp}-{index}-pass"
+    payload = {
+        "email": email,
+        "password": password,
+        "full_name": f"Acceptance Load {index}",
+        "role_slug": LOADTEST_ROLE_SLUG,
+    }
+    try:
+        data = post_json(f"{api_url}{REGISTER_PATH}", payload, timeout_s)
+    except RuntimeError as exc:
+        if "HTTP 409" not in str(exc):
+            raise
+        data = post_json(
+            f"{api_url}{LOGIN_PATH}",
+            {"email": email, "password": password},
+            timeout_s,
+        )
+    token = data.get("access_token") if isinstance(data, dict) else None
+    if not isinstance(token, str) or not token:
+        raise RuntimeError(f"POST {api_url}{REGISTER_PATH} -> нет access_token")
+    return token
+
+
+def provision_auth_tokens(api_url: str, count: int, timeout_s: float) -> list[str]:
+    """Регистрация ``count`` тестовых пользователей; Bearer round-robin ниже.
+
+    Ошибка любой регистрации — RuntimeError (run() превращает в код 2:
+    непонятное состояние — не PASS). Пароли синтетические, в отчёт и
+    stdout не попадают; после прогона оператор удаляет учётки
+    ``acceptance-load-*@load.local`` (см. README-ACCEPTANCE.md).
+    """
+    stamp = f"{os.getpid()}-{int(time.time())}"
+    workers = max(1, min(8, count))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(
+            pool.map(
+                lambda index: _register_one(api_url, index, stamp, timeout_s),
+                range(count),
+            )
+        )
+
+
+def auth_headers(token: str | None) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
+
+def one_iteration(
+    api_url: str, page_url: str, timeout_s: float, token: str | None = None
+) -> list[tuple[str, str, float]]:
+    """Три пробы воркера: (вид, категория classify(), латентность).
+
+    Bearer несёт только проба реестра — она единственная под лимитом;
+    health и страница идут анонимно, как у живых посетителей.
+    """
+    authed = token is not None
     probes = [
-        ("api", f"{api_url}/api/v1/health"),
-        ("api", f"{api_url}/api/v1/projects/registry?limit=20"),
-        ("page", f"{page_url}/"),
+        ("api", f"{api_url}/api/v1/health", None),
+        ("api", f"{api_url}/api/v1/projects/registry?limit=20", token),
+        ("page", f"{page_url}/", None),
     ]
-    return [(kind, *fetch(url, timeout_s)) for kind, url in probes]
+    results = []
+    for kind, url, probe_token in probes:
+        status, latency, error_code = fetch(url, timeout_s, auth_headers(probe_token))
+        results.append((kind, classify(status, error_code, authed), latency))
+    return results
 
 
-def run_load(api_url: str, page_url: str, concurrency: int, requests: int, timeout_s: float):
+def run_load(
+    api_url: str,
+    page_url: str,
+    concurrency: int,
+    requests: int,
+    timeout_s: float,
+    tokens: list[str] | None = None,
+):
+    authed = bool(tokens)
     ram_before = read_ram_used_percent()
     api_latencies: list[float] = []
     page_latencies: list[float] = []
-    outcomes: list[bool] = []
+    succeeded = 0
+    limited = 0
+    failed = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as pool:
         futures = [
-            pool.submit(one_iteration, api_url, page_url, timeout_s) for _ in range(requests)
+            pool.submit(
+                one_iteration,
+                api_url,
+                page_url,
+                timeout_s,
+                tokens[index % len(tokens)] if tokens else None,
+            )
+            for index in range(requests)
         ]
         for future in concurrent.futures.as_completed(futures):
-            for kind, ok, latency in future.result():
-                outcomes.append(ok)
+            for kind, category, latency in future.result():
+                if category == OK:
+                    succeeded += 1
+                elif category == EXPECTED_LIMITED:
+                    limited += 1
+                else:
+                    failed += 1
                 if kind == "api":
                     api_latencies.append(latency)
                 else:
                     page_latencies.append(latency)
     ram_after = read_ram_used_percent()
     ram_samples = [value for value in (ram_before, ram_after) if value is not None]
-    total = len(outcomes)
+    total = succeeded + limited + failed
+    # Ожидаемый 429 защиты — не провал: в зачёт успеха идёт наряду с 2xx.
+    success = ((succeeded + limited) / total) if total else 0.0
     return {
-        "success_rate": (sum(1 for ok in outcomes if ok) / total) if total else 0.0,
+        "success_rate": success,
         "api_p95_s": percentile(api_latencies, 95),
         "page_p95_s": percentile(page_latencies, 95),
         "ram_percent": max(ram_samples) if ram_samples else None,
         "requests": total,
         "concurrency": concurrency,
+        "mode": "auth" if authed else "anon",
+        "auth_users": len(tokens) if tokens else 0,
+        "rate_limited_expected": limited,
+        "failed": failed,
     }
 
 
@@ -202,15 +386,39 @@ def run(argv: list[str]) -> int:
     parser.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     parser.add_argument("--requests", type=int, default=DEFAULT_REQUESTS)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_S)
+    parser.add_argument(
+        "--auth-users",
+        type=int,
+        default=DEFAULT_AUTH_USERS,
+        help=(
+            "число тестовых пользователей (регистрация + Bearer round-robin "
+            "на пробы реестра); 0 — anon-режим проверки защиты"
+        ),
+    )
     parser.add_argument("--report", default="reports/acceptance-load.json")
     args = parser.parse_args(argv)
 
     if args.concurrency < 1 or args.requests < 1:
         print("ACCEPTANCE ERROR: concurrency и requests — положительные", file=sys.stderr)
         return 2
+    if args.auth_users < 0:
+        print("ACCEPTANCE ERROR: --auth-users — неотрицательное", file=sys.stderr)
+        return 2
+    tokens: list[str] = []
+    if args.auth_users > 0:
+        try:
+            tokens = provision_auth_tokens(args.api_url, args.auth_users, args.timeout)
+        except Exception as exc:  # fail-closed: непонятное состояние — не PASS.
+            print(f"ACCEPTANCE ERROR: тестовые пользователи не поднялись: {exc}", file=sys.stderr)
+            return 2
     try:
         metrics = run_load(
-            args.api_url, args.page_url, args.concurrency, args.requests, args.timeout
+            args.api_url,
+            args.page_url,
+            args.concurrency,
+            args.requests,
+            args.timeout,
+            tokens or None,
         )
     except Exception as exc:  # fail-closed: непонятное состояние — не PASS.
         print(f"ACCEPTANCE ERROR: {type(exc).__name__}", file=sys.stderr)
@@ -233,9 +441,11 @@ def run(argv: list[str]) -> int:
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     print(f"ACCEPTANCE {result['overall']}: {metrics['requests']} req, "
+          f"mode={metrics['mode']}, "
           f"success={metrics['success_rate']:.3f}, "
           f"api_p95={metrics['api_p95_s']:.3f}s, page_p95={metrics['page_p95_s']:.3f}s, "
-          f"ram={metrics['ram_percent']}")
+          f"ram={metrics['ram_percent']}, "
+          f"limited_expected={metrics['rate_limited_expected']}, failed={metrics['failed']}")
     for check in result["checks"].values():
         print(f"  {check}")
     return 0 if result["overall"] == "PASS" else 1

@@ -22,7 +22,10 @@
 история 23/G15: 100 МБ новых файлов/день):
   CPU >= 6 vCPU, RAM >= 11 ГиБ, свободно >= 60 ГБ (диск 150 ГБ:
       100 МБ новых файлов/день ~= 37 ГБ за год + снапшоты, WAL, образы и
-      кэш сборки), сумма лимитов памяти <= 8 ГиБ, сумма лимитов CPU <= 6 vCPU.
+      кэш сборки), сумма лимитов памяти <= 8 ГиБ, сумма лимитов CPU <= 6 vCPU,
+  лимит CPU фронтенда >= 1.25 (таск 08, приёмка 2026-09-17: SSR страниц
+      упирался в CPU — page p95 3.06–3.5с при 50 concurrent против гейта
+      2с; тихий откат к 0.75 гейт отклоняет до сборки).
 """
 
 from __future__ import annotations
@@ -49,6 +52,11 @@ CPU_BUDGET_CPUS = 6.0  # 6 vCPU — суммарный потолок лимит
 # с нездорового демона и нерепрезентативен — границы проекта, а не замера.
 CLAMAV_MIN_MIB = 1024  # 1 ГиБ.
 CLAMAV_MAX_MIB = 2048  # 2 ГиБ.
+# Таск 08 (приёмка 2026-09-17): откалиброванный пол CPU фронтенда. SSR при
+# 50 concurrent давал page p95 3.06–3.5с на лимите 0.75 против гейта 2с;
+# конверт поднят до 1.25 перебалансировкой из простаивающих sidecar
+# (таблица «Ресурсный конверт P1» в README-DEPLOY.md). Ниже — до сборки.
+FRONTEND_MIN_CPUS = 1.25
 
 # Долгоживущие сервисы prod-контура: у каждого обязаны быть лимиты CPU и RAM.
 EXPECTED_SERVICES = (
@@ -246,6 +254,7 @@ def check_compose_budget(errors: list[str]) -> None:
     check_redis(errors, blocks.get("redis", ""), redis_limit_bytes)
     check_prometheus(errors, blocks.get("prometheus", ""))
     check_clamav(errors, blocks.get("clamav", ""))
+    check_frontend(errors, blocks.get("frontend", ""))
 
 
 def service_command(block: str) -> str:
@@ -317,6 +326,26 @@ def check_clamav(errors: list[str], block: str) -> None:
             f"PREFLIGHT: лимит памяти clamav {mib} МиБ > 2 ГиБ "
             "(история 39/G42, Решения: ClamAV 1–2 ГиБ; замер 7 МиБ "
             "с нездорового демона нерепрезентативен) — до сборки"
+        )
+
+
+def check_frontend(errors: list[str], block: str) -> None:
+    """Пол CPU фронтенда (таск 08): ниже калибровки — тихий возврат SSR-узкого
+    места, отклоняется до сборки."""
+    if not block:
+        return
+    cpus = find_limit(block, "cpus")
+    if cpus is None:
+        return  # отсутствие лимита уже отклонено выше
+    try:
+        value = float(cpus)
+    except ValueError:
+        return  # не число уже отклонено выше
+    if value < FRONTEND_MIN_CPUS:
+        errors.append(
+            f"PREFLIGHT: лимит CPU frontend {value} < {FRONTEND_MIN_CPUS} "
+            "(таск 08, приёмка 2026-09-17: SSR давал page p95 3.06–3.5с "
+            "при 50 concurrent против гейта 2с) — до сборки"
         )
 
 

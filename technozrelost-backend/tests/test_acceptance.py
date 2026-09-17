@@ -72,27 +72,95 @@ def test_verdict_passes_only_inside_all_g47_gates():
     assert failed["checks"]["ram"].startswith("FAIL")
 
 
+def test_classify_expected_429_is_not_a_failure_in_anon_mode():
+    """Таск 08: ожидаемый 429 защиты — не провал только в anon-режиме."""
+    load = load_module("acceptance_load", INFRA_ROOT / "acceptance_load.py")
+
+    assert load.classify(200, None, False) == "ok"
+    assert load.classify(200, None, True) == "ok"
+    # Штатное срабатывание защиты: статус + глава каталога, без Bearer.
+    assert load.classify(429, "REGISTRY_RATE_LIMITED", False) == "expected_limited"
+    # 429 без главы каталога — не доказанная защита, а провал.
+    assert load.classify(429, None, False) == "failed"
+    # 429 с чужой главой — тоже провал.
+    assert load.classify(429, "AUTH_LOGIN_LIMIT", False) == "failed"
+    # В auth-режиме честные учётки под высоким лимитом: любой 429 — провал.
+    assert load.classify(429, "REGISTRY_RATE_LIMITED", True) == "failed"
+    assert load.classify(500, None, False) == "failed"
+    # Транспортная ошибка (статус 0) — провал, а не «ожидаемый лимит».
+    assert load.classify(0, None, False) == "failed"
+
+
 class StubHandler(BaseHTTPRequestHandler):
     mode = "ok"
+    register_calls: list = []
+    registry_auth_headers: list = []
 
-    def do_GET(self):  # noqa: N802
-        if self.mode == "broken" and self.path.startswith("/api/v1/projects/registry"):
-            body, status = b"error", 500
-        else:
-            body, status = b'{"status":"ok"}', 200
-        payload = body if self.path != "/" else b"<html>page</html>"
+    def _send(self, body: bytes, status: int, extra_headers: dict | None = None):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(payload)))
+        for name, value in (extra_headers or {}).items():
+            self.send_header(name, value)
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(payload)
+        self.wfile.write(body)
+
+    def do_POST(self):  # noqa: N802
+        length = int(self.headers.get("Content-Length", 0))
+        self.rfile.read(length)
+        if self.path == "/api/v1/auth/register":
+            if self.mode == "noreg":
+                self._send(b"error", 500)
+            else:
+                type(self).register_calls.append(self.path)
+                body = json.dumps(
+                    {"access_token": "test-token", "token_type": "bearer"}
+                ).encode()
+                self._send(body, 201)
+        elif self.path == "/api/v1/auth/login":
+            body = json.dumps(
+                {"access_token": "test-token-login", "token_type": "bearer"}
+            ).encode()
+            self._send(body, 200)
+        else:
+            self._send(b"not found", 404)
+
+    def do_GET(self):  # noqa: N802
+        if self.path.startswith("/api/v1/projects/registry"):
+            if self.mode == "broken":
+                body, status, headers = b"error", 500, None
+            elif self.mode == "anon_limited":
+                body, status, headers = (
+                    b"limited",
+                    429,
+                    {"X-Error-Code": "REGISTRY_RATE_LIMITED"},
+                )
+            elif self.mode == "anon_bare429":
+                body, status, headers = b"limited", 429, None
+            elif self.mode == "auth":
+                seen = self.headers.get("Authorization", "")
+                type(self).registry_auth_headers.append(seen)
+                if seen == "Bearer test-token":
+                    body, status, headers = b'{"status":"ok"}', 200, None
+                else:
+                    body, status, headers = b"unauthorized", 401, None
+            else:
+                body, status, headers = b'{"status":"ok"}', 200, None
+        else:
+            body, status, headers = b'{"status":"ok"}', 200, None
+        payload = body if self.path != "/" else b"<html>page</html>"
+        self._send(payload, status, headers)
 
     def log_message(self, *args):
         pass
 
 
-def run_harness_against_stub(mode: str, tmp_path: Path) -> subprocess.CompletedProcess[str]:
+def run_harness_against_stub(
+    mode: str, tmp_path: Path, extra_args: tuple = ()
+) -> subprocess.CompletedProcess[str]:
     StubHandler.mode = mode
+    StubHandler.register_calls = []
+    StubHandler.registry_auth_headers = []
     server = ThreadingHTTPServer(("127.0.0.1", 0), StubHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -112,6 +180,7 @@ def run_harness_against_stub(mode: str, tmp_path: Path) -> subprocess.CompletedP
                 "5",
                 "--requests",
                 "20",
+                *extra_args,
                 "--report",
                 str(report),
             ],
@@ -141,6 +210,61 @@ def test_harness_fails_when_registry_errors_drag_success_below_99(tmp_path: Path
 
     assert result.returncode == 1
     assert "ACCEPTANCE FAIL" in result.stdout
+
+
+def test_harness_auth_mode_registers_users_and_sends_bearer(tmp_path: Path):
+    """Таск 08: auth-режим — N регистраций, Bearer на пробах реестра, PASS."""
+    result = run_harness_against_stub("auth", tmp_path, ("--auth-users", "5"))
+
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert "ACCEPTANCE PASS" in result.stdout
+    assert "mode=auth" in result.stdout
+    report = json.loads((tmp_path / "acceptance.json").read_text(encoding="utf-8"))
+    assert report["verdict"] == "PASS"
+    assert report["metrics"]["mode"] == "auth"
+    assert report["metrics"]["auth_users"] == 5
+    assert report["metrics"]["rate_limited_expected"] == 0
+    assert report["metrics"]["failed"] == 0
+    # Пять тестовых пользователей зарегистрированы, каждая проба реестра
+    # несла Bearer (20 запросов × 1 проба реестра).
+    assert len(StubHandler.register_calls) == 5
+    assert len(StubHandler.registry_auth_headers) == 20
+    assert all(
+        header == "Bearer test-token" for header in StubHandler.registry_auth_headers
+    )
+
+
+def test_harness_anon_expected_429_is_not_a_failure(tmp_path: Path):
+    """Таск 08: anon-режим — 429 с главой каталога не роняет success."""
+    result = run_harness_against_stub("anon_limited", tmp_path)
+
+    assert result.returncode == 0, result.stderr + result.stdout
+    assert "ACCEPTANCE PASS" in result.stdout
+    report = json.loads((tmp_path / "acceptance.json").read_text(encoding="utf-8"))
+    assert report["verdict"] == "PASS"
+    assert report["metrics"]["mode"] == "anon"
+    assert report["metrics"]["success_rate"] == 1.0
+    assert report["metrics"]["rate_limited_expected"] == 20
+    assert report["metrics"]["failed"] == 0
+
+
+def test_harness_anon_429_without_catalog_header_still_fails(tmp_path: Path):
+    """Таск 08: anon-режим — 429 без главы каталога остаётся провалом."""
+    result = run_harness_against_stub("anon_bare429", tmp_path)
+
+    assert result.returncode == 1
+    assert "ACCEPTANCE FAIL" in result.stdout
+    report = json.loads((tmp_path / "acceptance.json").read_text(encoding="utf-8"))
+    assert report["metrics"]["rate_limited_expected"] == 0
+    assert report["metrics"]["failed"] == 20
+
+
+def test_harness_auth_provision_failure_is_exit_2(tmp_path: Path):
+    """Таск 08: регистрация не поднялась — код 2, а не PASS/FAIL."""
+    result = run_harness_against_stub("noreg", tmp_path, ("--auth-users", "3"))
+
+    assert result.returncode == 2
+    assert "ACCEPTANCE ERROR" in result.stderr
 
 
 def test_alert_dryrun_sends_nothing_and_names_no_values(tmp_path: Path):

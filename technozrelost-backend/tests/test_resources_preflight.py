@@ -158,6 +158,25 @@ def test_preflight_rejects_clamav_above_2gib(tmp_path: Path):
     assert "clamav" in result.stderr.lower()
 
 
+def test_preflight_rejects_frontend_below_calibrated_cpu(tmp_path: Path):
+    """Таск 08: тихий откат CPU фронта к 0.75 отклоняется до сборки."""
+    fixture = write_compose_fixture(
+        tmp_path, real_compose_source().replace("cpus: '1.25'", "cpus: '0.75'", 1)
+    )
+    result = run_preflight({**adequate_machine(), "PREFLIGHT_COMPOSE_FILE": fixture})
+
+    assert result.returncode == 1
+    assert "frontend" in result.stderr.lower()
+
+
+def test_preflight_accepts_calibrated_frontend_cpu():
+    """Таск 08: реальный compose — пол фронта 1.25 пройден, суммы в бюджете."""
+    result = run_preflight(adequate_machine())
+
+    assert result.returncode == 0, result.stderr
+    assert "1.25" in (INFRA_ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")
+
+
 def test_preflight_disk_error_names_parent_decisions_and_story():
     result = run_preflight(
         {
