@@ -176,8 +176,20 @@ async def list_nioktr_cards(
     stmt = select(NioktrCard).order_by(
         NioktrCard.created_date.desc().nullslast(), NioktrCard.id.desc()
     )
-    if search:
-        stmt = stmt.where(NioktrCard.name.ilike(f"%{search}%"))
+    # Таск 03: серверный поиск по всей базе (название, аннотация,
+    # исполнитель, заказчик, регномер), а не по загруженному в браузер.
+    if search is not None and search.strip():
+        term = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(
+                NioktrCard.name.ilike(term),
+                NioktrCard.annotation.ilike(term),
+                NioktrCard.executor_name.ilike(term),
+                NioktrCard.executor_short_name.ilike(term),
+                NioktrCard.customer_name.ilike(term),
+                NioktrCard.registration_number.ilike(term),
+            )
+        )
     if ai is not None:
         stmt = stmt.where(NioktrCard.is_ai_area == ai)
     if type:
@@ -214,8 +226,15 @@ async def list_organizations(
         .where(or_(Organization.projects_count > 0, card_count_lateral.c.cnt > 0))
         .order_by(card_count_lateral.c.cnt.desc())
     )
-    if search:
-        stmt = stmt.where(Organization.name.ilike(f"%{search}%"))
+    # Таск 03: серверный поиск по названию и короткому названию.
+    if search is not None and search.strip():
+        term = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Organization.name.ilike(term),
+                Organization.short_name.ilike(term),
+            )
+        )
     stmt = stmt.limit(limit).offset(offset)
     rows = await db.execute(stmt)
     return [

@@ -4,8 +4,9 @@
  * и /nioktr — публичные (CurrentUserOptional на бэке), как и GET
  * /projects/registry у витрины проектов. Пагинация — как у витрины проектов:
  * специалисты — keyset after_id/limit, организации и НИОКТР — limit/offset
- * (так отдают бэкенд-ручки); поиск — клиентский фильтр, бэкенд его не
- * понимает. Чистые функции ниже — шов для тестов витрин.
+ * (так отдают бэкенд-ручки); поиск — серверный ?search= (таск 03) по всей
+ * базе, а не по загруженному в браузер. Чистые функции ниже — шов для
+ * тестов витрин.
  */
 
 import type { NioktrCardOut, OrganizationOut } from "./types";
@@ -19,6 +20,8 @@ export interface PublicExecutor {
   role_name: string;
   competencies: string[];
   completed_projects: number;
+  /** ОГРН организации (таск 03, ссылка на /customers/[ogrn]); у людей — null. */
+  ogrn?: string | null;
 }
 
 /** Организация из публичного каталога (та же форма ExecutorOut, id < 0). */
@@ -47,15 +50,19 @@ export const SHOWCASE_DIRECTORY_PAGE_SIZE = 9;
 export interface SpecialistsQuery {
   after_id?: number;
   limit?: number;
+  /** Серверный поиск (таск 03): ФИО и организация, пустое — без фильтра. */
+  search?: string;
 }
 
 /**
- * Query для GET /executors/specialists: keyset after_id + limit.
- * Поиск сюда не входит — он применяется клиентской фильтрацией в компоненте.
+ * Query для GET /executors/specialists: keyset after_id + limit + search.
+ * Поиск идёт на сервере по всей базе (таск 03), а не по загруженной странице.
  */
 export function buildSpecialistsQuery(query: SpecialistsQuery): string {
   const qs = new URLSearchParams();
   if (query.after_id != null) qs.set("after_id", String(query.after_id));
+  const search = query.search?.trim();
+  if (search) qs.set("search", search);
   qs.set("limit", String(query.limit ?? SHOWCASE_DIRECTORY_PAGE_SIZE));
   const suffix = qs.toString();
   return suffix ? `?${suffix}` : "";
@@ -64,13 +71,17 @@ export function buildSpecialistsQuery(query: SpecialistsQuery): string {
 export interface OrganizationsQuery {
   limit?: number;
   offset?: number;
+  /** Серверный поиск (таск 03): название организации, пустое — без фильтра. */
+  search?: string;
 }
 
-/** Query для GET /executors/organizations: limit + offset (так отдаёт ручка). */
+/** Query для GET /executors/organizations: limit + offset + search (так отдаёт ручка). */
 export function buildOrganizationsQuery(query: OrganizationsQuery): string {
   const qs = new URLSearchParams();
   qs.set("limit", String(query.limit ?? SHOWCASE_DIRECTORY_PAGE_SIZE));
   if (query.offset) qs.set("offset", String(query.offset));
+  const search = query.search?.trim();
+  if (search) qs.set("search", search);
   const suffix = qs.toString();
   return suffix ? `?${suffix}` : "";
 }
@@ -78,13 +89,17 @@ export function buildOrganizationsQuery(query: OrganizationsQuery): string {
 export interface NioktrQuery {
   limit?: number;
   offset?: number;
+  /** Серверный поиск (таск 03): название, аннотация, исполнитель, заказчик, регномер. */
+  search?: string;
 }
 
-/** Query для GET /nioktr: limit + offset; поиск — клиентский, как у проектов. */
+/** Query для GET /nioktr: limit + offset + search (поиск — серверный, таск 03). */
 export function buildNioktrQuery(query: NioktrQuery): string {
   const qs = new URLSearchParams();
   qs.set("limit", String(query.limit ?? SHOWCASE_DIRECTORY_PAGE_SIZE));
   if (query.offset) qs.set("offset", String(query.offset));
+  const search = query.search?.trim();
+  if (search) qs.set("search", search);
   const suffix = qs.toString();
   return suffix ? `?${suffix}` : "";
 }
@@ -168,6 +183,8 @@ export interface ExecutorShowcaseCard {
   competencies: string[];
   completedProjects: number;
   isOrg: boolean;
+  /** ОГРН для ссылки на деталку /customers/[ogrn]; у людей — null. */
+  ogrn: string | null;
 }
 
 /**
@@ -183,6 +200,7 @@ export function toExecutorCard(item: PublicExecutor): ExecutorShowcaseCard {
     competencies: Array.isArray(item.competencies) ? item.competencies : [],
     completedProjects: item.completed_projects ?? 0,
     isOrg: item.id < 0,
+    ogrn: item.ogrn ?? null,
   };
 }
 
@@ -225,5 +243,6 @@ export function organizationToExecutorCard(item: OrganizationOut): ExecutorShowc
     competencies: Array.isArray(item.competencies) ? item.competencies : [],
     completedProjects: item.projects_count ?? 0,
     isOrg: true,
+    ogrn: item.ogrn ?? null,
   };
 }

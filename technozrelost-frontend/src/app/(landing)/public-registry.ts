@@ -26,11 +26,18 @@ export interface PublicRegistryResult {
  * Первая страница публичного реестра без токена. Ошибка не бросается —
  * возвращается флагом, чтобы страница показала честное состояние
  * (пустое — при пустом реестре, ошибку — при сбое), а не упала в 500.
+ * search — серверный поиск бэкенда (таск 03), пустое — без фильтра.
  */
-export async function fetchPublicRegistryPage(afterId?: number): Promise<PublicRegistryResult> {
+export async function fetchPublicRegistryPage(
+  afterId?: number,
+  search?: string,
+): Promise<PublicRegistryResult> {
   try {
+    const trimmed = search?.trim() ? search.trim() : undefined;
     const qs = buildPublicRegistryQuery(
-      afterId == null ? { limit: SHOWCASE_PAGE_SIZE } : { limit: SHOWCASE_PAGE_SIZE, after_id: afterId },
+      afterId == null
+        ? { limit: SHOWCASE_PAGE_SIZE, ...(trimmed ? { search: trimmed } : {}) }
+        : { limit: SHOWCASE_PAGE_SIZE, after_id: afterId, ...(trimmed ? { search: trimmed } : {}) },
     );
     const response = await fetch(`${serverApiBase()}/api/v1/projects/registry${qs}`, {
       cache: "no-store",

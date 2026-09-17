@@ -235,6 +235,9 @@ async def project_registry(
     category: str | None = Query(None),
     budget_min: float | None = Query(None, ge=0),
     budget_max: float | None = Query(None, ge=0),
+    search: str | None = Query(
+        None, max_length=200, description="Серверный поиск по названию и описанию"
+    ),
     after_id: int | None = Query(None, description="Keyset курсор"),
     limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[RegistryProjectOut]:
@@ -256,6 +259,13 @@ async def project_registry(
         stmt = stmt.where(Project.budget >= budget_min)
     if budget_max is not None:
         stmt = stmt.where(Project.budget <= budget_max)
+    # Таск 03: серверный поиск по всей базе (название + описание), а не
+    # по загруженному в браузер. Пустая строка — без фильтра.
+    if search is not None and search.strip():
+        term = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(Project.name.ilike(term), Project.description.ilike(term))
+        )
     # P-08 композитная keyset: (level, updated_at, id) как ORDER BY.
     # Fallback id<after_id если курсор не найден.
     if after_id is not None:
@@ -284,6 +294,7 @@ async def project_registry(
         RegistryProjectOut(
             id=p.id,
             name=p.name,
+            description=p.description,
             category=p.category,
             current_level=p.current_level,
             preliminary_level=(
@@ -292,6 +303,7 @@ async def project_registry(
             target_level=p.target_level,
             budget=float(p.budget) if p.budget is not None else None,
             organization=org_name,
+            status=p.status,
             is_public=p.is_public,
             show_preliminary=p.show_preliminary,
             published_at=(
@@ -301,6 +313,53 @@ async def project_registry(
         )
         for p, org_name in rows
     ]
+
+
+@router.get("/registry/{project_id}", response_model=RegistryProjectOut)
+async def public_project_detail(
+    project_id: int,
+    request: Request,
+    db: ReadDBSession,
+    user: CurrentUserOptional,
+) -> RegistryProjectOut:
+    """Публичная деталка проекта реестра (таск 03, R01): без токена.
+
+    Виден только опубликованный (`is_public`) проект; приватный,
+    архивный скрытый и несуществующий id — 404 без раскрытия причин.
+    Приватные поля (join_token, права, участники) не отдаются по построению.
+    """
+    await enforce_registry_limit(request, user)
+    row = await db.execute(
+        select(Project, User.organization)
+        .outerjoin(User, Project.created_by == User.id)
+        .where(Project.id == project_id, Project.is_public.is_(True))
+    )
+    found = row.first()
+    if found is None:
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
+    project, org_name = found
+    return RegistryProjectOut(
+        id=project.id,
+        name=project.name,
+        description=project.description,
+        category=project.category,
+        current_level=project.current_level,
+        preliminary_level=(
+            project.preliminary_level if project.show_preliminary else None
+        ),
+        target_level=project.target_level,
+        budget=float(project.budget) if project.budget is not None else None,
+        organization=org_name,
+        status=project.status,
+        is_public=project.is_public,
+        show_preliminary=project.show_preliminary,
+        published_at=(
+            project.published_at.isoformat() if project.published_at else None
+        ),
+        created_at=(
+            project.created_at.isoformat() if project.created_at else None
+        ),
+    )
 
 
 @router.put("/{project_id}/publish", response_model=ProjectOut)

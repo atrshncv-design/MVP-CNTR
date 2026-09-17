@@ -50,23 +50,43 @@ async function fetchPublicList<T>(path: string, qs: string): Promise<PublicDirec
 }
 
 /** Первая страница специалистов (keyset after_id, дальше — клиент). */
-export function fetchPublicSpecialistsPage(afterId?: number): Promise<PublicDirectoryResult<PublicExecutor>> {
+export function fetchPublicSpecialistsPage(
+  afterId?: number,
+  search?: string,
+): Promise<PublicDirectoryResult<PublicExecutor>> {
+  const trimmed = search?.trim() ? search.trim() : undefined;
   const qs = buildSpecialistsQuery(
     afterId == null
-      ? { limit: SHOWCASE_DIRECTORY_PAGE_SIZE }
-      : { limit: SHOWCASE_DIRECTORY_PAGE_SIZE, after_id: afterId },
+      ? { limit: SHOWCASE_DIRECTORY_PAGE_SIZE, ...(trimmed ? { search: trimmed } : {}) }
+      : { limit: SHOWCASE_DIRECTORY_PAGE_SIZE, after_id: afterId, ...(trimmed ? { search: trimmed } : {}) },
   );
   return fetchPublicList<PublicExecutor>("/executors/specialists", qs);
 }
 
 /** Первая страница организаций (offset 0, дальше — клиент). */
-export function fetchPublicOrganizationsPage(offset = 0): Promise<PublicDirectoryResult<PublicOrg>> {
-  const qs = buildOrganizationsQuery({ limit: SHOWCASE_DIRECTORY_PAGE_SIZE, offset });
+export function fetchPublicOrganizationsPage(
+  offset = 0,
+  search?: string,
+): Promise<PublicDirectoryResult<PublicOrg>> {
+  const trimmed = search?.trim() ? search.trim() : undefined;
+  const qs = buildOrganizationsQuery({
+    limit: SHOWCASE_DIRECTORY_PAGE_SIZE,
+    offset,
+    ...(trimmed ? { search: trimmed } : {}),
+  });
   return fetchPublicList<PublicOrg>("/executors/organizations", qs);
 }
 
 /** Первая страница НИОКТР (offset 0, дальше — клиент). */
-export function fetchPublicNioktrPage(offset = 0): Promise<PublicDirectoryResult<PublicNioktrCard>> {
-  const qs = buildNioktrQuery({ limit: SHOWCASE_DIRECTORY_PAGE_SIZE, offset });
+export function fetchPublicNioktrPage(
+  offset = 0,
+  search?: string,
+): Promise<PublicDirectoryResult<PublicNioktrCard>> {
+  const trimmed = search?.trim() ? search.trim() : undefined;
+  const qs = buildNioktrQuery({
+    limit: SHOWCASE_DIRECTORY_PAGE_SIZE,
+    offset,
+    ...(trimmed ? { search: trimmed } : {}),
+  });
   return fetchPublicList<PublicNioktrCard>("/nioktr", qs);
 }

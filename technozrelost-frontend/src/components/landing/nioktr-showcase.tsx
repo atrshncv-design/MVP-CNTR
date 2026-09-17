@@ -24,11 +24,16 @@ import {
 
 /**
  * Страница НИОКТР из браузера: относительный путь уходит на бэкенд
- * через rewrites. Только параметры бэкенда (limit/offset);
- * поиск — клиентский фильтр ниже. Без Authorization по построению.
+ * через rewrites. Параметры бэкенда: limit/offset + серверный поиск search
+ * (таск 03: по всей базе, а не по загруженной странице).
+ * Без Authorization по построению.
  */
-async function fetchNioktrPage(offset: number): Promise<PublicNioktrCard[]> {
-  const qs = buildNioktrQuery({ limit: SHOWCASE_DIRECTORY_PAGE_SIZE, offset });
+async function fetchNioktrPage(offset: number, search?: string): Promise<PublicNioktrCard[]> {
+  const qs = buildNioktrQuery({
+    limit: SHOWCASE_DIRECTORY_PAGE_SIZE,
+    offset,
+    ...(search ? { search } : {}),
+  });
   const response = await fetch(`${API_URL}/api/v1/nioktr${qs}`, {
     cache: "no-store",
   });
@@ -67,7 +72,15 @@ function NioktrCard({ card, index }: { card: NioktrShowcaseCard; index: number }
           </span>
         ))}
       </div>
-      <h3 className="tz-card-title leading-snug">{card.name}</h3>
+      <h3 className="tz-card-title leading-snug">
+        {/* Таск 03: ссылка на деталку /nioktr/[regNumber] (тот же URL). */}
+        <Link
+          href={`/nioktr/${encodeURIComponent(card.regNumber)}`}
+          className="transition-colors hover:text-tz-accent"
+        >
+          {card.name}
+        </Link>
+      </h3>
       {card.annotation && (
         <p className="flex-1 text-[13px] leading-relaxed text-tz-secondary">
           {card.annotation}
@@ -133,6 +146,9 @@ export default function NioktrShowcase({
   const [moreError, setMoreError] = useState<string | null>(null);
   const [retryTick, setRetryTick] = useState(0);
   const [search, setSearch] = useState("");
+  // Таск 03: поиск уходит на сервер (?search= по всей базе) — ввод с дебаунсом.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchActive = search.trim() !== "";
 
   const statusOf = (err: unknown): number | null => {
     const status = err instanceof Error ? (err as { status?: number }).status : undefined;
@@ -147,10 +163,17 @@ export default function NioktrShowcase({
   const skipInitialFetchRef = useRef(initialError === null);
   const requestRef = useRef(0);
 
+  // Дебаунс ввода поиска перед уходом запроса на сервер.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   useEffect(() => {
     if (skipInitialFetchRef.current) {
       skipInitialFetchRef.current = false;
-      return;
+      // Первый ввод в поиск после SSR тоже должен уйти на сервер.
+      if (debouncedSearch === "") return;
     }
     const requestId = ++requestRef.current;
     setLoading(true);
@@ -158,7 +181,7 @@ export default function NioktrShowcase({
     setErrorStatus(null);
     setMoreError(null);
 
-    fetchNioktrPage(0)
+    fetchNioktrPage(0, debouncedSearch || undefined)
       .then((page) => {
         if (requestRef.current !== requestId) return;
         const merged = mergeOffsetPage([], page, 0, SHOWCASE_DIRECTORY_PAGE_SIZE);
@@ -177,28 +200,11 @@ export default function NioktrShowcase({
       .finally(() => {
         if (requestRef.current === requestId) setLoading(false);
       });
-  }, [retryTick, toLoadError]);
+  }, [retryTick, debouncedSearch, toLoadError]);
 
+  // Поиск уже отработал на сервере (таск 03) — клиентской фильтрации нет.
   const cards = useMemo(() => items.map(toNioktrCard), [items]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return cards;
-    return cards.filter((p) => {
-      const haystack = [
-        p.name,
-        p.annotation ?? "",
-        p.executor ?? "",
-        p.customer ?? "",
-        p.regNumber,
-        ...p.keywords,
-        ...p.types,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [search, cards]);
+  const filtered = cards;
 
   const handleLoadMore = () => {
     if (loadingMore || loading || !hasMore) return;
@@ -207,7 +213,7 @@ export default function NioktrShowcase({
     setLoadingMore(true);
     setMoreError(null);
 
-    fetchNioktrPage(offset)
+    fetchNioktrPage(offset, debouncedSearch || undefined)
       .then((page) => {
         if (requestRef.current !== requestId) return;
         // Дедуп и слияние — через общий mergeOffsetPage: курсор считается
@@ -228,7 +234,7 @@ export default function NioktrShowcase({
 
   return (
     <div>
-      {/* Поиск — клиентский фильтр, бэкенд-поиск не используется для единообразия */}
+      {/* Поиск — серверный (таск 03): ?search= по всей базе, ввод с дебаунсом */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-tz-border/60 bg-tz-surface p-4">
         <div className="relative min-w-[220px] flex-1">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" />
@@ -276,8 +282,8 @@ export default function NioktrShowcase({
         </div>
       )}
 
-      {/* Фильтр ничего не дал — подсказка, не выдумка */}
-      {!loading && !error && items.length > 0 && filtered.length === 0 && (
+      {/* Поиск ничего не дал на сервере — подсказка, не выдумка */}
+      {!loading && !error && items.length === 0 && searchActive && (
         <div className="mt-6 rounded-2xl border border-dashed border-tz-border bg-tz-surface/50 px-6 py-16 text-center">
           <FlaskConical size={32} className="mx-auto text-tz-muted/60" />
           <h3 className="mt-4 text-lg font-semibold text-tz-fg">{t("emptyTitle")}</h3>
@@ -286,7 +292,7 @@ export default function NioktrShowcase({
       )}
 
       {/* Пустой реестр — честное пустое состояние с призывом к действию */}
-      {!loading && !error && items.length === 0 && (
+      {!loading && !error && items.length === 0 && !searchActive && (
         <div className="mt-6 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-tz-border bg-tz-surface/50 px-6 py-16 text-center">
           <FlaskConical size={32} className="mx-auto text-tz-muted/60" />
           <div>

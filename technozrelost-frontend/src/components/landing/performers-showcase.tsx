@@ -27,14 +27,15 @@ import {
 
 /**
  * Страница специалистов из браузера: относительный путь уходит на бэкенд
- * через rewrites. Только параметры бэкенда (after_id/limit);
- * поиск — клиентский фильтр ниже. Без Authorization по построению.
+ * через rewrites. Параметры бэкенда: after_id/limit + серверный поиск
+ * search (таск 03: по всей базе, а не по загруженной странице).
+ * Без Authorization по построению.
  */
-async function fetchSpecialistsPage(afterId?: number): Promise<PublicExecutor[]> {
+async function fetchSpecialistsPage(afterId?: number, search?: string): Promise<PublicExecutor[]> {
   const qs = buildSpecialistsQuery(
     afterId == null
-      ? { limit: SHOWCASE_DIRECTORY_PAGE_SIZE }
-      : { limit: SHOWCASE_DIRECTORY_PAGE_SIZE, after_id: afterId },
+      ? { limit: SHOWCASE_DIRECTORY_PAGE_SIZE, ...(search ? { search } : {}) }
+      : { limit: SHOWCASE_DIRECTORY_PAGE_SIZE, after_id: afterId, ...(search ? { search } : {}) },
   );
   const response = await fetch(`${API_URL}/api/v1/executors/specialists${qs}`, {
     cache: "no-store",
@@ -146,6 +147,9 @@ export default function PerformersShowcase({
   const [moreError, setMoreError] = useState<string | null>(null);
   const [retryTick, setRetryTick] = useState(0);
   const [search, setSearch] = useState("");
+  // Таск 03: поиск уходит на сервер (?search= по всей базе) — ввод с дебаунсом.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchActive = search.trim() !== "";
 
   const statusOf = (err: unknown): number | null => {
     const status = err instanceof Error ? (err as { status?: number }).status : undefined;
@@ -161,10 +165,17 @@ export default function PerformersShowcase({
   const skipInitialFetchRef = useRef(initialError === null);
   const requestRef = useRef(0);
 
+  // Дебаунс ввода поиска перед уходом запроса на сервер.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   useEffect(() => {
     if (skipInitialFetchRef.current) {
       skipInitialFetchRef.current = false;
-      return;
+      // Первый ввод в поиск после SSR тоже должен уйти на сервер.
+      if (debouncedSearch === "") return;
     }
     const requestId = ++requestRef.current;
     setLoading(true);
@@ -172,7 +183,7 @@ export default function PerformersShowcase({
     setErrorStatus(null);
     setMoreError(null);
 
-    fetchSpecialistsPage()
+    fetchSpecialistsPage(undefined, debouncedSearch || undefined)
       .then((page) => {
         if (requestRef.current !== requestId) return;
         const merged = mergeKeysetPage([], page, SHOWCASE_DIRECTORY_PAGE_SIZE);
@@ -191,18 +202,11 @@ export default function PerformersShowcase({
       .finally(() => {
         if (requestRef.current === requestId) setLoading(false);
       });
-  }, [retryTick, toLoadError]);
+  }, [retryTick, debouncedSearch, toLoadError]);
 
+  // Поиск уже отработал на сервере (таск 03) — клиентской фильтрации нет.
   const cards = useMemo(() => items.map(toExecutorCard), [items]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return cards;
-    return cards.filter((p) => {
-      const haystack = `${p.name} ${p.org ?? ""} ${p.role ?? ""} ${p.competencies.join(" ")}`.toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [search, cards]);
+  const filtered = cards;
 
   const handleLoadMore = () => {
     if (loadingMore || loading || !hasMore) return;
@@ -210,7 +214,7 @@ export default function PerformersShowcase({
     setLoadingMore(true);
     setMoreError(null);
 
-    fetchSpecialistsPage(afterIdRef.current)
+    fetchSpecialistsPage(afterIdRef.current, debouncedSearch || undefined)
       .then((page) => {
         if (requestRef.current !== requestId) return;
         // Дедуп и слияние — через общий mergeKeysetPage: граница страниц
@@ -231,7 +235,7 @@ export default function PerformersShowcase({
 
   return (
     <div>
-      {/* Поиск — клиентский фильтр, бэкенд его не понимает */}
+      {/* Поиск — серверный (таск 03): ?search= по всей базе, ввод с дебаунсом */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-tz-border/60 bg-tz-surface p-4">
         <div className="relative min-w-[220px] flex-1">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-tz-muted" />
@@ -279,8 +283,8 @@ export default function PerformersShowcase({
         </div>
       )}
 
-      {/* Фильтр ничего не дал — подсказка, не выдумка */}
-      {!loading && !error && items.length > 0 && filtered.length === 0 && (
+      {/* Поиск ничего не дал на сервере — подсказка, не выдумка */}
+      {!loading && !error && items.length === 0 && searchActive && (
         <div className="mt-6 rounded-2xl border border-dashed border-tz-border bg-tz-surface/50 px-6 py-16 text-center">
           <Users size={32} className="mx-auto text-tz-muted/60" />
           <h3 className="mt-4 text-lg font-semibold text-tz-fg">{t("emptyTitle")}</h3>
@@ -289,7 +293,7 @@ export default function PerformersShowcase({
       )}
 
       {/* Пустой каталог — честное пустое состояние с призывом к действию */}
-      {!loading && !error && items.length === 0 && (
+      {!loading && !error && items.length === 0 && !searchActive && (
         <div className="mt-6 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-tz-border bg-tz-surface/50 px-6 py-16 text-center">
           <Users size={32} className="mx-auto text-tz-muted/60" />
           <div>

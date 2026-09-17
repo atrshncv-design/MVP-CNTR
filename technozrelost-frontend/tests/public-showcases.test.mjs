@@ -108,6 +108,8 @@ test("showcases lib: toExecutorCard — честные поля, org по зна
     competencies: ["ML", "CAD"],
     completedProjects: 3,
     isOrg: false,
+    // Таск 03: ОГРН для ссылки на деталку /customers/[ogrn]; у людей — null.
+    ogrn: null,
   });
   // Отсутствующие поля — null/пусто, не выдумка; имя на языке ввода.
   const bare = { ...person, id: 8, organization: null, role_name: null };
@@ -120,6 +122,7 @@ test("showcases lib: toExecutorCard — честные поля, org по зна
   // Организация из каталога — отрицательный id → isOrg.
   const org = { ...person, id: -12 };
   assert.equal(toExecutorCard(org).isOrg, true);
+  assert.equal(toExecutorCard({ ...org, ogrn: "1027700132195" }).ogrn, "1027700132195");
   // OrganizationOut бэка ложится в ту же карточку с отрицательным id.
   const orgCard = organizationToExecutorCard({
     id: 12,

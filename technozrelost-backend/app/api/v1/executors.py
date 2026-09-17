@@ -40,6 +40,7 @@ async def _users_as_executors(
     limit: int | None = None,
     role_slug: str | None = None,
     org: str | None = None,
+    search: str | None = None,
 ) -> list[ExecutorOut]:
     role_subq = (
         select(
@@ -94,6 +95,12 @@ async def _users_as_executors(
         stmt = stmt.where(role_subq.c.role_slug == role_slug)
     if org:
         stmt = stmt.where(User.organization.ilike(f"%{org}%"))
+    # Таск 03: серверный поиск по всей базе (ФИО + организация).
+    if search is not None and search.strip():
+        term = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(User.full_name.ilike(term), User.organization.ilike(term))
+        )
     # P-08 DB keyset: WHERE full_name > after_cursor ORDER BY full_name LIMIT 20 (или id).
     # Композитный курсор (full_name, id) для детерминизма при одинаковых именах.
     if cursor_full_name is not None and cursor_id is not None:
@@ -132,6 +139,7 @@ async def _organizations_as_executors(
     after_id: int | None = None,
     limit: int | None = None,
     role_slug: str | None = None,
+    search: str | None = None,
 ) -> list[ExecutorOut]:
     # P-08: организации сортируются по full_name для глобальной keyset
     # WHERE full_name > cursor ORDER BY full_name LIMIT 20.
@@ -152,6 +160,15 @@ async def _organizations_as_executors(
             stmt = stmt.where(Organization.org_type == "serial_manufacturer")
         else:
             stmt = stmt.where(text("1=0"))
+    # Таск 03: серверный поиск по всей базе (название + короткое название).
+    if search is not None and search.strip():
+        term = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Organization.name.ilike(term),
+                Organization.short_name.ilike(term),
+            )
+        )
     if cursor_full_name is not None and cursor_id is not None:
         stmt = stmt.where(
             or_(
@@ -189,6 +206,7 @@ async def _organizations_as_executors(
                 role_name=ORG_ROLE_NAMES[r_slug],
                 competencies=list(org.competencies or []),
                 completed_projects=org.projects_count,
+                ogrn=org.ogrn,
             )
         )
     return result
@@ -200,6 +218,9 @@ async def list_executors(
     db: ReadDBSession,
     user: CurrentUserOptional,
     role: str | None = Query(None),
+    search: str | None = Query(
+        None, max_length=200, description="Серверный поиск по ФИО и организации"
+    ),
     after_id: int | None = Query(None, description="Keyset курсор"),
     limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[ExecutorOut]:
@@ -226,6 +247,7 @@ async def list_executors(
             cursor_id=cursor_id,
             limit=limit,
             role_slug=role,
+            search=search,
         )
         orgs = await _organizations_as_executors(
             db,
@@ -233,14 +255,15 @@ async def list_executors(
             cursor_id=cursor_id,
             limit=limit,
             role_slug=role,
+            search=search,
         )
     else:
         # fallback id>after_id когда курсор не найден (старый except StopIteration)
         users = await _users_as_executors(
-            db, after_id=after_id, limit=limit, role_slug=role
+            db, after_id=after_id, limit=limit, role_slug=role, search=search
         )
         orgs = await _organizations_as_executors(
-            db, after_id=after_id, limit=limit, role_slug=role
+            db, after_id=after_id, limit=limit, role_slug=role, search=search
         )
     # Глобальная сортировка по full_name и лимит 20 — не более 40 строк в памяти.
     executors = users + orgs
@@ -258,6 +281,9 @@ async def list_specialists(
         None, description="Роль: rd_executor | scientific_org | serial_manufacturer"
     ),
     org: str | None = Query(None, description="Подстрока организации"),
+    search: str | None = Query(
+        None, max_length=200, description="Серверный поиск по ФИО и организации"
+    ),
     after_id: int | None = Query(None, description="Keyset курсор"),
     limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
 ) -> list[ExecutorOut]:
@@ -282,9 +308,10 @@ async def list_specialists(
             limit=limit,
             role_slug=role,
             org=org,
+            search=search,
         )
     return await _users_as_executors(
-        db, after_id=after_id, limit=limit, role_slug=role, org=org
+        db, after_id=after_id, limit=limit, role_slug=role, org=org, search=search
     )
 
 
@@ -295,6 +322,9 @@ async def list_org_catalog(
     user: CurrentUserOptional,
     type: str | None = Query(None, description="Тип организации"),
     region: str | None = Query(None, description="Регион"),
+    search: str | None = Query(
+        None, max_length=200, description="Серверный поиск по названию организации"
+    ),
     limit: int = Query(20, ge=1, le=100, description="Размер страницы"),
     offset: int = Query(0, ge=0),
 ) -> list[ExecutorOut]:
@@ -308,6 +338,14 @@ async def list_org_catalog(
         stmt = stmt.where(Organization.org_type == type)
     if region:
         stmt = stmt.where(Organization.region == region)
+    if search is not None and search.strip():
+        term = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Organization.name.ilike(term),
+                Organization.short_name.ilike(term),
+            )
+        )
     stmt = stmt.limit(limit).offset(offset)
     rows = await db.execute(stmt)
     result: list[ExecutorOut] = []
@@ -322,6 +360,7 @@ async def list_org_catalog(
                 role_name=ORG_ROLE_NAMES[role_slug],
                 competencies=list(org.competencies or []),
                 completed_projects=org.projects_count,
+                ogrn=org.ogrn,
             )
         )
     return result

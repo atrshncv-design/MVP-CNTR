@@ -358,6 +358,9 @@ class ExecutorOut(BaseModel):
     role_name: str
     competencies: list[str] = []
     completed_projects: int = 0
+    # Таск 03: ОГРН организации для ссылки на деталку /customers/[ogrn].
+    # У специалистов всегда None (физлица без ОГРН в каталоге).
+    ogrn: str | None = None
 
 
 class TechnologyOut(BaseModel):
@@ -525,12 +528,14 @@ class VerificationDocOut(BaseModel):
 class RegistryProjectOut(BaseModel):
     id: int
     name: str
+    description: str | None = None
     category: str | None = None
     current_level: int = 0
     preliminary_level: int | None = None
     target_level: int = 9
     budget: float | None = None
     organization: str | None = None
+    status: str = "draft"
     is_public: bool = False
     show_preliminary: bool = False
     published_at: str | None = None

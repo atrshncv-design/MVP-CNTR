@@ -30,12 +30,14 @@ const ugtColor = (id: number) => `var(--tz-ugt-${id})`;
 
 /**
  * Страница реестра из браузера: относительный путь уходит на бэкенд
- * через rewrites. Только параметры бэкенда (уровни/after_id/limit);
- * поиск и категория — клиентские фильтры ниже.
+ * через rewrites. Уровни, серверный поиск и after_id/limit понимает
+ * бэкенд (таск 03: поиск по всей базе, а не по загруженному);
+ * категория — клиентский фильтр ниже.
  */
 async function fetchRegistryPage(params: {
   ugt_min?: number;
   ugt_max?: number;
+  search?: string;
   after_id?: number;
 }): Promise<RegistryProjectOut[]> {
   const qs = buildPublicRegistryQuery({ ...params, limit: SHOWCASE_PAGE_SIZE });
@@ -69,9 +71,16 @@ function ProjectCard({
     try { return tUgt(`code${project.current_level}`); } catch { return tLanding("ugtBadge", { level: project.current_level }); }
   })();
   return (
-    <motion.button
-      type="button"
+    <motion.div
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(project)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(project);
+        }
+      }}
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -98,7 +107,16 @@ function ProjectCard({
         </span>
       </div>
 
-      <h3 className="tz-card-title leading-snug">{project.name}</h3>
+      <h3 className="tz-card-title leading-snug">
+        {/* Таск 03: заголовок — ссылка на деталку /projects/[id] (тот же URL). */}
+        <Link
+          href={`/projects/${project.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="transition-colors hover:text-tz-accent"
+        >
+          {project.name}
+        </Link>
+      </h3>
 
       {project.description && (
         <p className="flex-1 text-[13px] leading-relaxed text-tz-secondary">
@@ -111,7 +129,7 @@ function ProjectCard({
           <span>{project.org}</span>
         </div>
       )}
-    </motion.button>
+    </motion.div>
   );
 }
 
@@ -286,6 +304,13 @@ function ProjectModal({
                   <p className="text-[12.5px] leading-relaxed text-tz-secondary">
                     {t("fullData")}
                   </p>
+                  {/* Таск 03: полная страница деталки по тому же URL. */}
+                  <Link
+                    href={`/projects/${project.id}`}
+                    className="tz-btn tz-btn-secondary mt-3"
+                  >
+                    {tCommon("open")} <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </div>
               </div>
             </div>
@@ -328,6 +353,9 @@ export default function ProjectsShowcase({
   const [moreError, setMoreError] = useState<string | null>(null);
   const [retryTick, setRetryTick] = useState(0);
   const [search, setSearch] = useState("");
+  // Таск 03: поиск уходит на сервер (?search= по всей базе, а не по
+  // загруженному) — ввод с дебаунсом, чтобы не слать запрос на каждую букву.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [minLevel, setMinLevel] = useState("all");
   const [maxLevel, setMaxLevel] = useState("all");
@@ -345,19 +373,27 @@ export default function ProjectsShowcase({
     [t],
   );
 
-  // Уровни понимает бэкенд (ugt_min/ugt_max) — уходят в запрос;
-  // поиск и категория бэкендом игнорируются — фильтруем клиентски ниже.
+  // Уровни и поиск понимает бэкенд (ugt_min/ugt_max/search) — уходят в запрос
+  // (таск 03: поиск по всей базе, а не по загруженному в браузер);
+  // категория бэкендом игнорируется — фильтруем клиентски ниже.
   const backendParams = useMemo(
     () => ({
       ugt_min: minLevel !== "all" ? Number(minLevel) : undefined,
       ugt_max: maxLevel !== "all" ? Number(maxLevel) : undefined,
+      search: debouncedSearch ? debouncedSearch : undefined,
     }),
-    [minLevel, maxLevel],
+    [minLevel, maxLevel, debouncedSearch],
   );
 
   const afterIdRef = useRef<number | undefined>(
     initialItems.length > 0 ? initialItems[initialItems.length - 1].id : undefined,
   );
+
+  // Дебаунс ввода поиска перед уходом запроса на сервер.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
   // Сервер (RSC) уже отдал первую страницу — не дублируем запрос на монтировании,
   // кроме случая серверной ошибки: браузер дотянется через rewrites сам.
   const skipInitialFetchRef = useRef(initialError === null);
@@ -406,17 +442,13 @@ export default function ProjectsShowcase({
   const filtersActive =
     search.trim() !== "" || category !== "all" || minLevel !== "all" || maxLevel !== "all";
 
+  // Поиск уже отработал на сервере — здесь только клиентская категория.
   const filtered = useMemo(() => {
     return cards.filter((p) => {
       if (category !== "all" && p.category !== category) return false;
-      if (search.trim()) {
-        const q = search.trim().toLowerCase();
-        const haystack = `${p.name} ${p.description ?? ""} ${p.org ?? ""} ${p.category ?? ""}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
       return true;
     });
-  }, [search, category, cards]);
+  }, [category, cards]);
 
   const handleLoadMore = () => {
     if (loadingMore || loading || !hasMore) return;

@@ -1,9 +1,11 @@
 /**
  * Публичная витрина лендинга на живых данных реестра (таск 13, R06i).
  * Почему отдельный модуль: GET /projects/registry — публичный
- * (CurrentUserOptional на бэке) с keyset-пагинацией after_id/limit и
- * фильтрами ugt_min/ugt_max; поиск и категория — клиентские, бэкенд
- * их не понимает. Чистые функции ниже — шов для тестов витрины.
+ * (CurrentUserOptional на бэке) с keyset-пагинацией after_id/limit,
+ * фильтрами ugt_min/ugt_max и серверным поиском search (таск 03:
+ * название + описание по всей базе, а не по загруженному в браузер).
+ * Категория — клиентский фильтр, бэкенд её как поиск не понимает.
+ * Чистые функции ниже — шов для тестов витрины.
  */
 
 import type { RegistryProjectOut } from "./types";
@@ -14,19 +16,23 @@ export const SHOWCASE_PAGE_SIZE = 9;
 export interface PublicRegistryQuery {
   ugt_min?: number;
   ugt_max?: number;
+  /** Серверный поиск (таск 03): подстрока названия/описания, пустое — без фильтра. */
+  search?: string;
   after_id?: number;
   limit?: number;
 }
 
 /**
  * Query-строка из параметров, которые понимает бэкенд
- * (ugt_min/ugt_max/after_id/limit). Поиск сюда не входит —
- * он применяется клиентской фильтрацией в компоненте.
+ * (ugt_min/ugt_max/search/after_id/limit). Категория сюда не входит —
+ * она применяется клиентской фильтрацией в компоненте.
  */
 export function buildPublicRegistryQuery(query: PublicRegistryQuery): string {
   const qs = new URLSearchParams();
   if (query.ugt_min != null) qs.set("ugt_min", String(query.ugt_min));
   if (query.ugt_max != null) qs.set("ugt_max", String(query.ugt_max));
+  const search = query.search?.trim();
+  if (search) qs.set("search", search);
   if (query.after_id != null) qs.set("after_id", String(query.after_id));
   qs.set("limit", String(query.limit ?? SHOWCASE_PAGE_SIZE));
   const suffix = qs.toString();
@@ -81,9 +87,9 @@ export interface ShowcaseCard {
 }
 
 /**
- * Проект API → карточка витрины. Бэкенд не отдаёт description/status/tags
- * (см. RegistryProjectOut в app/schemas.py) — такие поля остаются null,
- * компонент их скрывает вместо подстановки выдуманных строк.
+ * Проект API → карточка витрины. Бэкенд отдаёт description/status
+ * (RegistryProjectOut в app/schemas.py, таск 03); отсутствующие —
+ * null, компонент их скрывает вместо подстановки выдуманных строк.
  */
 export function toShowcaseCard(item: RegistryProjectOut): ShowcaseCard {
   const tags = item.tags ?? [];
