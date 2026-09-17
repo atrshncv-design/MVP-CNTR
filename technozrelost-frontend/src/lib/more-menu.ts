@@ -2,7 +2,6 @@ import {
   Bell,
   Building2,
   Database,
-  FileText,
   FlaskConical,
   Newspaper,
   ShieldCheck,
@@ -39,7 +38,9 @@ export const MORE_MENU_ITEMS: MoreMenuItem[] = [
   { labelKey: "moreMenuNewsAdmin", href: "/dashboard/news/admin", icon: ShieldCheck, isReady: true },
   // Реестр специалистов: страница живёт на платформе.
   { labelKey: "moreMenuExecutors", href: "/dashboard/executors", icon: Users, isReady: true },
-  { labelKey: "moreMenuDocs", href: "/dashboard/ai-assistant", icon: FileText, isReady: true },
+  // AI-ассистент — отдельный пункт верхнего меню (см. CORE_NAVIGATION в
+  // src/app/dashboard/layout.tsx): из «Больше функций» дубль убран, чтобы
+  // маршрут не прятался под чужим названием «Документы».
   // Профиль включает витрину «Мои достижения»; аналитика достижений —
   // вкладка кабинета cntr_admin («Рабочий стол» ведёт в кабинет роли).
   { labelKey: "moreMenuProfile", href: "/dashboard/profile", icon: UserRound, isReady: true },

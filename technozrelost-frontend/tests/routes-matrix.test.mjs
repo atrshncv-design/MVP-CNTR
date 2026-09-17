@@ -66,6 +66,19 @@ test("редактор новости закрыт на уровне маршр�
   ]);
 });
 
+test("ai-assistant доступен ровно ролям матрицы (REPAIR: пункт верхнего меню)", () => {
+  // Матрица — источник истины и для верхнего меню (layout фильтрует
+  // CORE_NAVIGATION через allowedRolesFor, fail-closed).
+  assert.deepEqual(allowedRolesFor("/dashboard/ai-assistant"), [
+    "gk_customer",
+    "rd_executor",
+    "scientific_org",
+    "serial_manufacturer",
+    "cntr_admin",
+    "cntr_manager",
+  ]);
+});
+
 test("маршрут вне матрицы не имеет доступа ни для одной роли (fail-closed данные)", () => {
   assert.equal(allowedRolesFor("/dashboard/definitely-not-in-matrix"), null);
 });

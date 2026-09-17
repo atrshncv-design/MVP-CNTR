@@ -8,6 +8,7 @@ import MobileNav from "@/components/dashboard/mobile-nav";
 import { SessionExpiredModal } from "@/features/notifications/SessionExpiredModal";
 import LocaleToggle from "@/i18n/LocaleToggle";
 import { P2_MATCHING_ENABLED } from "@/lib/release";
+import { allowedRolesFor } from "@/lib/roles";
 
 // Перейти к основному содержимому — keep literal for wcag test static analysis (translated via next-intl at runtime)
 
@@ -17,14 +18,23 @@ import { P2_MATCHING_ENABLED } from "@/lib/release";
  * уведомления + профиль + выход. Подписи core-навигации — через словарь
  * dashboard (серверный getTranslations, R01); бренд ТЕХНОЗРЕЛОСТЬ —
  * метаданные, не трогаем.
- * Остальные разделы (Реестры, НИОКТР, Организации, Новости, Документы,
+ * Остальные разделы (Реестры, НИОКТР, Организации, Новости,
  * Исполнители, Профиль) переехали в сетку «Больше функций»
- * (src/lib/more-menu.ts). Mobile shell: логотип + кнопка меню.
+ * (src/lib/more-menu.ts). AI-ассистент — отдельный пункт верхнего меню
+ * (подпись navAiAssistant в словарях dashboard ru/en/zh, иконка Bot в
+ * header-nav): из «Больше функций» дубль убран — раньше маршрут прятался
+ * там под чужим названием «Документы» (moreMenuDocs). Mobile shell: логотип + кнопка меню.
  */
 const CORE_NAVIGATION = [
   { href: "/dashboard", labelKey: "navWorkspace" },
   { href: "/dashboard/projects", labelKey: "navProjects" },
   { href: "/dashboard/gk_customer/projects/new", labelKey: "navRequests" },
+  // AI-ассистент — отдельный пункт верхнего меню (REPAIR prod-бага:
+  // был спрятан в «Больше функций» под чужим названием «Документы»).
+  // Ролевую фильтрацию делает код ниже через allowedRolesFor —
+  // матрица разрешает маршрут gk_customer/rd_executor/scientific_org/
+  // serial_manufacturer/cntr_admin/cntr_manager (см. src/lib/roles.ts).
+  { href: "/dashboard/ai-assistant", labelKey: "navAiAssistant" },
   // Подбор партнёра открыт таском 04 (R04, G36) — флаг P2_MATCHING_ENABLED
   // (подпись navMatching уже есть в словарях ru/en/zh).
   ...(P2_MATCHING_ENABLED ? [{ href: "/dashboard/matching", labelKey: "navMatching" }] : []),
@@ -46,7 +56,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const user = session?.user;
 
   // Подписи core-навигации резолвятся серверным переводом (R01.2).
-  const coreNavigation = CORE_NAVIGATION.map((item) => ({
+  // Ролевая фильтрация — тот же источник истины, что middleware и
+  // «Больше функций» (allowedRolesFor, fail-closed): пункт виден, только
+  // если маршрут есть в матрице и хотя бы одна роль сессии входит в список
+  // разрешённых — ссылки, которые middleware перепишет на /forbidden,
+  // в верхнем меню не показываются вовсе (AI-ассистент скрыт от
+  // regulating_organization/auditor/investor).
+  const userRoles = user?.roles ?? [];
+  const coreNavigation = CORE_NAVIGATION.filter((item) => {
+    const allowed = allowedRolesFor(item.href);
+    return allowed !== null && allowed.some((role) => userRoles.includes(role));
+  }).map((item) => ({
     href: item.href,
     label: td(item.labelKey),
   }));

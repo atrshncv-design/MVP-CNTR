@@ -3,12 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Bot, type LucideIcon } from "lucide-react";
 import MoreFunctionsMenu from "@/components/dashboard/more-functions-menu";
 
 export interface HeaderNavItem {
   href: string;
   label: string;
 }
+
+/**
+ * Иконки пунктов верхнего меню по смыслу маршрута. AI-ассистент — Bot
+ * (та же метафора, что на самой странице /dashboard/ai-assistant).
+ */
+const NAV_ICONS: Partial<Record<string, LucideIcon>> = {
+  "/dashboard/ai-assistant": Bot,
+};
 
 function isActive(href: string, pathname: string): boolean {
   const path = pathname.replace(/\/+$/, "");
@@ -17,9 +26,10 @@ function isActive(href: string, pathname: string): boolean {
 }
 
 /**
- * Основная навигация шапки: «Рабочий стол», «Проекты», «Заявки»
- * + кнопка «Больше функций». Используется и в desktop-шапке (горизонтально),
- * и внутри mobile-меню (vertical). Активный пункт подсвечивается токенами.
+ * Основная навигация шапки: «Рабочий стол», «Проекты», «Заявки»,
+ * «AI-ассистент» + кнопка «Больше функций». Используется и в desktop-шапке
+ * (горизонтально), и внутри mobile-меню (vertical). Активный пункт
+ * подсвечивается токенами.
  */
 export default function HeaderNav({
   items,
@@ -45,18 +55,20 @@ export default function HeaderNav({
       >
         {items.map((item) => {
           const active = isActive(item.href, pathname);
+          const Icon = NAV_ICONS[item.href];
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
-                className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   active
                     ? "bg-tz-accent-soft text-tz-accent"
                     : "text-tz-secondary hover:bg-tz-surface-2 hover:text-tz-fg"
                 }`}
               >
+                {Icon && <Icon size={15} aria-hidden="true" />}
                 {item.label}
               </Link>
             </li>

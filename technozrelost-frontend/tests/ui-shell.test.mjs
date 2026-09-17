@@ -28,10 +28,14 @@ test("dashboard shell uses compact header with menu button instead of link row",
   assert.match(layout, /import HeaderNav from "@\/components\/dashboard\/header-nav"/);
   assert.match(layout, /import MobileNav from "@\/components\/dashboard\/mobile-nav"/);
   // подписи core-пунктов — через словарь dashboard в обеих локалях (таск 04)
+  // + REPAIR prod-бага: AI-ассистент — отдельный пункт верхнего меню
+  // (navAiAssistant в словарях dashboard ru/en/zh), а не подпункт
+  // «Больше функций» под чужим названием «Документы».
   const { translatorFor } = await import("../src/lib/translators.ts");
   const ru = translatorFor("dashboard", "ru");
   const en = translatorFor("dashboard", "en");
-  for (const key of ["navWorkspace", "navProjects", "navRequests"]) {
+  const zh = translatorFor("dashboard", "zh");
+  for (const key of ["navWorkspace", "navProjects", "navRequests", "navAiAssistant"]) {
     assert.match(layout, new RegExp(key));
   }
   assert.equal(ru("navWorkspace"), "Рабочий стол");
@@ -40,6 +44,15 @@ test("dashboard shell uses compact header with menu button instead of link row",
   assert.equal(en("navWorkspace"), "Workspace");
   assert.equal(en("navProjects"), "Projects");
   assert.equal(en("navRequests"), "Requests");
+  assert.equal(ru("navAiAssistant"), "AI-ассистент");
+  assert.equal(en("navAiAssistant"), "AI assistant");
+  assert.equal(zh("navAiAssistant"), "AI 助手");
+  // Верхнее меню фильтруется по матрице ролей тем же источником истины,
+  // что middleware (fail-closed): AI-ассистент виден только ролям матрицы.
+  assert.match(layout, /allowedRolesFor/);
+  assert.match(layout, /href: "\/dashboard\/ai-assistant", labelKey: "navAiAssistant"/);
+  // Иконка пункта по смыслу — Bot (та же метафора, что на самой странице).
+  assert.match(read("src/components/dashboard/header-nav.tsx"), /Bot/);
   assert.match(layout, /ТЕХНОЗРЕЛОСТЬ/);
   assert.match(layout, /Перейти к основному содержимому/);
 });
@@ -49,6 +62,9 @@ test("more-functions menu covers every dashboard route with role filtering", () 
 
   // Все страницы кабинета платформы, включая новые (новости, админ-раздел
   // новостей, профиль с «Моими достижениями», исполнители).
+  // REPAIR prod-бага: /dashboard/ai-assistant — отдельный пункт верхнего
+  // меню (CORE_NAVIGATION в layout), из «Больше функций» дубль убран,
+  // чтобы маршрут не прятался под чужим названием «Документы».
   for (const href of [
     "/dashboard/technologies",
     "/dashboard/nioktr",
@@ -56,7 +72,6 @@ test("more-functions menu covers every dashboard route with role filtering", () 
     "/dashboard/news",
     "/dashboard/news/admin",
     "/dashboard/executors",
-    "/dashboard/ai-assistant",
     "/dashboard/profile",
   ]) {
     assert.ok(
@@ -64,6 +79,11 @@ test("more-functions menu covers every dashboard route with role filtering", () 
       `пункт меню обязан вести на ${href}`,
     );
   }
+  assert.ok(
+    !moreMenu.includes('href: "/dashboard/ai-assistant"'),
+    "дубль AI-ассистента в «Больше функций» убран — пункт живёт в верхнем меню",
+  );
+  assert.doesNotMatch(moreMenu, /moreMenuDocs/);
   // Фильтрация по ролям — тот же источник истины, что у middleware.
   assert.match(moreMenu, /allowedRolesFor/);
 });
