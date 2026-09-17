@@ -3,7 +3,19 @@
 # Требования: Linux + Docker + Docker Compose. Запускать из infra/.
 set -euo pipefail
 
-cd "$(dirname "$0")"
+# REPAIR 2026-09-17 (redirect-reload): юнит-тест сорсит файл, чтобы проверить
+# reload-логику моками без docker. При source только определяем функции ниже,
+# top-level выполнение (cd, проверки, диспетчер) пропускается флагом.
+# Bash 3.2-совместимо (macOS): только [ ], без ассоциативных массивов.
+if [[ "${BASH_SOURCE[0]:-}" != "${0}" ]]; then
+  TZ_DEPLOY_SOURCED=1
+else
+  TZ_DEPLOY_SOURCED=0
+fi
+
+if [ "${TZ_DEPLOY_SOURCED}" -eq 0 ]; then
+  cd "$(dirname "$0")"
+fi
 
 # shellcheck source=host_names.sh
 . ./host_names.sh
@@ -32,18 +44,21 @@ EOF
 
 # R06i группа F: --help чистый — без требования ENV_FILE и без изменения
 # конфигурации (раньше prepare_environment мутировал файл даже на --help).
-case "${1:-deploy}" in
-  -h|--help)
-    if [ "$#" -gt 1 ]; then
-      usage >&2
-      exit 2
-    fi
-    usage
-    exit 0
-    ;;
-esac
+# При source (TZ_DEPLOY_SOURCED=1) пропускаем — только определения функций.
+if [ "${TZ_DEPLOY_SOURCED}" -eq 0 ]; then
+  case "${1:-deploy}" in
+    -h|--help)
+      if [ "$#" -gt 1 ]; then
+        usage >&2
+        exit 2
+      fi
+      usage
+      exit 0
+      ;;
+  esac
+fi
 
-if [ ! -f "$ENV_FILE" ]; then
+if [ "${TZ_DEPLOY_SOURCED}" -eq 0 ] && [ ! -f "$ENV_FILE" ]; then
   echo "Нет файла $ENV_FILE. Создайте его из .env.production.example:"
   echo "  cp .env.production.example $ENV_FILE"
   echo "и заполните значения (JWT_SECRET, NEXTAUTH_SECRET, LLM_API_KEY...)."
@@ -197,6 +212,43 @@ render_legacy_redirect() {
   # Идёт после TLS-гейта (имена уже строгие); рендер проверяет снова.
   if ! ./render_legacy_redirect.sh; then
     echo "ОШИБКА: не сформирован 301-редирект со старого имени." >&2
+    return 1
+  fi
+}
+
+redirect_file_hash() {
+  # sha256 от redirect.conf для детекта «файл изменился → reload».
+  # Файла нет (первый рендер) — sentinel 'missing', не пустота.
+  local file="${1:-${LEGACY_REDIRECT_OUT:-nginx/legacy/redirect.conf}}"
+  if [ -f "$file" ]; then
+    sha256sum "$file" | cut -d' ' -f1
+  else
+    printf 'missing'
+  fi
+}
+
+reload_nginx_if_redirect_changed() {
+  # REPAIR 2026-09-17: bind-mount ./nginx/legacy виден в бегущем nginx сразу,
+  # но процесс держит старый конфиг в памяти. Образ nginx — pinned
+  # (nginx:1.27-alpine, не IMAGE_TAG), поэтому `compose up` контейнер не
+  # пересоздаёт и 301 со старого имени не применяется до ручного reload —
+  # именно так редирект «не работал» после зелёного деплоя. Сравниваем hash
+  # до/после рендера: изменился → `compose exec -T nginx nginx -s reload`
+  # (без разрыва соединений, как в tls_renew.sh); неуспех — fail-closed (1),
+  # вызывающий код делает rollback/fail. Не изменился → 0 без вызова docker.
+  # $1 — hash до рендера; $2 — файл (дефолт из LEGACY_REDIRECT_OUT).
+  # Секретов нет (только публичные имена в конфиге) — значения не печатаем.
+  local before_hash="${1:-missing}"
+  local file="${2:-${LEGACY_REDIRECT_OUT:-nginx/legacy/redirect.conf}}"
+  local after_hash
+  after_hash="$(redirect_file_hash "$file")"
+  if [ "$before_hash" = "$after_hash" ]; then
+    echo "301-редирект не изменился — reload nginx не нужен ($file)."
+    return 0
+  fi
+  echo "301-редирект изменился — перезагружаю nginx (reload без разрыва соединений)..."
+  if ! compose exec -T nginx nginx -s reload; then
+    echo "ОШИБКА: nginx не перезагрузил 301-редирект — на диске новый, в памяти старый." >&2
     return 1
   fi
 }
@@ -428,6 +480,11 @@ run_preflight() {
   fi
 }
 
+# Юнит-тест сорсит файл ради reload-функций — диспетчер ниже только при запуске.
+if [ "${TZ_DEPLOY_SOURCED:-0}" -eq 1 ]; then
+  return 0 2>/dev/null || exit 0
+fi
+
 case "${1:-deploy}" in
   deploy)
     if [ "$#" -gt 1 ]; then
@@ -440,6 +497,7 @@ case "${1:-deploy}" in
     validate_replicas
     run_preflight
     run_tls_gate
+    LEGACY_REDIRECT_BEFORE="$(redirect_file_hash "${LEGACY_REDIRECT_OUT:-nginx/legacy/redirect.conf}")"
     render_legacy_redirect
     run_routing_gate
     IMAGE_TAG="$(git rev-parse --short=12 HEAD 2>/dev/null)" || {
@@ -465,6 +523,11 @@ case "${1:-deploy}" in
       automatic_rollback || true
       exit 1
     fi
+    if ! reload_nginx_if_redirect_changed "$LEGACY_REDIRECT_BEFORE" "${LEGACY_REDIRECT_OUT:-nginx/legacy/redirect.conf}"; then
+      echo "ОШИБКА: выкладка не применила 301-редирект в running nginx, выполняю rollback previous." >&2
+      automatic_rollback || true
+      exit 1
+    fi
     echo "Выкладка $IMAGE_TAG прошла health-gate."
     echo "Проверка: curl https://$PUBLIC_HOST/api/v1/health"
     echo "Сертификат: выпуск — ./tls_issue.sh, продление — ./tls_renew.sh."
@@ -480,9 +543,14 @@ case "${1:-deploy}" in
     validate_replicas
     run_preflight
     run_tls_gate
+    LEGACY_REDIRECT_BEFORE="$(redirect_file_hash "${LEGACY_REDIRECT_OUT:-nginx/legacy/redirect.conf}")"
     render_legacy_redirect
     run_routing_gate
     rollback_to_tag "$2"
+    if ! reload_nginx_if_redirect_changed "$LEGACY_REDIRECT_BEFORE" "${LEGACY_REDIRECT_OUT:-nginx/legacy/redirect.conf}"; then
+      echo "ОШИБКА: rollback не применил 301-редирект в running nginx." >&2
+      exit 1
+    fi
     ;;
   check-env)
     if [ "$#" -ne 1 ]; then
