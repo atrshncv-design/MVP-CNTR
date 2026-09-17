@@ -16,7 +16,11 @@ from app.core.config import settings
 
 config = context.config
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # disable_existing_loggers=False: миграции гоняются и in-process из
+    # pytest-сессии (conftest), где сборка тестов уже создала логгеры app.* —
+    # дефолтный True гасил бы их (logger.disabled) и ломал caplog-тесты
+    # в зависимости от порядка сборки.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # psycopg sync DSN для миграций (multi-statement scripts).
 sync_dsn = settings.primary_dsn.replace("postgresql+asyncpg://", "postgresql+psycopg://")
