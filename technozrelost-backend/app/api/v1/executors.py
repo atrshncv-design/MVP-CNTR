@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Request
 from sqlalchemy import and_, func, or_, select, text
 
 from app.api.v1.nioktr import enforce_registry_limit
-from app.core.deps import CurrentUserOptional, DBSession, ReadDBSession
+from app.core.deps import DBSession, ReadCurrentUserOptional, ReadDBSession
 from app.db.models import (
     Organization,
     Project,
@@ -216,7 +216,7 @@ async def _organizations_as_executors(
 async def list_executors(
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
     role: str | None = Query(None),
     search: str | None = Query(
         None, max_length=200, description="Серверный поиск по ФИО и организации"
@@ -276,7 +276,7 @@ async def list_executors(
 async def list_specialists(
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
     role: str | None = Query(
         None, description="Роль: rd_executor | scientific_org | serial_manufacturer"
     ),
@@ -319,7 +319,7 @@ async def list_specialists(
 async def list_org_catalog(
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
     type: str | None = Query(None, description="Тип организации"),
     region: str | None = Query(None, description="Регион"),
     search: str | None = Query(

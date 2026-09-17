@@ -33,12 +33,19 @@ class Settings(BaseSettings):
     db_schema_public: str = "public"
     db_schema_test: str = "test"
     # Пул соединений согласован с max_connections PostgreSQL (P-01/R14):
-    # 2 реплики приложения × пул + резерв < 100. Дешевле pgbouncer и достаточно
-    # для пилота; при росте нагрузки сначала pgbouncer, а не эти цифры.
-    db_pool_size: int = 10
-    db_max_overflow: int = 20
+    # реплики приложения × пул + резерв < 100. REPAIR 2026-09-17 (прод:
+    # 50 concurrent аутентифицированных GET /projects/registry сыпали
+    # QueuePool timeout — каждый такой запрос держал 2 соединения из пула
+    # Primary: auth-сессия get_db + read-сессия get_read_db при отсутствии
+    # реплики): read-эндпоинты переведены на общую read-сессию
+    # (ReadCurrentUser*, 1 соединение на запрос), пул поднят до 20+35=55 —
+    # 50 concurrent по 1 соединению + 5 headroom планировщику/probe.
+    # Прод — 1 реплика backend (deploy.replicas: 1): 1×55+10=65<100.
+    # При росте нагрузки сначала pgbouncer, а не эти цифры.
+    db_pool_size: int = 20
+    db_max_overflow: int = 35
     # Число реплик приложения в прод-стеке (deploy.replicas в docker-compose.prod.yml).
-    db_app_replicas: int = 2
+    db_app_replicas: int = 1
     # Лимит соединений PostgreSQL (max_connections в infra-конфиге Primary).
     db_max_connections: int = 100
     # Резерв сверх пулов: миграции alembic, планировщик новостей, ручной psql.

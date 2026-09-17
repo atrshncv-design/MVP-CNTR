@@ -9,8 +9,8 @@ from sqlalchemy import Select, and_, func, or_, select
 from app.api.v1.nioktr import enforce_registry_limit
 from app.core.deps import (
     CurrentUser,
-    CurrentUserOptional,
     DBSession,
+    ReadCurrentUserOptional,
     ReadDBSession,
     has_role,
     is_cntr_staff,
@@ -240,7 +240,7 @@ async def list_projects(db: DBSession, user: CurrentUser) -> list[ProjectOut]:
 async def project_registry(
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
     ugt_min: int | None = Query(None, ge=1, le=9),
     ugt_max: int | None = Query(None, ge=1, le=9),
     category: str | None = Query(None),
@@ -331,7 +331,7 @@ async def public_project_detail(
     project_id: int,
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
 ) -> RegistryProjectOut:
     """Публичная деталка проекта реестра (таск 03, R01): без токена.
 

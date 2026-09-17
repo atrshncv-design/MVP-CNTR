@@ -40,6 +40,40 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+async def get_current_user_read(
+    request: Request,
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: ReadDBSession,
+) -> User:
+    """Авторизация для read-эндпоинтов (реестры/витрины) на той же read-сессии.
+
+    Почему отдельная функция, а не get_current_user: FastAPI кэширует
+    зависимости по вызываемому объекту. get_current_user зависит от get_db
+    (Primary), а read-эндпоинт — от get_read_db: кэш не совпадает и запрос
+    открывает 2 сессии/2 соединения из пула (при prod без реплики — из
+    одного и того же пула Primary). Аутентифицированный GET /projects/registry
+    держал 2 коннекта весь запрос: 50 concurrent требовали 100 при пуле 30 —
+    QueuePool timeout. Эта функция зависит от get_read_db, поэтому делит
+    одну сессию с db эндпоинта (1 соединение на запрос).
+    """
+    if creds is None or creds.scheme.lower() != "bearer":
+        raise raise_error("AUTH_REQUIRED", request=request)
+    try:
+        payload = decode_token(creds.credentials)
+        if payload.get("type") != "access":
+            raise ValueError("token type is not access")
+        user_id = int(payload["sub"])
+    except Exception as exc:  # noqa: BLE001
+        raise raise_error("AUTH_INVALID_TOKEN", request=request) from exc
+    user = await db.get(User, user_id)
+    if user is None or not user.is_active:
+        raise raise_error("AUTH_USER_INACTIVE", request=request)
+    return user
+
+
+ReadCurrentUser = Annotated[User, Depends(get_current_user_read)]
+
+
 async def get_current_user_optional(
     creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     db: DBSession,
@@ -61,6 +95,34 @@ async def get_current_user_optional(
 
 
 CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
+
+
+async def get_current_user_optional_read(
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: ReadDBSession,
+) -> User | None:
+    """Опциональная авторизация для read-эндпоинтов на той же read-сессии.
+
+    Та же причина, что у get_current_user_read: делит одну сессию с db
+    эндпоинта через кэш get_read_db (1 соединение на запрос вместо 2).
+    Публичные реестры работают без авторизации; невалидный токен = аноним.
+    """
+    if creds is None or creds.scheme.lower() != "bearer":
+        return None
+    try:
+        payload = decode_token(creds.credentials)
+        if payload.get("type") != "access":
+            return None
+        user_id = int(payload["sub"])
+        user = await db.get(User, user_id)
+        if user is None or not user.is_active:
+            return None
+        return user
+    except Exception:  # noqa: BLE001 — невалидный токен = аноним
+        return None
+
+
+ReadCurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional_read)]
 
 
 def require_role(*slugs: str) -> Any:

@@ -1,7 +1,7 @@
 """Новостной раздел (перенос со старой линии; контракт фронта —
 news-types.ts / news-admin-api.ts / api-client.ts).
 
-Публичные GET без токена (``CurrentUserOptional``):
+Публичные GET без токена (``ReadCurrentUserOptional`` — та же read-сессия, что db):
 - ``GET /news`` — лента опубликованного: пагинация page/per_page,
   сортировка published_at DESC, фильтры category/tag (slug);
 - ``GET /news/{id}`` — полная карточка опубликованного; черновики
@@ -43,8 +43,8 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import (
     CurrentUser,
-    CurrentUserOptional,
     DBSession,
+    ReadCurrentUserOptional,
     ReadDBSession,
     has_role,
     require_role,
@@ -190,7 +190,7 @@ async def _author_name(db: DBSession, user_id: int) -> str | None:
 @router.get("", response_model=NewsFeedOut)
 async def news_feed(
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=50),
     category: str | None = Query(None, description="slug категории"),
@@ -343,7 +343,7 @@ async def news_detail(
     news_id: int,
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
 ) -> NewsDetailOut:
     """Полная карточка: анониму/не-автору — только published, иначе 404.
 

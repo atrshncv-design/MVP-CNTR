@@ -18,7 +18,12 @@ from fastapi import APIRouter, Request, Response, status
 from sqlalchemy import select
 
 from app.api.v1.projects import can_access_project, get_project_or_404
-from app.core.deps import CurrentUser, CurrentUserOptional, DBSession, ReadDBSession
+from app.core.deps import (
+    CurrentUserOptional,
+    DBSession,
+    ReadCurrentUser,
+    ReadDBSession,
+)
 from app.core.errors import raise_error
 from app.db.models import Achievement, Project, ProjectAchievement, UserAchievement
 from app.schemas import (
@@ -122,7 +127,7 @@ async def achievements_catalog(
 @router.get("/mine", response_model=list[UserAchievementOut])
 async def achievements_mine(
     db: ReadDBSession,
-    user: CurrentUser,
+    user: ReadCurrentUser,
 ) -> list[UserAchievementOut]:
     """Персональная витрина (спека §4.6): медали + прогресс + история."""
     rows = (

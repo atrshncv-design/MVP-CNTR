@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy import func, or_, select, true
 
 from app.core.config import settings
-from app.core.deps import CurrentUserOptional, ReadDBSession
+from app.core.deps import ReadCurrentUserOptional, ReadDBSession
 from app.core.errors import raise_error
 from app.db.models import NioktrCard, Organization, User
 from app.schemas import NioktrCardOut, OrganizationDetailOut, OrgCardOut
@@ -70,7 +70,7 @@ async def enforce_registry_limit(request: Request, user: User | None = None) -> 
 
     Redis-часть async via to_thread — sync redis не блокирует event loop (H-02a, SPEC-02).
 
-    Классификация — по валидированному пользователю (CurrentUserOptional уже
+    Классификация — по валидированному пользователю (ReadCurrentUserOptional уже
     проверил подпись/срок/активность), а не по наличию заголовка Authorization:
     поддельный заголовок оставляет anon-лимит (R05i, история 9).
     """
@@ -164,7 +164,7 @@ def _card_out(card: NioktrCard) -> NioktrCardOut:
 async def list_nioktr_cards(
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
     search: str | None = Query(None),
     ai: bool | None = Query(None),
     type: str | None = Query(None),
@@ -205,7 +205,7 @@ async def list_nioktr_cards(
 async def list_organizations(
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
     search: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -257,7 +257,7 @@ async def get_organization(
     ogrn: str,
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
 ) -> OrganizationDetailOut:
     await enforce_registry_limit(request, user)
     org = await db.scalar(select(Organization).where(Organization.ogrn == ogrn))
@@ -293,7 +293,7 @@ async def get_nioktr_card(
     registration_number: str,
     request: Request,
     db: ReadDBSession,
-    user: CurrentUserOptional,
+    user: ReadCurrentUserOptional,
 ) -> NioktrCardOut:
     await enforce_registry_limit(request, user)
     card = await db.scalar(
