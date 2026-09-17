@@ -32,7 +32,7 @@ from app.schemas import (
     StageEvaluateOut,
     StageRequirementOut,
 )
-from app.services.achievements import award_document
+from app.services.achievements import award_document, award_first_request
 from app.services.ai_assistant import (
     PROMPT_ISOLATION_RULE,
     ask_llm,
@@ -226,6 +226,7 @@ async def _trigger_application(
     await award_document(db, project, user, doc.doc_type)
 
     stage = await _current_stage(db, project)
+    first_request_created = False
     if stage is not None:
         reqs = await _stage_reqs_with_status(db, project, stage)
         if all(r.uploaded for r in reqs):
@@ -311,6 +312,8 @@ async def _trigger_application(
                     attempt_no=attempt,
                 )
                 db.add(request)
+                if attempt == 1:
+                    first_request_created = True
                 await db.flush()
                 # Снимок версий документов заявки (тикет 07)
                 for d in (
@@ -376,6 +379,9 @@ async def _trigger_application(
                 "request_status": request.status,
                 "evaluation_success": success,
             }
+    if first_request_created:
+        # Тикет 06: первая заявка на переход УГТ → proj-first-request команде.
+        await award_first_request(db, project)
     await db.commit()
     return result
 

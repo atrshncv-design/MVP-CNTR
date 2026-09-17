@@ -1,9 +1,10 @@
 """Каталог и витрина достижений (перенос со старой линии).
 
-- ``GET /achievements/catalog`` — публичный каталог 66 медалей.
+- ``GET /achievements/catalog`` — публичный каталог открытых медалей
+  (секретные скрыты до получения — тикет 06).
 - ``GET /achievements/mine`` — персональная витрина авторизованного
   пользователя: выданные медали (что/когда/за какой проект/повторения)
-  + прогресс до следующей ступени для пороговых медалей doc-*/m-*.
+  + прогресс до следующей ступени для пороговых медалей doc-*/m-*/role-*/org-*.
 - ``GET /projects/{id}/achievements`` — командные медали проекта
   (участникам/менеджерам; анонимам — только для публичного проекта).
 """
@@ -31,8 +32,9 @@ from app.schemas import (
 router = APIRouter(prefix="/achievements", tags=["achievements"])
 
 # Группы пороговых ступеней, для которых витрина считает прогресс
-# «N/порог следующей ступени»: документы и мета-медали.
-PROGRESS_GROUPS = ("documents", "member")
+# «N/порог следующей ступени»: документы, мета-медали, верификации/экспертизы
+# и орг-ступени (тикет 06 — прогресс честен по всем группам со threshold).
+PROGRESS_GROUPS = ("documents", "member", "role", "organization")
 
 
 def _achievement_out(a: Achievement) -> AchievementOut:
@@ -64,13 +66,17 @@ async def achievements_catalog(
 ) -> list[AchievementCatalogOut] | Response:
     """Публичный каталог достижений (спека §4.2), сортировка sort_order.
 
-    P-09: ETag + Cache-Control для справочника 66 медалей.
+    Тикет 06: секретные медали (secret=True) скрыты до получения — отдаются
+    только открытые. Заработанные секретные видны в /mine и в медалях проекта.
+    P-09: ETag + Cache-Control для справочника.
     Клиент шлёт If-None-Match → 304 без тела, иначе 200 с ETag.
     """
     rows = (
         (
             await db.execute(
-                select(Achievement).order_by(Achievement.sort_order, Achievement.id)
+                select(Achievement)
+                .where(Achievement.secret.is_(False))
+                .order_by(Achievement.sort_order, Achievement.id)
             )
         )
         .scalars()

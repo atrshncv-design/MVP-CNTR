@@ -485,6 +485,12 @@ class PromotionDecisionIn(BaseModel):
     missing: list[str] = Field(default_factory=list, max_length=20)
 
 
+class PromotionRevertIn(BaseModel):
+    """Откат подтверждённого решения менеджера (тикет 06)."""
+
+    reason: str | None = Field(default=None, max_length=500)
+
+
 class StageRequirementOut(BaseModel):
     id: int
     from_level: int

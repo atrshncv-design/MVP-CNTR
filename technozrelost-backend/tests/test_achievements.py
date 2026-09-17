@@ -308,10 +308,10 @@ def test_ugt_level_awarded_to_team(client: TestClient, seeded_catalog) -> None:
         assert "ugt-3" in slugs, f"user {user_id}: {slugs}"
         assert "sector-it" in slugs
         assert "q-first-try" in slugs
-        # у всех медалей события — общий event_ref для отзыва
-        for slug in ("ugt-3", "sector-it", "q-first-try"):
-            row = next(r for r in rows if r[0] == slug)
-            assert row[2] == f"ugt:{project_id}:3", row
+        # ugt-3 — медаль именно этого события; sector-it/q-first-try могли
+        # быть заработаны раньше (первичное подтверждение черновика, тикет 06)
+        row = next(r for r in rows if r[0] == "ugt-3")
+        assert row[2] == f"ugt:{project_id}:3", row
 
     # owner: doc-first (загрузил документ) + m-first-medal (первая медаль)
     owner_slugs = {r[0] for r in _user_medal_rows(owner_id)}
@@ -360,6 +360,8 @@ def test_repeat_level_confirmation_no_duplicate(
     assert _count_ugt3() == 1
 
     # повторный вызов наградчика того же уровня — идемпотентно
+    before = _project_medal_slugs(project_id)
+    assert {"ugt-3", "sector-it", "q-first-try", "proj-ugt3"} <= before
     def _repeat(db):
         from app.db.models import Project
         from app.services.achievements import award_ugt
@@ -372,7 +374,9 @@ def test_repeat_level_confirmation_no_duplicate(
 
     _run_service(_repeat)
     assert _count_ugt3() == 1
-    assert len(_project_medal_slugs(project_id)) == 3  # ugt-3, sector-it, q-first-try
+    # идемпотентность: множество командных медалей не изменилось
+    # (тикет 06 добавил вехи proj-ugt3/q-perfect-set к базовым трём)
+    assert _project_medal_slugs(project_id) == before
 
 
 # ── Документы: doc-first, ступени, повторные версии ─────────────────────────
@@ -469,8 +473,10 @@ def test_revoke_for_event_removes_records(
         return revoke_for_event(db, event_ref)
 
     result = _run_service(_revoke)
-    assert result["user_records"] >= 3  # ugt-3 + sector-it + q-first-try
-    assert result["project_records"] == 3
+    # событие ugt:3 несёт базовые 3 + вехи тикета 06 (proj-ugt3, q-perfect-set)
+    assert result["user_records"] >= 3  # ugt-3 + sector-it + q-first-try + вехи
+    assert result["project_records"] >= 3
+    assert result["user_records"] >= result["project_records"]
 
     remaining = _fetch(
         """
@@ -482,11 +488,17 @@ def test_revoke_for_event_removes_records(
     )
     assert remaining == []
     assert "ugt-3" not in _project_medal_slugs(project_id)
-    assert "sector-it" not in _project_medal_slugs(project_id)
-    # не-событийные медали (doc-first, m-first-medal) сохраняются
+    assert "proj-ugt3" not in _project_medal_slugs(project_id)
+    assert "q-perfect-set" not in _project_medal_slugs(project_id)
+    # sector-it/q-first-try заработаны раньше (черновик, event ugt:N:1) —
+    # отзыв события УГТ 3 их не касается (тикет 06: отзыв пособытийный)
+    assert "sector-it" in _project_medal_slugs(project_id)
+    assert "q-first-try" in _project_medal_slugs(project_id)
+    # не-событийные медали (doc-first, m-first-medal, proj-first) сохраняются
     slugs = {r[0] for r in _user_medal_rows(owner_id)}
     assert "doc-first" in slugs
     assert "m-first-medal" in slugs
+    assert "proj-first" in slugs
 
 
 # ── Отраслевые медали ───────────────────────────────────────────────────────
@@ -539,8 +551,9 @@ def test_mine_returns_medals_progress_and_history(
     mgr_token, _ = _register(client, "cntr_manager")
     project_id, _join_token = _published_project(client, owner_token, mgr_token)
 
-    # УГТ 3 → командные медали (ugt-3, sector-it, q-first-try) + doc-first +
-    # m-first-medal + m-5-medals (total=5 → ступень 5 мета-медалей)
+    # УГТ 3 → командные медали (ugt-3, sector-it, q-first-try, вехи тикета 06:
+    # proj-first-request/ugt-1..2/q-leap с черновика, proj-ugt3, perfect-set,
+    # fast-start) + doc-first + m-first-medal + ступени m-5/m-15 (total ≥ 15)
     with _mock_llm_ok():
         request_id = _promotion_request(client, owner_token, project_id)
     approve = client.post(
@@ -593,10 +606,16 @@ def test_mine_returns_medals_progress_and_history(
     }
     # doc-first — не ступень: прогресса нет
     assert by_slug["doc-first"]["progress"] is None
-    # мета-ступень m-5-medals (times=5) → следующая m-15-medals
+    # мета-ступени: тикет 06 выдаёт больше медалей, total ≥ 15 → m-15-medals
+    # есть, прогресс группы member честен: current 15, следующая m-30 (порог 30)
+    assert "m-15-medals" in by_slug
+    assert by_slug["m-15-medals"]["progress"] == {
+        "current_count": 15,
+        "next_threshold": 30,
+    }
     assert by_slug["m-5-medals"]["progress"] == {
-        "current_count": 5,
-        "next_threshold": 15,
+        "current_count": 15,
+        "next_threshold": 30,
     }
     # командная медаль УГТ: project_id заполнен, прогресса нет
     assert by_slug["ugt-3"]["project_id"] == project_id

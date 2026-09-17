@@ -19,8 +19,9 @@ from sqlalchemy import func, select
 from app.api.v1.projects import require_project_access
 from app.core.deps import CurrentUser, DBSession
 from app.core.errors import raise_error
-from app.db.models import ProjectDocument
+from app.db.models import Project, ProjectDocument
 from app.schemas import DocumentFileOut
+from app.services.achievements import award_document
 from app.services.file_storage import (
     FileSizeExceeded,
     FileStorageError,
@@ -106,7 +107,15 @@ async def upload_project_file(
         status="uploaded",
     )
     db.add(doc)
+    await db.flush()
+    if scan_status == "clean":
+        # Тикет 06: clean-файл — принятый документ (doc-first/ступени,
+        # коллекционер при миксе типов, быстрый старт, орг-счётчики).
+        project = await db.get(Project, project_id)
+        if project is not None:
+            await award_document(db, project, user, doc.doc_type)
     await db.commit()
+    await db.refresh(doc)
     return _doc_out(doc)
 
 

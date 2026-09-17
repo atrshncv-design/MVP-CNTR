@@ -44,6 +44,11 @@ from app.schemas import (
     VerificationDocIn,
     VerificationDocOut,
 )
+from app.services.achievements import (
+    award_expert_check,
+    award_organization,
+    award_project_created,
+)
 from app.services.file_storage import FileStorageError, storage
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -137,6 +142,12 @@ async def create_project(
             action="project.created",
             details={"name": project.name, "target_level": project.target_level},
         )
+    )
+
+    # Тикет 06: первый проект создателя, первопроходец отрасли, орг-счётчики.
+    await award_project_created(db, project, user.id)
+    await award_organization(
+        db, user.id, project, event_ref=f"project:{project.id}:created"
     )
 
     await db.commit()
@@ -756,6 +767,10 @@ async def decide_control_point(
             action=f"control_point.{payload.status}",
             details={"cp_id": cp.id, "title": cp.title, "decision": payload.decision},
         )
+    )
+    # Тикет 06: КТ-решение — проверка эксперта (role-expert-1/25).
+    await award_expert_check(
+        db, user.id, event_ref=f"control-point:{cp.id}:{payload.status}"
     )
     await db.commit()
     await db.refresh(cp)

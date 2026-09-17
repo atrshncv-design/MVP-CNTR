@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
@@ -33,8 +34,17 @@ from app.schemas import (
     DraftProjectOut,
     PromotionDecisionIn,
     PromotionRequestOut,
+    PromotionRevertIn,
 )
-from app.services.achievements import award_meta, award_ugt
+from app.services.achievements import (
+    award_draft_approved,
+    award_fast_check,
+    award_meta,
+    award_organization,
+    award_role_verify,
+    award_ugt,
+    revoke_for_event,
+)
 from app.services.notifications import notify_user
 
 router = APIRouter(prefix="/manager", tags=["manager"])
@@ -152,6 +162,18 @@ async def decide_draft(
                 details={"level": project.current_level},
             )
         )
+        # Первичное подтверждение на уровень L засчитывает 1..L + рывок 0→L
+        # (тикет 06); верификация менеджера — role-verify; орг-счётчики.
+        # Всё до коммита ниже — атомарно с решением.
+        await award_draft_approved(db, project, project.current_level)
+        await award_role_verify(db, user.id, event_ref=f"draft:{project.id}:decided")
+        if project.created_by is not None:
+            await award_organization(
+                db,
+                project.created_by,
+                project,
+                event_ref=f"draft:{project.id}:{project.current_level}",
+            )
     else:
         project.status = "rejected"
         project.rejection_reason = payload.reason or "Отклонено менеджером ЦНТР"
@@ -291,6 +313,17 @@ async def decide_promotion(
         )
         for member_id in member_ids:
             await award_meta(db, member_id)
+        # Верификация менеджера (role-verify-1/10/50), быстрая проверка
+        # (<3 суток → role-fast-check) и орг-медали команды — тем же коммитом.
+        verify_ref = f"promotion:{req.id}:decided"
+        await award_role_verify(db, user.id, event_ref=verify_ref)
+        await award_fast_check(
+            db, user.id, req.created_at, datetime.now(UTC), event_ref=verify_ref
+        )
+        for member_id in member_ids:
+            await award_organization(
+                db, member_id, project, event_ref=f"ugt:{project.id}:{req.to_level}"
+            )
     else:
         req.status = "rejected"
         req.rejection_reason = payload.reason or "Отклонено менеджером ЦНТР"
@@ -318,6 +351,67 @@ async def decide_promotion(
             project.created_by,
             "promotion.decided",
             "Решение по заявке на повышение УГТ",
+            {
+                "project_id": project.id,
+                "request_id": req.id,
+                "status": req.status,
+                "from_level": req.from_level,
+                "to_level": req.to_level,
+            },
+        )
+    await db.commit()
+    await db.refresh(req)
+    return await _promotion_out(db, req)
+
+
+@router.post("/queue/promotions/{request_id}/revert", response_model=PromotionRequestOut)
+async def revert_promotion(
+    request_id: int,
+    payload: PromotionRevertIn,
+    request: Request,
+    db: DBSession,
+    user: ManagerUser,
+) -> PromotionRequestOut:
+    """Откат подтверждённого решения менеджера (тикет 06).
+
+    Только approved-заявка: статус → rejected, уровень проекта возвращается
+    на from_level (если проект всё ещё на to_level), медали события
+    отзываются через revoke_for_event (ugt + верификация этого решения) —
+    атомарно с откатом в одной транзакции.
+    """
+    req = await db.get(PromotionRequest, request_id)
+    if req is None or req.status != "approved":
+        raise raise_error("MANAGER_REVERT_INVALID", request=request)
+
+    project = await db.get(Project, req.project_id)
+    if project is None:
+        raise raise_error("PROJECT_NOT_FOUND", request=request)
+
+    if project.current_level == req.to_level:
+        project.current_level = req.from_level
+    req.status = "rejected"
+    req.rejection_reason = payload.reason or "Решение откачено менеджером ЦНТР"
+    db.add(
+        AuditTrailEntry(
+            project_id=project.id,
+            user_id=user.id,
+            action="promotion.reverted",
+            details={
+                "from_level": req.from_level,
+                "to_level": req.to_level,
+                "reason": req.rejection_reason,
+            },
+        )
+    )
+    await revoke_for_event(db, f"ugt:{project.id}:{req.to_level}")
+    await revoke_for_event(db, f"promotion:{req.id}:decided")
+
+    if project.created_by:
+        await notify_user(
+            db,
+            project.created_by,
+            "promotion.decided",
+            "Решение по заявке на повышение УГТ откачено",
             {
                 "project_id": project.id,
                 "request_id": req.id,

@@ -32,6 +32,7 @@ from app.schemas import (
     QuestionnaireResultOut,
     ReadinessResultOut,
 )
+from app.services.achievements import award_organization, award_project_created
 from app.services.readiness_assessment import (
     READINESS_CHECKPOINTS,
     READINESS_TEMPLATE_VERSION,
@@ -323,6 +324,12 @@ async def create_assessment(
                 "completion_pct": readiness_result["completion_pct"] if readiness_result else None,
             },
         )
+    )
+    # Тикет 06: первый проект создателя, автоподтверждение 1..official,
+    # первопроходец отрасли, орг-счётчики — до коммита (атомарно с созданием).
+    await award_project_created(db, project, user.id)
+    await award_organization(
+        db, user.id, project, event_ref=f"project:{project.id}:created"
     )
     await db.commit()
     await db.refresh(project)

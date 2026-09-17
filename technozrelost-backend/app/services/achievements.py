@@ -1,8 +1,10 @@
-"""Наградчики достижений (тикет 02, спека §4.3).
+"""Наградчики достижений (тикет 02, спека §4.3; тикет 06 — полный каталог).
 
 Автоматическое начисление медалей по подтверждённым событиям. Все функции
 асинхронные, принимают сессию БД и параметры события; вызываются из хуков
-существующих флоу (stages._trigger_application, manager.decide_promotion).
+существующих флоу (assessments.create_assessment, stages._trigger_application,
+manager.decide_draft/decide_promotion, files.upload_project_file,
+document_generator.generate_document, projects.decide_control_point).
 
 Правила:
 - Медаль существует в каталоге (achievements) → иначе событие молча
@@ -21,6 +23,20 @@
 Отзыв: revoke_for_event удаляет user_achievements по event_ref и командные
 project_achievements для тех же (project_id, achievement_id). Наградчики не
 коммитят — отзыв и начисление атомарны с событием в транзакции вызывающего.
+
+Честность недостижимого (тикет 06, аудит 2026-09-17):
+- q-leap: скачок N→N+2 невозможен в decide_promotion (строго N→N+1), поэтому
+  засчитывается первичное подтверждение сразу на УГТ 2+ (скачок 0→L) в
+  award_draft_approved; проверка _q_leap оставлена для будущих флоу.
+- proj-collector: требует ≥2 типов документов в проекте; второй тип дают
+  /files (doc_type='file') и /generate (tz/passport/teo) — хуки выдачи
+  стоят во всех трёх точках загрузки, stages пишет только 'stage'.
+- ugt-1/ugt-2: decide_promotion подтверждает только 3+, поэтому первичное
+  подтверждение на уровень L засчитывает уровни 1..L (анкета покрывает все
+  уровни до заявленного) — через award_draft_approved и автоконфирм в
+  award_project_created.
+- s-legend: 100+ уникальных медалей при 66 слагов в каталоге недостижимо;
+  легенда = собраны все открытые (несекретные) медали каталога.
 """
 
 from __future__ import annotations
@@ -34,6 +50,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import (
     Achievement,
+    AuditTrailEntry,
+    ControlPoint,
+    OrganizationMember,
     Project,
     ProjectAchievement,
     ProjectDocument,
@@ -41,6 +60,7 @@ from app.db.models import (
     PromotionRequest,
     User,
     UserAchievement,
+    UserOrganization,
 )
 from app.services.notifications import notify_user
 
@@ -96,6 +116,122 @@ SECTOR_MEDAL_MAP: dict[str, str] = {
     "medicine": "sector-medicine",
     "energy": "sector-energy",
     "transport": "sector-transport",
+}
+
+# ─── Пороги честности (тикет 06) ────────────────────────────────────────────
+# q-fast-start: первый принятый документ в первые дни жизни проекта.
+FAST_START_DAYS = 7
+# q-marathon: проект в работе дольше года.
+MARATHON_DAYS = 365
+# role-fast-check: решение менеджера быстрее трёх суток.
+FAST_CHECK_DAYS = 3
+# s-comet: полный путь 1→9 быстрее года — «рекордное время».
+COMET_DAYS = 365
+
+# Ступени верификаций менеджера: число подтверждений → slug (group role).
+ROLE_VERIFY_STEPS: list[tuple[int, str]] = [
+    (1, "role-verify-1"),
+    (10, "role-verify-10"),
+    (50, "role-verify-50"),
+]
+
+# Ступени экспертиз: число решений по контрольным точкам → slug (group role).
+ROLE_EXPERT_STEPS: list[tuple[int, str]] = [
+    (1, "role-expert-1"),
+    (25, "role-expert-25"),
+]
+
+# Вехи проекта: уровень УГТ → slug медали (group project).
+PROJ_MILESTONES: dict[int, str] = {
+    3: "proj-ugt3",
+    4: "proj-ugt4",
+    6: "proj-ugt6",
+    7: "proj-ugt7",
+    8: "proj-ugt8",
+}
+
+# Все УГТ-медали (полный путь 1→9 для proj-ugt9 / s-epic-collection).
+UGT_SLUGS: list[str] = [f"ugt-{level}" for level in range(1, 10)]
+
+# Карта покрытия каталога триггерами (тикет 06, критерий «слаги каталога минус
+# слаги с триггерами — пусто»): slug → кодовый путь получения. Тест
+# test_every_catalog_slug_has_trigger сверяет полноту со seed-каталогом.
+SLUG_TRIGGERS: dict[str, str] = {
+    # ugt: первичное подтверждение засчитывает 1..L, далее N→N+1
+    "ugt-1": "award_draft_approved:1..L | award_project_created:auto_confirmed",
+    "ugt-2": "award_draft_approved:1..L | award_project_created:auto_confirmed",
+    "ugt-3": "award_ugt:level",
+    "ugt-4": "award_ugt:level",
+    "ugt-5": "award_ugt:level",
+    "ugt-6": "award_ugt:level",
+    "ugt-7": "award_ugt:level",
+    "ugt-8": "award_ugt:level",
+    "ugt-9": "award_ugt:level",
+    # documents: принятый документ (stages/files/generate)
+    "doc-first": "award_document:accepted",
+    "doc-5": "award_document:steps",
+    "doc-10": "award_document:steps",
+    "doc-25": "award_document:steps",
+    "doc-50": "award_document:steps",
+    "doc-100": "award_document:steps",
+    # project: вехи жизненного цикла
+    "proj-first": "award_project_created:first-by-creator",
+    "proj-first-request": "award_first_request:attempt-1",
+    "proj-ugt3": "award_ugt:milestone",
+    "proj-ugt4": "award_ugt:milestone",
+    "proj-ugt6": "award_ugt:milestone",
+    "proj-ugt7": "award_ugt:milestone",
+    "proj-ugt8": "award_ugt:milestone",
+    "proj-ugt9": "award_ugt:full-path-1..9",
+    "proj-collector": "award_document:multi-type(stage+file+tz/passport/teo)",
+    "proj-3-sectors": "award_ugt:team-breadth-3plus",
+    # quality: проверки прохождения
+    "q-clean": "award_ugt:no-rejections-to-4",
+    "q-first-try": "award_ugt:no-rejections-for-level",
+    "q-leap": "award_draft_approved:leap-0-to-L",
+    "q-sprint": "award_ugt:level-interval-lt-30d",
+    "q-marathon": "award_ugt:project-age-gt-1y",
+    "q-comeback": "award_ugt:rejection-then-7plus",
+    "q-perfect-set": "award_ugt:no-rework-all-docs-v1",
+    "q-fast-start": "award_document:first-doc-within-7d",
+    # sector: отрасль проекта + межотраслевость команды
+    "sector-agri": "award_ugt:sector | award_draft_approved",
+    "sector-oil": "award_ugt:sector | award_draft_approved",
+    "sector-machinery": "award_ugt:sector | award_draft_approved",
+    "sector-it": "award_ugt:sector | award_draft_approved",
+    "sector-medicine": "award_ugt:sector | award_draft_approved",
+    "sector-energy": "award_ugt:sector | award_draft_approved",
+    "sector-transport": "award_ugt:sector | award_draft_approved",
+    "sector-polyglot": "award_ugt:team-breadth-3plus",
+    # role: действия менеджеров/экспертов
+    "role-verify-1": "award_role_verify:manager-decision",
+    "role-verify-10": "award_role_verify:manager-decision",
+    "role-verify-50": "award_role_verify:manager-decision",
+    "role-expert-1": "award_expert_check:control-point-decision",
+    "role-expert-25": "award_expert_check:control-point-decision",
+    "role-mentor": "award_ugt:creator-at-4plus",
+    "role-fast-check": "decide_promotion:decision-lt-3d",
+    # member: персональные мета-медали
+    "m-first-medal": "award_meta:first",
+    "m-5-medals": "award_meta:steps",
+    "m-15-medals": "award_meta:steps",
+    "m-30-medals": "award_meta:steps",
+    "m-3-projects": "award_meta:distinct-projects",
+    "m-longhaul": "award_ugt:member-holds-ugt1-and-4plus",
+    "m-5-projects": "award_meta:distinct-projects",
+    # organization: достижения организации участника
+    "org-first": "award_organization:first-project",
+    "org-5-projects": "award_organization:5-projects",
+    "org-3-sectors": "award_organization:3-sectors",
+    "org-10-docs": "award_organization:10-docs",
+    "org-ugt6": "award_organization:project-at-6plus",
+    # secret: скрыты из публичного каталога, выдаются на общих событиях
+    "s-ghost": "award_ugt:full-path-no-rejections",
+    "s-comet": "award_ugt:full-path-under-1y",
+    "s-pioneer": "award_project_created:first-in-sector",
+    "s-phoenix": "award_ugt:2plus-rejections-then-7plus",
+    "s-epic-collection": "award_meta:holds-ugt-1..9",
+    "s-legend": "award_meta:holds-all-open-medals",
 }
 
 
@@ -223,6 +359,154 @@ async def _award_team(
     return slug if project_row is not None else None
 
 
+async def _award_personal(
+    db: AsyncSession,
+    user_id: int,
+    slug: str,
+    *,
+    project_id: int | None = None,
+    event_ref: str | None = None,
+    times: int = 1,
+) -> str | None:
+    """Персональная медаль по slug; возвращает slug при новом награждении."""
+    achievement = await _get_achievement(db, slug)
+    if achievement is None:
+        return None
+    row = await _award(
+        db,
+        user_id,
+        achievement,
+        project_id=project_id,
+        event_ref=event_ref,
+        times=times,
+    )
+    return slug if row is not None else None
+
+
+def _ensure_aware(value: datetime) -> datetime:
+    """Naive datetime из БД считаем UTC, чтобы вычитания не падали."""
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+def _sector_of(project: Project) -> str | None:
+    """Отраслевой slug проекта по свободной строке category."""
+    return SECTOR_CATEGORY_MAP.get((project.category or "").strip().lower())
+
+
+async def _user_slugs(db: AsyncSession, user_id: int) -> set[str]:
+    """Слаги персональных медалей пользователя."""
+    rows = await db.execute(
+        select(Achievement.slug)
+        .join(UserAchievement, UserAchievement.achievement_id == Achievement.id)
+        .where(UserAchievement.user_id == user_id)
+    )
+    return set(rows.scalars().all())
+
+
+async def _member_project_ids(db: AsyncSession, member_ids: list[int]) -> set[int]:
+    """Проекты людей: созданные ими или с их активным участием."""
+    ids: set[int] = set()
+    if not member_ids:
+        return ids
+    for row in await db.execute(
+        select(ProjectMember.project_id).where(
+            ProjectMember.user_id.in_(member_ids),
+            ProjectMember.status == "active",
+        )
+    ):
+        ids.add(int(row[0]))
+    for row in await db.execute(
+        select(Project.id).where(Project.created_by.in_(member_ids))
+    ):
+        ids.add(int(row[0]))
+    return ids
+
+
+async def _sectors_of_projects(db: AsyncSession, project_ids: set[int]) -> set[str]:
+    """Отраслевые слаги набора проектов (категории маппятся в Python)."""
+    if not project_ids:
+        return set()
+    rows = await db.execute(
+        select(Project.category).where(Project.id.in_(sorted(project_ids)))
+    )
+    out: set[str] = set()
+    for (category,) in rows.all():
+        slug = SECTOR_CATEGORY_MAP.get((category or "").strip().lower())
+        if slug is not None:
+            out.add(slug)
+    return out
+
+
+async def _accepted_doc_keys(
+    db: AsyncSession, project_ids: set[int]
+) -> set[tuple[int, str]]:
+    """Принятые документы набора проектов (пары project_id + title, без версий).
+
+    «Принят» = clean-файл либо legacy-текст без storage_key — та же логика,
+    что в _accepted_doc_count.
+    """
+    if not project_ids:
+        return set()
+    rows = (
+        await db.execute(
+            select(ProjectDocument.project_id, ProjectDocument.title)
+            .where(
+                ProjectDocument.project_id.in_(sorted(project_ids)),
+                (ProjectDocument.storage_key.is_(None))
+                | (ProjectDocument.scan_status == "clean"),
+            )
+            .distinct()
+        )
+    ).all()
+    return {(int(pid), str(title)) for pid, title in rows}
+
+
+async def _rejected_count(db: AsyncSession, project_id: int) -> int:
+    """Число отклонённых заявок на повышение УГТ проекта."""
+    return int(
+        await db.scalar(
+            select(func.count(PromotionRequest.id)).where(
+                PromotionRequest.project_id == project_id,
+                PromotionRequest.status == "rejected",
+            )
+        )
+        or 0
+    )
+
+
+async def _project_has_full_path(db: AsyncSession, project_id: int) -> bool:
+    """Полный путь 1→9: у проекта есть все 9 командных УГТ-медалей."""
+    rows = await db.execute(
+        select(Achievement.slug)
+        .join(
+            ProjectAchievement,
+            ProjectAchievement.achievement_id == Achievement.id,
+        )
+        .where(ProjectAchievement.project_id == project_id)
+    )
+    return set(UGT_SLUGS) <= set(rows.scalars().all())
+
+
+async def _user_org_ids(db: AsyncSession, user_id: int) -> list[int]:
+    """Организации пользователя (user_organizations через членство)."""
+    rows = await db.execute(
+        select(OrganizationMember.organization_id).where(
+            OrganizationMember.user_id == user_id
+        )
+    )
+    return [int(v) for v in rows.scalars().all()]
+
+
+async def _org_member_ids(db: AsyncSession, org_id: int) -> list[int]:
+    """Все члены организации."""
+    rows = await db.execute(
+        select(OrganizationMember.user_id).where(
+            OrganizationMember.organization_id == org_id
+        )
+    )
+    return [int(v) for v in rows.scalars().all()]
+
+
 async def _accepted_doc_count(db: AsyncSession, project_id: int, user_id: int) -> int:
     """Число принятых документов пользователя в проекте (уникальные названия).
 
@@ -277,9 +561,12 @@ async def award_document(
     - doc-first — первый принятый документ пользователя в проекте;
     - doc-5..doc-100 — ступени по числу принятых документов (times = порог);
     - proj-collector — «Коллекционер»: у пользователя есть принятые документы
-      всех типов, представленных в проекте. Чтобы эпик-медаль была осмысленной,
-      требуется не менее двух типов документов в проекте (документированное
-      решение тикета 02; в текущем флоу единственный тип — 'stage').
+      всех типов, представленных в проекте (требуется ≥2 типов; второй тип
+      дают /files 'file' и /generate 'tz/passport/teo' — хуки стоят во всех
+      трёх точках загрузки, stages пишет только 'stage');
+    - q-fast-start — первый принятый документ в первые FAST_START_DAYS дней
+      жизни проекта (командная).
+    После документных медалей обновляются орг-счётчики (org-10-docs и др.).
     """
     user_id = await _user_id(user)
     awarded: list[str] = []
@@ -309,6 +596,21 @@ async def award_document(
             ):
                 awarded.append("proj-collector")
 
+    if project.created_at is not None and _ensure_aware(
+        datetime.now(UTC)
+    ) - _ensure_aware(project.created_at) <= timedelta(days=FAST_START_DAYS):
+        medal = await _award_team(
+            db,
+            project.id,
+            "q-fast-start",
+            event_ref=f"project:{project.id}:fast-start",
+        )
+        if medal:
+            awarded.append(medal)
+
+    org = await award_organization(db, user_id, project)
+    awarded.extend(org["awarded"])
+
     return {"doc_type": doc_type, "awarded": awarded}
 
 
@@ -327,9 +629,10 @@ async def _q_first_try(db: AsyncSession, project_id: int, level: int) -> bool:
 async def _q_leap(db: AsyncSession, project_id: int) -> bool:
     """q-leap: подтверждён переход на 2+ уровня за один цикл (по promotion_requests).
 
-    В текущем флоу decide_promotion разрешает только N→N+1, поэтому через API
-    медаль не выпадает; проверка реализована на случай будущих флоу (например,
-    первичное подтверждение выше заявленного).
+    В decide_promotion разрешён только N→N+1, поэтому достижимый путь рывка —
+    первичное подтверждение сразу на УГТ 2+ (скачок 0→L), его выдаёт
+    award_draft_approved. Проверка по заявкам оставлена для будущих флоу
+    (например, первичное подтверждение выше заявленного).
     """
     leap = await db.scalar(
         select(func.count(PromotionRequest.id)).where(
@@ -394,12 +697,24 @@ async def _q_sprint(db: AsyncSession, project_id: int, level: int) -> bool:
 
 
 async def award_ugt(db: AsyncSession, project: Project, level: int) -> dict[str, Any]:
-    """УГТ подтверждён → командные медали (спека §4.3.2).
+    """УГТ подтверждён → командные медали (спека §4.3.2 + тикет 06).
 
     - ugt-N — вся команда проекта на момент события (project_achievements +
       user_achievements участников с project_id);
     - sector-* — отраслевая медаль по Project.category;
-    - q-first-try / q-leap / q-clean / q-sprint — проверки качества прохождения.
+    - q-first-try / q-leap / q-clean / q-sprint — проверки качества прохождения;
+    - proj-ugt3/4/6/7/8 — вехи проекта; proj-ugt9 + s-ghost + s-comet — при
+      замыкании полного пути 1→9 (все 9 командных УГТ-медалей);
+    - proj-3-sectors + sector-polyglot — команда ведёт проекты в 3+ отраслях;
+    - q-marathon — проекту больше MARATHON_DAYS дней (свой event_ref);
+    - q-comeback / s-phoenix — уровень 7+ после 1+ / 2+ отказов (отклонённых
+      заявок; отклонение заявки — выводимый в API аналог отката);
+    - q-perfect-set — ни одного возврата и все документы проекта в версии 1;
+    - role-mentor — создателю проекта при достижении УГТ 4+;
+    - m-longhaul — участникам, держащим ugt-1 и текущий ugt-N (4+);
+    - s-pioneer — первый проект платформы в отрасли (запасной путь, основной —
+      award_project_created);
+    - орг-медали членов команды — через award_ общих событием.
     Все проверки идемпотентны: повторное подтверждение уровня не дублирует
     записи (дедупликация по user+achievement / project+achievement).
     """
@@ -410,7 +725,7 @@ async def award_ugt(db: AsyncSession, project: Project, level: int) -> dict[str,
     if ugt:
         awarded.append(ugt)
 
-    sector_slug = SECTOR_CATEGORY_MAP.get((project.category or "").strip().lower())
+    sector_slug = _sector_of(project)
     if sector_slug is not None:
         sector = await _award_team(
             db,
@@ -441,13 +756,376 @@ async def award_ugt(db: AsyncSession, project: Project, level: int) -> dict[str,
         if medal:
             awarded.append(medal)
 
+    milestone = PROJ_MILESTONES.get(level)
+    if milestone is not None:
+        medal = await _award_team(db, project.id, milestone, event_ref=event_ref)
+        if medal:
+            awarded.append(medal)
+
+    if await _project_has_full_path(db, project.id):
+        medal = await _award_team(db, project.id, "proj-ugt9", event_ref=event_ref)
+        if medal:
+            awarded.append(medal)
+        if await _rejected_count(db, project.id) == 0:
+            medal = await _award_team(db, project.id, "s-ghost", event_ref=event_ref)
+            if medal:
+                awarded.append(medal)
+        if project.created_at is not None and _ensure_aware(
+            datetime.now(UTC)
+        ) - _ensure_aware(project.created_at) <= timedelta(days=COMET_DAYS):
+            medal = await _award_team(db, project.id, "s-comet", event_ref=event_ref)
+            if medal:
+                awarded.append(medal)
+
+    member_ids = await _active_member_ids(db, project.id)
+    breadth = await _sectors_of_projects(
+        db, await _member_project_ids(db, member_ids)
+    )
+    if len(breadth) >= 3:
+        for slug in ("proj-3-sectors", "sector-polyglot"):
+            medal = await _award_team(db, project.id, slug, event_ref=event_ref)
+            if medal:
+                awarded.append(medal)
+
+    if project.created_at is not None and _ensure_aware(
+        datetime.now(UTC)
+    ) - _ensure_aware(project.created_at) > timedelta(days=MARATHON_DAYS):
+        medal = await _award_team(
+            db,
+            project.id,
+            "q-marathon",
+            event_ref=f"project:{project.id}:marathon",
+        )
+        if medal:
+            awarded.append(medal)
+
+    rejected = await _rejected_count(db, project.id)
+    if level >= 7 and rejected >= 1:
+        medal = await _award_team(db, project.id, "q-comeback", event_ref=event_ref)
+        if medal:
+            awarded.append(medal)
+        if rejected >= 2:
+            medal = await _award_team(db, project.id, "s-phoenix", event_ref=event_ref)
+            if medal:
+                awarded.append(medal)
+
+    if rejected == 0:
+        versions = (
+            await db.execute(
+                select(ProjectDocument.version).where(
+                    ProjectDocument.project_id == project.id
+                )
+            )
+        ).scalars().all()
+        if versions and all(int(v) == 1 for v in versions):
+            medal = await _award_team(
+                db, project.id, "q-perfect-set", event_ref=event_ref
+            )
+            if medal:
+                awarded.append(medal)
+
+    if level >= 4:
+        if project.created_by is not None:
+            medal = await _award_personal(
+                db,
+                project.created_by,
+                "role-mentor",
+                project_id=project.id,
+                event_ref=event_ref,
+            )
+            if medal:
+                awarded.append(medal)
+        for member_id in member_ids:
+            slugs = await _user_slugs(db, member_id)
+            if "ugt-1" in slugs and f"ugt-{level}" in slugs:
+                medal = await _award_personal(
+                    db,
+                    member_id,
+                    "m-longhaul",
+                    project_id=project.id,
+                    event_ref=event_ref,
+                )
+                if medal:
+                    awarded.append(medal)
+
+    if sector_slug is not None:
+        rows = await db.execute(
+            select(Project.category).where(Project.id != project.id)
+        )
+        other = {
+            SECTOR_CATEGORY_MAP.get((c or "").strip().lower()) for (c,) in rows.all()
+        }
+        if sector_slug not in other:
+            medal = await _award_team(db, project.id, "s-pioneer", event_ref=event_ref)
+            if medal:
+                awarded.append(medal)
+
+    for member_id in member_ids:
+        org = await award_organization(db, member_id, project, event_ref=event_ref)
+        awarded.extend(org["awarded"])
+
     return {"level": level, "awarded": awarded}
 
 
+async def award_project_created(
+    db: AsyncSession, project: Project, creator_id: int
+) -> dict[str, Any]:
+    """Проект создан → proj-first, автоподтверждение, s-pioneer (тикет 06).
+
+    - proj-first — первый проект создателя (по created_by), командная;
+    - auto_confirmed (экспресс-оценка ≤2): официальное подтверждение
+      засчитывает уровни 1..official — единственный путь к ugt-1/ugt-2;
+    - s-pioneer — первый проект платформы в отрасли (по category).
+    """
+    awarded: list[str] = []
+    created_ref = f"project:{project.id}:created"
+
+    total = int(
+        await db.scalar(
+            select(func.count(Project.id)).where(Project.created_by == creator_id)
+        )
+        or 0
+    )
+    if total >= 1:
+        medal = await _award_team(db, project.id, "proj-first", event_ref=created_ref)
+        if medal:
+            awarded.append(medal)
+
+    if project.status == "auto_confirmed" and project.current_level >= 1:
+        for lvl in range(1, project.current_level + 1):
+            res = await award_ugt(db, project, lvl)
+            awarded.extend(res["awarded"])
+
+    sector_slug = _sector_of(project)
+    if sector_slug is not None:
+        rows = await db.execute(
+            select(Project.category).where(Project.id != project.id)
+        )
+        other = {
+            SECTOR_CATEGORY_MAP.get((c or "").strip().lower()) for (c,) in rows.all()
+        }
+        if sector_slug not in other:
+            medal = await _award_team(
+                db, project.id, "s-pioneer", event_ref=created_ref
+            )
+            if medal:
+                awarded.append(medal)
+
+    return {"project_id": project.id, "awarded": awarded}
+
+
+async def award_first_request(db: AsyncSession, project: Project) -> dict[str, Any]:
+    """Первая заявка на переход УГТ → proj-first-request команде."""
+    medal = await _award_team(
+        db,
+        project.id,
+        "proj-first-request",
+        event_ref=f"project:{project.id}:first-request",
+    )
+    return {"project_id": project.id, "awarded": [medal] if medal else []}
+
+
+async def award_draft_approved(
+    db: AsyncSession, project: Project, level: int
+) -> dict[str, Any]:
+    """Черновик подтверждён менеджером → уровни 1..L + рывок (тикет 06).
+
+    Первичное подтверждение на уровень L засчитывает уровни 1..L (анкета
+    покрывает все уровни до заявленного) — через award_ugt каждый. Скачок
+    0→L при L≥2 — это достижимый q-leap (decide_promotion разрешает только
+    N→N+1, там рывок невозможен; проверка _q_leap оставлена для будущих
+    флоу с многоуровневыми переходами).
+    """
+    awarded: list[str] = []
+    for lvl in range(1, max(level, 0) + 1):
+        res = await award_ugt(db, project, lvl)
+        awarded.extend(res["awarded"])
+    if level >= 2:
+        medal = await _award_team(
+            db, project.id, "q-leap", event_ref=f"draft:{project.id}:{level}"
+        )
+        if medal:
+            awarded.append(medal)
+    return {"level": level, "awarded": awarded}
+
+
+async def award_role_verify(
+    db: AsyncSession, manager_id: int, event_ref: str
+) -> dict[str, Any]:
+    """Решение менеджера → ступени верификаций (тикет 06).
+
+    Считаются подтверждённые переходы (approved с manager_id) и опубликованные
+    черновики (audit project.published). times = порог; event_ref решения —
+    чтобы откат отзывал именно эту верификацию.
+    """
+    awarded: list[str] = []
+    promos = int(
+        await db.scalar(
+            select(func.count(PromotionRequest.id)).where(
+                PromotionRequest.manager_id == manager_id,
+                PromotionRequest.status == "approved",
+            )
+        )
+        or 0
+    )
+    drafts = int(
+        await db.scalar(
+            select(func.count(AuditTrailEntry.id)).where(
+                AuditTrailEntry.user_id == manager_id,
+                AuditTrailEntry.action == "project.published",
+            )
+        )
+        or 0
+    )
+    total = promos + drafts
+    if total <= 0:
+        return {"user_id": manager_id, "awarded": awarded}
+    for threshold, slug in ROLE_VERIFY_STEPS:
+        if total >= threshold:
+            medal = await _award_personal(
+                db, manager_id, slug, times=threshold, event_ref=event_ref
+            )
+            if medal:
+                awarded.append(medal)
+    return {"user_id": manager_id, "awarded": awarded}
+
+
+async def award_expert_check(
+    db: AsyncSession, user_id: int, event_ref: str
+) -> dict[str, Any]:
+    """Решение по контрольной точке → ступени экспертиз (тикет 06).
+
+    КТ-решение — выводимый в API аналог «проверки документа экспертом»;
+    times = порог; event_ref решения — для отзыва.
+    """
+    awarded: list[str] = []
+    total = int(
+        await db.scalar(
+            select(func.count(ControlPoint.id)).where(
+                ControlPoint.decided_by == user_id
+            )
+        )
+        or 0
+    )
+    if total <= 0:
+        return {"user_id": user_id, "awarded": awarded}
+    for threshold, slug in ROLE_EXPERT_STEPS:
+        if total >= threshold:
+            medal = await _award_personal(
+                db, user_id, slug, times=threshold, event_ref=event_ref
+            )
+            if medal:
+                awarded.append(medal)
+    return {"user_id": user_id, "awarded": awarded}
+
+
+async def award_fast_check(
+    db: AsyncSession,
+    user_id: int,
+    created_at: datetime | None,
+    decided_at: datetime | None,
+    event_ref: str,
+) -> dict[str, Any]:
+    """Решение быстрее FAST_CHECK_DAYS суток → role-fast-check (тикет 06)."""
+    awarded: list[str] = []
+    if created_at is not None and decided_at is not None:
+        delta = _ensure_aware(decided_at) - _ensure_aware(created_at)
+        if delta < timedelta(days=FAST_CHECK_DAYS):
+            medal = await _award_personal(
+                db, user_id, "role-fast-check", event_ref=event_ref
+            )
+            if medal:
+                awarded.append(medal)
+    return {"user_id": user_id, "awarded": awarded}
+
+
+async def award_organization(
+    db: AsyncSession,
+    user_id: int,
+    project: Project,
+    *,
+    event_ref: str | None = None,
+) -> dict[str, Any]:
+    """Медали организаций пользователя (тикет 06).
+
+    Проект приписывается организациям действующего пользователя (членство в
+    user_organizations): статистика считается по проектам всех членов каждой
+    организации (созданные ими или с их активным участием).
+    - org-first — первый проект организации;
+    - org-5-projects — 5 проектов (times=5);
+    - org-3-sectors — проекты в 3+ отраслях;
+    - org-10-docs — 10 принятых документов по проектам (times=10);
+    - org-ugt6 — проект организации достиг УГТ 6+.
+    Вызывается из создания проекта, приёма документов и подтверждения УГТ.
+    """
+    awarded: list[str] = []
+    for org_id in await _user_org_ids(db, user_id):
+        if await db.get(UserOrganization, org_id) is None:
+            continue
+        member_ids = await _org_member_ids(db, org_id)
+        if not member_ids:
+            continue
+        pids = await _member_project_ids(db, member_ids)
+        if project.id not in pids:
+            continue
+        medal = await _award_personal(
+            db, user_id, "org-first", project_id=project.id, event_ref=event_ref
+        )
+        if medal:
+            awarded.append(medal)
+        if len(pids) >= 5:
+            medal = await _award_personal(
+                db,
+                user_id,
+                "org-5-projects",
+                project_id=project.id,
+                event_ref=event_ref,
+                times=5,
+            )
+            if medal:
+                awarded.append(medal)
+        if len(await _sectors_of_projects(db, pids)) >= 3:
+            medal = await _award_personal(
+                db,
+                user_id,
+                "org-3-sectors",
+                project_id=project.id,
+                event_ref=event_ref,
+            )
+            if medal:
+                awarded.append(medal)
+        if len(await _accepted_doc_keys(db, pids)) >= 10:
+            medal = await _award_personal(
+                db,
+                user_id,
+                "org-10-docs",
+                project_id=project.id,
+                event_ref=event_ref,
+                times=10,
+            )
+            if medal:
+                awarded.append(medal)
+        ugt6 = await db.scalar(
+            select(func.count(Project.id)).where(
+                Project.id.in_(sorted(pids)),
+                Project.current_level >= 6,
+            )
+        )
+        if int(ugt6 or 0) > 0:
+            medal = await _award_personal(
+                db, user_id, "org-ugt6", project_id=project.id, event_ref=event_ref
+            )
+            if medal:
+                awarded.append(medal)
+    return {"user_id": user_id, "awarded": awarded}
+
+
 async def award_meta(db: AsyncSession, user_id: int) -> dict[str, Any]:
-    """Мета-медали (спека §4.3.5): первая медаль, ступени 5/15/30, 3+/5+
-    проектов, легенда (100+). Вызывается автоматически при каждой новой медали
-    (и явно из хука decide_promotion для всех участников — идемпотентно).
+    """Мета-медали (спека §4.3.5 + тикет 06): первая медаль, ступени 5/15/30,
+    3+/5+ проектов, эпическая коллекция (все 9 УГТ-медалей), легенда (все
+    открытые медали каталога — 100+ уникальных при 66 слагов недостижимо).
+    Вызывается автоматически при каждой новой медали (и явно из хука
+    decide_promotion для всех участников — идемпотентно).
     """
     awarded: list[str] = []
     total = int(
@@ -493,10 +1171,35 @@ async def award_meta(db: AsyncSession, user_id: int) -> dict[str, Any]:
         if medal is not None and await _award(db, user_id, medal, run_meta=False):
             awarded.append("m-5-projects")
 
-    if total >= 100:
-        medal = await _get_achievement(db, "s-legend")
+    held = await _user_slugs(db, user_id)
+    if set(UGT_SLUGS) <= held:
+        medal = await _get_achievement(db, "s-epic-collection")
         if medal is not None and await _award(db, user_id, medal, run_meta=False):
-            awarded.append("s-legend")
+            awarded.append("s-epic-collection")
+            held.add("s-epic-collection")
+
+    open_total = int(
+        await db.scalar(
+            select(func.count(Achievement.id)).where(Achievement.secret.is_(False))
+        )
+        or 0
+    )
+    if open_total > 0:
+        open_held = int(
+            await db.scalar(
+                select(func.count(UserAchievement.id))
+                .join(Achievement, UserAchievement.achievement_id == Achievement.id)
+                .where(
+                    UserAchievement.user_id == user_id,
+                    Achievement.secret.is_(False),
+                )
+            )
+            or 0
+        )
+        if open_held >= open_total:
+            medal = await _get_achievement(db, "s-legend")
+            if medal is not None and await _award(db, user_id, medal, run_meta=False):
+                awarded.append("s-legend")
 
     return {"user_id": user_id, "awarded": awarded}
 

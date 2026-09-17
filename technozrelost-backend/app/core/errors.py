@@ -422,6 +422,11 @@ CATALOG: dict[str, ErrorEntry] = {
         ru="Подтверждается только следующий уровень (N→N+1)",
         en="Only the next level can be confirmed (N to N+1)",
     ),
+    "MANAGER_REVERT_INVALID": ErrorEntry(
+        status=409,
+        ru="Можно откатить только подтверждённую заявку",
+        en="Only an approved request can be reverted",
+    ),
     "MANAGER_ONLY": ErrorEntry(
         status=403, ru="Только менеджеры", en="Managers only"
     ),

@@ -144,6 +144,12 @@ async def generate_document(
             details={"doc_type": doc_type, "template_id": template.id},
         )
     )
+    if user_id is not None:
+        # Тикет 06: сгенерированный документ — принятый (legacy-текст без
+        # storage_key): ступени, коллекционер при миксе типов, орг-счётчики.
+        from app.services.achievements import award_document
+
+        await award_document(db, project, user_id, doc_type)
     await db.commit()
     await db.refresh(document)
 
