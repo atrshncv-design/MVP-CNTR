@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import time
 import uuid
 from typing import cast
 
@@ -24,11 +25,12 @@ from app.services.rag import search_documents
 
 logger = logging.getLogger(__name__)
 
-LLM_TIMEOUT_SECONDS = 8.0
-# R05i (таск 11): синхронный путь не удерживает соединения дольше ~10с
-# (очередь 2с + LLM 8с ≤ 12с приёмки); при дауне — мгновенный fallback.
-# Очередь — семафор: ограничивает конкурентные внешние вызовы, пул
-# соединений не исчерпывается под нагрузкой.
+# Бюджет ожидания LLM (пересмотр R05i 2026-09-21): хвост провайдера
+# OpenCode Go на боевых RAG-промптах — 6–13с (замер с прод-стенда),
+# deepseek-reasoning — 30с+ (для чата непригоден). Бюджет 8с давал 100%
+# fallback в проде — медленно-рабочий ассистент лучше мгновенно-мёртвого.
+# Худший случай: очередь 2с + LLM 20с ≤ 24с, семафор 4 держит пул.
+LLM_TIMEOUT_SECONDS = 20.0
 LLM_QUEUE_TIMEOUT_SECONDS = 2.0
 LLM_MAX_CONCURRENCY = 4
 _LLM_SEMAPHORE = asyncio.Semaphore(LLM_MAX_CONCURRENCY)
@@ -38,10 +40,10 @@ _LLM_SEMAPHORE = asyncio.Semaphore(LLM_MAX_CONCURRENCY)
 # стабильный x-opencode-session (маршрутизация и prompt-кэш провайдера).
 LLM_USER_AGENT = "technozrelost-backend/1.0"
 OPENCODE_SESSION_HEADER = "x-opencode-session"
-# Cap генерации (прод 2026-09-21): reasoning-модели (deepseek) тратят токены
-# и время на thinking — cap 2000 давал хвосты за 8с бюджета. Персона требует
-# кратких ответов, 1200 достаточно; больше — только дольше, не лучше.
-LLM_MAX_TOKENS = 1200
+# Cap генерации (прод 2026-09-21, замер): 1200 токенов на боевом промпте —
+# 6–13с; 800 — заметно быстрее при тех же кратких ответах персоны.
+# Больше cap — только дольше, не лучше.
+LLM_MAX_TOKENS = 800
 
 
 def stable_session_id(*parts: object) -> str:
@@ -227,6 +229,7 @@ async def ask_llm(
             max_connections=LLM_MAX_CONCURRENCY,
             max_keepalive_connections=LLM_MAX_CONCURRENCY,
         )
+        started = time.monotonic()
         async with httpx.AsyncClient(
             timeout=LLM_TIMEOUT_SECONDS, limits=limits
         ) as client:
@@ -263,7 +266,11 @@ async def ask_llm(
         return cast(str, payload["choices"][0]["message"]["content"])
     except httpx.TimeoutException:
         ai_metrics.METRICS["timeouts_total"] += 1
-        logger.warning("LLM synthesis timeout: model=%s", model)
+        logger.warning(
+            "LLM synthesis timeout after %.1fs: model=%s",
+            time.monotonic() - started,
+            model,
+        )
         return None
     except Exception as exc:  # noqa: BLE001 — ассистент не должен падать из-за LLM
         ai_metrics.METRICS["errors_total"] += 1
