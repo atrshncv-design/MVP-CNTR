@@ -298,7 +298,9 @@ def _mock_llm(monkeypatch, reply: str | None) -> dict[str, str]:
 
     captured: dict[str, str] = {}
 
-    async def fake(system_prompt: str, user_message: str) -> str | None:
+    async def fake(
+        system_prompt: str, user_message: str, session_id: str | None = None
+    ) -> str | None:
         captured["system"] = system_prompt
         captured["user"] = user_message
         return reply

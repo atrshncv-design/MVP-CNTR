@@ -202,7 +202,7 @@ async def match_organizations(db: DBSession, payload: MatchIn) -> MatchOut:
     if settings.llm_gateway_enabled and resolve_llm_api_key():
         # Попытка LLM rerank: формируем промпт только из 5 полей без PII
         try:
-            from app.services.ai_assistant import ask_llm
+            from app.services.ai_assistant import ask_llm, stable_session_id
 
             # Строим контекст кандидатов для LLM
             cand_lines = []
@@ -233,7 +233,13 @@ async def match_organizations(db: DBSession, payload: MatchIn) -> MatchOut:
                 "выше, затем дефис и объяснение почему полезно "
                 "(1-2 предложения)."
             )
-            llm_text = await ask_llm(system_prompt, user_message)
+            llm_text = await ask_llm(
+                system_prompt,
+                user_message,
+                session_id=stable_session_id(
+                    "match", payload.title, payload.annotation or "", payload.sector or ""
+                ),
+            )
             if llm_text:
                 llm_reasons = [r.strip() for r in llm_text.split("\n") if r.strip()][:5]
                 if llm_reasons:

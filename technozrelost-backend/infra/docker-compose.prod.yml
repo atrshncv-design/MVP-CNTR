@@ -200,6 +200,10 @@ services:
       LLM_API_BASE: ${LLM_API_BASE}
       LLM_API_KEY: ${LLM_API_KEY}
       LLM_MODEL: ${LLM_MODEL}
+      # Алиасы того же ключа OpenCode Go (контракт allowlist: все имена
+      # из .env.production.example обязаны быть здесь либо в исключениях).
+      OPENCODE_API_KEY: ${OPENCODE_API_KEY:-}
+      OPENCODE_ZEN_API_KEY: ${OPENCODE_ZEN_API_KEY:-}
       # N-05/REPAIR 2026-09-17: гейтвей синтеза. Fail-closed: без явного
       # true в .env.production backend не обращается к внешнему LLM даже
       # при живом ключе (контейнер видит только allowlist ниже).

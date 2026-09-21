@@ -2,8 +2,9 @@
 
 - Провайдер (OpenCode Go) — OpenAI-совместимый; базовый URL берётся из
   серверных настроек `llm_api_base`, значение ключа — только из окружения.
-  В репо фиксируются только имена: `LLM_API_KEY` (настройка) и
-  `OPENCODE_API_KEY` (fallback окружения). Значений здесь нет и не будет.
+  В репо фиксируются только имена: `LLM_API_KEY` (настройка),
+  `OPENCODE_API_KEY` и алиас `OPENCODE_ZEN_API_KEY` (fallback окружения).
+  Значений здесь нет и не будет.
 - Наружу уходят только фрагменты allowlist-корпуса ГОСТов и обезличенный
   вопрос. Гейт корпуса — из таска 06 (`ensure_allowed_for_external`),
   импортируется, а не дублируется. ПДн, файлы проектов и данные ЛК
@@ -23,6 +24,8 @@ from app.core.config import settings
 
 # Имя переменной окружения с ключом провайдера (только имя, не значение).
 OPENCODE_API_KEY_ENV = "OPENCODE_API_KEY"
+# Алиас того же ключа OpenCode Go (другое имя, то же значение).
+OPENCODE_ZEN_API_KEY_ENV = "OPENCODE_ZEN_API_KEY"
 
 # Маркеры обезличивания — стабильные строки для тестов и логов.
 REDACTED_EMAIL = "[email скрыт]"
@@ -48,13 +51,15 @@ def resolve_llm_api_key() -> str | None:
     """Значение ключа провайдера без хранения в репо.
 
     Приоритет: серверная настройка `llm_api_key` (env `LLM_API_KEY`),
-    затем окружение `OPENCODE_API_KEY`. Пусто/`change_me` — как отсутствие.
+    затем окружение `OPENCODE_API_KEY`, затем алиас `OPENCODE_ZEN_API_KEY`
+    (тот же ключ OpenCode Go, другое имя). Пусто/`change_me` — как отсутствие.
     """
     if _looks_present(settings.llm_api_key):
         return settings.llm_api_key
-    env_key = os.environ.get(OPENCODE_API_KEY_ENV)
-    if _looks_present(env_key):
-        return env_key
+    for env_name in (OPENCODE_API_KEY_ENV, OPENCODE_ZEN_API_KEY_ENV):
+        env_key = os.environ.get(env_name)
+        if _looks_present(env_key):
+            return env_key
     return None
 
 

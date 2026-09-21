@@ -79,7 +79,9 @@ def test_chat_fallback_shows_rag_sources(client: TestClient) -> None:
 
 
 def test_chat_uses_llm_when_available(client: TestClient, monkeypatch) -> None:
-    async def fake_ask_llm(system_prompt: str, user_message: str) -> str:
+    async def fake_ask_llm(
+        system_prompt: str, user_message: str, session_id: str | None = None
+    ) -> str:
         return "Ответ от LLM: УГТ 5 — это прототип в реальных условиях."
 
     monkeypatch.setattr(ai_assistant, "ask_llm", fake_ask_llm)
