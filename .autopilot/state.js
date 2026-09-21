@@ -1,68 +1,49 @@
 window.STATE =
 {
-  "slug": "mvp-deploy-scope",
-  "dir": "2026-09-15-mvp-deploy-scope",
-  "title": "MVP деплой: минимум мощностей и скоуп функций",
+  "slug": "production-technical-audit",
+  "dir": "2026-09-21-production-technical-audit--wip",
+  "title": "Полный технический аудит production MVP",
   "mode": "interview",
   "depth": "normal",
   "polish": null,
   "tier": "T3",
-  "briefFile": "2026-09-16-brief.md",
+  "briefFile": "2026-09-21-brief.md",
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
-  "startedAt": "2026-09-15T08:34:37+04:00",
-  "updatedAt": "2026-09-21T16:42:09+04:00",
-  "finishedAt": "2026-09-21T16:42:09+04:00",
+  "startedAt": "2026-09-21T16:44:28+04:00",
+  "updatedAt": "2026-09-21T17:18:35+04:00",
+  "finishedAt": null,
   "stages": [
-    { "id": "preflight", "status": "done", "startedAt": "2026-09-15T08:34:37+04:00", "finishedAt": "2026-09-15T08:34:59+04:00" },
-    { "id": "manifest", "status": "done", "startedAt": "2026-09-15T09:12:55+04:00", "finishedAt": "2026-09-15T09:13:54+04:00", "note": "5 требований, предыдущая оценка отозвана" },
-    { "id": "briefing", "status": "done", "startedAt": "2026-09-15T09:13:54+04:00", "finishedAt": "2026-09-16T09:05:02+04:00", "note": "37 вопросов: функции, 3 пакета, сервер, RAG и внешние гейты" },
-    { "id": "spec", "status": "done", "startedAt": "2026-09-16T09:05:02+04:00", "finishedAt": "2026-09-16T09:14:29+04:00", "note": "G2 pass после 9 правок: измерения, 12 мес, ПДн, папка ГОСТов" },
-    { "id": "plan", "status": "done", "startedAt": "2026-09-16T09:14:29+04:00", "finishedAt": "2026-09-16T09:19:40+04:00", "note": "10 тасков, ярус T3, 4 волны" },
-    { "id": "build", "status": "done", "startedAt": "2026-09-16T09:19:40+04:00", "finishedAt": "2026-09-16T12:21:03+04:00", "note": "10 из 10 тасков готовы" },
-    { "id": "review", "status": "done", "startedAt": "2026-09-16T10:09:52+04:00", "finishedAt": "2026-09-16T12:21:03+04:00", "note": "проверено 10 из 10" },
-    { "id": "final", "status": "done", "startedAt": "2026-09-16T12:21:03+04:00", "finishedAt": "2026-09-21T16:42:09+04:00", "note": "Слепая приёмка: частично; public/ready и 237 frontend tests green, внешние гейты не подтверждены" }
+    { "id": "preflight", "status": "done", "startedAt": "2026-09-21T16:44:28+04:00", "finishedAt": "2026-09-21T16:51:50+04:00" },
+    { "id": "manifest", "status": "done", "startedAt": "2026-09-21T16:51:50+04:00", "finishedAt": "2026-09-21T16:51:50+04:00", "note": "37 атомарных требований" },
+    { "id": "briefing", "status": "done", "startedAt": "2026-09-21T16:51:50+04:00", "finishedAt": "2026-09-21T16:52:32+04:00", "note": "Интервью завершено: доступ, безопасность, AI, роли, реестры, UX, production-границы" },
+    { "id": "spec", "status": "done", "startedAt": "2026-09-21T16:52:32+04:00", "finishedAt": "2026-09-21T17:12:47+04:00", "note": "G2 PASS после двух раундов дополнений" },
+    { "id": "plan", "status": "done", "startedAt": "2026-09-21T17:12:47+04:00", "finishedAt": "2026-09-21T17:18:35+04:00", "note": "9 тасков, ярус T3, 9 последовательных волн" },
+    { "id": "build", "status": "active", "startedAt": "2026-09-21T17:18:35+04:00", "note": "0 из 9 тасков готовы" },
+    { "id": "review", "status": "pending" },
+    { "id": "final", "status": "pending" }
   ],
-  "requirements": {
-    "total": 63, "done": 60, "inTicket": 0, "inSpec": 0,
-    "placeholder": 0, "deferred": 3, "dropped": 0
-  },
+  "requirements": { "total": 37, "done": 0, "inTicket": 34, "inSpec": 0, "placeholder": 0, "deferred": 3, "dropped": 0 },
   "tickets": [
-    { "id": "01", "title": "Одноузловая топология P1", "requirements": ["R01", "R04i", "G17", "G18", "G19", "G42"], "blockedBy": [], "wave": 1, "zone": ["technozrelost-backend/infra/"], "status": "done", "startedAt": "2026-09-16T09:22:50+04:00", "finishedAt": "2026-09-16T10:09:52+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 507, "failed": 0 }, "commit": "a455592", "concerns": ["R01 partial: таблица лимитов 6/11/150 — зона 04", "G19: привязка к облаку РФ в runbook", "craft: строковые проверки вместо поведенческих — judgement"] },
-    { "id": "02", "title": "Gating P2: реестры и matching скрыты", "requirements": ["G04", "G05", "G06", "G09", "G35", "G36"], "blockedBy": [], "wave": 1, "zone": ["technozrelost-frontend/"], "status": "done", "startedAt": "2026-09-16T09:22:50+04:00", "finishedAt": "2026-09-16T10:51:33+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 189, "failed": 0 }, "commit": "1d7b364", "concerns": ["craft judgement: стабы/тесты gating — несрочно"] },
-    { "id": "03", "title": "Роли и регистрация без писем", "requirements": ["G10", "G11", "G20", "G39", "G46"], "blockedBy": [], "wave": 1, "zone": ["technozrelost-backend/app/"], "status": "done", "startedAt": "2026-09-16T09:22:50+04:00", "finishedAt": "2026-09-16T11:07:53+04:00", "retries": 0, "repairs": 1, "handoffs": 0, "tests": { "passed": 11, "failed": 0 }, "commit": "2f56764", "concerns": ["ролей в БД 9, не 8 — границы проверены; craft judgement по тестам"] },
-    { "id": "04", "title": "Ресурсный конверт и preflight", "requirements": ["R01", "G15", "G18", "G42", "G47"], "blockedBy": ["01"], "wave": 2, "zone": ["technozrelost-backend/infra/"], "status": "done", "startedAt": "2026-09-16T10:35:00+04:00", "finishedAt": "2026-09-16T11:07:53+04:00", "retries": 0, "repairs": 2, "handoffs": 0, "tests": { "passed": 82, "failed": 0 }, "commit": "6159349", "concerns": ["docs/СЕРВЕР-ТРЕБОВАНИЯ.md хранит старую оценку — чинит T10; BACKUP_KEEP=14 — решает T10; ClamAV ужaт до 1.0 CPU"] },
-    { "id": "05", "title": "Контент P2: инфоконтур, ЛК, файлы", "requirements": ["G07", "G08", "G12", "G13", "G14", "G22", "G37", "G38"], "blockedBy": ["02"], "wave": 2, "zone": ["technozrelost-frontend/"], "status": "done", "startedAt": "2026-09-16T10:50:00+04:00", "finishedAt": "2026-09-16T10:56:25+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 197, "failed": 0 }, "commit": "684a7f0", "concerns": ["тесты характеризующие, не поведенческие — e2e-доказательство в T10"] },
-    { "id": "06", "title": "RAG-импорт только корпуса ГОСТов", "requirements": ["G50", "G56", "G57", "G58"], "blockedBy": [], "wave": 2, "zone": ["technozrelost-backend/scripts/"], "status": "done", "startedAt": "2026-09-16T10:09:52+04:00", "finishedAt": "2026-09-16T11:07:53+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 7, "failed": 0 }, "commit": "c7b9157", "concerns": ["один sanity-ассерт вне шва — judgement"] },
-    { "id": "07", "title": "TLS sslip.io и строгий гейт деплоя", "requirements": ["G02", "G40", "G41"], "blockedBy": ["01"], "wave": 3, "zone": ["technozrelost-backend/infra/"], "status": "done", "startedAt": "2026-09-16T11:07:53+04:00", "finishedAt": "2026-09-16T11:59:21+04:00", "retries": 0, "repairs": 1, "handoffs": 0, "tests": { "passed": 93, "failed": 0 }, "commit": "66cb353", "concerns": ["исполнитель коммитил сам (3710a44) — сверено; живая проверка TLS за оператором/T10"] },
-    { "id": "08", "title": "AI-ассистент и RAG через OpenCode Go", "requirements": ["G51", "G52", "G53", "G54", "G55", "G56"], "blockedBy": ["06"], "wave": 3, "zone": ["technozrelost-backend/app/services/"], "status": "done", "startedAt": "2026-09-16T11:07:53+04:00", "finishedAt": "2026-09-16T11:59:21+04:00", "retries": 0, "repairs": 1, "handoffs": 0, "tests": { "passed": 8, "failed": 0 }, "commit": "92590f6", "concerns": ["исполнитель коммитил сам (6f9ebdc) — сверено"] },
-    { "id": "09", "title": "P3: публичные реестры", "requirements": ["G04", "G06", "G49", "G59"], "blockedBy": ["02", "05"], "wave": 4, "zone": ["technozrelost-frontend/src/app/"], "status": "done", "startedAt": "2026-09-16T11:49:52+04:00", "finishedAt": "2026-09-16T12:10:18+04:00", "retries": 1, "repairs": 1, "handoffs": 0, "tests": { "passed": 202, "failed": 0 }, "commit": "6fc23b9", "concerns": ["p2-content stale-ассёрт мигрирован отдельным микро-ремонтом"] },
-    { "id": "10", "title": "Приёмка: нагрузка, бэкапы, алерты, гейты", "requirements": ["R02", "R03", "G01", "G03", "G16", "G21", "G43", "G44", "G45", "G47", "G48"], "blockedBy": ["04", "07", "08"], "wave": 4, "zone": ["technozrelost-backend/infra/"], "status": "done", "startedAt": "2026-09-16T12:10:18+04:00", "finishedAt": "2026-09-16T12:21:03+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 103, "failed": 0 }, "commit": "2f072cd", "concerns": [] }
+    { "id": "01", "title": "Baseline: local, Git, server, production", "requirements": ["R01","R02","R03","R04","R05","R06","R23","R24","R30","R31","R37"], "blockedBy": [], "wave": 1, "zone": ["docs/audit/2026-09-21-production/00-evidence/","docs/audit/2026-09-21-production/01-environments.md"], "status": "done", "startedAt": "2026-09-21T17:25:02+04:00", "finishedAt": "2026-09-21T20:56:29+04:00", "retries": 0, "repairs": 1, "handoffs": 0 },
+    { "id": "02", "title": "Функциональная карта и перенос", "requirements": ["R02","R03","R07","R08","R10","R25","R30","R31","R32"], "blockedBy": ["01"], "wave": 2, "zone": ["docs/audit/2026-09-21-production/02-features/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "03", "title": "Качество кода и архитектура", "requirements": ["R03","R09","R10","R25","R26","R30","R31","R35"], "blockedBy": ["02"], "wave": 3, "zone": ["docs/audit/2026-09-21-production/03-code/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "04", "title": "БД и защита данных", "requirements": ["R03","R11","R12","R14","R26","R30","R31"], "blockedBy": ["01"], "wave": 4, "zone": ["docs/audit/2026-09-21-production/04-database/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "05", "title": "Application security и RBAC", "requirements": ["R03","R12","R13","R14","R15","R25","R26","R30","R31"], "blockedBy": ["02","04"], "wave": 5, "zone": ["docs/audit/2026-09-21-production/05-security/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "06", "title": "UX/UI production", "requirements": ["R03","R16","R17","R18","R25","R26","R30","R31"], "blockedBy": ["02"], "wave": 6, "zone": ["docs/audit/2026-09-21-production/06-ux/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "07", "title": "AI/RAG registry и eval", "requirements": ["R03","R12","R19","R20","R21","R22","R25","R26","R30","R31"], "blockedBy": ["01","02","05"], "wave": 7, "zone": ["docs/audit/2026-09-21-production/07-ai/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "08", "title": "Эксплуатация и производительность", "requirements": ["R03","R06","R23","R24","R25","R26","R30","R31"], "blockedBy": ["01","04"], "wave": 8, "zone": ["docs/audit/2026-09-21-production/08-operations/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "09", "title": "Синтез, backlog и gate-решение", "requirements": ["R01","R02","R03","R04","R05","R08","R26","R27","R28","R30","R31","R32","R34"], "blockedBy": ["02","03","04","05","06","07","08"], "wave": 9, "zone": ["docs/audit/2026-09-21-production/09-final/","docs/audit/2026-09-21-production/README.md"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 }
   ],
   "singlePass": null,
-  "tests": { "frontendPassed": 237, "frontendFailed": 0, "ruff": "pass", "backend": "blocked: test PostgreSQL unavailable", "build": "blocked: Turbopack process/port permission", "mypy": "blocked: Python 3.12 type syntax under current runtime" },
-  "debt": { "placeholders": [], "assumptions": [], "emptyEnv": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "OPENCODE_API_KEY", "LLM_API_BASE", "LLM_MODEL"] },
+  "tests": { "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)" },
+  "debt": { "placeholders": [], "assumptions": [], "emptyEnv": [] },
   "additions": [],
-  "coverage": {
-    "firstPassFindings": 10,
-    "fixed": 9,
-    "recheckFindings": 0,
-    "status": "pass",
-    "extra": 5,
-    "extraNote": "G2 independent: missing 4 (3 измерения уже отвечены в интервью — зафиксированы как факты; награды — покрытие было, формулировку усилил), half-covered 3 (12 мес, перечень ПДн, папка ГОСТов — дописано); in-spec-not-in-brief 5 — всё привязано к родителям G14/G39/G46/G50/G53/G54/G58, вырезать нечего"
-  },
+  "coverage": { "firstPassFindings": 7, "secondPassFindings": 3, "fixed": 10, "status": "pass", "note": "Добавлены чек-листы, MVP/инфра-границы, 16 артефактов, коммуникация, doctor и три явные схемы" },
   "concerns": [
-    "Предыдущая оценка мощностей не опиралась на ответы пользователя и не считается подтверждённой",
-    "Публичная обработка реальных ПДн заявлена до утверждения обязательных документов; фактическая публикация требует отдельного юридического гейта",
-    "Пароль root был опубликован в переписке; удалённое использование заблокировано 2026-09-16 отключением PasswordAuthentication, но сам пароль всё ещё следует сменить в Beget",
-    "Файл доступов в worktree содержит пароль в открытом виде и не в git; не коммитить, удалить после ротации",
-    "Исполнители 07/08 закоммитили сами (3710a44, 6f9ebdc) до ревью — состав коммитов сверен со scope тасков, ревью шли по тому же содержимому; дальше в промптах явный запрет коммитов"
+    { "ticket": "01", "area": "test-environment", "note": "Full regression suite cannot be green in this checkout: test PostgreSQL and installed frontend dependencies are absent; mypy runtime/stub mismatch is pre-existing. No product code changed." },
+    { "ticket": "01", "area": "deployment-evidence", "note": "deploy.log trails running image: last logged 8651cced865c, running f06b15c." }
   ],
   "reviewers": { "manifestSpec": null, "craft": null },
-  "blind": {
-    "status": "partial",
-    "agreed": ["public production", "HTTPS", "single-node readiness", "frontend tests", "Ruff"],
-    "drift": ["matching enabled although brief deferred it"],
-    "unknown": ["SSH hardening", "authorized role flows", "live AI/RAG", "backup freshness and restore", "Telegram delivery", "load thresholds"]
-  }
+  "blind": null
 }
