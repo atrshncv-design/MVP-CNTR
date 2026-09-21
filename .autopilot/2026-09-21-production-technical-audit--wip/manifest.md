@@ -12,7 +12,7 @@
 | R06 | «До анализа зафиксируй» local/server SHA, manifests, runtime, services, config names, CI/CD, deploy, logs, backup, monitoring | in-ticket | spec → T01,T08 | T01,T08 |
 | R07 | «Построй функциональную карту» routes, screens, APIs, jobs, integrations, flags, roles, tables, AI | in-ticket | spec → T02 | T02 |
 | R08 | «Для каждой функции укажи статус» `EXPECTED` ... `UNKNOWN` и полную строку матрицы | in-ticket | spec → T02,T09 | T02,T09 |
-| R09 | «Проверь» architecture, coupling, duplication, complexity, types, errors, retries, races, N+1, leaks, mutable state, hardcode, stubs, dead ends, tests, dependencies | in-ticket | spec → T03 | T03 |
+| R09 | «Проверь» architecture, coupling, duplication, complexity, types, errors, retries, races, N+1, leaks, mutable state, hardcode, stubs, dead ends, tests, dependencies | placeholder | T03 failed after two repair cycles: frontend duplication inventory remains unproven | T03 |
 | R10 | «Не называй код мёртвым только на основании текстового поиска» | in-ticket | spec → T02,T03 | T02,T03 |
 | R11 | «Проверь» model, migrations, constraints, indexes, plans, retention, encryption, least privilege, network, tenant isolation, audit and deletion | in-ticket | spec → T04 | T04 |
 | R12 | «Не выводи содержимое персональных данных» | in-ticket | spec → T04,T05,T07 | T04,T05,T07 |

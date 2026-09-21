@@ -49,3 +49,11 @@
 - Current distribution: 4 `DEPLOYED_WORKING`, 25 `EXPECTED`, 3 `STUB`, 1 `DISABLED`; authenticated production behavior remains `UNKNOWN` until safe test accounts exist.
 - Static inventory interface: 26 FastAPI routers, 36 SQLAlchemy tables, 35 Alembic revision files, public/auth/dashboard frontend route groups, jobs, flags, integrations and AI entrypoints.
 - No code is declared dead: candidates are only `alive` or `indeterminate` until imports, runtime registration, jobs, reflection and external consumers are checked.
+
+## T04 — Database and data protection
+
+- Static DB inventory distinguishes 36 declarative `__tablename__` classes plus 3 Core association `Table` objects, for 39 `Base.metadata` tables.
+- Production catalog evidence `EV-013`: applied migration version `0037`, 41 public base tables, PK 41 / FK 55 / unique 12 / check 8, 150 index rows, role/grant names, database/table sizes and aggregate row counts only.
+- `alembic_version=0037` proves migration-version parity only; schema/content/manual drift remains `UNKNOWN` until definitions or checksums are reconciled.
+- R14 static seams: `Role`/`Permission`, `require_role`/`has_role`, `Project.created_by`, `ProjectMember`, `can_access_project`, `ProjectInvite`, `require_project_admin`; authorized production runtime remains `UNKNOWN`.
+- No business rows or credential values were read or stored; production catalog queries were SELECT-only through existing container-environment passthrough.

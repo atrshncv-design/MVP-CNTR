@@ -1,0 +1,209 @@
+[
+ {
+  "acceptance_criteria": "Applied head 0037 доказан каталогом прод-БД (EV-013) и равен файловому head; файловое сравнение названо только parity имен.",
+  "affected_environments": [
+   "production"
+  ],
+  "affected_roles": [
+   "admin",
+   "maintainer"
+  ],
+   "business_effect": "Применённая версия прод-БД (0037) соответствует файловому head; соответствие схемы (schema/content/manual drift) — UNKNOWN; остаточный риск — расхождение немиграционного кода между f364388 и f06b15c.",
+  "complexity": "low",
+  "confidence": "high",
+  "dependencies": [
+   "operations-report"
+  ],
+   "description": "Файловый набор миграций на проде совпадает с локальным только по именам (35/35, EV-011; содержимое/checksum не сравнивались). Production-каталогом доказан только паритет применённой версии: public.alembic_version = 0037 = файловый head (EV-013); schema/content/manual drift — UNKNOWN (definitions/checksums не сравнивались). Каталог прод-БД: 41 public-таблица (= 39 ORM + alembic_version + db_migration_log), constraints PK 41 / FK 55 / unique 12 / check 8, pg_indexes 150 строк, grants только technoz (отдельной read-only роли нет); расхождение prod unique/check counts с local declarations без полного поимённого reconciliation выводом «не drift» не закрывается. Остаточная неопределенность: локальный HEAD f364388 != server HEAD f06b15c для немиграционного кода.",
+  "downtime_required": false,
+  "evidence_ids": [
+   "EV-001",
+   "EV-002",
+   "EV-010",
+   "EV-011",
+   "EV-013"
+  ],
+  "area": "database",
+  "id": "DB-01",
+  "kind": "risk",
+  "migration_required": false,
+  "regression_risk": "none",
+  "reproduction_steps": [
+   "Сверить ls alembic/versions/ локально и в ~/MVP-CNTR на сервере (EV-011, совпадают только имена)",
+   "Прочитать public.alembic_version read-only внутри tz-prod-db-primary через passthrough окружения контейнера без вывода credentials (EV-013): 0037"
+  ],
+  "safe_recommendation": "Держать примененный head доказанным (0037, EV-013); файловое сравнение не выдавать за content/checksum. Отдельный read-only доступ с read-only ролью по-прежнему желателен для будущих прогонов.",
+  "severity": "low",
+  "technical_cause": "Доступ к prod-БД требует credentials, чтение которых запрещено интерфейсами прогона."
+ },
+ {
+  "acceptance_criteria": "Задокументировано решение: оставить app-level изоляцию (с тестами ownership) либо ввести RLS/row-security отдельным изменением после согласования владельца.",
+  "affected_environments": [
+   "local",
+   "production"
+  ],
+  "affected_roles": [
+   "all"
+  ],
+  "business_effect": "Ошибка в одном запросе/проверке владения может показать чужие данные; защита зависит только от аккуратности кода, а не от БД.",
+  "complexity": "medium",
+  "confidence": "high",
+  "dependencies": [
+   "security-report"
+  ],
+  "description": "В модели нет tenant_id, CREATE POLICY / ENABLE ROW LEVEL SECURITY отсутствуют (EV-012, 0 совпадений). Изоляция данных — только application-level: роли и enforcement (EV-014: require_role/has_role, deps.py), владение проектом (can_access_project/require_project_access, projects.py), приглашения (require_project_admin, invites.py). Авторизованный runtime не проверен — UNKNOWN до test accounts (R36).",
+  "downtime_required": false,
+  "evidence_ids": [
+   "EV-009",
+   "EV-012",
+   "EV-014"
+  ],
+  "area": "database",
+  "id": "DB-02",
+  "kind": "risk",
+  "migration_required": true,
+  "regression_risk": "medium",
+  "reproduction_steps": [
+   "rg CREATE POLICY / tenant_id по app/ и alembic/ — 0 совпадений",
+   "Сверить enforcement: deps.py:128-145, projects.py:180-206, invites.py:58-96"
+  ],
+  "safe_recommendation": "Не вводить RLS в этом прогоне (вне рамок, требует миграции). Зафиксировать app-level изоляцию как принятое решение владельца либо вынести RLS в backlog с оценкой.",
+  "severity": "low",
+  "technical_cause": "Модель проектировалась без строковой изоляции на уровне БД."
+ },
+ {
+  "acceptance_criteria": "Векторные и перф-индексы перечислены в db-model.md и проверяются миграционным гейтом; ORM-метаданные не выдаются за полный каталог.",
+  "affected_environments": [
+   "local"
+  ],
+  "affected_roles": [
+   "maintainer"
+  ],
+  "business_effect": "Низкий: неверная инвентаризация индексов в отчётах, пропуск регресса векторного поиска при рефакторинге.",
+  "complexity": "low",
+  "confidence": "high",
+  "dependencies": [],
+  "description": "Частичные ivfflat-индексы rag_documents (tuno/kaba) и часть перф-индексов созданы миграциями (0029/0036/0027/0028/0031) и отсутствуют в ORM-metadata Base (EV-009 показывает 17 ORM-индексов без ivfflat). Это осознанный паттерн, но metadata-инструменты дают неполную картину.",
+  "downtime_required": false,
+  "evidence_ids": [
+   "EV-009",
+   "EV-010"
+  ],
+  "area": "database",
+  "id": "DB-03",
+  "kind": "debt",
+  "migration_required": false,
+  "regression_risk": "low",
+  "reproduction_steps": [
+   "Сравнить список Index из Base.metadata с CREATE INDEX в alembic/versions/",
+   "Убедиться, что ivfflat есть только в миграциях"
+  ],
+  "safe_recommendation": "Держать канонический список индексов в db-model.md; добавить существующий миграционный гейт-проверку ivfflat (test_migration_remediation уже покрывает контур).",
+  "severity": "low",
+  "technical_cause": "Векторные операторы pgvector не выражаются портабельно в ORM-metadata."
+ },
+ {
+  "acceptance_criteria": "Подтверждено шифрование at-rest для PG-volume, MinIO-объектов и локальных снапшотов (механизм + ротация ключей) либо зафиксировано его отсутствие как принятый риск.",
+  "affected_environments": [
+   "production"
+  ],
+  "affected_roles": [
+   "admin"
+  ],
+  "business_effect": "При компрометации дисков/снапшотов хоста данные (включая ПДн и хэши паролей) читаемы напрямую.",
+  "complexity": "medium",
+  "confidence": "medium",
+  "dependencies": [
+   "operations-report"
+  ],
+  "description": "TLS на границе есть (nginx TLSv1.2/1.3, EV-012). Offsite защищён rclone crypt-guard (EV-012). Но шифрование at-rest локальных снапшотов (BACKUP_KEEP=7), PG-volume (136M) и MinIO-объектов (KMS/SSE отсутствует в compose, EV-012) не доказано: зависит от диска хоста, что вне зоны чтения.",
+  "downtime_required": false,
+  "evidence_ids": [
+   "EV-006",
+   "EV-011",
+   "EV-012"
+  ],
+  "area": "database",
+  "id": "DB-04",
+  "kind": "risk",
+  "migration_required": false,
+  "regression_risk": "low",
+  "reproduction_steps": [
+   "Проверить наличие KMS/SSE-ключей в compose (имена) — отсутствуют",
+   "Содержимое дисков/снапшотов не читать (запрет)"
+  ],
+  "safe_recommendation": "Вынести at-rest шифрование (LUKS/volume-encryption, MinIO SSE/KMS, шифрованные дампы) в 30/60/90 как риск с оценкой; в прогоне только зафиксировать UNKNOWN.",
+  "severity": "medium",
+  "technical_cause": "Single-node топология без заявленного дискового/object-шифрования."
+ },
+ {
+  "acceptance_criteria": "Либо реплика развёрнута и /ready показывает lag-метрики, либо single-node SPOF формально принят владельцем.",
+  "affected_environments": [
+   "production"
+  ],
+  "affected_roles": [
+   "admin",
+   "maintainer"
+  ],
+  "business_effect": "Отказ единственного узла БД останавливает платформу; point-in-time recovery зависит только от снапшотов/WAL-offsite.",
+  "complexity": "high",
+  "confidence": "high",
+  "dependencies": [
+   "operations-report"
+  ],
+  "description": "Креды REPL_USER/REPL_PASSWORD заданы на db-primary (имена, EV-011), скрипты start-replica.sh существуют, но сервиса реплики нет среди 12 контейнеров (EV-003), а /ready отдаёт replica not_configured (EV-004). Репликация подготовлена, но не развёрнута.",
+  "downtime_required": true,
+  "evidence_ids": [
+   "EV-003",
+   "EV-004",
+   "EV-011"
+  ],
+  "area": "database",
+  "id": "DB-05",
+  "kind": "risk",
+  "migration_required": false,
+  "regression_risk": "medium",
+  "reproduction_steps": [
+   "docker ps: второго postgres нет",
+   "GET /api/v1/ready: replica not_configured (EV-004)"
+  ],
+  "safe_recommendation": "Ничего не разворачивать в прогоне (вне рамок). Передать факт в operations-зону для SPOF/RPO-оценки и 30/60/90.",
+  "severity": "medium",
+  "technical_cause": "Целевая топология 2xR640 вне прогона (spec); текущий single-node — факт."
+ },
+ {
+  "acceptance_criteria": "Владелец утвердил политику: жёсткие удаления + audit_trail только для проектов, либо backlog на soft-delete/retention для сущностей с ПДн.",
+  "affected_environments": [
+   "local",
+   "production"
+  ],
+  "affected_roles": [
+   "admin",
+   "user"
+  ],
+  "business_effect": "Случайное/злонамеренное удаление необратимо; соответствие 152-ФЗ по удалению/хранению ПДн недоказуемо.",
+  "complexity": "medium",
+  "confidence": "high",
+  "dependencies": [
+   "security-report"
+  ],
+  "description": "Колонок is_deleted/deleted_at — 0 во всём репозитории; audit_trail покрывает только действия с проектами (project_id/action/details). Retention/удаление бизнес-данных и ПДн политикой не зафиксированы.",
+  "downtime_required": false,
+  "evidence_ids": [
+   "EV-009",
+   "EV-012"
+  ],
+  "area": "database",
+  "id": "DB-06",
+  "kind": "debt",
+  "migration_required": true,
+  "regression_risk": "low",
+  "reproduction_steps": [
+   "rg is_deleted|deleted_at по app/ — 0 совпадений",
+   "Прочитать AuditTrailEntry (models.py:449): только project-контур"
+  ],
+  "safe_recommendation": "Не менять схему в прогоне. Вынести soft-delete/retention-политику для сущностей с ПДн в backlog после решения владельца.",
+  "severity": "low",
+  "technical_cause": "Модель росла без требований к восстановлению удалений и lifecycle ПДн."
+ }
+]
