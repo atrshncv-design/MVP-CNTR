@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "mvp-deploy-scope",
-  "dir": "2026-09-15-mvp-deploy-scope--wip",
+  "dir": "2026-09-15-mvp-deploy-scope",
   "title": "MVP деплой: минимум мощностей и скоуп функций",
   "mode": "interview",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-09-15T08:34:37+04:00",
-  "updatedAt": "2026-09-16T12:21:03+04:00",
-  "finishedAt": null,
+  "updatedAt": "2026-09-21T16:42:09+04:00",
+  "finishedAt": "2026-09-21T16:42:09+04:00",
   "stages": [
     { "id": "preflight", "status": "done", "startedAt": "2026-09-15T08:34:37+04:00", "finishedAt": "2026-09-15T08:34:59+04:00" },
     { "id": "manifest", "status": "done", "startedAt": "2026-09-15T09:12:55+04:00", "finishedAt": "2026-09-15T09:13:54+04:00", "note": "5 требований, предыдущая оценка отозвана" },
@@ -21,7 +21,7 @@ window.STATE =
     { "id": "plan", "status": "done", "startedAt": "2026-09-16T09:14:29+04:00", "finishedAt": "2026-09-16T09:19:40+04:00", "note": "10 тасков, ярус T3, 4 волны" },
     { "id": "build", "status": "done", "startedAt": "2026-09-16T09:19:40+04:00", "finishedAt": "2026-09-16T12:21:03+04:00", "note": "10 из 10 тасков готовы" },
     { "id": "review", "status": "done", "startedAt": "2026-09-16T10:09:52+04:00", "finishedAt": "2026-09-16T12:21:03+04:00", "note": "проверено 10 из 10" },
-    { "id": "final", "status": "active", "startedAt": "2026-09-16T12:21:03+04:00" }
+    { "id": "final", "status": "done", "startedAt": "2026-09-16T12:21:03+04:00", "finishedAt": "2026-09-21T16:42:09+04:00", "note": "Слепая приёмка: частично; public/ready и 237 frontend tests green, внешние гейты не подтверждены" }
   ],
   "requirements": {
     "total": 63, "done": 60, "inTicket": 0, "inSpec": 0,
@@ -40,7 +40,7 @@ window.STATE =
     { "id": "10", "title": "Приёмка: нагрузка, бэкапы, алерты, гейты", "requirements": ["R02", "R03", "G01", "G03", "G16", "G21", "G43", "G44", "G45", "G47", "G48"], "blockedBy": ["04", "07", "08"], "wave": 4, "zone": ["technozrelost-backend/infra/"], "status": "done", "startedAt": "2026-09-16T12:10:18+04:00", "finishedAt": "2026-09-16T12:21:03+04:00", "retries": 0, "repairs": 0, "handoffs": 0, "tests": { "passed": 103, "failed": 0 }, "commit": "2f072cd", "concerns": [] }
   ],
   "singlePass": null,
-  "tests": null,
+  "tests": { "frontendPassed": 237, "frontendFailed": 0, "ruff": "pass", "backend": "blocked: test PostgreSQL unavailable", "build": "blocked: Turbopack process/port permission", "mypy": "blocked: Python 3.12 type syntax under current runtime" },
   "debt": { "placeholders": [], "assumptions": [], "emptyEnv": ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "OPENCODE_API_KEY", "LLM_API_BASE", "LLM_MODEL"] },
   "additions": [],
   "coverage": {
@@ -59,5 +59,10 @@ window.STATE =
     "Исполнители 07/08 закоммитили сами (3710a44, 6f9ebdc) до ревью — состав коммитов сверен со scope тасков, ревью шли по тому же содержимому; дальше в промптах явный запрет коммитов"
   ],
   "reviewers": { "manifestSpec": null, "craft": null },
-  "blind": null
+  "blind": {
+    "status": "partial",
+    "agreed": ["public production", "HTTPS", "single-node readiness", "frontend tests", "Ruff"],
+    "drift": ["matching enabled although brief deferred it"],
+    "unknown": ["SSH hardening", "authorized role flows", "live AI/RAG", "backup freshness and restore", "Telegram delivery", "load thresholds"]
+  }
 }
