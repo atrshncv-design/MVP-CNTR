@@ -28,3 +28,10 @@
 - Код в ветке `fix/ai-assistant-relevance` (коммит `d464dc0`, запушен): `ask_llm(..., session_id=None)` шлёт `User-Agent: technozrelost-backend/1.0` + `x-opencode-session` (стабильный `stable_session_id`, наружу только хеш); сессии: чат — по пользователю, стейдж — по проекту+этапу, мэтчинг — по содержимому; `resolve_llm_api_key` знает алиас `OPENCODE_ZEN_API_KEY`; example + allowlist backend переведены на go/v1 + `mimo-v2.5` + оба имени ключа.
 - Проверки: ruff clean; 46 + 115 тестов зелёные (включая allowlist прод-env и infra-контракты).
 - Осталось (нужно решение владельца): сменить на проде `LLM_API_BASE` → `https://opencode.ai/zen/go/v1`, `LLM_MODEL` → `mimo-v2.5` (ключ тот же, гейт уже true) и передеплоить бэкенд.
+
+## 2026-09-21 — AI-ассистент оживлён на проде (deepseek-v4-flash) — done
+- Деплой `edf8083` (ветка в `53591dc`): health-gate passed. Прод-env: `LLM_API_BASE=https://opencode.ai/zen/go/v1`, `LLM_MODEL=deepseek-v4-flash`, ключ тот же, гейт true.
+- Почему не MiMo: `mimo-v2.5` стабильно 403 на этом ключе, `hy3` тоже 403; 200 отвечают `mimo-v2.5-pro`, `glm-5.3-flash`, `deepseek-v4-flash`, `deepseek-v4.1-flash`, `longcat-2.0`, `qwen3.8-flash`. Владелец выбрал `deepseek-v4-flash` (65 тыс. запросов/мес, retention 0 дней).
+- Ловушка при рестарте: `up -d backend` без `--env-file` и без `IMAGE_TAG` поднял старый образ `:local` — пересоздано явно с `IMAGE_TAG=edf8083cba6e`.
+- Живая проверка задеплоенным кодом: синтез «Да» за 1–6 сек (один холодный таймаут 8с — в пределах бюджета, повтор ок).
+- Осталось владельцу: проверить в UI (`/dashboard/ai-assistant`, вопрос по ГОСТ Р 58048-2017) — функциональная приёмка.
