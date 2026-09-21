@@ -140,16 +140,21 @@ def test_stage_crafted_doc_does_not_promote(client: TestClient, monkeypatch) -> 
 
 
 def test_chat_fallback_on_provider_down_is_fast(client: TestClient, monkeypatch) -> None:
-    """Даун провайдера: fallback за ≤12с, соединения не удерживаются по 60с."""
+    """Даун провайдера: fallback за ≤25с, соединения не удерживаются по 60с.
+
+    Бюджет пересмотрен 2026-09-21: хвост OpenCode Go на боевых RAG-промптах —
+    6–13с (замер с прод-стенда), бюджет 8с давал 100% fallback в проде.
+    Худший случай: очередь 2с + LLM 20с ≤ 24с.
+    """
     import time
 
     import httpx
 
     from app.services import ai_assistant as ai_module
 
-    assert ai_module.LLM_TIMEOUT_SECONDS <= 12, ai_module.LLM_TIMEOUT_SECONDS
+    assert ai_module.LLM_TIMEOUT_SECONDS <= 20, ai_module.LLM_TIMEOUT_SECONDS
     assert (
-        ai_module.LLM_TIMEOUT_SECONDS + ai_module.LLM_QUEUE_TIMEOUT_SECONDS <= 12
+        ai_module.LLM_TIMEOUT_SECONDS + ai_module.LLM_QUEUE_TIMEOUT_SECONDS <= 24
     )
 
     async def _hanging_post(self, *args, **kwargs):  # noqa: ARG001
@@ -174,7 +179,7 @@ def test_chat_fallback_on_provider_down_is_fast(client: TestClient, monkeypatch)
         ai_module.settings.llm_api_key = old_key  # type: ignore[assignment]
     assert response.status_code == 200, response.text
     assert response.json()["reply"]["role"] == "assistant"
-    assert elapsed <= 12, f"fallback за {elapsed:.1f}с — дольше 12с"
+    assert elapsed <= 25, f"fallback за {elapsed:.1f}с — дольше 25с"
 
 
 def test_pii_does_not_leave_contour_when_gateway_disabled(
