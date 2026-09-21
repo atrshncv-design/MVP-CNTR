@@ -38,6 +38,10 @@ _LLM_SEMAPHORE = asyncio.Semaphore(LLM_MAX_CONCURRENCY)
 # стабильный x-opencode-session (маршрутизация и prompt-кэш провайдера).
 LLM_USER_AGENT = "technozrelost-backend/1.0"
 OPENCODE_SESSION_HEADER = "x-opencode-session"
+# Cap генерации (прод 2026-09-21): reasoning-модели (deepseek) тратят токены
+# и время на thinking — cap 2000 давал хвосты за 8с бюджета. Персона требует
+# кратких ответов, 1200 достаточно; больше — только дольше, не лучше.
+LLM_MAX_TOKENS = 1200
 
 
 def stable_session_id(*parts: object) -> str:
@@ -235,7 +239,7 @@ async def ask_llm(
                         {"role": "user", "content": user_message},
                     ],
                     "temperature": 0.3,
-                    "max_tokens": 2000,
+                    "max_tokens": LLM_MAX_TOKENS,
                 },
                 headers={
                     "Authorization": f"Bearer {api_key}",
