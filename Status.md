@@ -21,3 +21,10 @@
 - Фикс в worktree `.worktrees/fix-ai-assistant`, ветка `fix/ai-assistant-relevance` (коммит `2357006`, запушен): порог `_is_relevant` (без общей лексики нужен combined>=0.15), местоимения я/ты/он/она/оно в стоп-слова, warning-лог отказов LLM без секретов, `tests/test_ai_relevance.py` (6 passed; соседние AI/RAG-сьюты 64 passed; ruff clean).
 - ВНИМАНИЕ: значение `LLM_API_KEY` прод-среды попало в вывод диагностики — рекомендована ротация ключа. Деплой фикса и решение по серверному LLM-ключу — за владельцем.
 - Дополнительно: весь корпус прод — `contour=tuno`, вызовы `/chat/kaba` (AiDocConsultant) всегда пустые; ГОСТы семантически относятся к `kaba` — нужен реимпорт с корректным контуром (решение владельца).
+
+## 2026-09-21 — переход AI на OpenCode Go (тот же ключ, endpoint go/v1, mimo-v2.5) — in-progress
+- Проверка с сервера: тот же ключ на `https://opencode.ai/zen/go/v1` принят (`GET /models` 200, 31 модель); точный id — `mimo-v2.5` (endpoint `chat/completions` по доке). Старый `zen/v1` + `mimo-v2.5-free` отвечал 403 FreeTierError.
+- Нюанс провайдера: без `x-opencode-session` — 400 MissingSessionID; клиент обязан слать свой User-Agent.
+- Код в ветке `fix/ai-assistant-relevance` (коммит `d464dc0`, запушен): `ask_llm(..., session_id=None)` шлёт `User-Agent: technozrelost-backend/1.0` + `x-opencode-session` (стабильный `stable_session_id`, наружу только хеш); сессии: чат — по пользователю, стейдж — по проекту+этапу, мэтчинг — по содержимому; `resolve_llm_api_key` знает алиас `OPENCODE_ZEN_API_KEY`; example + allowlist backend переведены на go/v1 + `mimo-v2.5` + оба имени ключа.
+- Проверки: ruff clean; 46 + 115 тестов зелёные (включая allowlist прод-env и infra-контракты).
+- Осталось (нужно решение владельца): сменить на проде `LLM_API_BASE` → `https://opencode.ai/zen/go/v1`, `LLM_MODEL` → `mimo-v2.5` (ключ тот же, гейт уже true) и передеплоить бэкенд.
