@@ -26,12 +26,12 @@ const CORE_NAVIGATION = [
   { href: "/dashboard", labelKey: "navWorkspace" },
   { href: "/dashboard/projects", labelKey: "navProjects" },
   { href: "/dashboard/gk_customer/projects/new", labelKey: "navRequests" },
-  // Точка входа AI-функций временно скрыта флагом AI_UI_ENABLED
-  // (2026-09-21, серверная версия): пункт появляется только при true.
+  // Точка входа AI-функций — за флагом AI_UI_ENABLED
+  // (false временно прячет пункт; сейчас true — пункт виден).
   // Ролевую фильтрацию делает код ниже через allowedRolesFor.
   ...(AI_UI_ENABLED ? [{ href: "/dashboard/ai-assistant", labelKey: "navAiAssistant" }] : []),
-  // Подбор партнёра временно скрыт вместе с AI (2026-09-21) — флаг
-  // P2_MATCHING_ENABLED (подпись navMatching уже есть в словарях ru/en/zh).
+  // Подбор партнёра — за флагом P2_MATCHING_ENABLED
+  // (подпись navMatching уже есть в словарях ru/en/zh).
   ...(P2_MATCHING_ENABLED ? [{ href: "/dashboard/matching", labelKey: "navMatching" }] : []),
 ] as const;
 
