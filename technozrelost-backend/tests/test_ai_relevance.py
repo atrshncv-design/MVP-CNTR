@@ -183,3 +183,104 @@ def test_llm_non200_logged_without_secrets(
     logged = "\n".join(record.getMessage() for record in caplog.records)
     assert "403" in logged
     assert "sk-test-secret-dummy" not in logged
+
+
+UGT_SECTION_TITLE = "ГОСТ Р 58048-2017 оценка зрелости — раздел 4"
+# В тексте намеренно НЕТ аббревиатуры «УГТ» — только «уровень зрелости»
+# и «готовности», как в реальных разделах корпуса.
+UGT_SECTION_TEXT = (
+    "Методические указания по оценке уровня зрелости технологий. "
+    "Шкала готовности производства УГТМАРКЕР критерии перехода разделы."
+)
+UGT_QUERY = "расскажи про угт 6"
+
+
+def _seed_ugt_section(client: TestClient) -> None:
+    admin_token = _register(client, "cntr_admin")
+    response = client.post(
+        "/api/v1/rag/templates",
+        json={
+            "title": UGT_SECTION_TITLE,
+            "doc_type": "gost",
+            "raw_text": UGT_SECTION_TEXT,
+        },
+        headers=_auth(admin_token),
+    )
+    assert response.status_code == 201, response.text
+
+
+def test_ugt_canon_links_abbreviation_and_spelled_out() -> None:
+    """Канон syn_ugt: «угт» и «уровень зрелости/готовности» — один терм."""
+    from app.core.embeddings import expanded_terms, token_to_canonical
+
+    assert token_to_canonical("угт") == "syn_ugt"
+    assert "syn_ugt" in expanded_terms("оценка уровня зрелости")
+    assert "syn_ugt" in expanded_terms("шкала готовности производства")
+
+
+def test_ugt_abbreviation_finds_spelled_out_sections(client: TestClient) -> None:
+    """«расскажи про угт 6» находит разделы 58048 без аббревиатуры в тексте."""
+    _seed_ugt_section(client)
+    token = _register(client)
+    response = client.post(
+        "/api/v1/rag/search",
+        headers=_auth(token),
+        json={"query": UGT_QUERY, "top_k": 3},
+    )
+    assert response.status_code == 200, response.text
+    results = response.json()
+    assert results, "синоним УГТ не сработал — раздел потерян"
+    assert results[0]["document"]["title"] == UGT_SECTION_TITLE
+
+
+def test_ugt_query_returns_excerpts_not_empty(client: TestClient, monkeypatch) -> None:
+    """Тот же запрос в /chat: выдержки из 58048, а не «ничего не найдено»."""
+    _gateway_off(monkeypatch)
+    _seed_ugt_section(client)
+    token = _register(client)
+    response = client.post(
+        "/api/v1/chat",
+        headers=_auth(token),
+        json={"message": UGT_QUERY},
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert "УГТМАРКЕР" in data["reply"]["content"]
+    assert len(data["sources"]) >= 1
+
+
+def test_llm_max_tokens_cap_is_sent(monkeypatch) -> None:
+    """Cap генерации едет в провайдер: не больше 1500 (хвосты reasoning)."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock
+
+    from app.services import ai_assistant
+
+    captured: dict = {}
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
+    mock_client = AsyncMock()
+
+    async def _capture_post(url, **kwargs):
+        captured["json"] = kwargs.get("json")
+        return mock_response
+
+    mock_client.post.side_effect = _capture_post
+    mock_client_cls = MagicMock(return_value=mock_client)
+    mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+    monkeypatch.setattr(ai_assistant.httpx, "AsyncClient", mock_client_cls)
+
+    old_gateway = ai_assistant.settings.llm_gateway_enabled
+    old_key = ai_assistant.settings.llm_api_key
+    ai_assistant.settings.llm_gateway_enabled = True  # type: ignore[assignment]
+    ai_assistant.settings.llm_api_key = "sk-test-captoken-dummy"  # type: ignore[assignment]
+    try:
+        result = asyncio.run(ai_assistant.ask_llm("s", "hi"))
+    finally:
+        ai_assistant.settings.llm_gateway_enabled = old_gateway  # type: ignore[assignment]
+        ai_assistant.settings.llm_api_key = old_key  # type: ignore[assignment]
+    assert result == "ok"
+    assert ai_assistant.LLM_MAX_TOKENS <= 1500
+    assert captured["json"]["max_tokens"] == ai_assistant.LLM_MAX_TOKENS
