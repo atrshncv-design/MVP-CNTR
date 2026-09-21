@@ -25,3 +25,7 @@
 - [ ] Frontend/backend/DB/background/integration/AI inventory не содержит недоказанных deployed-утверждений.
 - [ ] MVP planned/in-development отделён от regression; dead code не заявлен по одному grep.
 - [ ] У каждой строки есть evidence IDs или `UNKNOWN`.
+
+## Blocking review condition 01
+
+Причина: `inventory-backend.md` и сводка утверждают 37 таблиц, но машинный счётчик `rg -c '__tablename__\s*=' technozrelost-backend/app/db/models.py` даёт 36. Исправить все связанные упоминания и добавить воспроизводимую проверку точного числа; больше ничего не менять.

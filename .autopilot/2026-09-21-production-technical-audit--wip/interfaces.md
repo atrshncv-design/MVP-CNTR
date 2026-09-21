@@ -41,3 +41,11 @@
 - Production facts: deployment checkout `~/MVP-CNTR`, running SHA/image `f06b15c`, 12/12 containers healthy, replica `not_configured`.
 - Cross-ticket facts: `server-path-differs-from-spec`; `deploy-log-trail-behind-running`.
 - Config evidence exposes only key names and `set|empty`; raw env/log/config values are never an interface.
+
+## T02 — Feature transfer map
+
+- Canonical machine-readable map: `docs/audit/2026-09-21-production/02-features/feature-matrix.csv`; 33 rows `F-001`…`F-033` and the fixed 12-column schema from the spec.
+- Status vocabulary remains closed: `EXPECTED`, `LOCAL_ONLY`, `SERVER_ONLY`, `DEPLOYED_WORKING`, `DEPLOYED_BROKEN`, `PARTIALLY_DEPLOYED`, `DISABLED`, `STUB`, `UNKNOWN`.
+- Current distribution: 4 `DEPLOYED_WORKING`, 25 `EXPECTED`, 3 `STUB`, 1 `DISABLED`; authenticated production behavior remains `UNKNOWN` until safe test accounts exist.
+- Static inventory interface: 26 FastAPI routers, 36 SQLAlchemy tables, 35 Alembic revision files, public/auth/dashboard frontend route groups, jobs, flags, integrations and AI entrypoints.
+- No code is declared dead: candidates are only `alive` or `indeterminate` until imports, runtime registration, jobs, reflection and external consumers are checked.
