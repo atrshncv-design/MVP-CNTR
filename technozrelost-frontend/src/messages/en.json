@@ -321,6 +321,8 @@
     "navRequests": "Requests",
     "navAiAssistant": "AI assistant",
     "navMatching": "Partner matching",
+    "sectionHiddenTitle": "Section temporarily hidden",
+    "sectionHiddenDesc": "This section is disabled in the server build. It will return later — data and settings are kept.",
     "signOut": "Sign out",
     "mainNavAria": "Primary navigation",
     "menuAria": "Menu",

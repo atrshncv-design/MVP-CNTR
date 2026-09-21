@@ -33,9 +33,17 @@ test("p2-gating: ролевая матрица даёт доступ к matching
 });
 
 // G36 → открыт таском 04: навигация ЛК ведёт в matching (флаг P2_MATCHING_ENABLED).
-test("p2-gating: навигация ЛК ведёт в matching", () => {
-  assert.equal(P2_MATCHING_ENABLED, true);
-  assert.match(read("src/app/dashboard/layout.tsx"), /href: "\/dashboard\/matching"/);
+// Серверная версия 2026-09-21: подбор временно скрыт из UX вместе с AI
+// (экран насыщен AI-формулировками) — флага false, пункта нет в layout,
+// страница отдаёт заглушку. Возврат: P2_MATCHING_ENABLED=true.
+test("p2-gating: подбор партнёра временно скрыт из навигации (AI-скрытие)", () => {
+  assert.equal(P2_MATCHING_ENABLED, false);
+  assert.match(
+    read("src/app/dashboard/layout.tsx"),
+    /\.\.\.\(P2_MATCHING_ENABLED \? \[\{ href: "\/dashboard\/matching"/,
+  );
+  assert.match(read("src/app/dashboard/matching/page.tsx"), /P2_MATCHING_ENABLED/);
+  assert.match(read("src/app/dashboard/matching/page.tsx"), /matching-hidden/);
 });
 
 // G36 → открыт таском 04: api-client шлёт реальный POST /match.

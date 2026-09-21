@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { CLIENT_API_BASE } from "@/lib/public-api";
+import { AI_UI_ENABLED } from "@/lib/release";
 
 
 interface Source {
@@ -33,6 +34,7 @@ interface Message {
 
 export default function AiAssistantPage() {
   const t = useTranslations("aiAssistant");
+  const td = useTranslations("dashboard");
   const { data: session } = useSession();
   const initialAssistantMessage: Message = useMemo(() => ({
     role: 'assistant',
@@ -104,6 +106,18 @@ export default function AiAssistantPage() {
   const clearChat = () => {
     setMessages([initialAssistantMessage]);
   };
+
+  // Серверная версия (2026-09-21): раздел временно скрыт флагом
+  // AI_UI_ENABLED — вместо чата нейтральная заглушка без AI-текстов.
+  // Возврат: AI_UI_ENABLED=true в src/lib/release.ts.
+  if (!AI_UI_ENABLED) {
+    return (
+      <div className="tz-card tz-empty p-10 text-center" data-testid="ai-assistant-hidden">
+        <h1 className="tz-empty-title">{td("sectionHiddenTitle")}</h1>
+        <p className="tz-empty-text">{td("sectionHiddenDesc")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-100px)] flex-col">

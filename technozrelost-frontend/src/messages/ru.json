@@ -321,6 +321,8 @@
     "navRequests": "Заявки",
     "navAiAssistant": "AI-ассистент",
     "navMatching": "Подбор партнёра",
+    "sectionHiddenTitle": "Раздел временно скрыт",
+    "sectionHiddenDesc": "Этот раздел отключён в серверной версии. Он вернётся позже — данные и настройки сохраняются.",
     "signOut": "Выйти",
     "mainNavAria": "Основная навигация",
     "menuAria": "Меню",

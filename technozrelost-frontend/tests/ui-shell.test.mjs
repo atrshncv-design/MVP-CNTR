@@ -27,15 +27,16 @@ test("dashboard shell uses compact header with menu button instead of link row",
   // остальное уезжает в выпадающее меню «Больше функций».
   assert.match(layout, /import HeaderNav from "@\/components\/dashboard\/header-nav"/);
   assert.match(layout, /import MobileNav from "@\/components\/dashboard\/mobile-nav"/);
-  // подписи core-пунктов — через словарь dashboard в обеих локалях (таск 04)
-  // + REPAIR prod-бага: AI-ассистент — отдельный пункт верхнего меню
-  // (navAiAssistant в словарях dashboard ru/en/zh), а не подпункт
-  // «Больше функций» под чужим названием «Документы».
+  // подписи core-пунктов — через словарь dashboard в обеих локалях (таск 04).
+  // Серверная версия 2026-09-21: точка входа AI-функций временно скрыта
+  // флагом AI_UI_ENABLED — пункта ai-assistant нет ни в верхнем меню,
+  // ни в «Больше функций». Словарные подписи navAiAssistant остаются
+  // (возврат — AI_UI_ENABLED=true), поэтому значения пиним здесь.
   const { translatorFor } = await import("../src/lib/translators.ts");
   const ru = translatorFor("dashboard", "ru");
   const en = translatorFor("dashboard", "en");
   const zh = translatorFor("dashboard", "zh");
-  for (const key of ["navWorkspace", "navProjects", "navRequests", "navAiAssistant"]) {
+  for (const key of ["navWorkspace", "navProjects", "navRequests"]) {
     assert.match(layout, new RegExp(key));
   }
   assert.equal(ru("navWorkspace"), "Рабочий стол");
@@ -48,9 +49,13 @@ test("dashboard shell uses compact header with menu button instead of link row",
   assert.equal(en("navAiAssistant"), "AI assistant");
   assert.equal(zh("navAiAssistant"), "AI 助手");
   // Верхнее меню фильтруется по матрице ролей тем же источником истины,
-  // что middleware (fail-closed): AI-ассистент виден только ролям матрицы.
+  // что middleware (fail-closed) + флаг AI_UI_ENABLED: скрытый пункт
+  // висит только на условном спреде и при false не попадает в навигацию.
   assert.match(layout, /allowedRolesFor/);
-  assert.match(layout, /href: "\/dashboard\/ai-assistant", labelKey: "navAiAssistant"/);
+  assert.match(layout, /AI_UI_ENABLED/);
+  const { AI_UI_ENABLED } = await import("../src/lib/release.ts");
+  assert.equal(AI_UI_ENABLED, false);
+  assert.match(layout, /\.\.\.\(AI_UI_ENABLED \? \[\{ href: "\/dashboard\/ai-assistant"/);
   // Иконка пункта по смыслу — Bot (та же метафора, что на самой странице).
   assert.match(read("src/components/dashboard/header-nav.tsx"), /Bot/);
   assert.match(layout, /ТЕХНОЗРЕЛОСТЬ/);
@@ -62,9 +67,8 @@ test("more-functions menu covers every dashboard route with role filtering", () 
 
   // Все страницы кабинета платформы, включая новые (новости, админ-раздел
   // новостей, профиль с «Моими достижениями», исполнители).
-  // REPAIR prod-бага: /dashboard/ai-assistant — отдельный пункт верхнего
-  // меню (CORE_NAVIGATION в layout), из «Больше функций» дубль убран,
-  // чтобы маршрут не прятался под чужим названием «Документы».
+  // Серверная версия 2026-09-21: точка входа AI-функций скрыта флагом
+  // AI_UI_ENABLED — её нет ни в верхнем меню, ни в «Больше функций».
   for (const href of [
     "/dashboard/technologies",
     "/dashboard/nioktr",
@@ -81,7 +85,7 @@ test("more-functions menu covers every dashboard route with role filtering", () 
   }
   assert.ok(
     !moreMenu.includes('href: "/dashboard/ai-assistant"'),
-    "дубль AI-ассистента в «Больше функций» убран — пункт живёт в верхнем меню",
+    "точка входа AI-функций скрыта — её нет и в «Больше функций»",
   );
   assert.doesNotMatch(moreMenu, /moreMenuDocs/);
   // Фильтрация по ролям — тот же источник истины, что у middleware.

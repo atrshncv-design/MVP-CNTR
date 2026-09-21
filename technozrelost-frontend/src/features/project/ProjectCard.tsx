@@ -11,6 +11,7 @@ import { CanvasBlocks, type CanvasValue } from "./CanvasBlocks";
 import { DocsPanel } from "@/features/docs/DocsPanel";
 import { GenerationPanel } from "./GenerationPanel";
 import { AiDocConsultant } from "@/features/docs/AiDocConsultant";
+import { AI_UI_ENABLED } from "@/lib/release";
 import { TeamPanel } from "./TeamPanel";
 import { ActionsPanel } from "./ActionsPanel";
 import { HistoryPanel } from "./HistoryPanel";
@@ -184,7 +185,8 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
         documents={documents.map((d) => ({ doc_type: (d as DocumentOut).doc_type ?? "file", title: (d as DocumentOut).title }))}
       />
 
-      {/* Чек-лист ГОСТ доков + ИИ-консультант узкий */}
+      {/* Чек-лист ГОСТ доков (консультант по документам временно скрыт
+          флагом AI_UI_ENABLED, серверная версия 2026-09-21) */}
       <GostChecklist
         projectId={project.id}
         currentLevel={project.current_level}
@@ -192,7 +194,9 @@ export function ProjectCard({ detail, onProjectChange, className = "" }: Project
         documents={documents as DocumentOut[]}
         onRequirementsChange={setGostRequirements}
       />
-      <AiDocConsultant level={project.current_level} requirements={gostRequirements} projectId={project.id} />
+      {AI_UI_ENABLED ? (
+        <AiDocConsultant level={project.current_level} requirements={gostRequirements} projectId={project.id} />
+      ) : null}
 
       {/* КТ 1-4 панель аудитора — Go/No-Go per ControlPoint, чек-лист + бейдж возврата (P2, R04) */}
       <KtPanel

@@ -321,6 +321,8 @@
   "navRequests": "申请",
   "navAiAssistant": "AI 助手",
   "navMatching": "合作伙伴匹配",
+  "sectionHiddenTitle": "版块暂时隐藏",
+  "sectionHiddenDesc": "该版块在服务器版本中已禁用，稍后恢复——数据和设置将保留。",
   "signOut": "退出登录",
   "mainNavAria": "主导航",
   "menuAria": "菜单",
