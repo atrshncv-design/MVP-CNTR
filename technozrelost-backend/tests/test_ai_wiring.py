@@ -241,7 +241,7 @@ def test_chat_and_search_answer_with_sources(client, monkeypatch) -> None:
     """G53/G54: чат и RAG-поиск отвечают по корпусу с указанием источников."""
     from app.services import ai_assistant
 
-    async def _fake_llm(system: str, user_msg: str) -> str:  # noqa: ARG001
+    async def _fake_llm(system: str, user_msg: str, session_id: str | None = None) -> str:  # noqa: ARG001
         return "Ответ по корпусу ГОСТов."
 
     monkeypatch.setattr(ai_assistant, "ask_llm", _fake_llm)
@@ -291,3 +291,67 @@ def test_wiring_modules_secret_scan_is_clean() -> None:
         source = (root / name).read_text(encoding="utf-8")
         hits = [line for line in source.splitlines() if secret_assign.search(line)]
         assert hits == [], (name, hits)
+
+
+def test_zen_alias_key_env_resolves(monkeypatch) -> None:
+    """Алиас OPENCODE_ZEN_API_KEY — тот же ключ Go под другим именем."""
+    from app.services import ai_assistant
+    from app.services.ai_wiring import (
+        OPENCODE_API_KEY_ENV,
+        OPENCODE_ZEN_API_KEY_ENV,
+        resolve_llm_api_key,
+    )
+
+    monkeypatch.setattr(ai_assistant.settings, "llm_api_key", None)
+    monkeypatch.delenv(OPENCODE_API_KEY_ENV, raising=False)
+    monkeypatch.delenv(OPENCODE_ZEN_API_KEY_ENV, raising=False)
+    assert resolve_llm_api_key() is None
+
+    monkeypatch.setenv(OPENCODE_ZEN_API_KEY_ENV, "sk-test-zen-alias-dummy")
+    assert resolve_llm_api_key() == "sk-test-zen-alias-dummy"
+
+    # Приоритет: OPENCODE_API_KEY старше алиаса, настройка старше обоих.
+    monkeypatch.setenv(OPENCODE_API_KEY_ENV, "sk-test-opencode-dummy")
+    assert resolve_llm_api_key() == "sk-test-opencode-dummy"
+    monkeypatch.setattr(ai_assistant.settings, "llm_api_key", "sk-test-settings-dummy")
+    assert resolve_llm_api_key() == "sk-test-settings-dummy"
+
+
+def test_go_headers_session_and_user_agent(monkeypatch) -> None:
+    """OpenCode Go: свой User-Agent и x-opencode-session в каждом запросе."""
+    import asyncio
+
+    from app.services import ai_assistant
+
+    captured: dict = {}
+    _mock_transport(monkeypatch, captured)
+    old = _gateway_on(monkeypatch)
+    try:
+        result = asyncio.run(
+            ai_assistant.ask_llm("system", "hello", session_id="sess-123")
+        )
+        assert result == "wired-ok"
+        headers = captured["headers"]
+        assert headers["User-Agent"] == ai_assistant.LLM_USER_AGENT
+        assert "httpx" not in headers["User-Agent"]
+        assert headers[ai_assistant.OPENCODE_SESSION_HEADER] == "sess-123"
+
+        # Без явной сессии — сгенерированный id, но заголовок обязан быть.
+        result = asyncio.run(ai_assistant.ask_llm("system", "hello"))
+        assert result == "wired-ok"
+        auto = captured["headers"][ai_assistant.OPENCODE_SESSION_HEADER]
+        assert isinstance(auto, str) and len(auto) >= 16
+    finally:
+        _gateway_off(old)
+
+
+def test_stable_session_id_is_opaque_and_stable() -> None:
+    """stable_session_id: детерминирован, наружу — только хеш без id/PII."""
+    from app.services.ai_assistant import stable_session_id
+
+    first = stable_session_id("chat", 12345)
+    assert first == stable_session_id("chat", 12345)
+    assert first != stable_session_id("chat", 12346)
+    assert first != stable_session_id("stage", 12345)
+    assert "12345" not in first
+    assert len(first) == 32

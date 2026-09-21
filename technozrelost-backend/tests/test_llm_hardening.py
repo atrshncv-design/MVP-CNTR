@@ -67,7 +67,7 @@ def test_stage_ambiguous_answer_is_not_success(client: TestClient, monkeypatch) 
     assert reqs.status_code == 200, reqs.text
     rid = reqs.json()[0]["id"]
 
-    async def _fake_ambiguous(system: str, user_msg: str) -> str:
+    async def _fake_ambiguous(system: str, user_msg: str, session_id: str | None = None) -> str:
         return "not a SUCCESS case\nSUMMARY: сомнительно\n"
 
     monkeypatch.setattr(stages_module, "ask_llm", _fake_ambiguous)
@@ -103,7 +103,9 @@ def test_stage_crafted_doc_does_not_promote(client: TestClient, monkeypatch) -> 
 
     captured: dict[str, str] = {}
 
-    async def _delimiter_respecting_llm(system: str, user_msg: str) -> str:
+    async def _delimiter_respecting_llm(
+        system: str, user_msg: str, session_id: str | None = None
+    ) -> str:
         captured["system"] = system
         captured["user"] = user_msg
         begin = ai_module.UNTRUSTED_BEGIN
@@ -209,7 +211,7 @@ def test_chat_rag_context_isolated_by_delimiters(client: TestClient, monkeypatch
 
     captured: dict[str, str] = {}
 
-    async def _capture_llm(system: str, user_msg: str) -> str:
+    async def _capture_llm(system: str, user_msg: str, session_id: str | None = None) -> str:
         captured["system"] = system
         captured["user"] = user_msg
         return "Ответ по базе знаний."

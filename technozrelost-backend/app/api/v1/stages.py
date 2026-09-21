@@ -36,6 +36,7 @@ from app.services.achievements import award_document, award_first_request
 from app.services.ai_assistant import (
     PROMPT_ISOLATION_RULE,
     ask_llm,
+    stable_session_id,
     wrap_untrusted,
 )
 from app.services.file_storage import (
@@ -154,7 +155,9 @@ async def _evaluate(
         f"Загруженные документы:\n{wrap_untrusted(docs_text)}"
     )
 
-    answer = await ask_llm(system, user_msg)
+    answer = await ask_llm(
+        system, user_msg, session_id=stable_session_id("stage", project.id, stage.id)
+    )
     if not answer:
         # LLM недоступна — не пропускаем молча
         return None, [], "Оценка недоступна: языковая модель не настроена."

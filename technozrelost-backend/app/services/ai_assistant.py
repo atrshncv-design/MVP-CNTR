@@ -9,7 +9,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
+import uuid
 from typing import cast
 
 import httpx
@@ -30,6 +32,21 @@ LLM_TIMEOUT_SECONDS = 8.0
 LLM_QUEUE_TIMEOUT_SECONDS = 2.0
 LLM_MAX_CONCURRENCY = 4
 _LLM_SEMAPHORE = asyncio.Semaphore(LLM_MAX_CONCURRENCY)
+
+# OpenCode Go (https://opencode.ai/docs/go, раздел «Where can I use it»):
+# клиент представляется своим User-Agent, а каждый разговор несёт
+# стабильный x-opencode-session (маршрутизация и prompt-кэш провайдера).
+LLM_USER_AGENT = "technozrelost-backend/1.0"
+OPENCODE_SESSION_HEADER = "x-opencode-session"
+
+
+def stable_session_id(*parts: object) -> str:
+    """Стабильный непрозрачный id разговора: sha256 частей hex[:32].
+
+    Наружу уходит только хеш — ни user id, ни project id, ни PII.
+    """
+    digest = hashlib.sha256("|".join(str(p) for p in parts).encode("utf-8")).hexdigest()
+    return digest[:32]
 
 # R05i (таск 11): изоляция пользовательского контента документов.
 # Недоверенный текст оборачивается разделителями и рассматривается
@@ -169,13 +186,21 @@ def format_excerpt_quotes(
 def _llm_config() -> tuple[str | None, str, str]:
     base = settings.llm_api_base.rstrip("/")
     # G52/G55: значение ключа — только из окружения (настройка LLM_API_KEY
-    # либо OPENCODE_API_KEY через resolve_llm_api_key); в репо лишь имена.
+    # либо OPENCODE_API_KEY / OPENCODE_ZEN_API_KEY через resolve_llm_api_key);
+    # в репо лишь имена.
     key = ai_wiring.resolve_llm_api_key()
     return key, base, settings.llm_model
 
 
-async def ask_llm(system_prompt: str, user_message: str) -> str | None:
-    """Вызов chat/completions OpenAI-совместимого API. None при отсутствии ключа/ошибке."""
+async def ask_llm(
+    system_prompt: str, user_message: str, session_id: str | None = None
+) -> str | None:
+    """Вызов chat/completions OpenAI-совместимого API. None при отсутствии ключа/ошибке.
+
+    OpenCode Go (https://opencode.ai/docs/go): клиент обязан слать свой
+    User-Agent (не имя HTTP-библиотеки) и стабильный `x-opencode-session`
+    на разговор — без сессии провайдер отвечает 400 MissingSessionID.
+    """
     # N-05: контур — данные не покидают платформу пока гейтвей выключен.
     # Даже при наличии LLM_API_KEY внешний вызов запрещён, если
     # LLM_GATEWAY_ENABLED != true (по умолчанию False).
@@ -215,6 +240,8 @@ async def ask_llm(system_prompt: str, user_message: str) -> str | None:
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
+                    "User-Agent": LLM_USER_AGENT,
+                    OPENCODE_SESSION_HEADER: session_id or uuid.uuid4().hex,
                 },
             )
         if response.status_code != 200:
@@ -320,7 +347,10 @@ async def process_chat(
 
     from app.services import ai_metrics
 
-    llm_reply = await ask_llm(system_prompt, user_message)
+    # OpenCode Go: стабильная сессия на пользователя (маршрутизация/кэш).
+    llm_reply = await ask_llm(
+        system_prompt, user_message, session_id=stable_session_id("chat", user.id)
+    )
 
     if llm_reply:
         return ChatOut(reply=ChatMessage(role="assistant", content=llm_reply), sources=sources)

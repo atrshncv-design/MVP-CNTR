@@ -190,7 +190,7 @@ def test_stage_requirements_and_auto_application(client: TestClient, monkeypatch
     assert stage[0]["uploaded"] is False
 
     # Мок LLM: оценка успешна
-    async def _fake_llm(system: str, user_msg: str) -> str:
+    async def _fake_llm(system: str, user_msg: str, session_id: str | None = None) -> str:
         return "SUCCESS\nSUMMARY: комплект полный\n"
 
     monkeypatch.setattr(stages_module, "ask_llm", _fake_llm)
@@ -264,7 +264,7 @@ def test_stage_evaluate_failure_and_retry(client: TestClient, monkeypatch) -> No
         f"/api/v1/projects/{project_id}/stage-requirements", headers=_auth(owner_token)
     ).json()
 
-    async def _fake_fail(system: str, user_msg: str) -> str:
+    async def _fake_fail(system: str, user_msg: str, session_id: str | None = None) -> str:
         return "FAIL\nSUMMARY: не хватает обоснования\nMISSING: ТЭО этапа\n"
 
     monkeypatch.setattr(stages_module, "ask_llm", _fake_fail)
@@ -303,7 +303,7 @@ def test_stage_evaluate_success_sends_to_manager(client: TestClient, monkeypatch
         f"/api/v1/projects/{project_id}/stage-requirements", headers=_auth(owner_token)
     ).json()
 
-    async def _fake_ok(system: str, user_msg: str) -> str:
+    async def _fake_ok(system: str, user_msg: str, session_id: str | None = None) -> str:
         return "SUCCESS\nSUMMARY: документы подтверждают переход\n"
 
     monkeypatch.setattr(stages_module, "ask_llm", _fake_ok)

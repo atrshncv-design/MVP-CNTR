@@ -164,7 +164,7 @@ def test_match_rerank_changes_order_not_only_reasons(
     assert len(script_ids) >= 3
 
     # LLM возвращает обратный порядок номерами кандидатов входного топа.
-    async def _fake_reverse(system: str, user_msg: str) -> str:
+    async def _fake_reverse(system: str, user_msg: str, session_id: str | None = None) -> str:
         return (
             "3 - наиболее релевантен по синонимам\n"
             "2 - средняя релевантность\n"
