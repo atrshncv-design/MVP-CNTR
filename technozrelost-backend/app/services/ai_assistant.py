@@ -219,14 +219,24 @@ async def ask_llm(system_prompt: str, user_message: str) -> str | None:
             )
         if response.status_code != 200:
             ai_metrics.METRICS["errors_total"] += 1
+            # Диагностика прод 2026-09-21: молчаливый None превращал любой
+            # отказ провайдера (403 free-tier, 401, 429) в неотличимый
+            # «даун». В логах — только статус и модель, без ключа и тела.
+            logger.warning(
+                "LLM synthesis failed: provider status=%s model=%s",
+                response.status_code,
+                model,
+            )
             return None
         payload = response.json()
         return cast(str, payload["choices"][0]["message"]["content"])
     except httpx.TimeoutException:
         ai_metrics.METRICS["timeouts_total"] += 1
+        logger.warning("LLM synthesis timeout: model=%s", model)
         return None
-    except Exception:  # noqa: BLE001 — ассистент не должен падать из-за LLM
+    except Exception as exc:  # noqa: BLE001 — ассистент не должен падать из-за LLM
         ai_metrics.METRICS["errors_total"] += 1
+        logger.warning("LLM synthesis error: %s model=%s", type(exc).__name__, model)
         return None
     finally:
         _LLM_SEMAPHORE.release()

@@ -18,6 +18,20 @@ from app.schemas import (
 
 logger = logging.getLogger(__name__)
 
+# Порог релевантности RAG (диагностика прод 2026-09-21): запросы без единого
+# общего терма с корпусом («Ты работаешь?», скор combined ~0.0) возвращали
+# первые попавшиеся документы — сортировка без порога всегда отдаёт top_k.
+# Правило: документ без лексического пересечения (ни одного общего
+# стема/синонима) проходит только с сильным векторным сигналом — случайные
+# коллизии хеш-корзин дают combined ~0.04-0.07, живые совпадения — от ~0.3.
+MIN_VECTOR_ONLY_SIMILARITY = 0.15
+
+
+def _is_relevant(lex: float, combined: float) -> bool:
+    """Порог релевантности: есть общий терм — релевантно, иначе нужен
+    сильный векторный сигнал (защита от мусора при нулевом пересечении)."""
+    return lex > 0.0 or combined >= MIN_VECTOR_ONLY_SIMILARITY
+
 SQL_UPSERT_EMBEDDING = """
 UPDATE public.rag_documents
 SET embedding = CAST(:embedding AS vector)
@@ -152,6 +166,8 @@ async def _lexical_fallback(
     scored: list[tuple[float, Any]] = []
     for row in rows:
         lex = lexical_score(payload.query, f"{row.title} {row.raw_text}")
+        if lex <= 0.0:
+            continue
         scored.append((lex, row))
     scored.sort(key=lambda x: x[0], reverse=True)
     results: list[RagSearchResult] = []
@@ -202,6 +218,8 @@ async def search_documents(
         vec_sim = float(row.similarity) if row.similarity else 0.0
         lex = lexical_score(payload.query, f"{row.title} {row.raw_text}")
         combined = 0.65 * vec_sim + 0.35 * lex
+        if not _is_relevant(lex, combined):
+            continue
         scored.append((combined, vec_sim, lex, row))
     if not scored:
         return await _lexical_fallback(db, payload)
