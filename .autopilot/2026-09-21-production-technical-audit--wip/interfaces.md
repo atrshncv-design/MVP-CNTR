@@ -78,3 +78,10 @@
 - AI evidence: `EV-022` static inventory, `EV-023` offline eval and gates, `EV-024` request-cap/denylist/tenant proof; original collection instant is unavailable and bounded by file metadata, with exact re-verification UTC recorded.
 - Safe evaluation used 32 checklist tokens and 0 live calls out of the 200-call cap; this is distinct from the independently repeated 32-passed non-DB pytest set.
 - Findings `AI-01`…`AI-05` use the R26 schema; live synthesis, rerank, citations, outage behavior and authenticated tenant isolation remain `UNKNOWN` without safe test accounts.
+
+## T08 — Operations and performance
+
+- Operations evidence: `EV-025` static/read-only inventory with original collection instant unavailable, a metadata-bound UTC and exact re-verification UTC.
+- Findings `OPS-01`…`OPS-06` use the 21-key R26 schema (19 spec fields plus `effort` and `risk`).
+- The report separates backup freshness, encryption/offsite controls and restore proof; no load, restart or restore drill was executed.
+- Current production is a single-node topology; the comparison to the target 2× Dell R640 is documented without claiming that the target is deployed.
