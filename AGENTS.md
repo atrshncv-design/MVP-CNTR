@@ -27,15 +27,15 @@
 ```
 
 <!-- autopilot:start -->
-# Платформа «Технозрелость» — памятка агенту (tier T3, верифицировано 2026-09-16)
-Память из кода; стек Next.js 16 + FastAPI + PostgreSQL 16/pgvector + MinIO/ClamAV/Redis/nginx; УдГУ CLI офлайн без БД.
+# Платформа «Технозрелость» — памятка агенту (tier T3, аудит 2026-09-21)
+Стек: Next.js 16 + FastAPI + PostgreSQL/pgvector + Redis + MinIO + ClamAV + nginx; УдГУ CLI офлайн без БД.
 ## Заголовок и строка
-Tier T3; швы — публичная HTTP-граница API + `pytest`/`npm test`/линт/сборки; границы из кода: auth/registry/realtime/files/ai/frontend-auth/landing/infra-backup/infra-observe/db.
+T3; швы — публичный HTTP API, pytest/npm test, линт и сборки; аудит: `docs/audit/2026-09-21-production/README.md`.
 ## Команды
-- Полные сюиты (оркестратор 2026-09-16, установкой не перепроверялось): `cd technozrelost-backend && uv run pytest -q` → 507 passed; `cd technozrelost-frontend && npm test` → 202 passed, `npm run build` → success.
-- Линт/типы backend: `uv run ruff check app tests infra/alerter scripts/udgu_ingest`, `uv run mypy app`; CI-образец — `.github/workflows/ci.yml` (`uv sync --locked --extra dev`, `pip-audit`, `npm audit`, docker-сборка).
-- Один файл backend: `cd technozrelost-backend && uv run pytest tests/test_ci_gates.py -q`; один файл frontend: `cd technozrelost-frontend && node --test tests/offline.test.mjs`.
-- Голый `uv sync` без `--extra dev` сносит dev-зависимости — запрещён; `python` может отсутствовать — использовать `uv run python` или `python3`.
+- Backend: `cd technozrelost-backend && uv run ruff check app tests infra/alerter scripts/udgu_ingest` (green); `uv run mypy app` stops on numpy stub syntax under Python 3.14; `uv run pytest -q` reaches 1 warning and 720 setup errors because PostgreSQL `127.0.0.1:5432` is unavailable (31 tests passed before setup failures).
+- Frontend: `cd technozrelost-frontend && npm test` → 171 passed, 38 `ERR_MODULE_NOT_FOUND` (`next-intl`); `npm run build` → `next: command not found`.
+- Focused non-DB set: 32 passed; CI — `.github/workflows/ci.yml`.
+- Использовать `uv sync --locked --extra dev`; голый `uv sync` запрещён; Python — `uv run python`/`python3`.
 ## Структура
 - `technozrelost-backend/app/main.py` — композиция FastAPI, middleware, роутеры `/api/v1`.
 - `technozrelost-backend/app/api/v1/` — доменные роутеры: auth/projects/nioktr/executors/files/realtime/health/metrics и др.
@@ -93,8 +93,13 @@ Tier T3; швы — публичная HTTP-граница API + `pytest`/`npm t
 - Prod-guard падает на dev-дефолтах/пустых секретах и пустом `REDIS_URL`; dev-дефолт локального API только для dev (`technozrelost-frontend/next.config.ts`).
 - CSP/nonce и security-заголовки — источник nginx, дубли upstream вырезаются `proxy_hide_header`.
 - Флейки общей тестовой БД под параллельными прогонами лечатся повтором.
+## Аудит и ограничения
+- Артефакты аудита находятся в `docs/audit/2026-09-21-production/`: evidence, feature-matrix (33 строки), security, UX, AI, ops, final.
+- Gate: 30 findings, 16 обязательных артефактов, решение `GO WITH CONDITIONS`; условия C1–C4 и список UNKNOWN указаны в `09-final/README.md`.
+- Production только read-only/low-rate: без writes/DDL/migrations/seeds/restart/deploy/restore/fuzz/load; секреты и значения env не читать.
+- Недоказанное состояние — `UNKNOWN`; зависимости не ставить, писать `BLOCKED: <имя> — <причина>`; код продукта и `.autopilot/` не менять.
 ## Как здесь работает Autopilot
-- Память собирается из кода + `interfaces.md` этого прогона; spec/tickets/manifest не открывать.
-- Состояние поднимается чтением `.autopilot/state.js` и `dashboard.html` прогона, затем код по швам выше.
-- Пуш каждого коммита в `origin https://github.com/atrshncv-design/MVP-CNTR.git`; секреты только именами, никогда значениями.
+- Память собирается из фактического кода и текущего каталога `.autopilot/` (state/interfaces этого прогона); spec/manifest/tickets не открывать.
+- Работать в изолированном worktree; отчёты писать только в `docs/audit/2026-09-21-production/`; сырые transcripts не коммитить.
+- Секреты — только имена; после изменений сверять пути и JSON/CSV gates; тяжёлые suite не повторять без причины.
 <!-- autopilot:end -->

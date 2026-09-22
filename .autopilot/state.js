@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "production-technical-audit",
-  "dir": "2026-09-21-production-technical-audit--wip",
+  "dir": "2026-09-21-production-technical-audit",
   "title": "Полный технический аудит production MVP",
   "mode": "interview",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-09-21T16:44:28+04:00",
-  "updatedAt": "2026-09-22T18:38:24+04:00",
-  "finishedAt": null,
+  "updatedAt": "2026-09-22T19:01:08+04:00",
+  "finishedAt": "2026-09-22T19:01:08+04:00",
   "stages": [
     { "id": "preflight", "status": "done", "startedAt": "2026-09-21T16:44:28+04:00", "finishedAt": "2026-09-21T16:51:50+04:00" },
     { "id": "manifest", "status": "done", "startedAt": "2026-09-21T16:51:50+04:00", "finishedAt": "2026-09-21T16:51:50+04:00", "note": "37 атомарных требований" },
@@ -20,8 +20,8 @@ window.STATE =
     { "id": "spec", "status": "done", "startedAt": "2026-09-21T16:52:32+04:00", "finishedAt": "2026-09-21T17:12:47+04:00", "note": "G2 PASS после двух раундов дополнений" },
     { "id": "plan", "status": "done", "startedAt": "2026-09-21T17:12:47+04:00", "finishedAt": "2026-09-21T17:18:35+04:00", "note": "9 тасков, ярус T3, 9 последовательных волн" },
     { "id": "build", "status": "done", "startedAt": "2026-09-21T17:18:35+04:00", "finishedAt": "2026-09-22T18:38:24+04:00", "note": "9 из 9 тасков готовы; T03 recovered with owner authorization" },
-    { "id": "review", "status": "active", "startedAt": "2026-09-22T18:38:24+04:00", "note": "Per-ticket review complete; blind acceptance pending" },
-    { "id": "final", "status": "pending" }
+    { "id": "review", "status": "done", "startedAt": "2026-09-22T18:38:24+04:00", "finishedAt": "2026-09-22T19:01:08+04:00", "note": "Per-ticket review and blind G4 acceptance complete" },
+    { "id": "final", "status": "done", "startedAt": "2026-09-22T18:38:24+04:00", "finishedAt": "2026-09-22T19:01:08+04:00", "note": "GO WITH CONDITIONS; 30 findings, 16/16 artifacts, C1-C4" }
   ],
   "requirements": { "total": 37, "done": 34, "inTicket": 0, "inSpec": 0, "placeholder": 0, "deferred": 3, "dropped": 0 },
   "tickets": [
@@ -45,7 +45,7 @@ window.STATE =
     "reviewers": "fresh narrow-context GPT-5.6 Luna low reviewers for remaining tickets",
     "repairs": "one checkable condition per fresh Muse session"
   },
-  "tests": { "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)", "ticket02": "CSV schema/status/evidence validation green: 33 rows, fixed 12-column schema, closed statuses, no empty evidence IDs; table count independently verified as 36; focused secret scan green", "ticket03": "findings JSON valid (6 records); Ruff green; reproducible Python and JS/TS inventories; coupling command exit 0 with 5 lines/4 cross-import facts; remaining product suites retain exact environment blockers", "ticket04": "findings JSON schema valid (6 records); production catalog SELECTs succeeded without credential values/business rows; targeted migration test BLOCKED by absent local test DB (1 setup error); focused secret scan green", "ticket05": "findings JSON valid (5 records with effort/risk); independent non-DB security suite 32 passed; Ruff green by executor; DB-backed suite remains environment BLOCKED without local test DB", "ticket06": "check_ux.py green: 2 findings, 41 screenshots, viewports 1920/768/375; three JSON artifacts valid; frontend npm baseline remains 171 pass/38 fail because next-intl is absent", "ticket07": "check_ai.py green: 6 registry entries, 5 findings, 32 checklist tokens, 0/200 live calls; three JSON artifacts valid; independent non-DB pytest repeat 32 passed", "ticket08": "check_ops.py green: 6 findings, 27 checklist tokens, no load; findings JSON valid with 21 keys per record; two scoped re-reviews clean", "ticket09": "check_final.py green: 30 unique findings, 16/16 artifacts mapped, root README and gate included; UX/AI/operations sibling gates green" },
+  "tests": { "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)", "ticket02": "CSV schema/status/evidence validation green: 33 rows, fixed 12-column schema, closed statuses, no empty evidence IDs; table count independently verified as 36; focused secret scan green", "ticket03": "findings JSON valid (6 records); Ruff green; reproducible Python and JS/TS inventories; coupling command exit 0 with 5 lines/4 cross-import facts; remaining product suites retain exact environment blockers", "ticket04": "findings JSON schema valid (6 records); production catalog SELECTs succeeded without credential values/business rows; targeted migration test BLOCKED by absent local test DB (1 setup error); focused secret scan green", "ticket05": "findings JSON valid (5 records with effort/risk); independent non-DB security suite 32 passed; Ruff green by executor; DB-backed suite remains environment BLOCKED without local test DB", "ticket06": "check_ux.py green: 2 findings, 41 screenshots, viewports 1920/768/375; three JSON artifacts valid; frontend npm baseline remains 171 pass/38 fail because next-intl is absent", "ticket07": "check_ai.py green: 6 registry entries, 5 findings, 32 checklist tokens, 0/200 live calls; three JSON artifacts valid; independent non-DB pytest repeat 32 passed", "ticket08": "check_ops.py green: 6 findings, 27 checklist tokens, no load; findings JSON valid with 21 keys per record; two scoped re-reviews clean", "ticket09": "check_final.py green: 30 unique findings, 16/16 artifacts mapped, root README and gate included; UX/AI/operations sibling gates green", "finalRegression": "Ruff green; backend pytest 720 setup errors due absent PostgreSQL; mypy blocked by numpy stub/Python 3.14; frontend 171 passed/38 missing next-intl; build blocked because next is absent; focused non-DB set previously 32 passed" },
   "debt": { "placeholders": [], "assumptions": [], "emptyEnv": [] },
   "additions": [],
   "coverage": { "firstPassFindings": 7, "secondPassFindings": 3, "fixed": 10, "status": "pass", "note": "Добавлены чек-листы, MVP/инфра-границы, 16 артефактов, коммуникация, doctor и три явные схемы" },
@@ -61,5 +61,14 @@ window.STATE =
     { "ticket": "08", "area": "artifact-gate", "file": "docs/audit/2026-09-21-production/08-operations/check_ops.py", "note": "The operations gate uses substring coverage and does not prove item-level evidence or UNKNOWN status; final synthesis must retain the report's explicit evidence boundaries." }
   ],
   "reviewers": { "manifestSpec": "/root/economy_manifest_spec", "craft": "/root/economy_craft" },
-  "blind": null
+  "concernTriage": { "fixNow": 0, "report": 9, "drop": 0, "note": "All deferred concerns are evidence-boundary or environment limitations already carried into the final report; none warrants changing product code in this audit-only run." },
+  "blind": {
+    "status": "pass-with-conditions",
+    "verdict": "GO WITH CONDITIONS",
+    "drift": [],
+    "implemented": ["environment evidence", "feature matrix", "architecture map", "unified findings", "UX public pass", "risk matrix", "quick wins", "30/60/90", "backlog", "UNKNOWN register", "gate decision"],
+    "partial": ["server/runtime evidence", "database/data protection", "authorized security runtime", "live AI", "operations/restore/performance"],
+    "unavailable": ["safe test accounts", "live AI production eval", "load/fuzz/restart/restore", "RPO/RTO proof", "offsite contents", "at-rest encryption", "full DB internals and logs"],
+    "commands": ["check_final.py: 30 findings, 16/16 artifacts", "check_ops.py: 6 findings", "check_ai.py: 6 entries, 0/200", "check_ux.py: 2 findings, 41 screenshots"]
+  }
 }

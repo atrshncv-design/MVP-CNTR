@@ -31,4 +31,4 @@
 | 2026-09-07 | `2026-09-07-registry-limits-env` | сдан | Лимиты реестра в env, дефолты те же, 405 passed |
 | 2026-09-08 | `2026-09-08-audit-remediation` | сдан | 22 таска: аудит-фиксы + zh до конца, hi убран, входы и тоггл починены; приёмка pass |
 | 2026-09-15 | `2026-09-15-mvp-deploy-scope` | сдан | Одноузловой MVP и три пакета релиза; public/ready работают, внешние AI/backup/alert/load гейты остались неподтверждёнными |
-| 2026-09-21 | `2026-09-21-production-technical-audit--wip` | в работе | — |
+| 2026-09-21 | `2026-09-21-production-technical-audit` | сдан | Полный production-аудит: 30 findings, 16/16 артефактов, `GO WITH CONDITIONS`, risk/backlog/30-60-90 |
