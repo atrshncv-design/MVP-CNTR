@@ -1,0 +1,57 @@
+{
+  "cap": 200,
+  "live_provider_requests": 0,
+  "note": "No provider calls were made in this audit (auth-gated live eval is UNKNOWN until safe test accounts exist, R36). All cases below are offline/static: embeddings math (semantic-ru-v2, no network) and ranking-parser behavior, measured once locally on 2026-09-22 and frozen here. Queries are synthetic or GOST-public only; no personal data and no project secrets are used or stored.",
+  "cases": [
+    {
+      "query": "Что такое УГТ 6 по ГОСТ Р 58048-2017?",
+      "kind": "GOST-public grounding probe (offline)",
+      "lexical_score": 0.6455,
+      "vector_cosine": 0.6513,
+      "combined_065_035": 0.6475,
+      "verdict": "retrieved (lex>0, combined>=0.15): relevance gate passes, honest-excerpt path would cite the section"
+    },
+    {
+      "query": "беспилотный летательный аппарат испытания",
+      "kind": "synonym probe (дрон/БПЛА canon syn_bpla, offline)",
+      "lexical_score": 0.4629,
+      "vector_cosine": 0.507,
+      "combined_065_035": 0.4784,
+      "verdict": "retrieved via synonym canon: query/document share syn_bpla even with zero literal overlap"
+    },
+    {
+      "query": "Ты работаешь?",
+      "kind": "off-topic probe (offline)",
+      "lexical_score": 0.0,
+      "vector_cosine": 0.0,
+      "combined_065_035": 0.0,
+      "verdict": "rejected by relevance gate (lex=0, combined<0.15): NO_DOCS_TEXT refusal path, no garbage top_k"
+    },
+    {
+      "query": "xyzqqq nonsense",
+      "kind": "garbage probe (offline)",
+      "lexical_score": 0.0,
+      "vector_cosine": 0.0,
+      "combined_065_035": 0.0,
+      "verdict": "rejected by relevance gate: refusal path, no hallucinated citations"
+    },
+    {
+      "query": "parse_llm_ranking: five numbered lines",
+      "kind": "matching rerank parser probe (static behavior)",
+      "lexical_score": 1.0,
+      "verdict": "order [0,1,2,3,4] parsed: LLM rerank would reorder candidates (method=llm)"
+    },
+    {
+      "query": "parse_llm_ranking: prose without numbers",
+      "kind": "matching rerank parser probe (static behavior)",
+      "lexical_score": 0.0,
+      "verdict": "None returned: script order preserved, reasons untouched (method stays script)"
+    },
+    {
+      "query": "parse_llm_ranking: two numbered lines of five",
+      "kind": "matching rerank parser probe (static behavior)",
+      "lexical_score": 0.0,
+      "verdict": "None returned (<3 lines threshold): partial ranking does not reorder, no silent mis-rank"
+    }
+  ]
+}

@@ -71,3 +71,10 @@
 - UX artifacts: `docs/audit/2026-09-21-production/06-ux/ux.md`, `findings.json`, two machine-readable pass files and 41 PNG screenshots.
 - Findings interface: `UX-01`…`UX-02` use the common R26 schema with `effort` and `risk`; authorized screens remain `UNKNOWN` until safe test accounts exist.
 - `check_ux.py` is the in-zone artifact gate: 2 findings, 41 screenshots and all three required viewport classes.
+
+## T07 — AI/RAG registry and eval
+
+- Canonical registry: `docs/audit/2026-09-21-production/07-ai/ai-registry.json`, 6 entries using the exact 17-field spec schema.
+- AI evidence: `EV-022` static inventory, `EV-023` offline eval and gates, `EV-024` request-cap/denylist/tenant proof; original collection instant is unavailable and bounded by file metadata, with exact re-verification UTC recorded.
+- Safe evaluation used 32 checklist tokens and 0 live calls out of the 200-call cap; this is distinct from the independently repeated 32-passed non-DB pytest set.
+- Findings `AI-01`…`AI-05` use the R26 schema; live synthesis, rerank, citations, outage behavior and authenticated tenant isolation remain `UNKNOWN` without safe test accounts.

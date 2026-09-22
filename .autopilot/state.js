@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.agents/skills/autopilot",
   "startedAt": "2026-09-21T16:44:28+04:00",
-  "updatedAt": "2026-09-22T08:33:59+04:00",
+  "updatedAt": "2026-09-22T08:48:52+04:00",
   "finishedAt": null,
   "stages": [
     { "id": "preflight", "status": "done", "startedAt": "2026-09-21T16:44:28+04:00", "finishedAt": "2026-09-21T16:51:50+04:00" },
@@ -19,7 +19,7 @@ window.STATE =
     { "id": "briefing", "status": "done", "startedAt": "2026-09-21T16:51:50+04:00", "finishedAt": "2026-09-21T16:52:32+04:00", "note": "Интервью завершено: доступ, безопасность, AI, роли, реестры, UX, production-границы" },
     { "id": "spec", "status": "done", "startedAt": "2026-09-21T16:52:32+04:00", "finishedAt": "2026-09-21T17:12:47+04:00", "note": "G2 PASS после двух раундов дополнений" },
     { "id": "plan", "status": "done", "startedAt": "2026-09-21T17:12:47+04:00", "finishedAt": "2026-09-21T17:18:35+04:00", "note": "9 тасков, ярус T3, 9 последовательных волн" },
-    { "id": "build", "status": "active", "startedAt": "2026-09-21T17:18:35+04:00", "note": "5 из 9 тасков готовы; 1 failed" },
+    { "id": "build", "status": "active", "startedAt": "2026-09-21T17:18:35+04:00", "note": "6 из 9 тасков готовы; 1 failed" },
     { "id": "review", "status": "pending" },
     { "id": "final", "status": "pending" }
   ],
@@ -31,7 +31,7 @@ window.STATE =
     { "id": "04", "title": "БД и защита данных", "requirements": ["R03","R11","R12","R14","R26","R30","R31"], "blockedBy": ["01"], "wave": 4, "zone": ["docs/audit/2026-09-21-production/04-database/"], "status": "done", "startedAt": "2026-09-21T21:27:14+04:00", "finishedAt": "2026-09-21T21:45:31+04:00", "retries": 0, "repairs": 2, "handoffs": 0 },
     { "id": "05", "title": "Application security и RBAC", "requirements": ["R03","R12","R13","R14","R15","R25","R26","R30","R31"], "blockedBy": ["02","04"], "wave": 5, "zone": ["docs/audit/2026-09-21-production/05-security/"], "status": "done", "startedAt": "2026-09-22T07:58:04+04:00", "finishedAt": "2026-09-22T08:14:49+04:00", "retries": 1, "repairs": 1, "handoffs": 0 },
     { "id": "06", "title": "UX/UI production", "requirements": ["R03","R16","R17","R18","R25","R26","R30","R31"], "blockedBy": ["02"], "wave": 6, "zone": ["docs/audit/2026-09-21-production/06-ux/"], "status": "done", "startedAt": "2026-09-22T08:17:46+04:00", "finishedAt": "2026-09-22T08:33:59+04:00", "retries": 1, "repairs": 1, "handoffs": 0 },
-    { "id": "07", "title": "AI/RAG registry и eval", "requirements": ["R03","R12","R19","R20","R21","R22","R25","R26","R30","R31"], "blockedBy": ["01","02","05"], "wave": 7, "zone": ["docs/audit/2026-09-21-production/07-ai/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
+    { "id": "07", "title": "AI/RAG registry и eval", "requirements": ["R03","R12","R19","R20","R21","R22","R25","R26","R30","R31"], "blockedBy": ["01","02","05"], "wave": 7, "zone": ["docs/audit/2026-09-21-production/07-ai/"], "status": "done", "startedAt": "2026-09-22T08:36:09+04:00", "finishedAt": "2026-09-22T08:48:52+04:00", "retries": 0, "repairs": 1, "handoffs": 0 },
     { "id": "08", "title": "Эксплуатация и производительность", "requirements": ["R03","R06","R23","R24","R25","R26","R30","R31"], "blockedBy": ["01","04"], "wave": 8, "zone": ["docs/audit/2026-09-21-production/08-operations/"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 },
     { "id": "09", "title": "Синтез, backlog и gate-решение", "requirements": ["R01","R02","R03","R04","R05","R08","R26","R27","R28","R30","R31","R32","R34"], "blockedBy": ["02","03","04","05","06","07","08"], "wave": 9, "zone": ["docs/audit/2026-09-21-production/09-final/","docs/audit/2026-09-21-production/README.md"], "status": "pending", "retries": 0, "repairs": 0, "handoffs": 0 }
   ],
@@ -45,7 +45,7 @@ window.STATE =
     "reviewers": "fresh narrow-context GPT-5.6 Luna low reviewers for remaining tickets",
     "repairs": "one checkable condition per fresh Muse session"
   },
-  "tests": { "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)", "ticket02": "CSV schema/status/evidence validation green: 33 rows, fixed 12-column schema, closed statuses, no empty evidence IDs; table count independently verified as 36; focused secret scan green", "ticket04": "findings JSON schema valid (6 records); production catalog SELECTs succeeded without credential values/business rows; targeted migration test BLOCKED by absent local test DB (1 setup error); focused secret scan green", "ticket05": "findings JSON valid (5 records with effort/risk); independent non-DB security suite 32 passed; Ruff green by executor; DB-backed suite remains environment BLOCKED without local test DB", "ticket06": "check_ux.py green: 2 findings, 41 screenshots, viewports 1920/768/375; three JSON artifacts valid; frontend npm baseline remains 171 pass/38 fail because next-intl is absent" },
+  "tests": { "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)", "ticket02": "CSV schema/status/evidence validation green: 33 rows, fixed 12-column schema, closed statuses, no empty evidence IDs; table count independently verified as 36; focused secret scan green", "ticket04": "findings JSON schema valid (6 records); production catalog SELECTs succeeded without credential values/business rows; targeted migration test BLOCKED by absent local test DB (1 setup error); focused secret scan green", "ticket05": "findings JSON valid (5 records with effort/risk); independent non-DB security suite 32 passed; Ruff green by executor; DB-backed suite remains environment BLOCKED without local test DB", "ticket06": "check_ux.py green: 2 findings, 41 screenshots, viewports 1920/768/375; three JSON artifacts valid; frontend npm baseline remains 171 pass/38 fail because next-intl is absent", "ticket07": "check_ai.py green: 6 registry entries, 5 findings, 32 checklist tokens, 0/200 live calls; three JSON artifacts valid; independent non-DB pytest repeat 32 passed" },
   "debt": { "placeholders": [], "assumptions": [], "emptyEnv": [] },
   "additions": [],
   "coverage": { "firstPassFindings": 7, "secondPassFindings": 3, "fixed": 10, "status": "pass", "note": "Добавлены чек-листы, MVP/инфра-границы, 16 артефактов, коммуникация, doctor и три явные схемы" },
@@ -59,7 +59,8 @@ window.STATE =
     { "ticket": "04", "area": "data-protection", "file": "docs/audit/2026-09-21-production/04-database/README.md", "note": "Masking/log controls remain UNKNOWN; token hashing and seed behavior are separate controls and do not prove log masking." },
     { "ticket": "04", "area": "migrations", "file": "docs/audit/2026-09-21-production/04-database/db-model.md", "note": "Only migration 0036 downgrade was inspected; chain-wide downgrade/transaction/rollback coverage remains partial." },
     { "ticket": "05", "area": "evidence-scope", "file": "docs/audit/2026-09-21-production/05-security/findings.json", "note": "Some static/local observations list production in affected_environments although deployed behavior is UNKNOWN because server HEAD differs; final synthesis must not present those as confirmed production findings." },
-    { "ticket": "06", "area": "screenshot-safety", "file": "docs/audit/2026-09-21-production/06-ux/check_ux.py", "note": "The artifact gate scans screenshot filenames, not rendered text inside PNGs; screenshots are public unauthenticated pages, but content-level sensitive-data absence is not machine-proven." }
+    { "ticket": "06", "area": "screenshot-safety", "file": "docs/audit/2026-09-21-production/06-ux/check_ux.py", "note": "The artifact gate scans screenshot filenames, not rendered text inside PNGs; screenshots are public unauthenticated pages, but content-level sensitive-data absence is not machine-proven." },
+    { "ticket": "07", "area": "artifact-gate", "file": "docs/audit/2026-09-21-production/07-ai/check_ai.py", "note": "The AI gate checks non-empty arrays and token presence but does not enforce the reported 6/5 cardinalities or item-level semantic coverage; final synthesis must treat it as a structural gate, not a semantic oracle." }
   ],
   "reviewers": { "manifestSpec": "/root/economy_manifest_spec", "craft": "/root/economy_craft" },
   "blind": null
