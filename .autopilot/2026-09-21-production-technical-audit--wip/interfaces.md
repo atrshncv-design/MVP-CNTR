@@ -57,3 +57,10 @@
 - `alembic_version=0037` proves migration-version parity only; schema/content/manual drift remains `UNKNOWN` until definitions or checksums are reconciled.
 - R14 static seams: `Role`/`Permission`, `require_role`/`has_role`, `Project.created_by`, `ProjectMember`, `can_access_project`, `ProjectInvite`, `require_project_admin`; authorized production runtime remains `UNKNOWN`.
 - No business rows or credential values were read or stored; production catalog queries were SELECT-only through existing container-environment passthrough.
+
+## T05 — Application security and RBAC
+
+- Security evidence: `EV-016` public security headers, `EV-017` static auth/RBAC/OWASP inventory, `EV-018` green non-DB acceptance set, `EV-018b` explicit local-DB environment blocker.
+- Findings interface: `SEC-01`…`SEC-05` in `docs/audit/2026-09-21-production/05-security/findings.json`, including the fixed finding schema plus `effort` and `risk`.
+- Static access seams remain role + ownership + active membership/invite; authenticated production behavior remains `UNKNOWN` until approved test accounts exist.
+- Execution provenance for this ticket: `autopilot-opencode` with `opencode-go/muse-spark-1.3-contributor`; credentials were neither read nor recorded.
