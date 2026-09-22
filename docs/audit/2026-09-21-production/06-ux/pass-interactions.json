@@ -1,0 +1,37 @@
+{
+  "started": "2026-09-22T04:26:04Z",
+  "checks": [
+    {
+      "name": "keyboard-tab-login-1920",
+      "focus_sequence": [
+        "a|Перейти к основному содержимому",
+        "button|Русский",
+        "button|English",
+        "button|中文 (Chinese)",
+        "input|email",
+        "input|password",
+        "button|Войти",
+        "a|Подать заявку"
+      ]
+    },
+    {
+      "name": "language-en",
+      "lang_before": "ru",
+      "lang_after": "en",
+      "title": "Techno-maturity — digital technology transfer platform of CNTR UD",
+      "screenshot": "screenshots/home-en-1920.png"
+    },
+    {
+      "name": "mobile-menu-375",
+      "state": {
+        "dialogs": 0,
+        "expanded": [
+          "false",
+          "true"
+        ]
+      },
+      "screenshot": "screenshots/home-menu-375.png"
+    }
+  ],
+  "finished": "2026-09-22T04:26:22Z"
+}

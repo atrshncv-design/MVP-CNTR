@@ -64,3 +64,10 @@
 - Findings interface: `SEC-01`…`SEC-05` in `docs/audit/2026-09-21-production/05-security/findings.json`, including the fixed finding schema plus `effort` and `risk`.
 - Static access seams remain role + ownership + active membership/invite; authenticated production behavior remains `UNKNOWN` until approved test accounts exist.
 - Execution provenance for this ticket: `autopilot-opencode` with `opencode-go/muse-spark-1.3-contributor`; credentials were neither read nor recorded.
+
+## T06 — Production UX/UI
+
+- Browser evidence: `EV-019` public-route pass at 1920/768/375, `EV-020` keyboard/language/menu interaction probes, `EV-021` label probe with its timestamp limitation stated explicitly.
+- UX artifacts: `docs/audit/2026-09-21-production/06-ux/ux.md`, `findings.json`, two machine-readable pass files and 41 PNG screenshots.
+- Findings interface: `UX-01`…`UX-02` use the common R26 schema with `effort` and `risk`; authorized screens remain `UNKNOWN` until safe test accounts exist.
+- `check_ux.py` is the in-zone artifact gate: 2 findings, 41 screenshots and all three required viewport classes.
