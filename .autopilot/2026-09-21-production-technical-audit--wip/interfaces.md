@@ -85,3 +85,10 @@
 - Findings `OPS-01`…`OPS-06` use the 21-key R26 schema (19 spec fields plus `effort` and `risk`).
 - The report separates backup freshness, encryption/offsite controls and restore proof; no load, restart or restore drill was executed.
 - Current production is a single-node topology; the comparison to the target 2× Dell R640 is documented without claiming that the target is deployed.
+
+## T03 — Code quality and architecture (recovered)
+
+- Architecture and data-flow map: `docs/audit/2026-09-21-production/03-code/architecture.md`; code-quality inventory and evidence boundaries: `hardcode-stubs-deadends.md`.
+- Python and frontend JS/TS definition/import inventories are separate and reproducible from the worktree root; they are name inventories, not semantic clone detection.
+- Semantic duplication, uninspected raw-SQL paths, complete unused-dependency status and runtime dead-code claims remain `UNKNOWN` where evidence is insufficient.
+- Local gates preserve exact observed outcomes and environment blockers; findings use the common machine-readable schema.
