@@ -92,3 +92,10 @@
 - Python and frontend JS/TS definition/import inventories are separate and reproducible from the worktree root; they are name inventories, not semantic clone detection.
 - Semantic duplication, uninspected raw-SQL paths, complete unused-dependency status and runtime dead-code claims remain `UNKNOWN` where evidence is insufficient.
 - Local gates preserve exact observed outcomes and environment blockers; findings use the common machine-readable schema.
+
+## T09 — Final synthesis and gate
+
+- Root entry point: `docs/audit/2026-09-21-production/README.md`; detailed final report: `09-final/README.md`.
+- Unified registry: `09-final/findings.json`, 30 unique findings ordered high-to-low without changing source severity.
+- Artifact gate: `09-final/check_final.py` enforces all 16 mandatory categories, root README, its own gate file, anchored sections 12–16, R32 and the gate decision.
+- Final decision is `GO WITH CONDITIONS`; C1–C4 and the explicit UNKNOWN/access list are the release conditions, while planned features remain outside regression accounting.

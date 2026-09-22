@@ -1,0 +1,1042 @@
+[
+  {
+    "id": "CODE-03",
+    "area": "code",
+    "severity": "high",
+    "confidence": "high",
+    "affected_environments": [
+      "local"
+    ],
+    "affected_roles": [
+      "maintainer"
+    ],
+    "description": "Каноничный backend-baseline: 31 passed, 720 setup errors — все ошибки setup/fixture (psycopg.OperationalError: session autouse-фикстура требует живую тестовую БД, включая test_ci_gates.py с 5 errors). Продуктовых падений ноль; локальная воспроизводимость гейта без БД отсутствует.",
+    "business_effect": "Аудит и ревью не могут подтвердить качество backend green-to-green; gate-решение опирается на CI, а не на локальный прогон.",
+    "technical_cause": "Фикстуры требуют PostgreSQL; sqlite-фолбэка или скипа с явным статусом нет.",
+    "evidence_ids": [
+      "EV-001"
+    ],
+    "reproduction_steps": [
+      "cd technozrelost-backend && uv run pytest -q 2>&1 | tail -5",
+      "cd technozrelost-backend && uv run pytest tests/test_ci_gates.py -q 2>&1 | tail -8"
+    ],
+    "safe_recommendation": "Документировать требование тестовой БД и каноничную команду подготовки; provisioning — только с подтверждения владельца, в этом прогоне не запускать.",
+    "complexity": "S",
+    "dependencies": [],
+    "regression_risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "В gates.md зафиксирован BLOCKED-статус с точной ошибкой; повтор возможен по документированной команде.",
+    "kind": "risk"
+  },
+  {
+    "id": "OPS-01",
+    "area": "operations",
+    "severity": "high",
+    "confidence": "high",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "Весь контур — single-node: один хост, nginx/backend/db-primary/redis/minio в единственном экземпляре (12/12 healthy на момент аудита, EV-003). Отказ хоста, диска или любого stateful-сервиса полностью останавливает платформу; второй БД нет (replica not_configured, EV-004; детали — DB-05). До цели 2xR640 с отказоустойчивостью разрыв полный (таблица в operations.md).",
+    "business_effect": "Любой отказ уровня хоста — полный простой сервиса и риск потери данных сверх последнего локального снапшота (усиливается OPS-02).",
+    "technical_cause": "P1-топология: replicas 1, без streaming-реплики, без второго узла (docker-compose.prod.yml, EV-025).",
+    "evidence_ids": [
+      "EV-003",
+      "EV-004",
+      "EV-025"
+    ],
+    "reproduction_steps": [
+      "docker ps: вторых экземпляров db/backend/redis/nginx нет (EV-003)",
+      "GET /api/v1/ready: replica not_configured (EV-004)",
+      "Сверить backend deploy.replicas: 1 в docker-compose.prod.yml (EV-025)"
+    ],
+    "safe_recommendation": "Ничего не разворачивать в прогоне (вне рамок). В 30/60/90: план переезда на 2xR640 (replica+failover, backend x2, offsite) после решения владельца; до тех пор держать свежие снапшоты (OPS-02/OPS-03).",
+    "complexity": "high",
+    "effort": "high",
+    "dependencies": [
+      "DB-05"
+    ],
+    "regression_risk": "medium",
+    "risk": "high",
+    "migration_required": false,
+    "downtime_required": true,
+    "acceptance_criteria": "Владелец формально принял single-node риск либо утверждён срок переезда на отказоустойчивую топологию.",
+    "kind": "risk"
+  },
+  {
+    "id": "AI-01",
+    "area": "ai",
+    "severity": "medium",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "server",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "У LLM-поверхностей нет денежных бюджетов/квот и circuit breaker; /match и /rag/* не имеют собственного per-user rate-гейта (только /chat: 30/60с); учёт токенов контекста отсутствует. Единственные крышки — LLM_MAX_TOKENS=800, semaphore-4, таймауты 20с/2с. Пока gateway выключен (дефолт) риск латентен; при включении spend-поверхность ограничена только rate чата.",
+    "business_effect": "При включённом gateway один пользователь может генерировать неограниченное число /match-запросов (1 LLM-вызов на запрос) без квоты; мониторинг трат отсутствует — сюрприз в счёте провайдера.",
+    "technical_cause": "Cost-контур спроектирован как rate+token-cap, без budget/quota/breaker-объектов (ai_assistant.py:33-46, ai_metrics.py:19-21).",
+    "evidence_ids": [
+      "EV-001",
+      "EV-022",
+      "EV-023",
+      "EV-024"
+    ],
+    "reproduction_steps": [
+      "Открыть app/services/ai_assistant.py:33-46 (таймауты/токены/semaphore) и app/services/ai_metrics.py:19-35 (rate только для chat)",
+      "Убедиться: rg -n 'budget|quota|circuit|CircuitBreaker' technozrelost-backend/app — только комментарии/отсутствие объектов",
+      "Сверить: app/api/v1/match.py не вызывает ai_metrics.allow_request (в отличие от chat.py:26)"
+    ],
+    "safe_recommendation": "Вынести в backlog (R29, не executable до согласования): per-route rate для /match и /rag/search, глобальный дневной budget-guard с alert, оценка токенов контекста до вызова. В прогоне код не менять.",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [
+      "operations-report"
+    ],
+    "regression_risk": "low",
+    "risk": "medium",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Включённый gateway живёт под budget/quota/rate-контуром; превышение даёт честный fallback, а не счёт без крышки.",
+    "kind": "risk"
+  },
+  {
+    "id": "CODE-01",
+    "area": "code",
+    "severity": "medium",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "server"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "Около 30 мест с `except Exception` и `pass` подавляют ошибки (auth_throttle, rag, file_storage, matching, metrics, main loop, deps, nioktr, metrics router). Каждый помечен причиной/noqa, но централизованного учёта подавлений нет.",
+    "business_effect": "Скрытые сбои (Redis, RAG, ClamAV, LLM) выглядят как норма; диагностика инцидентов дороже.",
+    "technical_cause": "Defensive-паттерн fallback без единого error-budget: исключение гасится и возвращается дефолт.",
+    "evidence_ids": [
+      "EV-001"
+    ],
+    "reproduction_steps": [
+      "rg -n 'except Exception|except:' technozrelost-backend/app --glob '*.py'",
+      "сверить с app/services/auth_throttle.py:68,116,150, rag.py:163,193,212, file_storage.py:67-343, matching.py:42,267"
+    ],
+    "safe_recommendation": "Завести счётчик suppressed_total с меткой модуля в metrics.py; read-only проверка, код не менять в этом прогоне.",
+    "complexity": "S",
+    "dependencies": [],
+    "regression_risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Каждое подавление имеет throttle-safe метрику; Ruff остаётся зелёным.",
+    "kind": "debt"
+  },
+  {
+    "id": "CODE-02",
+    "area": "code",
+    "severity": "medium",
+    "confidence": "medium",
+    "affected_environments": [
+      "local",
+      "server",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "Глобальное мутабельное состояние: ai_metrics.METRICS dict инкрементируется из async-путей (timeouts_total), синхронизация — threading.Lock в metrics.py и asyncio.Semaphore(4) в ai_assistant.py. Гонки частично закрыты, но инвариант нигде не зафиксирован.",
+    "business_effect": "Риск потерянных/искажённых AI-метрик (timeouts, queue) при конкуренции; неверные capacity-решения.",
+    "technical_cause": "Модульный синглтон метрик без инкапсуляции и concurrency-теста.",
+    "evidence_ids": [
+      "EV-001"
+    ],
+    "reproduction_steps": [
+      "Открыть app/services/ai_metrics.py:14, app/services/ai_assistant.py:36,221-268, app/services/metrics.py:42",
+      "rg -n 'METRICS\\[' technozrelost-backend/app"
+    ],
+    "safe_recommendation": "Инкапсулировать счётчики за потокобезопасным API + unit-тест конкуренции; read-only в этом прогоне.",
+    "complexity": "M",
+    "dependencies": [],
+    "regression_risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Конкурентный тест инкрементов стабильно зелёный; публичные швы не меняются.",
+    "kind": "risk"
+  },
+  {
+    "id": "CODE-06",
+    "area": "code",
+    "severity": "medium",
+    "confidence": "high",
+    "affected_environments": [
+      "local"
+    ],
+    "affected_roles": [
+      "maintainer"
+    ],
+    "description": "Фронт-сьют заблокирован окружением (BLOCKED, не продуктовая регрессия): наблюдаемое 171 passed / 38 import errors / total 209 — все 38 ошибок импорта с ERR_MODULE_NOT_FOUND next-intl (node_modules отсутствует). Продуктовых падений не доказано.",
+    "business_effect": "Локальный фронт-контур качества заблокирован окружением и не подтверждает регрессии; опора только на CI после подготовки окружения.",
+    "technical_cause": "Зависимости не установлены в этом окружении; npm ci не запускался (молча ставить запрещено, решение — за оркестратором).",
+    "evidence_ids": [
+      "EV-001"
+    ],
+    "reproduction_steps": [
+      "cd technozrelost-frontend && npm test 2>&1 | tail -12",
+      "сверить, что все 38 ошибок — ERR_MODULE_NOT_FOUND next-intl, а не продуктовые ассёрты"
+    ],
+    "safe_recommendation": "Прогнать npm ci решением оркестратора и повторить оба гейта перед gate-решением; до этого статус — BLOCKED, не FAIL.",
+    "complexity": "S",
+    "dependencies": [],
+    "regression_risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "npm test и npm run build имеют зафиксированный итог после npm ci; до этого — BLOCKED без красного product-suite результата.",
+    "kind": "risk"
+  },
+  {
+    "acceptance_criteria": "Подтверждено шифрование at-rest для PG-volume, MinIO-объектов и локальных снапшотов (механизм + ротация ключей) либо зафиксировано его отсутствие как принятый риск.",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "admin"
+    ],
+    "business_effect": "При компрометации дисков/снапшотов хоста данные (включая ПДн и хэши паролей) читаемы напрямую.",
+    "complexity": "medium",
+    "confidence": "medium",
+    "dependencies": [
+      "operations-report"
+    ],
+    "description": "TLS на границе есть (nginx TLSv1.2/1.3, EV-012). Offsite защищён rclone crypt-guard (EV-012). Но шифрование at-rest локальных снапшотов (BACKUP_KEEP=7), PG-volume (136M) и MinIO-объектов (KMS/SSE отсутствует в compose, EV-012) не доказано: зависит от диска хоста, что вне зоны чтения.",
+    "downtime_required": false,
+    "evidence_ids": [
+      "EV-006",
+      "EV-011",
+      "EV-012"
+    ],
+    "area": "database",
+    "id": "DB-04",
+    "kind": "risk",
+    "migration_required": false,
+    "regression_risk": "low",
+    "reproduction_steps": [
+      "Проверить наличие KMS/SSE-ключей в compose (имена) — отсутствуют",
+      "Содержимое дисков/снапшотов не читать (запрет)"
+    ],
+    "safe_recommendation": "Вынести at-rest шифрование (LUKS/volume-encryption, MinIO SSE/KMS, шифрованные дампы) в 30/60/90 как риск с оценкой; в прогоне только зафиксировать UNKNOWN.",
+    "severity": "medium",
+    "technical_cause": "Single-node топология без заявленного дискового/object-шифрования."
+  },
+  {
+    "acceptance_criteria": "Либо реплика развёрнута и /ready показывает lag-метрики, либо single-node SPOF формально принят владельцем.",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "admin",
+      "maintainer"
+    ],
+    "business_effect": "Отказ единственного узла БД останавливает платформу; point-in-time recovery зависит только от снапшотов/WAL-offsite.",
+    "complexity": "high",
+    "confidence": "high",
+    "dependencies": [
+      "operations-report"
+    ],
+    "description": "Креды REPL_USER/REPL_PASSWORD заданы на db-primary (имена, EV-011), скрипты start-replica.sh существуют, но сервиса реплики нет среди 12 контейнеров (EV-003), а /ready отдаёт replica not_configured (EV-004). Репликация подготовлена, но не развёрнута.",
+    "downtime_required": true,
+    "evidence_ids": [
+      "EV-003",
+      "EV-004",
+      "EV-011"
+    ],
+    "area": "database",
+    "id": "DB-05",
+    "kind": "risk",
+    "migration_required": false,
+    "regression_risk": "medium",
+    "reproduction_steps": [
+      "docker ps: второго postgres нет",
+      "GET /api/v1/ready: replica not_configured (EV-004)"
+    ],
+    "safe_recommendation": "Ничего не разворачивать в прогоне (вне рамок). Передать факт в operations-зону для SPOF/RPO-оценки и 30/60/90.",
+    "severity": "medium",
+    "technical_cause": "Целевая топология 2xR640 вне прогона (spec); текущий single-node — факт."
+  },
+  {
+    "id": "OPS-02",
+    "area": "operations",
+    "severity": "medium",
+    "confidence": "medium",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "admin",
+      "maintainer"
+    ],
+    "description": "BACKUP_OFFSITE_REMOTE пуст у backend/backup-timer/wal-offsite (EV-007, 3 empty из 5): offsite-копии, скорее всего, не создаются (контракт маркеров даёт warn при пустом remote). Содержимое маркеров .offsite-status/.wal-offsite-status не читалось, поэтому отсутствие копий — UNKNOWN с высокой вероятностью, а не доказанный факт. Локальные снапшоты свежие (EV-006), но живут на том же хосте, что и данные.",
+    "business_effect": "Потеря хоста/диска оставляет платформу без копий вне хоста: восстанавливаться не из чего сверх последнего локального снапшота.",
+    "technical_cause": "Offsite-таргет не настроен; rclone-синхронизация без remote никуда не копирует.",
+    "evidence_ids": [
+      "EV-006",
+      "EV-007",
+      "EV-025"
+    ],
+    "reproduction_steps": [
+      "Сверить empty-ключи BACKUP_OFFSITE_REMOTE в EV-007",
+      "Проверить свежесть локальных маркеров в EV-006 (08:03, 3 снапшота)"
+    ],
+    "safe_recommendation": "Настроить offsite-remote и crypt-guard отдельным изменением (вне прогона, требует секретов получателя); подтвердить первой ok-строкой маркера. Значений не читать и не сохранять.",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [],
+    "regression_risk": "low",
+    "risk": "medium",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Offsite-маркер показывает ok со свежей меткой либо владелец принял риск хранения только на хосте.",
+    "kind": "risk"
+  },
+  {
+    "id": "OPS-03",
+    "area": "operations",
+    "severity": "medium",
+    "confidence": "high",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "admin",
+      "maintainer"
+    ],
+    "description": "Restore proof отсутствует: restore.sh (sha256-предпроверка + pg_restore + MinIO-зеркало) и PITR P3 существуют только статически (EV-025); production restore/rehearsal не выполнялся (вне рамок). Наличие скрипта восстановлением не считается. Свежесть снапшотов (EV-006) доказывает создание копий, но не их пригодность.",
+    "business_effect": "В день аварии восстановление может упереться в непредвиденную несовместимость снапшота/процедуры; фактическое RTO неизвестно.",
+    "technical_cause": "Restore drill требует отдельного подтверждения и не входит в рамки прогона.",
+    "evidence_ids": [
+      "EV-006",
+      "EV-025"
+    ],
+    "reproduction_steps": [
+      "Прочитать infra/restore.sh и RUNBOOK-DATA.md P3 (EV-025)",
+      "Убедиться: rehearsal-отчётов по production нет (EV-006 — только маркеры)"
+    ],
+    "safe_recommendation": "Запланировать restore drill на staging/чистом кластере (не на проде) после согласования; хранить отчёт rehearsal как будущее доказательство. В прогоне drill не запускать.",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [
+      "OPS-02"
+    ],
+    "regression_risk": "none",
+    "risk": "medium",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Есть rehearsal-отчёт восстановления из свежего снапшота (staging), RTO замерено.",
+    "kind": "risk"
+  },
+  {
+    "id": "SEC-01",
+    "area": "security",
+    "severity": "medium",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "server",
+      "production"
+    ],
+    "affected_roles": [
+      "admin",
+      "maintainer"
+    ],
+    "description": "Контейнеры работают от default root без user:, read_only, cap_drop/security_opt в обоих compose (0 совпадений статическим поиском). Прямой эксплуатации из кода нет, но компрометация любого сервиса даёт root в контейнере и облегчает escape на single-node хост.",
+    "business_effect": "Повышенный blast radius инцидента на единственном узле: RCE в backend/frontend превращается в root-доступ к контейнеру и соседним томам.",
+    "technical_cause": "Compose-файлы не задают least-privilege runtime-параметры.",
+    "evidence_ids": [
+      "EV-001",
+      "EV-007",
+      "EV-017"
+    ],
+    "reproduction_steps": [
+      "rg -n 'user:|read_only|cap_drop|privileged' technozrelost-backend/infra/docker-compose.yml technozrelost-backend/infra/docker-compose.prod.yml — 0 совпадений",
+      "Сверить сервисный набор с EV-007 (12 сервисов, ключи name+set/empty, без values)"
+    ],
+    "safe_recommendation": "Вынести в 30/60/90 backlog: non-root user, read-only rootfs где возможно, drop ALL + add необходимых, no-new-privileges. В прогоне ничего не менять (вне рамок, требует отдельного подтверждения).",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [
+      "operations-report"
+    ],
+    "regression_risk": "medium",
+    "risk": "medium",
+    "migration_required": false,
+    "downtime_required": true,
+    "acceptance_criteria": "Compose задаёт non-root и capabilities-политику; образы стартуют и пробы /health//ready зелёные.",
+    "kind": "risk"
+  },
+  {
+    "id": "AI-02",
+    "area": "ai",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "server",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "Тело 200-ответа провайдера не валидируется схемой: payload[\"choices\"][0][\"message\"][\"content\"] читается прямым индексом (ai_assistant.py:265-266). Малформированный 200 превращается в исключение, которое гасится broad-except и уходит в честный fallback — безопасно, но шумно (errors_total++ без различения «провайдер лёг» vs «провайдер ответил мусором»).",
+    "business_effect": "Низкий прямой риск (пользователь всегда получает честный ответ); цена — слепота диагностики: мусор провайдера неотличим от дауна в метриках.",
+    "technical_cause": "Отсутствие response-schema guard на границе провайдера; единый except-блок на все LLM-ошибки.",
+    "evidence_ids": [
+      "EV-001",
+      "EV-022"
+    ],
+    "reproduction_steps": [
+      "Открыть app/services/ai_assistant.py:254-280 (парсинг payload без валидации оболочки)",
+      "Сверить: метрики различают только errors_total/timeouts_total, без причины отказа"
+    ],
+    "safe_recommendation": "Вынести в backlog: строгий парсинг оболочки ответа (choices non-empty, message.content str non-empty) + отдельный счётчик malformed_total. В прогоне код не менять.",
+    "complexity": "low",
+    "effort": "low",
+    "dependencies": [],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Мусорный 200 отличается от дауна в метриках; пользовательский путь без изменений (честный fallback).",
+    "kind": "debt"
+  },
+  {
+    "id": "AI-03",
+    "area": "ai",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "server",
+      "production"
+    ],
+    "affected_roles": [
+      "maintainer"
+    ],
+    "description": "AI-наблюдаемость — только in-memory счётчики (сброс при рестарте), без split-by-contour, без трейсов и без мониторинга staleness индекса (677 prod-строк из EV-013 — только count). Стартовый лог фиксирует лишь наличие ключа и модель. Этого достаточно для honest-fallback, но недостаточно для capacity-решений и детекта тихого протухания корпуса.",
+    "business_effect": "Тихая деградация (протухший индекс, рост fallback-доли) видна только глазами в /metrics/ai; алертов нет.",
+    "technical_cause": "Метрики — модульный dict без персистентности (см. CODE-02); staleness видна лишь через manifest/content_hash вручную.",
+    "evidence_ids": [
+      "EV-001",
+      "EV-013",
+      "EV-022"
+    ],
+    "reproduction_steps": [
+      "Открыть app/services/ai_metrics.py:10-41 (in-memory, snapshot без per-user карты)",
+      "Сверить: rg -n 'staleness|reindex.*cron|manifest.*alert' technozrelost-backend/app technozrelost-backend/infra — совпадений нет"
+    ],
+    "safe_recommendation": "Вынести в backlog: персистентные AI-метрики с лейблом контура, доля fallback как SLO-сигнал, возраст манифеста ГОСТов в monitoring. В прогоне код не менять.",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [
+      "operations-report"
+    ],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Fallback-доля и возраст индекса наблюдаются персистентно; рестарт метрики не обнуляет.",
+    "kind": "debt"
+  },
+  {
+    "id": "AI-04",
+    "area": "ai",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "server",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "Явного чанкинга нет: RAG-контекст режется срезом raw_text[:500] (промпт) и [:200] (sources), без перекрытия и метаданных чанков. Длинные разделы ГОСТов обрезаются посередине; цитата может потерять условие/исключение, ушедшее за 500 символов.",
+    "business_effect": "Потенциально усечённые цитаты и пропущенный контекст в синтезе; пользователь видит обрезанную выдержку без признака обрезки.",
+    "technical_cause": "Контекст собирается в process_chat/build_rag_context плоскими срезами (ai_assistant.py:293,316,324).",
+    "evidence_ids": [
+      "EV-001",
+      "EV-022",
+      "EV-023"
+    ],
+    "reproduction_steps": [
+      "Открыть app/services/ai_assistant.py:283-294,313-319 (срезы [:500]/[:200])",
+      "Сверить: rg -n 'chunk|overlap|sliding' technozrelost-backend/app/services/rag.py technozrelost-backend/app/services/ai_assistant.py — чанкинга нет"
+    ],
+    "safe_recommendation": "Вынести в backlog: явные чанки с overlap и метаданными (doc_id/chunk_id/offsets) + маркер усечения в цитатах. В прогоне код не менять.",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Цитаты ссылаются на чанк с границами; усечение явно помечено; retrieval-метрики не хуже текущих.",
+    "kind": "debt"
+  },
+  {
+    "id": "AI-05",
+    "area": "ai",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "maintainer"
+    ],
+    "description": "Размеченного live eval set с human-judgement нет: этот тикет завёл только 7 офлайн-кейсов (eval-local.json, ГОСТ-публика/синтетика, 0 provider calls). Live-качество (grounding, цитаты, rerank, отказы) остаётся UNKNOWN до safe entrypoint и test accounts. Решение о плане live-eval (≤200, только ГОСТы/синтетика) — за владельцем.",
+    "business_effect": "Без live-eval нельзя отличить «честно работает» от «честно деградирует всегда»; gate-решение по AI опирается на static + offline.",
+    "technical_cause": "Live-eval требует auth-контура и бюджета запросов; в этом прогоне оба недоступны по правилам (R36, Решение 5).",
+    "evidence_ids": [
+      "EV-022",
+      "EV-023",
+      "EV-024"
+    ],
+    "reproduction_steps": [
+      "Открыть docs/audit/2026-09-21-production/07-ai/eval-local.json (live_provider_requests=0, cap=200)",
+      "Сверить: test accounts отсутствуют (см. 00-evidence README, R36)"
+    ],
+    "safe_recommendation": "После решения владельца: утвердить safe eval-план (запросы из ГОСТ-публики, cap 200, без ПДн) и прогнать его с test accounts; до этого live-статус остаётся UNKNOWN, а не «пройдено».",
+    "complexity": "low",
+    "effort": "low",
+    "dependencies": [
+      "test-accounts"
+    ],
+    "regression_risk": "none",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Владелец утвердил eval-план либо срок; live UNKNOWN закрыт измерением, а не допущением.",
+    "kind": "product_recommendation"
+  },
+  {
+    "id": "CODE-04",
+    "area": "code",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "server"
+    ],
+    "affected_roles": [
+      "maintainer"
+    ],
+    "description": "Dev-дефолты в app/core/config.py (0.0.0.0, 127.0.0.1, http://localhost:3000, 127.0.0.1:9000, ClamAV 127.0.0.1) присутствуют в коде; prod-guard отклоняет dev-секреты, но хосты остаются неявной связью с локальной топологией.",
+    "business_effect": "Низкий прямой риск; цена — путаница при переносе и ложные срабатывания локальных проб.",
+    "technical_cause": "Единый Settings-класс с dev-значениями по умолчанию без env-профилей.",
+    "evidence_ids": [
+      "EV-001",
+      "EV-007"
+    ],
+    "reproduction_steps": [
+      "Открыть technozrelost-backend/app/core/config.py:16,23,72,92,97",
+      "Сверить ключи с EV-007 (name+set/empty, без values)"
+    ],
+    "safe_recommendation": "Разделить dev/prod-пресеты конфига именами ключей; значений секретов не читать и не сохранять.",
+    "complexity": "S",
+    "dependencies": [],
+    "regression_risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Dev-дефолты помечены и отделены от prod-пресета; prod-guard зелёный.",
+    "kind": "debt"
+  },
+  {
+    "id": "CODE-05",
+    "area": "code",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "customer",
+      "executor"
+    ],
+    "description": "P2-функции (matching, public-registry в api-client) отвечают declared-403 через p2GatedMessage; это единственный доказанный dead end. Заглушки явные, в коде и матрице F-028 помечены STUB — скрытых стабов нет.",
+    "business_effect": "Пользователь без P2-скоупа упирается в 403; поведение честное, но требует UX-сигнала вместо тихого тупика.",
+    "technical_cause": "Граница MVP: функции в разработке, гейт выставлен явно.",
+    "evidence_ids": [
+      "EV-001"
+    ],
+    "reproduction_steps": [
+      "Открыть src/lib/release.ts:36 и src/lib/api-client.ts:679",
+      "Сверить статусы F-028/F-029/F-033 в 02-features/feature-matrix.csv"
+    ],
+    "safe_recommendation": "Оставить гейт; решение о сроках P2 — за владельцем (R29: backlog не executable до согласования).",
+    "complexity": "S",
+    "dependencies": [],
+    "regression_risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Заглушки остаются явными и типизированными; преждевременная публикация считается finding.",
+    "kind": "product_recommendation"
+  },
+  {
+    "acceptance_criteria": "Applied head 0037 доказан каталогом прод-БД (EV-013) и равен файловому head; файловое сравнение названо только parity имен.",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "admin",
+      "maintainer"
+    ],
+    "business_effect": "Применённая версия прод-БД (0037) соответствует файловому head; соответствие схемы (schema/content/manual drift) — UNKNOWN; остаточный риск — расхождение немиграционного кода между f364388 и f06b15c.",
+    "complexity": "low",
+    "confidence": "high",
+    "dependencies": [
+      "operations-report"
+    ],
+    "description": "Файловый набор миграций на проде совпадает с локальным только по именам (35/35, EV-011; содержимое/checksum не сравнивались). Production-каталогом доказан только паритет применённой версии: public.alembic_version = 0037 = файловый head (EV-013); schema/content/manual drift — UNKNOWN (definitions/checksums не сравнивались). Каталог прод-БД: 41 public-таблица (= 39 ORM + alembic_version + db_migration_log), constraints PK 41 / FK 55 / unique 12 / check 8, pg_indexes 150 строк, grants только technoz (отдельной read-only роли нет); расхождение prod unique/check counts с local declarations без полного поимённого reconciliation выводом «не drift» не закрывается. Остаточная неопределенность: локальный HEAD f364388 != server HEAD f06b15c для немиграционного кода.",
+    "downtime_required": false,
+    "evidence_ids": [
+      "EV-001",
+      "EV-002",
+      "EV-010",
+      "EV-011",
+      "EV-013"
+    ],
+    "area": "database",
+    "id": "DB-01",
+    "kind": "risk",
+    "migration_required": false,
+    "regression_risk": "none",
+    "reproduction_steps": [
+      "Сверить ls alembic/versions/ локально и в ~/MVP-CNTR на сервере (EV-011, совпадают только имена)",
+      "Прочитать public.alembic_version read-only внутри tz-prod-db-primary через passthrough окружения контейнера без вывода credentials (EV-013): 0037"
+    ],
+    "safe_recommendation": "Держать примененный head доказанным (0037, EV-013); файловое сравнение не выдавать за content/checksum. Отдельный read-only доступ с read-only ролью по-прежнему желателен для будущих прогонов.",
+    "severity": "low",
+    "technical_cause": "Доступ к prod-БД требует credentials, чтение которых запрещено интерфейсами прогона."
+  },
+  {
+    "acceptance_criteria": "Задокументировано решение: оставить app-level изоляцию (с тестами ownership) либо ввести RLS/row-security отдельным изменением после согласования владельца.",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "business_effect": "Ошибка в одном запросе/проверке владения может показать чужие данные; защита зависит только от аккуратности кода, а не от БД.",
+    "complexity": "medium",
+    "confidence": "high",
+    "dependencies": [
+      "security-report"
+    ],
+    "description": "В модели нет tenant_id, CREATE POLICY / ENABLE ROW LEVEL SECURITY отсутствуют (EV-012, 0 совпадений). Изоляция данных — только application-level: роли и enforcement (EV-014: require_role/has_role, deps.py), владение проектом (can_access_project/require_project_access, projects.py), приглашения (require_project_admin, invites.py). Авторизованный runtime не проверен — UNKNOWN до test accounts (R36).",
+    "downtime_required": false,
+    "evidence_ids": [
+      "EV-009",
+      "EV-012",
+      "EV-014"
+    ],
+    "area": "database",
+    "id": "DB-02",
+    "kind": "risk",
+    "migration_required": true,
+    "regression_risk": "medium",
+    "reproduction_steps": [
+      "rg CREATE POLICY / tenant_id по app/ и alembic/ — 0 совпадений",
+      "Сверить enforcement: deps.py:128-145, projects.py:180-206, invites.py:58-96"
+    ],
+    "safe_recommendation": "Не вводить RLS в этом прогоне (вне рамок, требует миграции). Зафиксировать app-level изоляцию как принятое решение владельца либо вынести RLS в backlog с оценкой.",
+    "severity": "low",
+    "technical_cause": "Модель проектировалась без строковой изоляции на уровне БД."
+  },
+  {
+    "acceptance_criteria": "Векторные и перф-индексы перечислены в db-model.md и проверяются миграционным гейтом; ORM-метаданные не выдаются за полный каталог.",
+    "affected_environments": [
+      "local"
+    ],
+    "affected_roles": [
+      "maintainer"
+    ],
+    "business_effect": "Низкий: неверная инвентаризация индексов в отчётах, пропуск регресса векторного поиска при рефакторинге.",
+    "complexity": "low",
+    "confidence": "high",
+    "dependencies": [],
+    "description": "Частичные ivfflat-индексы rag_documents (tuno/kaba) и часть перф-индексов созданы миграциями (0029/0036/0027/0028/0031) и отсутствуют в ORM-metadata Base (EV-009 показывает 17 ORM-индексов без ivfflat). Это осознанный паттерн, но metadata-инструменты дают неполную картину.",
+    "downtime_required": false,
+    "evidence_ids": [
+      "EV-009",
+      "EV-010"
+    ],
+    "area": "database",
+    "id": "DB-03",
+    "kind": "debt",
+    "migration_required": false,
+    "regression_risk": "low",
+    "reproduction_steps": [
+      "Сравнить список Index из Base.metadata с CREATE INDEX в alembic/versions/",
+      "Убедиться, что ivfflat есть только в миграциях"
+    ],
+    "safe_recommendation": "Держать канонический список индексов в db-model.md; добавить существующий миграционный гейт-проверку ivfflat (test_migration_remediation уже покрывает контур).",
+    "severity": "low",
+    "technical_cause": "Векторные операторы pgvector не выражаются портабельно в ORM-metadata."
+  },
+  {
+    "acceptance_criteria": "Владелец утвердил политику: жёсткие удаления + audit_trail только для проектов, либо backlog на soft-delete/retention для сущностей с ПДн.",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "admin",
+      "user"
+    ],
+    "business_effect": "Случайное/злонамеренное удаление необратимо; соответствие 152-ФЗ по удалению/хранению ПДн недоказуемо.",
+    "complexity": "medium",
+    "confidence": "high",
+    "dependencies": [
+      "security-report"
+    ],
+    "description": "Колонок is_deleted/deleted_at — 0 во всём репозитории; audit_trail покрывает только действия с проектами (project_id/action/details). Retention/удаление бизнес-данных и ПДн политикой не зафиксированы.",
+    "downtime_required": false,
+    "evidence_ids": [
+      "EV-009",
+      "EV-012"
+    ],
+    "area": "database",
+    "id": "DB-06",
+    "kind": "debt",
+    "migration_required": true,
+    "regression_risk": "low",
+    "reproduction_steps": [
+      "rg is_deleted|deleted_at по app/ — 0 совпадений",
+      "Прочитать AuditTrailEntry (models.py:449): только project-контур"
+    ],
+    "safe_recommendation": "Не менять схему в прогоне. Вынести soft-delete/retention-политику для сущностей с ПДн в backlog после решения владельца.",
+    "severity": "low",
+    "technical_cause": "Модель росла без требований к восстановлению удалений и lifecycle ПДн."
+  },
+  {
+    "id": "OPS-04",
+    "area": "operations",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "admin",
+      "maintainer"
+    ],
+    "description": "RPO ≤ 5 мин / RTO ≤ 1 ч — заявленные RUNBOOK-цели без production-доказательств (EV-025; локальная PITR-репетиция целями не считается по самому RUNBOOK). Факт доставки алертов в Telegram недоказан (только имена ключей, EV-007); покрытие сигналами и error-budget/SLO отсутствуют наблюдением. Механика (alerter-проверки, пороги 25ч/300с/80%/90%) статически закрыта.",
+    "business_effect": "Цели выглядят как гарантии, но drill'ами не подтверждены; немая авария (алерт не дошёл) обнаружится только вручную.",
+    "technical_cause": "Наблюдаемость построена (prometheus/grafana/alerter healthy), но SLO/доставка/drill'ы не входят в рамки прогона.",
+    "evidence_ids": [
+      "EV-003",
+      "EV-006",
+      "EV-007",
+      "EV-025"
+    ],
+    "reproduction_steps": [
+      "Прочитать RUNBOOK-DATA.md: цели RPO/RTO + оговорка про rehearsal (EV-025)",
+      "Сверить alerter-проверки и пороги в infra/alerter/alerter.py (EV-025)"
+    ],
+    "safe_recommendation": "В 30/60/90: тестовый алерт (dry-run доставки), SLO на readiness/latency, RPO/RTO-drill с отчётом. В прогоне не выполнять.",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [],
+    "regression_risk": "none",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Доставка алертов подтверждена dry-run; RPO/RTO подтверждены drill-отчётом либо цели сняты до UNKNOWN-принятия.",
+    "kind": "risk"
+  },
+  {
+    "id": "OPS-05",
+    "area": "operations",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "Zero-downtime deploy невозможен (backend replicas: 1 — rolling не из чего); окно простоя при выкладке не замерялось (UNKNOWN). Rollback-процедура (deploy.sh rollback previous|<sha>, теги на хосте) перевыкатывает только образы: БД требует restore/PITR, процедура не испытывалась. Файловое deploy-событие отстаёт от running (deploy-log-trail-behind-running, EV-008).",
+    "business_effect": "Каждая выкладка — короткое окно простоя; откат с миграциями требует ручной связки образ+БД без проверенной процедуры.",
+    "technical_cause": "Single-backend конструкция P1; DB-aware rollback описан только документально (README-DEPLOY).",
+    "evidence_ids": [
+      "EV-003",
+      "EV-008",
+      "EV-025"
+    ],
+    "reproduction_steps": [
+      "Сверить replicas: 1 и rollback-функцию deploy.sh (EV-025)",
+      "Сверить отставание deploy.log от running SHA (EV-008 vs EV-002)"
+    ],
+    "safe_recommendation": "Держать previous-теги; выполнять миграции только под pre-migration backup (BACKUP_BEFORE_MIGRATIONS=1 уже дефолт); multi-replica стратегию — в план 2xR640 (OPS-01).",
+    "complexity": "low",
+    "effort": "low",
+    "dependencies": [
+      "OPS-01",
+      "OPS-03"
+    ],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": true,
+    "acceptance_criteria": "Окно простоя замерено при следующем deploy либо принят backend x2 в целевой топологии.",
+    "kind": "risk"
+  },
+  {
+    "id": "OPS-06",
+    "area": "operations",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "maintainer"
+    ],
+    "description": "Распределённого трейсинга (OTel/Sentry) нет — только X-Request-ID в логах/ответах (static, EV-025); межсервисной корреляции nginx→backend→db/redis нет. Latency production известна только разовыми точками EV-004 (health 0.95с, ready 0.69с, landing 1.22с) — p50/p95/SLO отсутствуют; нагрузка в тикете не создавалась. Это долг наблюдаемости, а не дефект: при текущих объёмах (PG 136M) запаса достаточно.",
+    "business_effect": "Диагностика медленных запросов и межсервисных сбоев — вручную по логам; деградация будет замечена поздно.",
+    "technical_cause": "Трейсинг и SLO не входили в скоуп P1-контура.",
+    "evidence_ids": [
+      "EV-004",
+      "EV-006",
+      "EV-025"
+    ],
+    "reproduction_steps": [
+      "rg otel/opentelemetry/sentry по app/ — 0 совпадений (кроме request_id в main.py)",
+      "Сверить разовые тайминги EV-004 (не выдавать за SLO)"
+    ],
+    "safe_recommendation": "Вынести в backlog: OTel-трейсинг (или минимум propagation X-Request-ID в nginx), latency-SLO на readiness/landing, p95-панель в Grafana. Решение — за владельцем (R29: не executable до согласования).",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Владелец утвердил: оставить X-Request-ID либо срок трейсинга/SLO; backlog обновлён.",
+    "kind": "product_recommendation"
+  },
+  {
+    "id": "SEC-02",
+    "area": "security",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "CORSMiddleware настроен с allow_credentials=True одновременно с allow_methods=[\"*\"] и allow_headers=[\"*\"] (app/main.py:292-298; origins — список из именованного ключа, config.py:72,142-144). Текущий дефолт origins узкий, но любое будущее расширение списка автоматически открывает credentialed-доступ с любыми методами/заголовками.",
+    "business_effect": "Низкий прямой риск сейчас; цена — тихая эскалация при добавлении origin без пересмотра методов/заголовков.",
+    "technical_cause": "Широкие дефолты CORS при credentialed-режиме.",
+    "evidence_ids": [
+      "EV-001",
+      "EV-017"
+    ],
+    "reproduction_steps": [
+      "Открыть app/main.py:292-298 и app/core/config.py:72,142-144",
+      "Убедиться: allow_origins — список, allow_credentials=True, methods/headers — \"*\""
+    ],
+    "safe_recommendation": "Зафиксировать явные allow_methods/allow_headers (GET/POST/PUT/PATCH/DELETE + нужные заголовки) в backlog; значений origins не читать и не сохранять.",
+    "complexity": "low",
+    "effort": "low",
+    "dependencies": [],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Preflight отвечает явным списком методов/заголовков; легальные клиенты не сломаны.",
+    "kind": "risk"
+  },
+  {
+    "id": "SEC-03",
+    "area": "security",
+    "severity": "low",
+    "confidence": "medium",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "OpenAPI-документация кодом не отключена (комментарий в app/main.py:340 видит /docs; docs_url/redoc_url не заданы). Раскрывает ли /docs схему наружу в deployed-окружении — не проверено: проба этого endpoint в low-rate контур тикета не входила, поэтому deployed-состояние — UNKNOWN, а не факт.",
+    "business_effect": "Потенциальное раскрытие полной схемы API неаутентифицированным читателям; облегчает разведку.",
+    "technical_cause": "Отсутствие явного отключения docs в prod-пресете.",
+    "evidence_ids": [
+      "EV-004",
+      "EV-017"
+    ],
+    "reproduction_steps": [
+      "Открыть app/main.py:293-340 (docs не отключаются)",
+      "Одной read-only пробой GET /docs (operations-зона, с подтверждения) зафиксировать 200/404 за nginx"
+    ],
+    "safe_recommendation": "В operations-зоне одной пробой закрыть UNKNOWN; при 200 — вынести отключение/гейт /docs в backlog. В этом прогоне пробу не выполнять.",
+    "complexity": "low",
+    "effort": "low",
+    "dependencies": [
+      "operations-report"
+    ],
+    "regression_risk": "none",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Deployed-состояние /docs зафиксировано доказательством (200 с гейтом либо 404/отключено).",
+    "kind": "risk"
+  },
+  {
+    "id": "SEC-04",
+    "area": "security",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "MFA/2FA отсутствует (0 совпадений totp/otp/mfa/2fa по app/); self-service восстановления нет — сброс только ручной через персонал (POST /users/{id}/reset-password) с отзывом всех сессий цели и аудит-событием. Для B2B/B2G-контура с ПДн это продуктовая рекомендация, а не дефект: решение — за владельцем.",
+    "business_effect": "Компрометация пароля = компрометация аккаунта до ручного сброса; нагрузка на персонал при росте базы.",
+    "technical_cause": "MFA не входил в скоуп MVP; восстановление сознательно ручное (G39).",
+    "evidence_ids": [
+      "EV-001",
+      "EV-017"
+    ],
+    "reproduction_steps": [
+      "rg -i 'totp|otp|mfa|2fa' technozrelost-backend/app — 0 совпадений",
+      "Прочитать users.py:235-250 (ручной сброс + отзыв сессий + аудит)"
+    ],
+    "safe_recommendation": "Вынести MFA (TOTP минимум для staff/привилегированных) и/или managed recovery в backlog после решения владельца (R29: не executable до согласования).",
+    "complexity": "medium",
+    "effort": "medium",
+    "dependencies": [],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Владелец утвердил: оставить ручной контур либо срок MFA; backlog обновлён.",
+    "kind": "product_recommendation"
+  },
+  {
+    "id": "SEC-05",
+    "area": "security",
+    "severity": "low",
+    "confidence": "high",
+    "affected_environments": [
+      "local",
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "description": "После logout отзывается только refresh (auth.py:179-191); access живёт до expiry (~55-60 мин по окну клиента auth.config.ts:74-79) без серверного blocklist. Это осознанный JWT-tradeoff с коротким TTL и family-revoke при reuse, но окно злоупотребления украденным access существует.",
+    "business_effect": "Украденный access-токен работает до expiry даже после logout жертвы; окно — до часа.",
+    "technical_cause": "Stateless access без revocation-списка (комментарий auth.py:183-185).",
+    "evidence_ids": [
+      "EV-001",
+      "EV-017"
+    ],
+    "reproduction_steps": [
+      "Прочитать auth.py:179-191 (logout отзывает только refresh)",
+      "Сверить окно: auth.config.ts:74-79 (accessTokenExpires now+55 мин)"
+    ],
+    "safe_recommendation": "Принять как риск с коротким TTL либо вынести укорочение TTL/deny-list в backlog; в прогоне код не менять.",
+    "complexity": "low",
+    "effort": "low",
+    "dependencies": [],
+    "regression_risk": "low",
+    "risk": "low",
+    "migration_required": false,
+    "downtime_required": false,
+    "acceptance_criteria": "Окно зафиксировано; владелец принял TTL либо срок работ по сокращению.",
+    "kind": "risk"
+  },
+  {
+    "acceptance_criteria": "Каждый form control публичных страниц имеет programmatic label: search — aria-label, УГТ-selects — связанные <label>; DOM-проба показывает labeled=true для всех трёх; скриншоты без визуальных регрессий.",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "all",
+      "screen-reader users"
+    ],
+    "area": "ux",
+    "business_effect": "Пользователи скринридеров не получают имени поля поиска и УГТ-фильтров; видимая подпись есть, но программно не связана — снижает доступность публичного реестра и дорожного картирования.",
+    "complexity": "low",
+    "confidence": "high",
+    "dependencies": [],
+    "description": "Три контрола без программной метки: search input на /projects (только placeholder «Поиск: название, организация, регион…», id/name/label/aria отсутствуют) и оба УГТ-select на /roadmap (видимые подписи «ТЕКУЩИЙ УГТ»/«ЦЕЛЕВОЙ УГТ» — plain text, не <label>). Остальные inputs (login/register/selects проектов) связаны корректно.",
+    "downtime_required": false,
+    "effort": "low",
+    "evidence_ids": [
+      "EV-019",
+      "EV-021"
+    ],
+    "id": "UX-01",
+    "kind": "defect",
+    "migration_required": false,
+    "regression_risk": "none",
+    "reproduction_steps": [
+      "Открыть URL https://technozrelost.atrshnjc.beget.tech/projects на viewport 1920 (screenshot screenshots/projects-1920.png, role anonymous): в DOM один input[type=search] без label/aria, только placeholder",
+      "Открыть URL https://technozrelost.atrshnjc.beget.tech/roadmap на viewport 768 (screenshot screenshots/roadmap-768.png, role anonymous): два select без связанного <label>",
+      "Expected behavior: каждый control имеет accessible name через <label for>/обёртку/aria-label; placeholder — дополнение, а не единственное имя"
+    ],
+    "risk": "low",
+    "safe_recommendation": "Вынести в backlog (не executable до согласования, R29): добавить aria-label поиску и связать подписи УГТ-selects через <label for>. В прогоне код не менять.",
+    "severity": "low",
+    "technical_cause": "Фильтровые контролы сверстаны без label-ассоциации; плейсхолдер использован как единственное имя."
+  },
+  {
+    "acceptance_criteria": "Оверлейный текст hero/nav проверен ручным замером контраста (WCAG AA 4.5:1 body / 3:1 large) либо зафиксирован как принятое исключение с фоном-подложкой.",
+    "affected_environments": [
+      "production"
+    ],
+    "affected_roles": [
+      "all"
+    ],
+    "area": "ux",
+    "business_effect": "Низкий прямой риск (визуально текст читаем на screenshots), но без замера нельзя заявить соответствие AA для hero-текста поверх изображений — остаётся недоказанное утверждение в аудите.",
+    "complexity": "low",
+    "confidence": "medium",
+    "dependencies": [],
+    "description": "Computed-style спот-замер контраста неприменим к тексту поверх hero-изображений/градиентов: прозрачная цепочка фонов даёт артефакты ratio 1.0–2.29 (напр. nav-ссылки на /), тогда как сплошные фоны чистые (body 17.38, кнопки ≥4.85). Фактического нарушения не зафиксировано — только невозможность замера этим методом.",
+    "downtime_required": false,
+    "effort": "low",
+    "evidence_ids": [
+      "EV-019"
+    ],
+    "id": "UX-02",
+    "kind": "product_recommendation",
+    "migration_required": false,
+    "regression_risk": "none",
+    "reproduction_steps": [
+      "Открыть URL https://technozrelost.atrshnjc.beget.tech/ на viewport 1920 (screenshot screenshots/home-1920.png, role anonymous): hero-текст и nav-ссылки лежат поверх фонового изображения/градиента",
+      "Сравнить computed-style замер в pass-results.json (samples ratio 1.0–2.29 для оверлеев против 17.38 body) — расхождение объясняется прозрачными фонами, а не реальным контрастом",
+      "Expected behavior: контраст оверлейного текста подтверждён попиксельным замером по screenshots либо задокументирован как проверенный вручную"
+    ],
+    "risk": "low",
+    "safe_recommendation": "Попиксельный замер по сохранённым screenshots либо ручная проверка AA для hero/nav-оверлеев — backlog-шаг после согласования; код в прогоне не менять.",
+    "severity": "low",
+    "technical_cause": "Метод getComputedStyle не видит изображение/градиент под текстом; нужен попиксельный анализ скриншота."
+  }
+]
