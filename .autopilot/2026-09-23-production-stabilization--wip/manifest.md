@@ -8,7 +8,7 @@
 | R02 | «превратить подтверждённые findings в исполнимые задачи» | in-spec | spec §Решение/Трассировка | — |
 | R03 | «реализовать необходимые изменения для достижения целевого состояния MVP» | in-spec | spec §Волны | — |
 | R04 | «Работай только в отдельном git worktree и новой ветке. Не изменяй `main` напрямую» + «Рекомендуемая ветка: autopilot/production-stabilization» | done | T01: branch autopilot/production-stabilization @ 83d3c9b, worktree .worktrees/production-stabilization | 37a4340 |
-| R05 | «Сначала выполни: `python3 docs/audit/2026-09-21-production/09-final/check_final.py`» | in-spec | spec §Воспроизводимость | — |
+| R05 | «Сначала выполни: `python3 docs/audit/2026-09-21-production/09-final/check_final.py`» | in-ticket | spec §Воспроизводимость → T02 (BE-часть; T03/T04 дополнят) | — |
 | R06 | «Не считай локальный код, audit finding или старую документацию автоматически правильными» + «Не превращай `UNKNOWN` в утверждение без нового доказательства» | in-spec | spec §Доказательства | — |
 | R07 | «Доведи MVP до технически стабильного состояния, пригодного для ограниченной эксплуатации и последующего масштабирования» + 10 критических пунктов (публичный контур; регистрация и аутентификация; кабинеты и роли; жизненный цикл техпроекта; безопасность доступа; расчёт и переходы УГТ; ручная верификация; хранение/восстановление; управляемые AI/RAG; зелёные CI/CD-гейты) | in-spec | spec §DoD | — |
 | R08 | «Доступ к проекту определяется одновременно ролью, владением и приглашением» | in-spec | spec §Продуктовые правила | — |
@@ -23,8 +23,8 @@
 | R17 | «C1 — offsite backup» (REMOTE через штатный secret-механизм, без секретов в Git/логах, свежий marker, retention/устаревание, alert при сбое) | in-spec | spec §C1/C2 | — |
 | R18 | «C2 — restore proof» (только staging/изоляция, дата+ID backup, схема+данные, integrity/smoke, RTO/RPO, rehearsal-отчёт; скрипт ≠ доказательство) | in-spec | spec §C1/C2 | — |
 | R19 | «C3 — авторизованные сценарии» (role matrix после safe accounts; до этого BLOCKED/UNKNOWN; production-пользователей не создавать без разрешения) | in-spec | spec §C3 | — |
-| R20 | «C4 — топология и зелёные гейты» (воспроизводимое окружение, зелёные backend/frontend/CI, решение SPOF / план HA) | in-spec | spec §Гейты/C4 | — |
-| R21 | «Волна 0 — воспроизводимость и baseline» (изолированный worktree, SHA/status, версии, локальное окружение, `uv sync --locked --extra dev`, устранить CODE-03/CODE-06, честный baseline, без `\| tail`/`\|\| true`; гейты ruff/mypy/pytest/npm test/build; тесты только в test schema, никогда в production) | in-spec | spec §Волна 0 | — |
+| R20 | «C4 — топология и зелёные гейты» (воспроизводимое окружение, зелёные backend/frontend/CI, решение SPOF / план HA) | in-ticket | spec §Гейты/C4 → T02 (BE-часть; T03/T04/T20 дополнят) | — |
+| R21 | «Волна 0 — воспроизводимость и baseline» (изолированный worktree, SHA/status, версии, локальное окружение, `uv sync --locked --extra dev`, устранить CODE-03/CODE-06, честный baseline, без `\| tail`/`\|\| true`; гейты ruff/mypy/pytest/npm test/build; тесты только в test schema, никогда в production) | in-ticket | spec §Волна 0 → T02 (BE-часть; T03/T04 дополнят) | — |
 | R22 | «Волна 1 — P0 и условия GO» (OPS-02/OPS-03/CODE-03/CODE-06/OPS-01+DB-05/C3; инфра-план на production только как change plan с подтверждением владельца) | in-spec | spec §Волна 1 | — |
 | R23 | «Волна 2 — P1» (SEC-01, AI-01, DB-04, DB-05, CODE-01, CODE-02; для каждого — тест, доказывающий устранение) | in-spec | spec §Волна 2 | — |
 | R24 | «Волна 3 — безопасные quick wins» (UX-01, SEC-02, SEC-03, AI-02, CODE-04; DB-03 — docs+проверка индексов) | in-spec | spec §Волна 3 | — |

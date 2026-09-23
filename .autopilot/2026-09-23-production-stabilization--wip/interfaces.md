@@ -1,0 +1,24 @@
+# Границы и швы (seed из spec §Границы и швы + правила прогона)
+
+## Границы, решённые в спецификации
+
+- `test-env` — владеет воспроизводимостью гейтов; наружу: команды гейтов и их итог.
+- `access` — владеет правилом «роль+владение+приглашение», УГТ-переходы, верификация; наружу: RBAC/ownership/invitation/IDOR regression-тесты.
+- `public-surface` — витрина, CORS, политика docs; наружу: публичные пробы и тесты полей/заголовков.
+- `ai-controls` — лимиты/квоты/breaker/валидация/метрики AI, PII-гейт; наружу: поведение при превышении и `malformed_total`.
+- `data-safety` — индексы, at-rest, backup/restore; наружу: проверки, marker/retention/alert, rehearsal-отчёт.
+- `hardening` — non-root/capabilities/read-only, пресеты dev/test/prod; наружу: воспроизводимый compose-результат.
+- `run-records` — brief/manifest/spec/tickets/traceability/acceptance; наружу: сами файлы (пишет только оркестратор).
+
+Швы для тестов (единственные места проверки поведения): backend-сьют, frontend-сьют, ruff, mypy, production build, новые regression-тесты тикетов. Новых швов не вводить.
+
+## Правила, которые исполнитель не выводит сам
+
+- Стек: frontend Next.js (App Router); backend Python + FastAPI; БД PostgreSQL (+pgvector); MinIO/ClamAV/Redis/nginx. Точные версии фиксирует T02 — спроси их у отчёта T02, не выдумывай.
+- Канонические команды гейтов — из брифа §5-Волна 0. Зависимости backend — только `uv sync --locked --extra dev` (голый `uv sync` запрещён); frontend — только `npm ci` по lock-файлу. Проверочные пайпы без `| tail`, `|| true` и аналогов.
+- Тесты — только отдельная test schema/database; production для тестов запрещён.
+- Не трогать: ветку `main`; immutable аудит-базeline (`docs/audit/2026-09-21-production`, findings, matrix, gate); чужие worktree и `.autopilot/*--wip` других прогонов; файлы прогона (`brief/manifest/spec/tickets/state.js/dashboard` — их пишет оркестратор).
+- Исполнитель НЕ коммитит. Изменённые файлы + полный вывод тестов возвращаются оркестратору текстом.
+- Недостающая зависимость или недоступный сервис — это `BLOCKED` с точной ошибкой и командой устранения, а не молчаливая установка и не заглушка.
+- Секреты и ПДн: только имена (`BACKUP_OFFSITE_REMOTE`, `LLM_API_KEY`, …), никогда значения; в отчётах — ноль токенов, email, телефонов и содержимого проектов.
+- Production: ноль исходящих соединений, ноль мутаций, ноль чтения `.env`/keys/credential stores.
