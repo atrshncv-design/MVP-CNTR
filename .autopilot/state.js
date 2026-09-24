@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T10:09:34+04:00",
+  "updatedAt": "2026-09-24T10:11:30+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -75,8 +75,8 @@ window.STATE =
   "requirements": {
     "total": 52,
     "done": 11,
-    "inTicket": 4,
-    "inSpec": 34,
+    "inTicket": 5,
+    "inSpec": 33,
     "placeholder": 0,
     "deferred": 3,
     "dropped": 0
@@ -195,6 +195,16 @@ window.STATE =
       "tests": {"canonicalMypy": "Python 3.11 exit 1; 2 app typing errors in 62 files", "diagnosticMypy": "Python 3.14 target 3.12 exit 1; same errors", "python311Sync": "exit 0; 79 resolved, 76 installed"},
       "blocker": "Toolchain mismatch removed in isolated Python 3.11 environment; mypy gate remains red on D03/T26 and D04/T27.",
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T04-verification.md"
+    },
+    {
+      "id": "05",
+      "title": "UX-01: доступные подписи публичных фильтров",
+      "requirements": ["R24"],
+      "blockedBy": ["02", "03", "04"],
+      "wave": 3,
+      "zone": ["technozrelost-frontend/src/components/landing/projects-showcase.tsx", "technozrelost-frontend/src/components/landing/roadmap-content.tsx", "technozrelost-frontend/tests/"],
+      "status": "pending",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/05-public-form-labels.md"
     },
     {
       "id": "25",
