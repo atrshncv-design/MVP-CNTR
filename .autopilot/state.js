@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T09:19:49+04:00",
+  "updatedAt": "2026-09-24T09:36:01+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend tests green; T25 exact-font fix done; Python 3.11 mypy exposes D03/D04; CI frontend npm audit exposes D05-D07"
+      "note": "Backend Python 3.11 mypy/Ruff/720 pytest green after T26/T27; frontend T28 underway, npm audit D06/D07 remain"
     },
     {
       "id": "review",
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 51,
-    "done": 6,
-    "inTicket": 8,
+    "done": 7,
+    "inTicket": 7,
     "inSpec": 34,
     "placeholder": 0,
     "deferred": 3,
@@ -237,7 +237,14 @@ window.STATE =
       "requirements": ["D04"],
       "blockedBy": ["04"],
       "zone": ["technozrelost-backend/app/main.py"],
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-09-24T09:20:38+04:00",
+      "finishedAt": "2026-09-24T09:36:01+04:00",
+      "commit": "9f7791a",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
+      "tests": {"mypy": "exit 0; 62 files", "ruff": "exit 0", "pytest": "720 passed, 2 warnings; 663.07s"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T27-verification.md"
     },
     {
       "id": "28",
@@ -245,7 +252,10 @@ window.STATE =
       "requirements": ["D05"],
       "blockedBy": ["25"],
       "zone": ["technozrelost-frontend/package.json", "technozrelost-frontend/package-lock.json"],
-      "status": "pending"
+      "status": "in-progress",
+      "startedAt": "2026-09-24T09:26:07+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high"
     },
     {
       "id": "29",

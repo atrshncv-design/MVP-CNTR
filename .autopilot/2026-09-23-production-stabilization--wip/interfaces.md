@@ -59,3 +59,8 @@
 
 - `Redis.from_url` эквивалентен прежнему module-level factory в locked redis-py; нетипизированность ограничена локальной ссылкой, без новых публичных интерфейсов. `4236c95`.
 - Независимый Python 3.11 mypy оставляет только T27, 10 SSE-тестов и Ruff PASS; см. `evidence/T26-verification.md`.
+
+## Из T27 — полный backend gate (2026-09-24)
+
+- Код `9f7791a`: handler типизирован по Starlette без смены HTTP 422 или fallback 500. Независимое review PASS.
+- Python 3.11 в isolated env: полный mypy 62 файла без ошибок, Ruff PASS, pytest 720 passed / 2 dependency warnings на локальной test DB. См. `evidence/T27-verification.md`.
