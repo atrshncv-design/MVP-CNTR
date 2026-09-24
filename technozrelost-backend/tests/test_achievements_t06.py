@@ -112,7 +112,7 @@ def seeded_catalog() -> None:
         conn.close()
 
 
-async def _fake_ok_llm(system: str, user_msg: str) -> str:  # noqa: ARG001
+async def _fake_ok_llm(system: str, user_msg: str, *, session_id: str) -> str:  # noqa: ARG001
     return "SUCCESS\nSUMMARY: Комплект достаточен\n"
 
 

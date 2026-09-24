@@ -36,7 +36,7 @@ def _register(client: TestClient, role: str = "gk_customer") -> tuple[str, int]:
     return data["access_token"], data["user"]["id"]
 
 
-async def _fake_ok_llm(system: str, user_msg: str) -> str:  # noqa: ARG001
+async def _fake_ok_llm(system: str, user_msg: str, *, session_id: str) -> str:  # noqa: ARG001
     return "SUCCESS\nSUMMARY: Комплект достаточен\n"
 
 
