@@ -64,3 +64,8 @@
 
 - Код `9f7791a`: handler типизирован по Starlette без смены HTTP 422 или fallback 500. Независимое review PASS.
 - Python 3.11 в isolated env: полный mypy 62 файла без ошибок, Ruff PASS, pytest 720 passed / 2 dependency warnings на локальной test DB. См. `evidence/T27-verification.md`.
+
+## Из T28 — patched Next и новый lint gate (2026-09-24)
+
+- Next 16.3.3 в `f0f8b0a`, независимый audit 0 critical; sharp/browserslist high остаются T29/T30. npm ci и 238 tests PASS, webpack build 53 страницы PASS, default Turbopack локально EPERM; `evidence/T28-verification.md`.
+- Полный lint выявил предсуществующий blocking `setState-in-effect` в org verification hint; D08/T31 отдельно. Не смешивать с security upgrade.

@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T09:36:01+04:00",
+  "updatedAt": "2026-09-24T09:39:47+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend Python 3.11 mypy/Ruff/720 pytest green after T26/T27; frontend T28 underway, npm audit D06/D07 remain"
+      "note": "Backend Python 3.11 gates green; T28 patched Next critical done; frontend audit high D06/D07 and lint D08 remain"
     },
     {
       "id": "review",
@@ -73,8 +73,8 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 51,
-    "done": 7,
+    "total": 52,
+    "done": 8,
     "inTicket": 7,
     "inSpec": 34,
     "placeholder": 0,
@@ -252,10 +252,14 @@ window.STATE =
       "requirements": ["D05"],
       "blockedBy": ["25"],
       "zone": ["technozrelost-frontend/package.json", "technozrelost-frontend/package-lock.json"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-24T09:26:07+04:00",
+      "finishedAt": "2026-09-24T09:39:47+04:00",
+      "commit": "f0f8b0a",
       "executorModel": "gpt-6-luna",
-      "reasoningEffort": "high"
+      "reasoningEffort": "high",
+      "tests": {"npmCi": "exit 0", "audit": "0 critical; 2 high remain", "npmTest": "238 passed", "webpackBuild": "exit 0; 53 pages", "lint": "exit 1; D08"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T28-verification.md"
     },
     {
       "id": "29",
@@ -271,6 +275,14 @@ window.STATE =
       "requirements": ["D07"],
       "blockedBy": ["28"],
       "zone": ["technozrelost-frontend/package-lock.json"],
+      "status": "pending"
+    },
+    {
+      "id": "31",
+      "title": "React effect в подсказке верификации организации",
+      "requirements": ["D08"],
+      "blockedBy": ["28"],
+      "zone": ["technozrelost-frontend/src/components/project-create/org-verification-hint.tsx"],
       "status": "pending"
     },
     {
