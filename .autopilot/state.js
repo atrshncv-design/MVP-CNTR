@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T10:48:01+04:00",
+  "updatedAt": "2026-09-24T10:49:23+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -362,7 +362,10 @@ window.STATE =
       "requirements": ["D09"],
       "blockedBy": ["31"],
       "zone": ["technozrelost-backend/tests/test_health.py"],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-24T10:49:23+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/32-readiness-redis-test-isolation.md"
     },
     {
