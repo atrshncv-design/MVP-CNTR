@@ -14,8 +14,6 @@ interface MemberOrg {
   state: string;
 }
 
-type Phase = 'pending' | 'loading' | 'ready' | 'error';
-
 const KNOWN_STATES = new Set(['draft', 'pending', 'verified', 'rejected']);
 
 /**
@@ -26,21 +24,20 @@ const KNOWN_STATES = new Set(['draft', 'pending', 'verified', 'rejected']);
  * по общим правилам после модерации (см. PublishRulesNote).
  */
 export function OrgVerificationHint() {
-  const t = useTranslations('dashboard');
-  const tp = useTranslations('profile');
   const { data: session, status } = useSession();
   const token = session?.user?.accessToken;
-  const [phase, setPhase] = useState<Phase>('pending');
+  if (status === 'loading' || !token) return null;
+  return <AuthenticatedOrgVerificationHint key={token} token={token} />;
+}
+
+function AuthenticatedOrgVerificationHint({ token }: { token: string }) {
+  const t = useTranslations('dashboard');
+  const tp = useTranslations('profile');
+  const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
   const [orgs, setOrgs] = useState<MemberOrg[]>([]);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    if (!token) {
-      setPhase('pending');
-      return;
-    }
     let cancelled = false;
-    setPhase('loading');
     fetch(`${CLIENT_API_BASE}/api/v1/profile`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
@@ -60,10 +57,7 @@ export function OrgVerificationHint() {
     return () => {
       cancelled = true;
     };
-  }, [status, token]);
-
-  // Без сессии подсказывать нечего — визард сам покажет ошибку сессии при сохранении.
-  if (phase === 'pending') return null;
+  }, [token]);
 
   if (phase === 'loading') {
     return (
