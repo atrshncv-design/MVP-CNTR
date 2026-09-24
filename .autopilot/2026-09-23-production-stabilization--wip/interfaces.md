@@ -22,3 +22,13 @@
 - Недостающая зависимость или недоступный сервис — это `BLOCKED` с точной ошибкой и командой устранения, а не молчаливая установка и не заглушка.
 - Секреты и ПДн: только имена (`BACKUP_OFFSITE_REMOTE`, `LLM_API_KEY`, …), никогда значения; в отчётах — ноль токенов, email, телефонов и содержимого проектов.
 - Production: ноль исходящих соединений, ноль мутаций, ноль чтения `.env`/keys/credential stores.
+- С 2026-09-24 исполнитель — отдельный Codex-контекст `gpt-6-luna`/`high` на таск; прежний OpenCode-контур завершён владельцем. Оркестратор сохраняет ревью, статусы и git.
+- Целевые AI-пути: документы `AiDocConsultant` → `/rag/search` или `/chat/kaba`; реестры — контур `/chat/tuno`. Live provider тест остаётся BLOCKED до обновления владельцем ключа после локальных правок.
+
+## Из T02 — проверенный backend test baseline (2026-09-24)
+
+- `uv sync --locked --extra dev` → exit 0; lock-файлы не менялись.
+- Ruff → exit 0; mypy → BLOCKED Python 3.14/numpy stub syntax.
+- Pytest на локальном PostgreSQL `technozrelost_test` → exit 1 (705 passed, 15 failed, 1 warning); все 15 failures — тестовые mocks без `session_id` (`STAB-TEST-01`).
+- Никаких продуктовых интерфейсов T02 не добавил. T02 остаётся BLOCKED; commit не создан.
+- Подробные результаты и evidence: `evidence/T02-verification.md`.

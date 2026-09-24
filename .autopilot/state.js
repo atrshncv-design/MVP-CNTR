@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T07:52:38+04:00",
+  "updatedAt": "2026-09-24T08:25:15+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -56,11 +56,16 @@ window.STATE =
     {
       "id": "build",
       "status": "active",
-      "startedAt": "2026-09-23T12:04:44+04:00"
+      "startedAt": "2026-09-23T12:04:44+04:00",
+      "note": "T02 evidence captured; T22 repairs discovered test contract; T03/T04 pending"
     },
     {
       "id": "review",
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-09-24T08:14:03+04:00",
+      "finishedAt": "2026-09-24T08:15:58+04:00",
+      "finishedAtObservedAt": "2026-09-24T08:15:58+04:00",
+      "note": "Independent diff/scope review: no executor changes; red regression blocks commit"
     },
     {
       "id": "final",
@@ -68,12 +73,12 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 41,
-    "done": 2,
-    "inTicket": 3,
+    "total": 45,
+    "done": 3,
+    "inTicket": 5,
     "inSpec": 34,
     "placeholder": 0,
-    "deferred": 2,
+    "deferred": 3,
     "dropped": 0
   },
   "tickets": [
@@ -118,24 +123,67 @@ window.STATE =
       "zone": [
         "technozrelost-backend/"
       ],
-      "status": "in-progress",
+      "status": "failed",
       "startedAt": "2026-09-23T12:04:44+04:00",
       "lastAttemptStartedAt": "2026-09-24T07:52:38+04:00",
       "retries": 1,
       "repairs": 0,
       "handoffs": 0,
-      "executorModel": "openai/gpt-6-luna"
+      "executorModel": "openai/gpt-6-luna",
+      "finishedAtObservedAt": "2026-09-24T08:15:58+04:00",
+      "tests": {
+        "sync": "exit 0; resolved 79, checked 76",
+        "ruff": "exit 0",
+        "mypy": "exit 2; numpy stub syntax error under Python 3.14",
+        "pytest": "exit 1; 705 passed, 15 failed, 1 warning; 516.20s"
+      },
+      "blocker": "CODE-03 BLOCKED: full backend suite red because four _fake_ok_llm test mocks reject session_id; 15 cases fail. T02 scope forbids test/app edits.",
+      "review": "No executor diff; no code to commit; lock files unchanged; no blocking diff finding.",
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T02-verification.md"
+    },
+    {
+      "id": "22",
+      "title": "Восстановить контракт mocks оценки стадий (D01)",
+      "requirements": ["D01"],
+      "blockedBy": ["01"],
+      "wave": 2,
+      "zone": ["technozrelost-backend/tests/"],
+      "status": "in-progress",
+      "startedAt": "2026-09-24T08:23:23+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "23",
+      "title": "Ассистент по документам (kaba)",
+      "requirements": ["R33"],
+      "blockedBy": ["03", "04", "08", "14"],
+      "status": "pending",
+      "zone": ["technozrelost-backend/app/services/", "technozrelost-frontend/src/features/docs/"]
+    },
+    {
+      "id": "24",
+      "title": "Ассистент по реестрам (tuno)",
+      "requirements": ["R33"],
+      "blockedBy": ["03", "04", "08", "14"],
+      "status": "pending",
+      "zone": ["technozrelost-backend/app/api/v1/chat.py", "technozrelost-frontend/src/app/dashboard/ai-assistant/"]
     }
   ],
   "singlePass": null,
   "executionPolicy": {
-    "executor": "openai/gpt-6-luna",
+    "executor": "codex/gpt-6-luna:high",
+    "currentAuthorization": "user explicitly switched implementation from OpenCode to Codex GPT-6 Luna high on 2026-09-24",
     "executorAuthorization": "user authorized on 2026-09-24 after opencode-go subscription launch error",
-    "priorLaunch": "opencode-go/muse-spark-1.3-contributor failed before work: active subscription required; no return contract; worktree clean"
+    "priorLaunch": "opencode-go/muse-spark-1.3-contributor failed before work: active subscription required; no return contract; worktree clean",
+    "pytestIndependent": "completed exit 1; orchestrator log in local tmp; not committed"
   },
   "tests": {
     "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)",
-    "ticket02": "CSV schema/status/evidence validation green: 33 rows, fixed 12-column schema, closed statuses, no empty evidence IDs; table count independently verified as 36; focused secret scan green",
+    "ticket02": "Independent: uv sync exit 0 (79 resolved/76 checked); Ruff exit 0; mypy exit 2 (Python 3.14/numpy stub syntax); pytest exit 1 (705 passed, 15 failed, 1 warning, 516.20s). Test DB technozrelost_test at local 127.0.0.1:5432 confirmed from conftest + process socket + local dev compose metadata. CODE-03 BLOCKED; see evidence/T02-verification.md.",
     "ticket03": "findings JSON valid (6 records); Ruff green; reproducible Python and JS/TS inventories; coupling command exit 0 with 5 lines/4 cross-import facts; remaining product suites retain exact environment blockers",
     "ticket04": "findings JSON schema valid (6 records); production catalog SELECTs succeeded without credential values/business rows; targeted migration test BLOCKED by absent local test DB (1 setup error); focused secret scan green",
     "ticket05": "findings JSON valid (5 records with effort/risk); independent non-DB security suite 32 passed; Ruff green by executor; DB-backed suite remains environment BLOCKED without local test DB",
@@ -162,8 +210,13 @@ window.STATE =
   "concerns": [
     {
       "ticket": "02",
-      "time": "2026-09-24T07:52:38+04:00",
-      "note": "First resumed launcher failed before execution: OpenCode Go requires active subscription. User explicitly authorized GPT-6 Luna for replacement session. No T02 work product returned."
+      "finding": "STAB-TEST-01",
+      "note": "15 existing tests fail because _fake_ok_llm mocks in four test files reject session_id passed by stages.py; repair is outside T02 scope."
+    },
+    {
+      "ticket": "02",
+      "finding": "TOOLCHAIN-01",
+      "note": "mypy cannot analyze app under Python 3.14 because installed numpy stub syntax requires Python 3.12+."
     }
   ],
   "reviewers": {
