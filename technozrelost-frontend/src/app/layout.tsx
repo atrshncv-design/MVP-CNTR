@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -10,16 +10,16 @@ import enMessages from "@/messages/en.json";
 import ruMessages from "@/messages/ru.json";
 import zhMessages from "@/messages/zh.json";
 
-const manrope = Manrope({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700", "800"],
+const manrope = localFont({
+  src: "./fonts/Manrope[wght].ttf",
+  weight: "400 800",
   variable: "--font-manrope",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  weight: ["400", "500", "700"],
-  subsets: ["latin", "cyrillic"],
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono[wght].ttf",
+  weight: "400 700",
   variable: "--font-jetbrains-mono",
   display: "swap",
 });

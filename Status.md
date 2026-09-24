@@ -1,5 +1,10 @@
 # Status — платформа «Технозрелость»
 
+## 2026-09-24 — stabilization audit follow-up (отдельный worktree, без деплоя) — in-progress
+- Ветка `autopilot/production-stabilization`: backend test baseline 720 passed; Ruff passed. Изолированный Python 3.11 mypy проверил 62 файла и выявил два локальных typing findings (T26/T27), поэтому type gate ещё красный.
+- Frontend T25: те же Manrope и JetBrains Mono скачаны из официального `google/fonts` с OFL, подключены локально; 238 тестов и production build через webpack проходят. Штатный Turbopack build в локальном sandbox блокируется на создании worker process; CI/production этим не подтверждены.
+- T23/T24: ассистенты по документам и реестрам ещё не исправлялись; live provider проверка ждёт нового ключа от владельца после локальных правок. Production не менялся.
+
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).
 - Скрыто: пункт «AI-ассистент» + страница (заглушка), «Подбор партнёра» + страница (заглушка), `AiDocConsultant` в карточке проекта.
