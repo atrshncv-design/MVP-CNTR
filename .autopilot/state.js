@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T09:50:41+04:00",
+  "updatedAt": "2026-09-24T09:52:06+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -282,7 +282,10 @@ window.STATE =
       "requirements": ["D07"],
       "blockedBy": ["28"],
       "zone": ["technozrelost-frontend/package-lock.json"],
-      "status": "pending"
+      "status": "in-progress",
+      "startedAt": "2026-09-24T09:52:06+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high"
     },
     {
       "id": "31",
