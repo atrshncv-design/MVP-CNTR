@@ -27,7 +27,11 @@ def test_ready_reports_checked_database_roles(monkeypatch) -> None:
     async def databases_ready() -> dict[str, str]:
         return {"primary": "ok", "replica": "not_configured"}
 
+    async def redis_not_configured() -> str:
+        return "not_configured"
+
     monkeypatch.setattr(health_module, "check_databases", databases_ready)
+    monkeypatch.setattr(health_module, "check_redis", redis_not_configured)
 
     response = client.get("/api/v1/ready")
 
@@ -45,7 +49,11 @@ def test_ready_fails_closed_when_database_check_fails(monkeypatch) -> None:
     async def databases_unavailable() -> dict[str, str]:
         return {"primary": "unavailable", "replica": "not_configured"}
 
+    async def redis_not_configured() -> str:
+        return "not_configured"
+
     monkeypatch.setattr(health_module, "check_databases", databases_unavailable)
+    monkeypatch.setattr(health_module, "check_redis", redis_not_configured)
 
     response = client.get("/api/v1/ready")
 
