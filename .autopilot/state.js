@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T09:59:44+04:00",
+  "updatedAt": "2026-09-24T10:09:34+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend Python 3.11 gates green; frontend dependency audit high gate green after T30; lint D08 remains"
+      "note": "Backend Python 3.11 gates green; frontend high audit and lint gates green after T31; local Turbopack sandbox limit remains"
     },
     {
       "id": "review",
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 52,
-    "done": 10,
-    "inTicket": 5,
+    "done": 11,
+    "inTicket": 4,
     "inSpec": 34,
     "placeholder": 0,
     "deferred": 3,
@@ -297,10 +297,14 @@ window.STATE =
       "requirements": ["D08"],
       "blockedBy": ["28"],
       "zone": ["technozrelost-frontend/src/components/project-create/org-verification-hint.tsx"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-24T09:59:44+04:00",
+      "finishedAt": "2026-09-24T10:09:34+04:00",
+      "commit": "5b1a6cd",
       "executorModel": "gpt-6-luna",
-      "reasoningEffort": "high"
+      "reasoningEffort": "high",
+      "tests": {"focusedEslint": "exit 0; RED before fix", "lint": "exit 0; one pre-existing warning", "npmTest": "238 passed", "webpackBuild": "exit 0; 53 pages"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T31-verification.md"
     },
     {
       "id": "23",
