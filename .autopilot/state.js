@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T08:50:58+04:00",
+  "updatedAt": "2026-09-24T09:03:51+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend tests green; T03 build blocked by Google Fonts; T04 mypy 3.11 sync blocked by DNS, two app typing findings split"
+      "note": "Backend tests green; T25 exact-font build repair active; Python 3.11 mypy now runs and exposes two app typing findings"
     },
     {
       "id": "review",
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 48,
-    "done": 4,
-    "inTicket": 7,
+    "done": 5,
+    "inTicket": 6,
     "inSpec": 34,
     "placeholder": 0,
     "deferred": 3,
@@ -187,13 +187,13 @@ window.STATE =
       "blockedBy": ["03"],
       "wave": 2,
       "zone": ["technozrelost-backend/", ".github/workflows/ci.yml"],
-      "status": "failed",
+      "status": "done",
       "startedAt": "2026-09-24T08:47:44+04:00",
-      "finishedAt": "2026-09-24T08:50:58+04:00",
+      "finishedAt": "2026-09-24T08:57:21+04:00",
       "executorModel": "gpt-6-luna",
       "reasoningEffort": "high",
-      "tests": {"canonicalMypy": "exit 2; numpy stub target mismatch", "diagnosticMypy": "exit 1; 2 app typing errors in 62 files", "python311Sync": "exit 1; DNS download httptools"},
-      "blocker": "Compatible Python 3.11 dependency sync requires network; D03/T26 and D04/T27 are separate app typing errors.",
+      "tests": {"canonicalMypy": "Python 3.11 exit 1; 2 app typing errors in 62 files", "diagnosticMypy": "Python 3.14 target 3.12 exit 1; same errors", "python311Sync": "exit 0; 79 resolved, 76 installed"},
+      "blocker": "Toolchain mismatch removed in isolated Python 3.11 environment; mypy gate remains red on D03/T26 and D04/T27.",
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T04-verification.md"
     },
     {
@@ -203,7 +203,18 @@ window.STATE =
       "blockedBy": ["03"],
       "wave": 2,
       "zone": ["technozrelost-frontend/"],
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-09-24T08:51:57+04:00",
+      "priorAttemptFinishedAt": "2026-09-24T08:54:01+04:00",
+      "lastAttemptStartedAt": "2026-09-24T08:55:26+04:00",
+      "finishedAt": "2026-09-24T09:03:51+04:00",
+      "commit": "6799a9a",
+      "retries": 1,
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
+      "tests": {"npmTest": "238 passed", "webpackBuild": "exit 0; 53 pages", "defaultBuild": "exit 1; Turbopack worker EPERM, no font fetch"},
+      "blocker": "Font fetch issue fixed; default Turbopack build remains locally unverified due sandbox worker permission. CODE-06 conditional.",
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T25-verification.md"
     },
     {
       "id": "26",
@@ -250,7 +261,7 @@ window.STATE =
     "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)",
     "ticket02": "Independent: uv sync exit 0 (79 resolved/76 checked); Ruff exit 0; mypy exit 2 (Python 3.14/numpy stub syntax, T04); pytest after T22 exit 0 (720 passed, 1 warning, 560.65s). Local test DB technozrelost_test confirmed; see evidence/T02-verification.md.",
     "ticket03": "Stabilization T03: npm ci exit 0 (529 packages), independent npm test exit 0 (237 passed), build with CI API_URL_INTERNAL exit 1 due Google Fonts fetch; CODE-06 BLOCKED, see evidence/T03-verification.md.",
-    "ticket04": "Stabilization T04: canonical mypy exit 2 on Python 3.14/numpy 2.5.2 vs mypy target 3.11; Python 3.11 locked sync blocked DNS; diagnostic target 3.12 finds two app errors in 62 files, see evidence/T04-verification.md.",
+    "ticket04": "Stabilization T04: isolated Python 3.11 locked sync exit 0; canonical mypy analyzes 62 files, exits 1 on D03/D04. Original Python 3.14/numpy stub mismatch removed without config/lock/CI edits; see evidence/T04-verification.md.",
     "ticket05": "findings JSON valid (5 records with effort/risk); independent non-DB security suite 32 passed; Ruff green by executor; DB-backed suite remains environment BLOCKED without local test DB",
     "ticket06": "check_ux.py green: 2 findings, 41 screenshots, viewports 1920/768/375; three JSON artifacts valid; frontend npm baseline remains 171 pass/38 fail because next-intl is absent",
     "ticket07": "check_ai.py green: 6 registry entries, 5 findings, 32 checklist tokens, 0/200 live calls; three JSON artifacts valid; independent non-DB pytest repeat 32 passed",

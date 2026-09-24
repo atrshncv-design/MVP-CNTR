@@ -42,5 +42,11 @@
 ## Из T04 — mypy toolchain diagnosis (2026-09-24)
 
 - Локальный Python 3.14 выбирает numpy 2.5.2 со стабом PEP 695, а mypy target в проекте 3.11. Канонический gate exit 2 до анализа приложения.
-- Python 3.11.15 установлен, но изолированный locked sync остановлен DNS-ошибкой загрузки `httptools`; совместимый gate остаётся BLOCKED.
+- Первую попытку isolated locked sync Python 3.11.15 остановила DNS-ошибка загрузки `httptools`; позднее доступ восстановлен (см. ниже).
 - Диагностический target 3.12 проверил 62 файла, показал две ошибки приложения: Redis `from_url` в `realtime.py:109` (D03/T26) и validation handler в `main.py:311` (D04/T27). Оркестратор независимо воспроизвёл. Детали: `evidence/T04-verification.md`.
+- Позднее совместимое Python 3.11 окружение восстановлено через разрешённый сетевой доступ в `/private/tmp/t04-backend-venv`: locked sync exit 0, канонический mypy проверил 62 файла и подтвердил ровно D03/D04. Toolchain blocker снят, сам mypy gate остаётся красным до T26/T27.
+
+## Из T25 — локальные исходные шрифты (2026-09-24)
+
+- Те же Manrope и JetBrains Mono размещены локально из официального `google/fonts`, бинарные SHA-256 независимо сверены; OFL включены, CSS-переменные не менялись. Код/тест: `6799a9a`.
+- Frontend `npm test` → 238 passed; build через `--webpack` → exit 0 (53 страницы). Штатный Turbopack в sandbox падает на worker process `Operation not permitted`, не на fonts fetch; общий CODE-06/CI до отдельной проверки не объявлен GREEN.
