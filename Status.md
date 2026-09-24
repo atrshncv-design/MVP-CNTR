@@ -8,6 +8,7 @@
 - T27: тип обработчика RequestValidationError согласован с контрактом Starlette; полный Python 3.11 backend baseline: mypy 62 файла без ошибок, Ruff PASS, pytest 720 passed (2 dependency warnings).
 - T28: Next.js обновлён до patched 16.3.3; `npm ci`, 238 тестов и webpack production build PASS, `npm audit` — 0 critical. Остались high `sharp`/`browserslist` (T29/T30) и отдельный frontend lint finding (T31); штатный Turbopack локально ограничен sandbox.
 - T29: transitive sharp/libheif обновлён через lock до sharp 0.35.4; независимые `npm ls`, 238 тестов и webpack build PASS. `npm audit`: 0 critical, один high `browserslist` (T30); lint finding T31 остаётся.
+- T30: browserslist обновлён до 4.28.7; независимый `npm audit --audit-level=high` exit 0 (0 critical/high, 3 moderate), 238 тестов и webpack build PASS. Frontend lint T31 остаётся.
 
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).

@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T09:52:06+04:00",
+  "updatedAt": "2026-09-24T09:58:47+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend Python 3.11 gates green; T29 patched sharp done; frontend audit high D07 and lint D08 remain"
+      "note": "Backend Python 3.11 gates green; frontend dependency audit high gate green after T30; lint D08 remains"
     },
     {
       "id": "review",
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 52,
-    "done": 9,
-    "inTicket": 6,
+    "done": 10,
+    "inTicket": 5,
     "inSpec": 34,
     "placeholder": 0,
     "deferred": 3,
@@ -282,10 +282,14 @@ window.STATE =
       "requirements": ["D07"],
       "blockedBy": ["28"],
       "zone": ["technozrelost-frontend/package-lock.json"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-24T09:52:06+04:00",
+      "finishedAt": "2026-09-24T09:58:47+04:00",
+      "commit": "cd7632a",
       "executorModel": "gpt-6-luna",
-      "reasoningEffort": "high"
+      "reasoningEffort": "high",
+      "tests": {"npmCi": "exit 0", "audit": "exit 0; 0 high/critical; 3 moderate", "npmTest": "238 passed", "webpackBuild": "exit 0; 53 pages"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T30-verification.md"
     },
     {
       "id": "31",
