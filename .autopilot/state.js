@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T09:08:27+04:00",
+  "updatedAt": "2026-09-24T09:19:49+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 51,
-    "done": 5,
-    "inTicket": 9,
+    "done": 6,
+    "inTicket": 8,
     "inSpec": 34,
     "placeholder": 0,
     "deferred": 3,
@@ -222,10 +222,14 @@ window.STATE =
       "requirements": ["D03"],
       "blockedBy": ["04"],
       "zone": ["technozrelost-backend/app/api/v1/realtime.py"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-24T09:05:02+04:00",
+      "finishedAt": "2026-09-24T09:19:49+04:00",
+      "commit": "4236c95",
       "executorModel": "gpt-6-luna",
-      "reasoningEffort": "high"
+      "reasoningEffort": "high",
+      "tests": {"sse": "10 passed", "ruff": "exit 0", "mypy": "T26 fixed; only T27 remains"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T26-verification.md"
     },
     {
       "id": "27",

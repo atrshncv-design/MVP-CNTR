@@ -54,3 +54,8 @@
 ## CI gate после T25 (2026-09-24)
 
 - GitHub Actions run `35958291085`: backend stopped at mypy (D03/D04), frontend stopped at `npm audit` (D05-D07); frontend lint/tests/build в CI skipped. Локальный `npm audit --audit-level=high` exit 1: Next critical, sharp и browserslist high. Атомарные T28-T30 подготовлены; детали `evidence/CI-dependency-audit.md`.
+
+## Из T26 — Redis typing (2026-09-24)
+
+- `Redis.from_url` эквивалентен прежнему module-level factory в locked redis-py; нетипизированность ограничена локальной ссылкой, без новых публичных интерфейсов. `4236c95`.
+- Независимый Python 3.11 mypy оставляет только T27, 10 SSE-тестов и Ruff PASS; см. `evidence/T26-verification.md`.
