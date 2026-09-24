@@ -104,9 +104,10 @@ def _get_redis_async() -> Any | None:
     if not url:
         return None
     try:
-        import redis.asyncio as redis_async
+        from redis.asyncio import Redis
 
-        return redis_async.from_url(
+        from_url: Any = Redis.from_url  # redis-py 5.2.1 factory is untyped.
+        return from_url(
             url, socket_connect_timeout=1, socket_timeout=1, decode_responses=True
         )
     except Exception:  # noqa: BLE001
