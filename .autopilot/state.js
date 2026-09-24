@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T10:13:47+04:00",
+  "updatedAt": "2026-09-24T10:15:02+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -215,6 +215,16 @@ window.STATE =
       "zone": ["technozrelost-backend/app/main.py", "technozrelost-backend/tests/"],
       "status": "pending",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/06-explicit-cors-allowlist.md"
+    },
+    {
+      "id": "07",
+      "title": "SEC-03: production OpenAPI docs policy",
+      "requirements": ["R24"],
+      "blockedBy": ["06"],
+      "wave": 3,
+      "zone": ["technozrelost-backend/app/main.py", "technozrelost-backend/tests/"],
+      "status": "pending",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/07-production-api-docs-policy.md"
     },
     {
       "id": "25",
