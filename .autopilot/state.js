@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T08:46:49+04:00",
+  "updatedAt": "2026-09-24T08:50:58+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend tests green; T03 frontend tests green but build BLOCKED by Google Fonts; T04 pending"
+      "note": "Backend tests green; T03 build blocked by Google Fonts; T04 mypy 3.11 sync blocked by DNS, two app typing findings split"
     },
     {
       "id": "review",
@@ -73,9 +73,9 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 46,
+    "total": 48,
     "done": 4,
-    "inTicket": 5,
+    "inTicket": 7,
     "inSpec": 34,
     "placeholder": 0,
     "deferred": 3,
@@ -187,7 +187,14 @@ window.STATE =
       "blockedBy": ["03"],
       "wave": 2,
       "zone": ["technozrelost-backend/", ".github/workflows/ci.yml"],
-      "status": "pending"
+      "status": "failed",
+      "startedAt": "2026-09-24T08:47:44+04:00",
+      "finishedAt": "2026-09-24T08:50:58+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
+      "tests": {"canonicalMypy": "exit 2; numpy stub target mismatch", "diagnosticMypy": "exit 1; 2 app typing errors in 62 files", "python311Sync": "exit 1; DNS download httptools"},
+      "blocker": "Compatible Python 3.11 dependency sync requires network; D03/T26 and D04/T27 are separate app typing errors.",
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T04-verification.md"
     },
     {
       "id": "25",
@@ -196,6 +203,22 @@ window.STATE =
       "blockedBy": ["03"],
       "wave": 2,
       "zone": ["technozrelost-frontend/"],
+      "status": "pending"
+    },
+    {
+      "id": "26",
+      "title": "Типизация Redis from_url в realtime",
+      "requirements": ["D03"],
+      "blockedBy": ["04"],
+      "zone": ["technozrelost-backend/app/api/v1/realtime.py"],
+      "status": "pending"
+    },
+    {
+      "id": "27",
+      "title": "Типизация RequestValidationError handler",
+      "requirements": ["D04"],
+      "blockedBy": ["04"],
+      "zone": ["technozrelost-backend/app/main.py"],
       "status": "pending"
     },
     {
@@ -227,7 +250,7 @@ window.STATE =
     "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)",
     "ticket02": "Independent: uv sync exit 0 (79 resolved/76 checked); Ruff exit 0; mypy exit 2 (Python 3.14/numpy stub syntax, T04); pytest after T22 exit 0 (720 passed, 1 warning, 560.65s). Local test DB technozrelost_test confirmed; see evidence/T02-verification.md.",
     "ticket03": "Stabilization T03: npm ci exit 0 (529 packages), independent npm test exit 0 (237 passed), build with CI API_URL_INTERNAL exit 1 due Google Fonts fetch; CODE-06 BLOCKED, see evidence/T03-verification.md.",
-    "ticket04": "findings JSON schema valid (6 records); production catalog SELECTs succeeded without credential values/business rows; targeted migration test BLOCKED by absent local test DB (1 setup error); focused secret scan green",
+    "ticket04": "Stabilization T04: canonical mypy exit 2 on Python 3.14/numpy 2.5.2 vs mypy target 3.11; Python 3.11 locked sync blocked DNS; diagnostic target 3.12 finds two app errors in 62 files, see evidence/T04-verification.md.",
     "ticket05": "findings JSON valid (5 records with effort/risk); independent non-DB security suite 32 passed; Ruff green by executor; DB-backed suite remains environment BLOCKED without local test DB",
     "ticket06": "check_ux.py green: 2 findings, 41 screenshots, viewports 1920/768/375; three JSON artifacts valid; frontend npm baseline remains 171 pass/38 fail because next-intl is absent",
     "ticket07": "check_ai.py green: 6 registry entries, 5 findings, 32 checklist tokens, 0/200 live calls; three JSON artifacts valid; independent non-DB pytest repeat 32 passed",

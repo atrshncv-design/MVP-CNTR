@@ -38,3 +38,9 @@
 - `npm ci` exit 0, 529 packages; `npm test` exit 0, 237 passed (независимый повтор оркестратора совпал).
 - `npm run build` без env закономерно exit 1 (`API_URL_INTERNAL` production-guard). С CI-значением `API_URL_INTERNAL=http://backend:8000` exit 1: build-time fetch Manrope/JetBrains Mono из Google Fonts недоступен. Повтор оркестратора совпал. Это D02/T25; CODE-06 остаётся BLOCKED.
 - Продуктовый код, package/lock и production не менялись. Подробности: `evidence/T03-verification.md`.
+
+## Из T04 — mypy toolchain diagnosis (2026-09-24)
+
+- Локальный Python 3.14 выбирает numpy 2.5.2 со стабом PEP 695, а mypy target в проекте 3.11. Канонический gate exit 2 до анализа приложения.
+- Python 3.11.15 установлен, но изолированный locked sync остановлен DNS-ошибкой загрузки `httptools`; совместимый gate остаётся BLOCKED.
+- Диагностический target 3.12 проверил 62 файла, показал две ошибки приложения: Redis `from_url` в `realtime.py:109` (D03/T26) и validation handler в `main.py:311` (D04/T27). Оркестратор независимо воспроизвёл. Детали: `evidence/T04-verification.md`.
