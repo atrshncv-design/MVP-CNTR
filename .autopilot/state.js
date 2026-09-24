@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T10:11:30+04:00",
+  "updatedAt": "2026-09-24T10:13:47+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -205,6 +205,16 @@ window.STATE =
       "zone": ["technozrelost-frontend/src/components/landing/projects-showcase.tsx", "technozrelost-frontend/src/components/landing/roadmap-content.tsx", "technozrelost-frontend/tests/"],
       "status": "pending",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/05-public-form-labels.md"
+    },
+    {
+      "id": "06",
+      "title": "SEC-02: явный список CORS-методов и заголовков",
+      "requirements": ["R24"],
+      "blockedBy": ["05"],
+      "wave": 3,
+      "zone": ["technozrelost-backend/app/main.py", "technozrelost-backend/tests/"],
+      "status": "pending",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/06-explicit-cors-allowlist.md"
     },
     {
       "id": "25",
