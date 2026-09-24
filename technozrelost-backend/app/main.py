@@ -228,7 +228,7 @@ _CATALOG_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 
 async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
+    request: Request, exc: Exception
 ) -> JSONResponse:
     """Коды каталога из pydantic-валидаторов — в текст на языке запроса.
 
@@ -237,6 +237,8 @@ async def validation_exception_handler(
     Accept-Language (умолчание русское, история 5). Неизвестные ValueError
     идут как раньше: дефолтная форма FastAPI (422 + detail-массив).
     """
+    if not isinstance(exc, RequestValidationError):
+        raise exc
     locale = locale_from_request(request)
     details: list[object] = []
     for err in exc.errors():

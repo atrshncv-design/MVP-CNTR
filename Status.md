@@ -5,6 +5,7 @@
 - Frontend T25: те же Manrope и JetBrains Mono скачаны из официального `google/fonts` с OFL, подключены локально; 238 тестов и production build через webpack проходят. Штатный Turbopack build в локальном sandbox блокируется на создании worker process; CI/production этим не подтверждены.
 - T23/T24: ассистенты по документам и реестрам ещё не исправлялись; live provider проверка ждёт нового ключа от владельца после локальных правок. Production не менялся.
 - T26: Redis SSE factory приведён к узкой границе типов; 10 SSE-тестов и Ruff проходят, mypy теперь показывает только T27.
+- T27: тип обработчика RequestValidationError согласован с контрактом Starlette; полный Python 3.11 backend baseline: mypy 62 файла без ошибок, Ruff PASS, pytest 720 passed (2 dependency warnings).
 
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).
