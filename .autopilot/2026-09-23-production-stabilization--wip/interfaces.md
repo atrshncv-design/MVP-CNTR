@@ -32,3 +32,9 @@
 - Исторический RED: pytest на локальном PostgreSQL `technozrelost_test` → exit 1 (705 passed, 15 failed, 1 warning); все 15 failures — тестовые mocks без `session_id` (`STAB-TEST-01`).
 - После T22 (`14eca1d`): полный независимый pytest → exit 0, 720 passed, 1 warning; Ruff → exit 0. Backend CODE-03 разблокирован, mypy toolchain остаётся T04. Продуктовых интерфейсов T02/T22 не добавили.
 - Подробные результаты и evidence: `evidence/T02-verification.md`.
+
+## Из T03 — frontend baseline (2026-09-24)
+
+- `npm ci` exit 0, 529 packages; `npm test` exit 0, 237 passed (независимый повтор оркестратора совпал).
+- `npm run build` без env закономерно exit 1 (`API_URL_INTERNAL` production-guard). С CI-значением `API_URL_INTERNAL=http://backend:8000` exit 1: build-time fetch Manrope/JetBrains Mono из Google Fonts недоступен. Повтор оркестратора совпал. Это D02/T25; CODE-06 остаётся BLOCKED.
+- Продуктовый код, package/lock и production не менялись. Подробности: `evidence/T03-verification.md`.
