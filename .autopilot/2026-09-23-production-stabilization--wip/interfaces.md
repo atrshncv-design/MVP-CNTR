@@ -50,3 +50,7 @@
 
 - Те же Manrope и JetBrains Mono размещены локально из официального `google/fonts`, бинарные SHA-256 независимо сверены; OFL включены, CSS-переменные не менялись. Код/тест: `6799a9a`.
 - Frontend `npm test` → 238 passed; build через `--webpack` → exit 0 (53 страницы). Штатный Turbopack в sandbox падает на worker process `Operation not permitted`, не на fonts fetch; общий CODE-06/CI до отдельной проверки не объявлен GREEN.
+
+## CI gate после T25 (2026-09-24)
+
+- GitHub Actions run `35958291085`: backend stopped at mypy (D03/D04), frontend stopped at `npm audit` (D05-D07); frontend lint/tests/build в CI skipped. Локальный `npm audit --audit-level=high` exit 1: Next critical, sharp и browserslist high. Атомарные T28-T30 подготовлены; детали `evidence/CI-dependency-audit.md`.

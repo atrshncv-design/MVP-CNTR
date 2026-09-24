@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T09:03:51+04:00",
+  "updatedAt": "2026-09-24T09:08:27+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend tests green; T25 exact-font build repair active; Python 3.11 mypy now runs and exposes two app typing findings"
+      "note": "Backend tests green; T25 exact-font fix done; Python 3.11 mypy exposes D03/D04; CI frontend npm audit exposes D05-D07"
     },
     {
       "id": "review",
@@ -73,9 +73,9 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 48,
+    "total": 51,
     "done": 5,
-    "inTicket": 6,
+    "inTicket": 9,
     "inSpec": 34,
     "placeholder": 0,
     "deferred": 3,
@@ -222,7 +222,10 @@ window.STATE =
       "requirements": ["D03"],
       "blockedBy": ["04"],
       "zone": ["technozrelost-backend/app/api/v1/realtime.py"],
-      "status": "pending"
+      "status": "in-progress",
+      "startedAt": "2026-09-24T09:05:02+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high"
     },
     {
       "id": "27",
@@ -230,6 +233,30 @@ window.STATE =
       "requirements": ["D04"],
       "blockedBy": ["04"],
       "zone": ["technozrelost-backend/app/main.py"],
+      "status": "pending"
+    },
+    {
+      "id": "28",
+      "title": "Next.js critical npm advisory",
+      "requirements": ["D05"],
+      "blockedBy": ["25"],
+      "zone": ["technozrelost-frontend/package.json", "technozrelost-frontend/package-lock.json"],
+      "status": "pending"
+    },
+    {
+      "id": "29",
+      "title": "sharp/libheif high npm advisory",
+      "requirements": ["D06"],
+      "blockedBy": ["28"],
+      "zone": ["technozrelost-frontend/package-lock.json"],
+      "status": "pending"
+    },
+    {
+      "id": "30",
+      "title": "browserslist high npm advisory",
+      "requirements": ["D07"],
+      "blockedBy": ["28"],
+      "zone": ["technozrelost-frontend/package-lock.json"],
       "status": "pending"
     },
     {
