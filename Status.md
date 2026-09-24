@@ -1,12 +1,13 @@
 # Status — платформа «Технозрелость»
 
 ## 2026-09-24 — stabilization audit follow-up (отдельный worktree, без деплоя) — in-progress
-- Ветка `autopilot/production-stabilization`: backend test baseline 720 passed; Ruff passed. Изолированный Python 3.11 mypy проверил 62 файла и выявил два локальных typing findings (T26/T27), поэтому type gate ещё красный.
+- Ветка `autopilot/production-stabilization`: backend test baseline 720 passed; Ruff и изолированный Python 3.11 mypy (62 файла) прошли после T26/T27.
 - Frontend T25: те же Manrope и JetBrains Mono скачаны из официального `google/fonts` с OFL, подключены локально; 238 тестов и production build через webpack проходят. Штатный Turbopack build в локальном sandbox блокируется на создании worker process; CI/production этим не подтверждены.
 - T23/T24: ассистенты по документам и реестрам ещё не исправлялись; live provider проверка ждёт нового ключа от владельца после локальных правок. Production не менялся.
 - T26: Redis SSE factory приведён к узкой границе типов; 10 SSE-тестов и Ruff проходят, mypy теперь показывает только T27.
 - T27: тип обработчика RequestValidationError согласован с контрактом Starlette; полный Python 3.11 backend baseline: mypy 62 файла без ошибок, Ruff PASS, pytest 720 passed (2 dependency warnings).
 - T28: Next.js обновлён до patched 16.3.3; `npm ci`, 238 тестов и webpack production build PASS, `npm audit` — 0 critical. Остались high `sharp`/`browserslist` (T29/T30) и отдельный frontend lint finding (T31); штатный Turbopack локально ограничен sandbox.
+- T29: transitive sharp/libheif обновлён через lock до sharp 0.35.4; независимые `npm ls`, 238 тестов и webpack build PASS. `npm audit`: 0 critical, один high `browserslist` (T30); lint finding T31 остаётся.
 
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).
