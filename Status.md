@@ -6,6 +6,7 @@
 - T23/T24: ассистенты по документам и реестрам ещё не исправлялись; live provider проверка ждёт нового ключа от владельца после локальных правок. Production не менялся.
 - T26: Redis SSE factory приведён к узкой границе типов; 10 SSE-тестов и Ruff проходят, mypy теперь показывает только T27.
 - T27: тип обработчика RequestValidationError согласован с контрактом Starlette; полный Python 3.11 backend baseline: mypy 62 файла без ошибок, Ruff PASS, pytest 720 passed (2 dependency warnings).
+- T28: Next.js обновлён до patched 16.3.3; `npm ci`, 238 тестов и webpack production build PASS, `npm audit` — 0 critical. Остались high `sharp`/`browserslist` (T29/T30) и отдельный frontend lint finding (T31); штатный Turbopack локально ограничен sandbox.
 
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).
