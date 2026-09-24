@@ -42,3 +42,7 @@
 - CODE-03: `BLOCKED`, не `DONE`: suite исполняется после восстановления БД, но не зелёный из-за `STAB-TEST-01`; зелёный полный backend baseline не доказан.
 - T02: `BLOCKED`; commit не создан из-за красного regression suite и mypy blocker. T03 не запускался.
 - Production не затрагивался. Независимый suite завершён с exit 1.
+
+## Продолжение после отдельного T22 (2026-09-24)
+
+Предыдущий красный результат сохранён выше как исторический baseline. T22 исправил только сигнатуры четырёх тестовых mocks, не меняя приложение (`14eca1d`). Независимый повтор оркестратора: `uv run pytest -q` → exit 0, **720 passed, 1 warning**, 560.65s; `uv run ruff check app tests infra/alerter scripts/udgu_ingest` → exit 0. `uv sync --locked --extra dev` уже имел exit 0; lock-файлы не менялись. Два независимых ревью T22 не нашли блокирующих замечаний. Backend test baseline CODE-03 теперь зелёный; mypy остаётся отдельным toolchain-блокером T04 и не объявляется зелёным. Production не затрагивался.

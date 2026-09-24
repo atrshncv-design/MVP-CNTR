@@ -29,6 +29,6 @@
 
 - `uv sync --locked --extra dev` → exit 0; lock-файлы не менялись.
 - Ruff → exit 0; mypy → BLOCKED Python 3.14/numpy stub syntax.
-- Pytest на локальном PostgreSQL `technozrelost_test` → exit 1 (705 passed, 15 failed, 1 warning); все 15 failures — тестовые mocks без `session_id` (`STAB-TEST-01`).
-- Никаких продуктовых интерфейсов T02 не добавил. T02 остаётся BLOCKED; commit не создан.
+- Исторический RED: pytest на локальном PostgreSQL `technozrelost_test` → exit 1 (705 passed, 15 failed, 1 warning); все 15 failures — тестовые mocks без `session_id` (`STAB-TEST-01`).
+- После T22 (`14eca1d`): полный независимый pytest → exit 0, 720 passed, 1 warning; Ruff → exit 0. Backend CODE-03 разблокирован, mypy toolchain остаётся T04. Продуктовых интерфейсов T02/T22 не добавили.
 - Подробные результаты и evidence: `evidence/T02-verification.md`.
