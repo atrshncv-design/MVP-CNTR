@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T07:49:35+04:00",
+  "updatedAt": "2026-09-24T07:52:38+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -120,17 +120,18 @@ window.STATE =
       ],
       "status": "in-progress",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "lastAttemptStartedAt": "2026-09-24T07:49:35+04:00",
+      "lastAttemptStartedAt": "2026-09-24T07:52:38+04:00",
       "retries": 1,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "executorModel": "openai/gpt-6-luna"
     }
   ],
   "singlePass": null,
   "executionPolicy": {
-    "executor": "opencode-go/muse-spark-1.3-contributor",
-    "ticket": "T02",
-    "mode": "fresh-session; no commit; no run-file edits"
+    "executor": "openai/gpt-6-luna",
+    "executorAuthorization": "user authorized on 2026-09-24 after opencode-go subscription launch error",
+    "priorLaunch": "opencode-go/muse-spark-1.3-contributor failed before work: active subscription required; no return contract; worktree clean"
   },
   "tests": {
     "ticket01": "evidence 19/19 + secret scan green; Ruff green; pytest blocked by absent 127.0.0.1:5432 (31 passed/720 setup errors); mypy blocked by Python 3.14/numpy stub mismatch; frontend dependencies absent (171 passed/38 fail, next build unavailable)",
@@ -160,56 +161,9 @@ window.STATE =
   },
   "concerns": [
     {
-      "ticket": "01",
-      "area": "test-environment",
-      "note": "Full regression suite cannot be green in this checkout: test PostgreSQL and installed frontend dependencies are absent; mypy runtime/stub mismatch is pre-existing. No product code changed."
-    },
-    {
-      "ticket": "01",
-      "area": "deployment-evidence",
-      "note": "deploy.log trails running image: last logged 8651cced865c, running f06b15c."
-    },
-    {
-      "ticket": "03",
-      "area": "craft",
-      "file": "docs/audit/2026-09-21-production/03-code/findings.json",
-      "note": "CODE-01 groups several fallback contours without a complete suppression inventory."
-    },
-    {
-      "ticket": "04",
-      "area": "data-protection",
-      "file": "docs/audit/2026-09-21-production/04-database/README.md",
-      "note": "Masking/log controls remain UNKNOWN; token hashing and seed behavior are separate controls and do not prove log masking."
-    },
-    {
-      "ticket": "04",
-      "area": "migrations",
-      "file": "docs/audit/2026-09-21-production/04-database/db-model.md",
-      "note": "Only migration 0036 downgrade was inspected; chain-wide downgrade/transaction/rollback coverage remains partial."
-    },
-    {
-      "ticket": "05",
-      "area": "evidence-scope",
-      "file": "docs/audit/2026-09-21-production/05-security/findings.json",
-      "note": "Some static/local observations list production in affected_environments although deployed behavior is UNKNOWN because server HEAD differs; final synthesis must not present those as confirmed production findings."
-    },
-    {
-      "ticket": "06",
-      "area": "screenshot-safety",
-      "file": "docs/audit/2026-09-21-production/06-ux/check_ux.py",
-      "note": "The artifact gate scans screenshot filenames, not rendered text inside PNGs; screenshots are public unauthenticated pages, but content-level sensitive-data absence is not machine-proven."
-    },
-    {
-      "ticket": "07",
-      "area": "artifact-gate",
-      "file": "docs/audit/2026-09-21-production/07-ai/check_ai.py",
-      "note": "The AI gate checks non-empty arrays and token presence but does not enforce the reported 6/5 cardinalities or item-level semantic coverage; final synthesis must treat it as a structural gate, not a semantic oracle."
-    },
-    {
-      "ticket": "08",
-      "area": "artifact-gate",
-      "file": "docs/audit/2026-09-21-production/08-operations/check_ops.py",
-      "note": "The operations gate uses substring coverage and does not prove item-level evidence or UNKNOWN status; final synthesis must retain the report's explicit evidence boundaries."
+      "ticket": "02",
+      "time": "2026-09-24T07:52:38+04:00",
+      "note": "First resumed launcher failed before execution: OpenCode Go requires active subscription. User explicitly authorized GPT-6 Luna for replacement session. No T02 work product returned."
     }
   ],
   "reviewers": {
