@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T10:49:23+04:00",
+  "updatedAt": "2026-09-24T15:04:05+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 55,
-    "done": 11,
-    "inTicket": 8,
+    "done": 12,
+    "inTicket": 7,
     "inSpec": 33,
     "placeholder": 0,
     "deferred": 3,
@@ -362,11 +362,16 @@ window.STATE =
       "requirements": ["D09"],
       "blockedBy": ["31"],
       "zone": ["technozrelost-backend/tests/test_health.py"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-24T10:49:23+04:00",
+      "finishedAt": "2026-09-24T15:04:05+04:00",
+      "commit": "ed4586e",
       "executorModel": "gpt-6-luna",
       "reasoningEffort": "high",
-      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/32-readiness-redis-test-isolation.md"
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/32-readiness-redis-test-isolation.md",
+      "tests": {"redisFocused": "4 passed", "noRedisFocused": "4 passed", "fullRedis": "751 passed, 2 warnings", "ruff": "exit 0", "mypy": "62 files, exit 0"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T32-verification.md",
+      "concerns": ["Craft review: duplicated 3-line redis_not_configured double in two tests; non-blocking"]
     },
     {
       "id": "33",
