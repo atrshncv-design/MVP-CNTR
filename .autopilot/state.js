@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T10:18:00+04:00",
+  "updatedAt": "2026-09-24T10:48:01+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Backend Python 3.11 gates green; frontend high audit and lint gates green after T31; local Turbopack sandbox limit remains"
+      "note": "Local backend 751 tests green; CI backend Pytest red on D09-D11; frontend CI green; T32-T34 required before wave 3"
     },
     {
       "id": "review",
@@ -73,9 +73,9 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 52,
+    "total": 55,
     "done": 11,
-    "inTicket": 5,
+    "inTicket": 8,
     "inSpec": 33,
     "placeholder": 0,
     "deferred": 3,
@@ -355,6 +355,33 @@ window.STATE =
       "reasoningEffort": "high",
       "tests": {"focusedEslint": "exit 0; RED before fix", "lint": "exit 0; one pre-existing warning", "npmTest": "238 passed", "webpackBuild": "exit 0; 53 pages"},
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T31-verification.md"
+    },
+    {
+      "id": "32",
+      "title": "Readiness Redis test isolation for CI",
+      "requirements": ["D09"],
+      "blockedBy": ["31"],
+      "zone": ["technozrelost-backend/tests/test_health.py"],
+      "status": "pending",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/32-readiness-redis-test-isolation.md"
+    },
+    {
+      "id": "33",
+      "title": "Deploy secret test env isolation for CI",
+      "requirements": ["D10"],
+      "blockedBy": ["32"],
+      "zone": ["technozrelost-backend/tests/test_infra_contracts.py"],
+      "status": "pending",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/33-deploy-secret-test-env-isolation.md"
+    },
+    {
+      "id": "34",
+      "title": "Portable OpenSSL SAN-check for TLS gate",
+      "requirements": ["D11"],
+      "blockedBy": ["33"],
+      "zone": ["technozrelost-backend/infra/tls_deploy_gate.py", "technozrelost-backend/tests/test_tls_deploy_gate.py"],
+      "status": "pending",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/34-tls-openssl-argv-portability.md"
     },
     {
       "id": "23",

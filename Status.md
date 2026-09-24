@@ -10,6 +10,7 @@
 - T29: transitive sharp/libheif обновлён через lock до sharp 0.35.4; независимые `npm ls`, 238 тестов и webpack build PASS. `npm audit`: 0 critical, один high `browserslist` (T30); lint finding T31 остаётся.
 - T30: browserslist обновлён до 4.28.7; независимый `npm audit --audit-level=high` exit 0 (0 critical/high, 3 moderate), 238 тестов и webpack build PASS. Frontend lint T31 остаётся.
 - T31: frontend lint исправлен через размонтирование подсказки при отсутствии сессии и token-keyed child; независимые lint (0 errors, 1 pre-existing warning), 238 tests и webpack build PASS. Прямого runtime-теста неиспользуемого компонента нет; focused ESLint регрессия PASS.
+- CI baseline: frontend job SUCCESS; backend Pytest FAIL из-за трёх воспроизведённых классов расхождения CI/test окружения (D09 Redis readiness, D10 inherited synthetic deploy env, D11 Linux OpenSSL SAN argv). Локально точная suite без Redis 751 passed; с Redis первый readiness failure воспроизведён. T32–T34 подготовлены, T05 пока не запускался.
 
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).
