@@ -174,6 +174,41 @@ def test_gate_accepts_matching_fresh_certificate(tmp_path: Path) -> None:
     assert "TLS-GATE OK" in result.stdout
 
 
+def test_gate_uses_portable_subject_alt_name_argv(tmp_path: Path) -> None:
+    fake_openssl = tmp_path / "openssl"
+    fake_openssl.write_text(
+        """#!/usr/bin/env python3
+import sys
+
+arguments = sys.argv[1:]
+if arguments[-1] == "-ext subjectAltName":
+    raise SystemExit(0)
+if arguments[-2:] == ["-ext", "subjectAltName"]:
+    print("X509v3 Subject Alternative Name:")
+    print("    DNS:1-2-3-4.sslip.io")
+elif arguments[-1] == "-issuer":
+    print("issuer=CN=test-ca")
+elif arguments[-1] == "-subject":
+    print("subject=CN=1-2-3-4.sslip.io")
+elif arguments[-1] == "-enddate":
+    print("notAfter=Dec 31 23:59:59 2099 GMT")
+else:
+    raise SystemExit(2)
+""",
+        encoding="ascii",
+    )
+    fake_openssl.chmod(0o755)
+    key = tmp_path / "leaf.key"
+    cert = tmp_path / "leaf.crt"
+    key.touch()
+    cert.touch()
+    env = _valid_env(tmp_path, key, cert)
+    env["PATH"] = f"{tmp_path}{os.pathsep}{os.environ['PATH']}"
+    result = run_gate(env)
+    assert result.returncode == 0
+    assert "TLS-GATE OK" in result.stdout
+
+
 def _infrasource(name: str) -> str:
     return (INFRA_ROOT / name).read_text(encoding="utf-8")
 

@@ -202,9 +202,9 @@ def check_cors(errors: list[str], host: str) -> None:
         errors.append("TLS-GATE: CORS_ORIGINS не содержит публичный хост")
 
 
-def openssl_text(path: Path, kind: str) -> str | None:
+def openssl_text(path: Path, *arguments: str) -> str | None:
     proc = subprocess.run(
-        ["openssl", "x509", "-in", str(path), "-noout", kind],
+        ["openssl", "x509", "-in", str(path), "-noout", *arguments],
         check=False,
         capture_output=True,
         text=True,
@@ -232,7 +232,7 @@ def check_certificate(errors: list[str], host: str, legacy: str | None) -> None:
     if shutil.which("openssl") is None:
         print("TLS-GATE: внутренняя ошибка гейта: нет openssl", file=sys.stderr)
         raise SystemExit(2)
-    san = openssl_text(cert, "-ext subjectAltName")
+    san = openssl_text(cert, "-ext", "subjectAltName")
     if san is None:
         san = openssl_text(cert, "-text")
     if san is None:
