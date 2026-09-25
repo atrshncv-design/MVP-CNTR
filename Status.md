@@ -13,6 +13,7 @@
 - CI baseline: frontend job SUCCESS; backend Pytest FAIL из-за трёх воспроизведённых классов расхождения CI/test окружения (D09 Redis readiness, D10 inherited synthetic deploy env, D11 Linux OpenSSL SAN argv). Локально точная suite без Redis 751 passed; с Redis первый readiness failure воспроизведён. T32–T34 подготовлены, T05 пока не запускался.
 - T32: readiness-тесты изолированы от конфигурации Redis в CI (`ed4586e`); независимые focused-прогоны с Redis и без него — по 4 passed, полный локальный backend suite с Redis — 751 passed, Ruff/mypy PASS. Linux CI остаётся непроверенным до T33/T34; production не менялся.
 - 2026-09-25: владелец выбрал Space Bunny Free в режиме Max для оставшихся локальных тасков; `opencode/space-bunny-free`/`max` подтверждена каталогом и отдельным пробным ответом `OK`. T33 передаётся новой OpenCode-сессии; оркестратор сохраняет независимое ревью, тесты и commit/push.
+- T33: исправлена только изоляция synthetic deploy-теста от унаследованного CI-default (`6aff356`); оба positive-case, 70 infra-тестов, полный backend 751 tests, Ruff и mypy PASS; независимое ревью clean. Linux CI/production этим не подтверждены; далее T34.
 
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).

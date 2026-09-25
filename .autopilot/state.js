@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T07:58:08+04:00",
+  "updatedAt": "2026-09-25T08:14:28+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 56,
-    "done": 12,
-    "inTicket": 8,
+    "done": 13,
+    "inTicket": 7,
     "inSpec": 33,
     "placeholder": 0,
     "deferred": 3,
@@ -379,11 +379,15 @@ window.STATE =
       "requirements": ["D10"],
       "blockedBy": ["32"],
       "zone": ["technozrelost-backend/tests/test_infra_contracts.py"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-25T07:58:08+04:00",
+      "finishedAt": "2026-09-25T08:14:28+04:00",
+      "commit": "6aff356",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
-      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/33-deploy-secret-test-env-isolation.md"
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/33-deploy-secret-test-env-isolation.md",
+      "tests": {"positiveWithDefault": "1 passed", "positiveWithoutDefault": "1 passed", "infraFile": "70 passed", "fullWithRedisAndDefault": "751 passed, 2 warnings", "ruff": "exit 0", "mypy": "62 files, exit 0"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T33-verification.md"
     },
     {
       "id": "34",
@@ -458,8 +462,8 @@ window.STATE =
     }
   ],
   "reviewers": {
-    "manifestSpec": "/root/economy_manifest_spec",
-    "craft": "/root/economy_craft"
+    "manifestSpec": "/root/t32_manifest_spec_review",
+    "craft": "/root/t31_frontend_lint"
   },
   "concernTriage": {
     "fixNow": 0,
