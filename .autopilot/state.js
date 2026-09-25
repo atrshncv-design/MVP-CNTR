@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T13:35:54+04:00",
+  "updatedAt": "2026-09-25T13:40:46+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -75,8 +75,8 @@ window.STATE =
   "requirements": {
     "total": 56,
     "done": 14,
-    "inTicket": 6,
-    "inSpec": 33,
+    "inTicket": 7,
+    "inSpec": 32,
     "placeholder": 0,
     "deferred": 3,
     "dropped": 0
@@ -279,12 +279,30 @@ window.STATE =
       "startedAt": "2026-09-25T10:31:51+04:00",
       "updatedAt": "2026-09-25T13:35:54+04:00",
       "finishedAt": "2026-09-25T13:35:54+04:00",
-      "executorModel": "opencode/space-bunny-free",
-      "reasoningVariant": "max",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/09-explicit-environment-presets.md",
       "outcome": "No product change justified: standard production Compose overrides loopback dev defaults. Actual deployed runtime values remain UNKNOWN.",
       "tests": {"configFocused": "5 passed, 1 existing warning", "ruff": "not run; no product code changed", "mypy": "not run; no product code changed"},
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T09-config-matrix.md"
+    },
+    {
+      "id": "10",
+      "title": "CODE-01: счётчик подавленных исключений",
+      "requirements": ["R23"],
+      "blockedBy": ["09"],
+      "wave": 3,
+      "zone": ["technozrelost-backend/app/services/metrics.py", "technozrelost-backend/app/services/", "technozrelost-backend/app/api/v1/", "technozrelost-backend/app/core/deps.py", "technozrelost-backend/tests/test_observability.py"],
+      "status": "in-progress",
+      "startedAt": "2026-09-25T13:40:46+04:00",
+      "updatedAt": "2026-09-25T13:40:46+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/10-suppressed-exception-metric.md",
+      "red": "tests/test_observability.py::test_suppressed_exception_counter_is_bounded_and_resettable — expected AttributeError: recorder not implemented",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     },
     {
       "id": "25",

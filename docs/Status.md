@@ -380,3 +380,4 @@
 ## Production stabilization — 2026-09-25
 
 - ✅ T09 / CODE-04 configuration matrix: focused config tests 5 passed (1 existing warning). Repository production Compose explicitly overrides backend loopback dev defaults for PostgreSQL, MinIO, and ClamAV; no product code change was justified. This conclusion is limited to the standard Compose path; actual deployed environment remains UNKNOWN because production and real `.env` values were not inspected. Evidence: `.autopilot/2026-09-23-production-stabilization--wip/evidence/T09-config-matrix.md`.
+- 🔄 T10 / CODE-01 started in Codex (GPT-6 Luna High). RED confirmed: the new observability contract test fails because `suppressed_exception_observed` is not implemented yet.

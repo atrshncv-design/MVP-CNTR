@@ -196,6 +196,20 @@ def test_queue_and_storage_gauges(client: TestClient) -> None:
     assert _metric_value(body, "technozrelost_storage_objects") >= 0
 
 
+def test_suppressed_exception_counter_is_bounded_and_resettable() -> None:
+    metrics.reset()
+    metrics.suppressed_exception_observed("rag")
+    metrics.suppressed_exception_observed("rag")
+    metrics.suppressed_exception_observed('rag{tenant="secret"}')
+
+    body = metrics.render()
+    assert 'technozrelost_suppressed_exceptions_total{module="rag"} 2' in body
+    assert "secret" not in body
+
+    metrics.reset()
+    assert 'technozrelost_suppressed_exceptions_total{module="rag"} 2' not in metrics.render()
+
+
 def test_redact_masks_secrets_and_emails() -> None:
     assert redact("password=hunter2 остальное") == "password=*** остальное"
     assert redact("Authorization: Bearer eyJhbGci.abc") == "Authorization: ***"
