@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T15:44:22+04:00",
+  "updatedAt": "2026-09-25T17:27:46+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,13 +57,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "T10 repair green/reviewed; T11 reviewed; backend regression 748 passed; T12 is next"
+      "note": "T12 DB-03 implemented, independently reviewed and committed; remaining Wave 3 work complete"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-25T15:03:23+04:00",
-      "note": "T10 repair and T11 reviewed; wave 3 continues at T12"
+      "note": "T12 manifest/spec re-review clean; Craft has one non-blocking concern logged for final triage"
     },
     {
       "id": "final",
@@ -72,8 +72,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 56,
-    "done": 14,
-    "inTicket": 7,
+    "done": 15,
+    "inTicket": 6,
     "inSpec": 32,
     "placeholder": 0,
     "deferred": 3,
@@ -166,7 +166,7 @@ window.STATE =
       "blockedBy": ["02", "22"],
       "wave": 2,
       "zone": ["technozrelost-frontend/"],
-      "status": "failed",
+      "status": "in-progress",
       "startedAt": "2026-09-24T08:43:11+04:00",
       "finishedAt": "2026-09-24T08:46:49+04:00",
       "executorModel": "gpt-6-luna",
@@ -335,6 +335,37 @@ window.STATE =
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
+    },
+    {
+      "id": "12",
+      "title": "DB-03: канонический список и автоматическая проверка индексов",
+      "requirements": ["R24"],
+      "blockedBy": ["11"],
+      "wave": 3,
+      "zone": ["technozrelost-backend/docs/database-indexes.md", "technozrelost-backend/tests/test_db_index_inventory.py"],
+      "status": "done",
+      "startedAt": "2026-09-25T15:48:16+04:00",
+      "updatedAt": "2026-09-25T17:27:46+04:00",
+      "lastAttemptStartedAt": "2026-09-25T16:56:18+04:00",
+      "finishedAt": "2026-09-25T17:27:46+04:00",
+      "executorNote": "OpenCode v2.0.15 / opencode/space-bunny-free / max returned DONE_WITH_CONCERNS. Independent focused static pytest: 4 passed with --noconftest; Ruff PASS; Python 3.11 mypy PASS (62 files); full backend suite PASS (752 passed, 1 warning).",
+      "priorBlocker": "OpenCode's external_directory gate rejected a malformed Unicode absolute docs path despite owner authorization; corrected by moving the same isolated worktree to an ASCII-only path.",
+      "commit": "be3e3a4",
+      "tests": {
+        "focusedIndependent": "4 passed; --noconftest avoids repository-wide autouse PostgreSQL fixture; test remains static",
+        "ruff": "PASS",
+        "mypy": "PASS; Python 3.11, 62 source files",
+        "fullSuite": "752 passed, 1 existing Starlette/httpx deprecation warning in 479.75s; isolated local test DB"
+      },
+      "review": "Manifest/spec review clean after repair. Craft has no blocking finding; key-expression/operator-class/lists comparison retained as non-blocking concern for final triage.",
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T12-db-index-inventory.md",
+      "concerns": ["Static inventory test discovers named migration indexes and checks table/method/predicate/source, but not every SQL/ORM key expression, operator class, or ivfflat lists value."],
+      "retries": 2,
+      "repairs": 1,
+      "handoffs": 0,
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/12-db-index-inventory.md"
     },
     {
       "id": "25",
