@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T17:27:46+04:00",
+  "updatedAt": "2026-09-25T17:41:10+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,13 +57,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "T12 DB-03 implemented, independently reviewed and committed; remaining Wave 3 work complete"
+      "note": "T13 SEC-01 container hardening dispatched to OpenCode Space Bunny Free Max"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-25T15:03:23+04:00",
-      "note": "T12 manifest/spec re-review clean; Craft has one non-blocking concern logged for final triage"
+      "note": "T13 review will follow independent diff review and full regression"
     },
     {
       "id": "final",
@@ -366,6 +366,22 @@ window.STATE =
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/12-db-index-inventory.md"
+    },
+    {
+      "id": "13",
+      "title": "SEC-01: least-privilege container hardening",
+      "requirements": ["R23", "R28"],
+      "blockedBy": ["12"],
+      "wave": 4,
+      "zone": ["technozrelost-backend/infra/docker-compose.yml", "technozrelost-backend/infra/docker-compose.prod.yml", "technozrelost-backend/Dockerfile", "technozrelost-frontend/Dockerfile", "technozrelost-backend/tests/test_container_hardening.py", "technozrelost-backend/infra/container-hardening-runbook.md"],
+      "status": "in-progress",
+      "startedAt": "2026-09-25T17:41:10+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/13-container-hardening.md",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     },
     {
       "id": "25",
