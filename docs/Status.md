@@ -376,3 +376,7 @@
 ## Friday Release Candidate — ФИНАЛ (05.08.2026)
 
 ✅ **Все 22 тикета закрыты.** Release gate: 190/190 pytest, frontend lint/tsc/5/5/build зелёные, compose/backup/security PASS (известные ecdsa advisory без фикса задокументированы), публичные реестры 200 (B1 закрыт), resubmit отклонённых драфтов. Отчёт: `.scratch/friday-release-candidate/release-gate-report.md`. Ветки: backend `codex/recovery-backend` (head `35594a2`), frontend `codex/recovery-frontend` (head `7a08999`), docs `codex/friday-release-candidate` (head `…`). Развёртывание: `infra/README-DEPLOY.md` (deploy.sh) + seed `uv run python -m app.db.reset_demo --full` на сервере.
+
+## Production stabilization — 2026-09-25
+
+- ✅ T09 / CODE-04 configuration matrix: focused config tests 5 passed (1 existing warning). Repository production Compose explicitly overrides backend loopback dev defaults for PostgreSQL, MinIO, and ClamAV; no product code change was justified. This conclusion is limited to the standard Compose path; actual deployed environment remains UNKNOWN because production and real `.env` values were not inspected. Evidence: `.autopilot/2026-09-23-production-stabilization--wip/evidence/T09-config-matrix.md`.
