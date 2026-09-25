@@ -2241,6 +2241,7 @@
     "title": "Project showcase",
     "desc": "Regional projects assessed for technology readiness per GOST R 58048-2017. Click a card to open maturity radar and project details.",
     "searchPlaceholder": "Search: name, organization, region…",
+    "searchAria": "Search projects",
     "allCategories": "All categories",
     "ugtFromAny": "TRL from: any",
     "ugtToAny": "TRL to: any",

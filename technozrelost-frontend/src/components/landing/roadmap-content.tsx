@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -66,12 +66,18 @@ function UgtSelect({
   onChange: (v: number) => void;
   options: { value: number; label: string }[];
 }) {
+  const selectId = useId();
+
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-xs font-medium uppercase tracking-[0.08em] text-white/50">
+      <label
+        htmlFor={selectId}
+        className="text-xs font-medium uppercase tracking-[0.08em] text-white/50"
+      >
         {label}
       </label>
       <select
+        id={selectId}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="h-[48px] w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-white/8 px-4 text-base text-white outline-none transition-all focus:ring-2 focus:ring-tz-accent/50 sm:w-[220px]"

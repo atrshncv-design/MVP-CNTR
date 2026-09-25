@@ -2241,6 +2241,7 @@
   "title": "项目展示",
   "desc": "按 GOST R 58048-2017 评估技术成熟度的地区项目。点击卡片查看成熟度雷达与项目详情。",
   "searchPlaceholder": "搜索：名称、机构、地区…",
+  "searchAria": "搜索项目",
   "allCategories": "全部分类",
   "ugtFromAny": "TRL 从：不限",
   "ugtToAny": "TRL 到：不限",
