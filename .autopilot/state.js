@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T08:45:37+04:00",
+  "updatedAt": "2026-09-25T08:57:28+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "T32 local 751 tests green; CI backend still needs D10/D11; T33 assigned to Space Bunny Free Max; frontend CI green"
+      "note": "T32–T34 complete; local backend 752 passed, Ruff/mypy green; GitHub run 36095799333 Backend/Frontend success; wave 3 unlocked"
     },
     {
       "id": "review",

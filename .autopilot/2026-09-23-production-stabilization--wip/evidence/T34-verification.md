@@ -7,4 +7,4 @@
 - Ruff по `app tests infra/alerter scripts/udgu_ingest` — exit 0. Mypy `app` — exit 0, 62 files. `git diff --check` — exit 0.
 - Linux OpenSSL 3.0.20 проверен в эфемерном локальном контейнере `--network none` на синтетическом сертификате: объединённый аргумент `"-ext subjectAltName"` → exit 0, 0 байт stdout; раздельные `-ext subjectAltName` → exit 0, SAN присутствует. Контейнер удалён по завершении; образ не содержал pytest, поэтому полноценный Linux test suite остаётся задачей GitHub CI.
 - Manifest+Spec review: PASS, blocking нет. Craft review: clean, blocking нет. Публичный TLS gate сохранил fail-closed.
-- Граница доказательства: native Linux OpenSSL behavior подтверждён, но GitHub Actions backend job после `5706518` ещё не подтверждён GREEN.
+- После отправки `d2bca7e` GitHub Actions run `36095799333` завершился `success`: Backend Pytest/readiness и Frontend успешны (`CI-baseline-green-2026-09-25.md`). Это не подтверждает production deployment.
