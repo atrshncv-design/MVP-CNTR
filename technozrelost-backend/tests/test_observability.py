@@ -7,6 +7,7 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.logging_config import JsonFormatter, redact
@@ -212,6 +213,35 @@ def test_suppressed_exception_counter_is_bounded_and_resettable() -> None:
 
     metrics.reset()
     assert 'technozrelost_suppressed_exceptions_total{module="rag"} 502' not in metrics.render()
+
+
+@pytest.mark.asyncio
+async def test_propagated_middleware_exception_is_not_counted() -> None:
+    metrics.reset()
+
+    async def failing_app(scope, receive, send):
+        raise RuntimeError("propagated")
+
+    async def receive():
+        return {"type": "http.request"}
+
+    async def send(message):
+        return None
+
+    middleware = metrics.PrometheusMetricsMiddleware(failing_app)
+    with pytest.raises(RuntimeError, match="propagated"):
+        await middleware(
+            {"type": "http", "method": "GET", "path": "/propagated"},
+            receive,
+            send,
+        )
+
+    body = metrics.render()
+    assert 'technozrelost_suppressed_exceptions_total{module="metrics"}' not in body
+    assert (
+        'technozrelost_http_requests_total{method="GET",route="unmatched",status="500"} 1'
+        in body
+    )
 
 
 def test_redact_masks_secrets_and_emails() -> None:

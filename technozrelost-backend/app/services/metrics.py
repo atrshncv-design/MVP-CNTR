@@ -305,7 +305,6 @@ class PrometheusMetricsMiddleware:
         try:
             await self.app(scope, receive, wrapped_send)
         except Exception:
-            suppressed_exception_observed("metrics")
             observe_http(
                 method,
                 self._resolve_route(scope),

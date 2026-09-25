@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T13:57:41+04:00",
+  "updatedAt": "2026-09-25T15:40:54+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,15 +57,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "T32–T34 complete; local backend 752 passed, Ruff/mypy green; GitHub run 36095799333 Backend/Frontend success; wave 3 unlocked"
+      "note": "T10 repair green/reviewed; T11 reviewed; backend regression 748 passed; T12 is next"
     },
     {
       "id": "review",
-      "status": "done",
-      "startedAt": "2026-09-24T08:14:03+04:00",
-      "finishedAt": "2026-09-24T08:15:58+04:00",
-      "finishedAtObservedAt": "2026-09-24T08:15:58+04:00",
-      "note": "Independent diff/scope review: no executor changes; red regression blocks commit"
+      "status": "active",
+      "startedAt": "2026-09-25T15:03:23+04:00",
+      "note": "T10 repair re-reviewed; T11 manifest/spec and craft reviews clean"
     },
     {
       "id": "final",
@@ -293,18 +291,24 @@ window.STATE =
       "blockedBy": ["09"],
       "wave": 3,
       "zone": ["technozrelost-backend/app/services/metrics.py", "technozrelost-backend/app/services/", "technozrelost-backend/app/api/v1/", "technozrelost-backend/app/core/deps.py", "technozrelost-backend/tests/test_observability.py"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-25T13:40:46+04:00",
-      "updatedAt": "2026-09-25T13:40:46+04:00",
-      "executorModel": "gpt-6-luna",
-      "reasoningEffort": "high",
+      "updatedAt": "2026-09-25T15:40:54+04:00",
+      "finishedAt": "2026-09-25T15:40:54+04:00",
+      "reviewStartedAt": "2026-09-25T15:14:25+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/10-suppressed-exception-metric.md",
+      "commit": "cb6e076",
       "red": "tests/test_observability.py::test_suppressed_exception_counter_is_bounded_and_resettable — expected AttributeError: recorder not implemented",
-      "tests": {"focused": "41 passed, 1 existing warning", "counterConcurrency": "1 passed", "ruff": "PASS", "mypyPython311": "62 files, PASS", "fullBackendRegression": "scheduled after T10–T12"},
+      "tests": {"relatedAfterRepair": "42 passed, 1 existing warning", "ruff": "PASS", "mypyPython311": "62 files, PASS", "fullBackendRegression": "748 passed, 1 existing warning in 474.66s"},
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T10-suppressed-exceptions.md",
-      "implementation": "green; awaiting wave regression and final review",
+      "implementation": "reviewed clean; blocking propagated-exception metric finding repaired",
+      "review": "manifest/spec clean; craft blocking finding addressed; one non-blocking private-helper test seam concern recorded",
+      "executorNote": "OpenCode session stopped before final contract; orchestrator independently reviewed and reran all required gates",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 1,
+      "repairFindings": ["metrics.py middleware counts an exception before re-raising it; propagated exceptions must not increment suppressed_exceptions_total"],
       "handoffs": 0
     },
     {
@@ -314,13 +318,16 @@ window.STATE =
       "blockedBy": ["10"],
       "wave": 3,
       "zone": ["technozrelost-backend/app/services/ai_metrics.py", "technozrelost-backend/app/services/ai_assistant.py", "technozrelost-backend/app/api/v1/chat.py", "technozrelost-backend/tests/test_ai_wiring.py"],
-      "status": "in-progress",
+      "status": "review",
       "startedAt": "2026-09-25T13:56:48+04:00",
-      "updatedAt": "2026-09-25T13:57:41+04:00",
-      "executorModel": "gpt-6-luna",
-      "reasoningEffort": "high",
+      "updatedAt": "2026-09-25T15:03:23+04:00",
+      "reviewStartedAt": "2026-09-25T15:03:23+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/11-ai-metrics-concurrency.md",
       "red": "test_ai_wiring.py::test_ai_metric_increment_is_thread_safe — expected AttributeError: increment API absent",
+      "tests": {"relatedAiIndependent": "46 passed, 1 existing warning", "ruff": "PASS", "mypyPython311": "62 files, PASS", "fullBackendRegression": "748 passed, 1 existing warning in 474.66s"},
+      "executorNote": "OpenCode session stopped before final contract; implementation and checks were independently reviewed and rerun",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -536,6 +543,11 @@ window.STATE =
     "extraNote": "Independent G2 against verbatim brief and spec; 12 missing, 15 half-covered, 4 extra identified and addressed."
   },
   "concerns": [
+    {
+      "ticket": "10",
+      "finding": "craft test seam",
+      "note": "tests/test_auth_throttle.py exercises private _get_redis(); acceptable for current test but may couple the regression to helper structure."
+    },
     {
       "ticket": "02",
       "finding": "STAB-TEST-01",
