@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-24T15:04:05+04:00",
+  "updatedAt": "2026-09-25T07:58:08+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -57,7 +57,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-23T12:04:44+04:00",
-      "note": "Local backend 751 tests green; CI backend Pytest red on D09-D11; frontend CI green; T32-T34 required before wave 3"
+      "note": "T32 local 751 tests green; CI backend still needs D10/D11; T33 assigned to Space Bunny Free Max; frontend CI green"
     },
     {
       "id": "review",
@@ -73,9 +73,9 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 55,
+    "total": 56,
     "done": 12,
-    "inTicket": 7,
+    "inTicket": 8,
     "inSpec": 33,
     "placeholder": 0,
     "deferred": 3,
@@ -379,7 +379,10 @@ window.STATE =
       "requirements": ["D10"],
       "blockedBy": ["32"],
       "zone": ["technozrelost-backend/tests/test_infra_contracts.py"],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-25T07:58:08+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/33-deploy-secret-test-env-isolation.md"
     },
     {

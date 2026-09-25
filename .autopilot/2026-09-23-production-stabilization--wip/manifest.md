@@ -39,6 +39,7 @@
 | R33 | «Под AI функциями я имел в виду работу ИИ-ассистентов по документам и по реестрам» | in-ticket | spec §Уточнение AI; T23/T24 — отдельные сквозные проверки | — |
 | R34 | «там ключ устарел, я добавлю новый - от другой модели, но уже после доработки всех текущих правок» | deferred | Новый ключ предоставляет владелец после локальных исправлений; live provider gate до этого BLOCKED | — |
 | R35 | «Давай отбросим сейчас opencode и поработаем в codex… модель для написания кода и реализации тасков теперь будет не muse spark, а gpt luna 6 high» | done | Codex T22 запущен на `gpt-6-luna`/high; spec §Уточнение исполнения | state.js T22 |
+| R36 | «space-bunny-free» + «любой - главное, чтобы был режим MAX» | in-ticket | Последнее решение владельца об исполнителе: `opencode/space-bunny-free`/`max` подтверждена в каталоге, пробный ответ `OK`; T33 — первый implementation-таск, качество ещё не доказано | `spec.md` §Уточнение AI и исполнения; `.autopilot/opencode.json` |
 | G01 | «Немедленно изолируй работу… Создай отдельные: branch autopilot/production-stabilization; worktree; Autopilot run production-stabilization» | done | T01: inventory выполнен, база 83d3c9b доказана сравнением веток, worktree+branch созданы | 37a4340 |
 | G02 | «Не изменяй материалы завершённого аудита… Для стабилизации создай отдельные: findings status registry; traceability matrix; implementation evidence; acceptance report» | in-spec | spec §Контекст | — |
 | G03 | «Сделай тикеты действительно атомарными» (T01–T21, по одному finding/изменению) | in-spec | spec §Волны | — |
