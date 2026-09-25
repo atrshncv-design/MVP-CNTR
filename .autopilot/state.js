@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T08:58:31+04:00",
+  "updatedAt": "2026-09-25T09:09:48+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -204,11 +204,16 @@ window.STATE =
       "dependencyNote": "T03 historical failure was repaired by T25; T34 includes green CI baseline 36095799333",
       "wave": 3,
       "zone": ["technozrelost-frontend/src/components/landing/projects-showcase.tsx", "technozrelost-frontend/src/components/landing/roadmap-content.tsx", "technozrelost-frontend/tests/"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-25T08:58:31+04:00",
+      "updatedAt": "2026-09-25T09:09:48+04:00",
+      "finishedAt": "2026-09-25T09:09:48+04:00",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
-      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/05-public-form-labels.md"
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/05-public-form-labels.md",
+      "commit": "d12c0ee",
+      "tests": {"focused": "1 passed", "frontend": "239 passed", "lint": "exit 0; one pre-existing warning", "webpackBuild": "exit 0; 53 routes"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T05-verification.md"
     },
     {
       "id": "06",
