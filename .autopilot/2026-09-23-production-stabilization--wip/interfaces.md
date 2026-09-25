@@ -76,3 +76,10 @@
 - `ai_metrics.increment(metric: str, amount: int | float = 1) -> None` — единственная точка записи AI counters; increments и `snapshot() -> dict[str, Any]` используют одну process-local lock.
 - Семантика остаётся in-memory и процессной; имена/типы метрик и rate policy не меняются. Не записывать в `METRICS` напрямую из app call sites.
 - Доказательства: `.autopilot/2026-09-23-production-stabilization--wip/evidence/T11-ai-metrics-concurrency.md`.
+
+## Из T12 — канонический DB index inventory (2026-09-25)
+
+- Добавлены `technozrelost-backend/docs/database-indexes.md` и статический шов `technozrelost-backend/tests/test_db_index_inventory.py`; публичные API, ORM и схема БД не менялись.
+- Тест извлекает именованные `CREATE INDEX` из шести явно покрытых SQL migration sources и сопоставляет их с документом; специально проверяет два частичных RAG ivfflat индекса.
+- Проверки не доказывают совпадение key expressions/operator classes/`lists` каждого индекса с SQL: это неблокирующее замечание Craft review, оставлено concern для T21/final triage.
+- Доказательства: `.autopilot/2026-09-23-production-stabilization--wip/evidence/T12-db-index-inventory.md`.
