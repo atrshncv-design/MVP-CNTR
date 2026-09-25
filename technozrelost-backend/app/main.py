@@ -285,11 +285,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 def create_app() -> FastAPI:
+    docs_enabled = settings.app_env != "production"
     app = FastAPI(
         title="Technozrelost Backend",
         version="0.1.0",
         description="B2B/B2G инфраструктура для ЦНТР по ГОСТ Р 58048-2017.",
         lifespan=lifespan,
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        openapi_url="/openapi.json" if docs_enabled else None,
     )
     app.add_middleware(
         CORSMiddleware,
