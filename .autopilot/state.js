@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T08:57:28+04:00",
+  "updatedAt": "2026-09-25T08:58:31+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -200,10 +200,14 @@ window.STATE =
       "id": "05",
       "title": "UX-01: доступные подписи публичных фильтров",
       "requirements": ["R24"],
-      "blockedBy": ["02", "03", "04"],
+      "blockedBy": ["02", "04", "25", "34"],
+      "dependencyNote": "T03 historical failure was repaired by T25; T34 includes green CI baseline 36095799333",
       "wave": 3,
       "zone": ["technozrelost-frontend/src/components/landing/projects-showcase.tsx", "technozrelost-frontend/src/components/landing/roadmap-content.tsx", "technozrelost-frontend/tests/"],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-25T08:58:31+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/05-public-form-labels.md"
     },
     {
