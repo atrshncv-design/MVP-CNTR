@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T19:33:57+04:00",
+  "updatedAt": "2026-09-25T19:35:49+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -420,6 +420,8 @@ window.STATE =
       "zone": ["technozrelost-backend/app/core/config.py", "technozrelost-backend/app/services/ai_assistant.py", "technozrelost-backend/app/services/ai_metrics.py", "technozrelost-backend/app/api/v1/chat.py", "technozrelost-backend/app/api/v1/match.py", "technozrelost-backend/app/api/v1/rag.py", "technozrelost-backend/tests/"],
       "status": "in-progress",
       "startedAt": "2026-09-25T19:33:57+04:00",
+      "lastAttemptStartedAt": "2026-09-25T19:35:49+04:00",
+      "executorNote": "OpenCode session dispatched with Space Bunny Free Max; implementation in progress. No live-provider calls, env/secrets or production actions are allowed.",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/14-ai-budget-rate-breaker.md",
