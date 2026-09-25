@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T19:35:49+04:00",
+  "updatedAt": "2026-09-25T20:36:01+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -72,9 +72,9 @@ window.STATE =
   ],
   "requirements": {
     "total": 56,
-    "done": 15,
+    "done": 17,
     "inTicket": 7,
-    "inSpec": 31,
+    "inSpec": 29,
     "placeholder": 0,
     "deferred": 3,
     "dropped": 0
@@ -157,6 +157,28 @@ window.STATE =
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T22-verification.md",
       "retries": 0,
       "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "20",
+      "title": "ADR-пакет открытых архитектурных решений",
+      "requirements": ["R25", "G08"],
+      "blockedBy": ["01"],
+      "wave": 4,
+      "zone": ["docs/adr/0043-*.md", "docs/adr/0044-*.md", "docs/adr/0045-*.md", "docs/adr/0046-*.md", "docs/adr/0047-*.md", "docs/adr/0048-*.md", "docs/adr/0049-*.md", "docs/adr/0050-*.md", "docs/adr/0051-*.md"],
+      "status": "done",
+      "startedAt": "2026-09-25T20:13:40+04:00",
+      "repairStartedAt": "2026-09-25T20:25:41+04:00",
+      "lastRepairStartedAt": "2026-09-25T20:31:09+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/20-architecture-adrs.md",
+      "finishedAt": "2026-09-25T20:36:01+04:00",
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T20-adr-package.md",
+      "tests": {"structure": "9 ADRs; each has sections 1–7 and proposed status", "whitespace": "PASS", "codeSuites": "not applicable: docs-only"},
+      "review": "Manifest/Spec clean; Craft clean after scoped repairs; no blocking findings.",
+      "retries": 0,
+      "repairs": 2,
       "handoffs": 0
     },
     {
@@ -421,13 +443,16 @@ window.STATE =
       "status": "in-progress",
       "startedAt": "2026-09-25T19:33:57+04:00",
       "lastAttemptStartedAt": "2026-09-25T19:35:49+04:00",
-      "executorNote": "OpenCode session dispatched with Space Bunny Free Max; implementation in progress. No live-provider calls, env/secrets or production actions are allowed.",
+      "executorNote": "OpenCode Space Bunny Free Max returned DONE_WITH_CONCERNS after 1 repair. Independent review clean for blocking findings; 14 DB-independent ticket tests, Ruff and Python 3.11 mypy pass. Awaiting the full backend suite because local tz-pg-primary is restarting; no production actions or data changes.",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/14-ai-budget-rate-breaker.md",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 0,
+      "tests": {"focusedNoDbIndependent": "14 passed, 4 DB-backed deselected", "ruff": "PASS", "mypyPython311": "PASS; 62 files", "fullSuite": "BLOCKED: PostgreSQL test container tz-pg-primary restarting; no container operation authorized"},
+      "review": "Manifest/Spec and Craft repair re-review clean for the three blocking findings. Non-blocking concern: budget_used_tokens docstring says last known local value on Redis read failure; production fallback is usually 0 while operator metric snapshot retains the last gauge.",
+      "blocker": "Full pytest and 4 DB-backed T14 tests remain unverified until the local test PostgreSQL is safely restored."
     },
     {
       "id": "25",
