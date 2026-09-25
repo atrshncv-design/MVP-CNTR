@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T13:54:00+04:00",
+  "updatedAt": "2026-09-25T13:57:41+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -303,6 +303,24 @@ window.STATE =
       "tests": {"focused": "41 passed, 1 existing warning", "counterConcurrency": "1 passed", "ruff": "PASS", "mypyPython311": "62 files, PASS", "fullBackendRegression": "scheduled after T10–T12"},
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T10-suppressed-exceptions.md",
       "implementation": "green; awaiting wave regression and final review",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "11",
+      "title": "CODE-02: атомарные AI-счётчики",
+      "requirements": ["R23"],
+      "blockedBy": ["10"],
+      "wave": 3,
+      "zone": ["technozrelost-backend/app/services/ai_metrics.py", "technozrelost-backend/app/services/ai_assistant.py", "technozrelost-backend/app/api/v1/chat.py", "technozrelost-backend/tests/test_ai_wiring.py"],
+      "status": "in-progress",
+      "startedAt": "2026-09-25T13:56:48+04:00",
+      "updatedAt": "2026-09-25T13:57:41+04:00",
+      "executorModel": "gpt-6-luna",
+      "reasoningEffort": "high",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/11-ai-metrics-concurrency.md",
+      "red": "test_ai_wiring.py::test_ai_metric_increment_is_thread_safe — expected AttributeError: increment API absent",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0

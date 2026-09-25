@@ -10,6 +10,19 @@ from __future__ import annotations
 import pytest
 
 
+def test_ai_metric_increment_is_thread_safe() -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    from app.services import ai_metrics
+
+    before = ai_metrics.snapshot()["requests_total"]
+    increments = 5000
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(ai_metrics.increment, ["requests_total"] * increments))
+
+    assert ai_metrics.snapshot()["requests_total"] == before + increments
+
+
 def test_sanitize_question_redacts_pii() -> None:
     """Обезличивание вопроса: email и телефон не уходят внешнему провайдеру."""
     from app.services.ai_wiring import sanitize_question_for_external
