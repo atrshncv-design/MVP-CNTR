@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T17:41:10+04:00",
+  "updatedAt": "2026-09-25T17:47:39+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -376,10 +376,12 @@ window.STATE =
       "zone": ["technozrelost-backend/infra/docker-compose.yml", "technozrelost-backend/infra/docker-compose.prod.yml", "technozrelost-backend/Dockerfile", "technozrelost-frontend/Dockerfile", "technozrelost-backend/tests/test_container_hardening.py", "technozrelost-backend/infra/container-hardening-runbook.md"],
       "status": "in-progress",
       "startedAt": "2026-09-25T17:41:10+04:00",
+      "lastAttemptStartedAt": "2026-09-25T17:47:39+04:00",
+      "retries": 1,
+      "executorNote": "Первый запуск остановлен permission gate при запросе read `technozrelost-backend/infra/.env.production.example`; файл не читался, изменений нет. Перезапуск явно запрещает чтение любых env-файлов и использует только синтетические значения/статическую проверку.",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/13-container-hardening.md",
-      "retries": 0,
       "repairs": 0,
       "handoffs": 0
     },
