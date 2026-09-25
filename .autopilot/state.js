@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T08:14:28+04:00",
+  "updatedAt": "2026-09-25T08:15:42+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -395,7 +395,10 @@ window.STATE =
       "requirements": ["D11"],
       "blockedBy": ["33"],
       "zone": ["technozrelost-backend/infra/tls_deploy_gate.py", "technozrelost-backend/tests/test_tls_deploy_gate.py"],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-25T08:15:42+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/34-tls-openssl-argv-portability.md"
     },
     {
