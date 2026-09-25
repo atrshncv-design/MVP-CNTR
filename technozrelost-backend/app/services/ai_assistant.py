@@ -239,7 +239,7 @@ async def ask_llm(
             _LLM_SEMAPHORE.acquire(), timeout=LLM_QUEUE_TIMEOUT_SECONDS
         )
     except TimeoutError:
-        ai_metrics.METRICS["timeouts_total"] += 1
+        ai_metrics.increment("timeouts_total")
         return None
     try:
         limits = httpx.Limits(
@@ -269,7 +269,7 @@ async def ask_llm(
                 },
             )
         if response.status_code != 200:
-            ai_metrics.METRICS["errors_total"] += 1
+            ai_metrics.increment("errors_total")
             # Диагностика прод 2026-09-21: молчаливый None превращал любой
             # отказ провайдера (403 free-tier, 401, 429) в неотличимый
             # «даун». В логах — только статус и модель, без ключа и тела.
@@ -282,8 +282,8 @@ async def ask_llm(
         try:
             payload = response.json()
         except (TypeError, ValueError) as exc:
-            ai_metrics.METRICS["errors_total"] += 1
-            ai_metrics.METRICS["malformed_total"] += 1
+            ai_metrics.increment("errors_total")
+            ai_metrics.increment("malformed_total")
             logger.warning(
                 "LLM synthesis malformed response: type=%s category=json model=%s",
                 type(exc).__name__,
@@ -292,13 +292,13 @@ async def ask_llm(
             return None
         content = _extract_llm_content(payload)
         if content is None:
-            ai_metrics.METRICS["errors_total"] += 1
-            ai_metrics.METRICS["malformed_total"] += 1
+            ai_metrics.increment("errors_total")
+            ai_metrics.increment("malformed_total")
             logger.warning("LLM synthesis malformed response: category=envelope model=%s", model)
             return None
         return content
     except httpx.TimeoutException:
-        ai_metrics.METRICS["timeouts_total"] += 1
+        ai_metrics.increment("timeouts_total")
         logger.warning(
             "LLM synthesis timeout after %.1fs: model=%s",
             time.monotonic() - started,
@@ -306,7 +306,7 @@ async def ask_llm(
         )
         return None
     except Exception as exc:  # noqa: BLE001 — ассистент не должен падать из-за LLM
-        ai_metrics.METRICS["errors_total"] += 1
+        ai_metrics.increment("errors_total")
         logger.warning("LLM synthesis error: %s model=%s", type(exc).__name__, model)
         return None
     finally:
@@ -398,7 +398,7 @@ async def process_chat(
 
     if llm_reply:
         return ChatOut(reply=ChatMessage(role="assistant", content=llm_reply), sources=sources)
-    ai_metrics.METRICS["fallbacks_total"] += 1
+    ai_metrics.increment("fallbacks_total")
 
     # R01/R02 (таск 01): честный фолбэк — человеческие выдержки с цитатами,
     # код 200. Отдельная ветка «нет синтеза» (гейт выключен или ключа нет),

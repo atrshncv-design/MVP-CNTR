@@ -70,3 +70,9 @@
 
 - Next 16.3.3 в `f0f8b0a`, независимый audit 0 critical; sharp/browserslist high остаются T29/T30. npm ci и 238 tests PASS, webpack build 53 страницы PASS, default Turbopack локально EPERM; `evidence/T28-verification.md`.
 - Полный lint выявил предсуществующий blocking `setState-in-effect` в org verification hint; D08/T31 отдельно. Не смешивать с security upgrade.
+
+## Из T11 — атомарные AI-счётчики (2026-09-25)
+
+- `ai_metrics.increment(metric: str, amount: int | float = 1) -> None` — единственная точка записи AI counters; increments и `snapshot() -> dict[str, Any]` используют одну process-local lock.
+- Семантика остаётся in-memory и процессной; имена/типы метрик и rate policy не меняются. Не записывать в `METRICS` напрямую из app call sites.
+- Доказательства: `.autopilot/2026-09-23-production-stabilization--wip/evidence/T11-ai-metrics-concurrency.md`.

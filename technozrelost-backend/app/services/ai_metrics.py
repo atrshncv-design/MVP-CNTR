@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
+from threading import Lock
 from typing import Any
 
 # Счётчики запросов AI-консультанта (in-memory; сбрасываются при рестарте)
@@ -16,6 +17,14 @@ METRICS: dict[str, Any] = {
     "rate_limited_total": 0,
     "latency_seconds_total": 0.0,
 }
+_METRICS_LOCK = Lock()
+
+
+def increment(metric: str, amount: int | float = 1) -> None:
+    """Увеличить счётчик под блокировкой, не раскрывая словарь наружу."""
+    with _METRICS_LOCK:
+        METRICS[metric] = METRICS[metric] + amount
+
 
 # Простой скользящий лимит: N запросов за окно секунд на пользователя
 RATE_LIMIT: dict[str, int] = {"limit": 30, "window_seconds": 60}
@@ -30,7 +39,7 @@ def allow_request(user_id: int) -> bool:
     while stamp_list and now - stamp_list[0] > window:
         stamp_list.pop(0)
     if len(stamp_list) >= RATE_LIMIT["limit"]:
-        METRICS["rate_limited_total"] += 1
+        increment("rate_limited_total")
         return False
     stamp_list.append(now)
     return True
@@ -39,4 +48,5 @@ def allow_request(user_id: int) -> bool:
 def snapshot() -> dict[str, Any]:
     """Снимок метрик для /metrics/ai — агрегаты без per-user карты (N-10)."""
     # N-10: не отдаём requests_by_user (карта активности других пользователей)
-    return dict(METRICS)
+    with _METRICS_LOCK:
+        return dict(METRICS)

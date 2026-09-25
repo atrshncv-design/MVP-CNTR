@@ -26,10 +26,10 @@ async def _handle_chat(
     if not ai_metrics.allow_request(user.id):
         raise raise_error("AI_RATE_LIMITED", request=request)
 
-    ai_metrics.METRICS["requests_total"] += 1
+    ai_metrics.increment("requests_total")
     started = time.monotonic()
     result = await process_chat(db, payload, user, contour=contour)
-    ai_metrics.METRICS["latency_seconds_total"] += time.monotonic() - started
+    ai_metrics.increment("latency_seconds_total", time.monotonic() - started)
     return result
 
 
