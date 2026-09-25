@@ -116,6 +116,7 @@ def test_ai_metrics_endpoint(client: TestClient) -> None:
     assert data["requests_total"] >= 1
     assert "requests_by_user" not in data
     assert "fallbacks_total" in data
+    assert "malformed_total" in data
 
 
 def test_chat_rate_limit(client: TestClient) -> None:

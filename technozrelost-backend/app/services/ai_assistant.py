@@ -13,7 +13,6 @@ import hashlib
 import logging
 import time
 import uuid
-from typing import cast
 
 import httpx
 
@@ -198,6 +197,24 @@ def _llm_config() -> tuple[str | None, str, str]:
     return key, base, settings.llm_model
 
 
+def _extract_llm_content(payload: object) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return None
+    choice = choices[0]
+    if not isinstance(choice, dict):
+        return None
+    message = choice.get("message")
+    if not isinstance(message, dict):
+        return None
+    content = message.get("content")
+    if not isinstance(content, str) or not content.strip():
+        return None
+    return content
+
+
 async def ask_llm(
     system_prompt: str, user_message: str, session_id: str | None = None
 ) -> str | None:
@@ -262,8 +279,24 @@ async def ask_llm(
                 model,
             )
             return None
-        payload = response.json()
-        return cast(str, payload["choices"][0]["message"]["content"])
+        try:
+            payload = response.json()
+        except (TypeError, ValueError) as exc:
+            ai_metrics.METRICS["errors_total"] += 1
+            ai_metrics.METRICS["malformed_total"] += 1
+            logger.warning(
+                "LLM synthesis malformed response: type=%s category=json model=%s",
+                type(exc).__name__,
+                model,
+            )
+            return None
+        content = _extract_llm_content(payload)
+        if content is None:
+            ai_metrics.METRICS["errors_total"] += 1
+            ai_metrics.METRICS["malformed_total"] += 1
+            logger.warning("LLM synthesis malformed response: category=envelope model=%s", model)
+            return None
+        return content
     except httpx.TimeoutException:
         ai_metrics.METRICS["timeouts_total"] += 1
         logger.warning(

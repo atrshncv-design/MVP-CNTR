@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 
 def test_sanitize_question_redacts_pii() -> None:
     """Обезличивание вопроса: email и телефон не уходят внешнему провайдеру."""
@@ -81,6 +83,159 @@ def _gateway_off(old) -> None:
     ai_assistant.settings.llm_gateway_enabled = old[0]  # type: ignore[assignment]
     ai_assistant.settings.llm_api_key = old[1]  # type: ignore[assignment]
     ai_assistant.settings.llm_api_base = old[2]  # type: ignore[assignment]
+
+
+def _mock_ai_client(
+    monkeypatch, response: object = None, error: Exception | None = None
+) -> None:
+    from unittest.mock import AsyncMock, MagicMock
+
+    from app.services import ai_assistant
+
+    mock_client = AsyncMock()
+    if error is not None:
+        mock_client.post.side_effect = error
+    else:
+        mock_client.post.return_value = response
+    mock_client_cls = MagicMock(return_value=mock_client)
+    mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+    monkeypatch.setattr(ai_assistant.httpx, "AsyncClient", mock_client_cls)
+
+
+@pytest.mark.asyncio
+async def test_malformed_200_returns_none_and_increments_metric(monkeypatch) -> None:
+    from unittest.mock import MagicMock
+
+    from app.services import ai_assistant, ai_metrics
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"choices": []}
+
+    _mock_ai_client(monkeypatch, mock_response)
+
+    old = _gateway_on(monkeypatch)
+    before = ai_metrics.snapshot()
+    try:
+        result = await ai_assistant.ask_llm("system", "hello")
+        after = ai_metrics.snapshot()
+        assert result is None
+        assert after["errors_total"] == before["errors_total"] + 1
+        assert after.get("malformed_total") == before.get("malformed_total", 0) + 1
+    finally:
+        _gateway_off(old)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        None,
+        {},
+        {"choices": []},
+        {"choices": "wrong"},
+        {"choices": [None]},
+        {"choices": [{}]},
+        {"choices": [{"message": None}]},
+        {"choices": [{"message": {}}]},
+        {"choices": [{"message": {"content": ""}}]},
+        {"choices": [{"message": {"content": "   "}}]},
+        {"choices": [{"message": {"content": 42}}]},
+    ],
+)
+@pytest.mark.asyncio
+async def test_malformed_200_envelopes_return_none_and_count(monkeypatch, payload) -> None:
+    from unittest.mock import MagicMock
+
+    from app.services import ai_assistant, ai_metrics
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = payload
+
+    _mock_ai_client(monkeypatch, mock_response)
+
+    old = _gateway_on(monkeypatch)
+    before = ai_metrics.snapshot()
+    try:
+        result = await ai_assistant.ask_llm("system", "hello")
+        after = ai_metrics.snapshot()
+        assert result is None
+        assert after["errors_total"] == before["errors_total"] + 1
+        assert after["malformed_total"] == before["malformed_total"] + 1
+    finally:
+        _gateway_off(old)
+
+
+@pytest.mark.asyncio
+async def test_non_json_200_returns_none_and_counts_malformed(monkeypatch) -> None:
+    from unittest.mock import MagicMock
+
+    from app.services import ai_assistant, ai_metrics
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.side_effect = ValueError("not json")
+
+    _mock_ai_client(monkeypatch, mock_response)
+
+    old = _gateway_on(monkeypatch)
+    before = ai_metrics.snapshot()
+    try:
+        result = await ai_assistant.ask_llm("system", "hello")
+        after = ai_metrics.snapshot()
+        assert result is None
+        assert after["errors_total"] == before["errors_total"] + 1
+        assert after["malformed_total"] == before["malformed_total"] + 1
+    finally:
+        _gateway_off(old)
+
+
+@pytest.mark.parametrize("status_code", [400, 401, 429, 500])
+@pytest.mark.asyncio
+async def test_http_failure_keeps_error_category(monkeypatch, status_code) -> None:
+    from unittest.mock import MagicMock
+
+    from app.services import ai_assistant, ai_metrics
+
+    mock_response = MagicMock()
+    mock_response.status_code = status_code
+
+    _mock_ai_client(monkeypatch, mock_response)
+
+    old = _gateway_on(monkeypatch)
+    before = ai_metrics.snapshot()
+    try:
+        result = await ai_assistant.ask_llm("system", "hello")
+        after = ai_metrics.snapshot()
+        assert result is None
+        assert after["errors_total"] == before["errors_total"] + 1
+        assert after["malformed_total"] == before["malformed_total"]
+        assert after["timeouts_total"] == before["timeouts_total"]
+        mock_response.json.assert_not_called()
+    finally:
+        _gateway_off(old)
+
+
+@pytest.mark.asyncio
+async def test_timeout_keeps_timeout_category(monkeypatch) -> None:
+    import httpx
+
+    from app.services import ai_assistant, ai_metrics
+
+    _mock_ai_client(monkeypatch, error=httpx.ReadTimeout("timed out"))
+
+    old = _gateway_on(monkeypatch)
+    before = ai_metrics.snapshot()
+    try:
+        result = await ai_assistant.ask_llm("system", "hello")
+        after = ai_metrics.snapshot()
+        assert result is None
+        assert after["errors_total"] == before["errors_total"]
+        assert after["malformed_total"] == before["malformed_total"]
+        assert after["timeouts_total"] == before["timeouts_total"] + 1
+    finally:
+        _gateway_off(old)
 
 
 def test_chat_external_prompt_has_no_pii(client, monkeypatch) -> None:
@@ -233,6 +388,45 @@ def test_provider_down_gives_honest_fallback(client, monkeypatch) -> None:
         assert "Нашёл в базе знаний" in data["reply"]["content"]
         assert "ГОСТ-ФОЛБЭК-МАРКЕР" in data["reply"]["content"]
         assert len(data["sources"]) >= 1
+    finally:
+        _gateway_off(old)
+
+
+def test_malformed_200_uses_honest_fallback(client, monkeypatch) -> None:
+    from unittest.mock import MagicMock
+
+    from app.services import ai_metrics
+
+    admin_token = _register(client, "cntr_admin")
+    _seed_template(
+        client,
+        admin_token,
+        "ГОСТ Р 58048-2017.pdf",
+        "ГОСТ-МАЛФОРМЕД-ФОЛБЭК уровни готовности технологии",
+    )
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"choices": []}
+    _mock_ai_client(monkeypatch, mock_response)
+
+    old = _gateway_on(monkeypatch)
+    before = ai_metrics.snapshot()
+    try:
+        token = _register(client)
+        response = client.post(
+            "/api/v1/chat",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"message": "Расскажи про уровни готовности"},
+        )
+        after = ai_metrics.snapshot()
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert "Нашёл в базе знаний" in data["reply"]["content"]
+        assert "ГОСТ-МАЛФОРМЕД-ФОЛБЭК" in data["reply"]["content"]
+        assert after["errors_total"] == before["errors_total"] + 1
+        assert after["malformed_total"] == before["malformed_total"] + 1
+        assert after["fallbacks_total"] == before["fallbacks_total"] + 1
     finally:
         _gateway_off(old)
 

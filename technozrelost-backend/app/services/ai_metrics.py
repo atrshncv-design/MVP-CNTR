@@ -10,6 +10,7 @@ from typing import Any
 METRICS: dict[str, Any] = {
     "requests_total": 0,
     "errors_total": 0,
+    "malformed_total": 0,
     "fallbacks_total": 0,
     "timeouts_total": 0,
     "rate_limited_total": 0,
