@@ -23,12 +23,22 @@ RUN npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
+# T13: runtime user is created and writable cache paths are owned at build time.
+ARG APP_UID=10001
+ARG APP_GID=10001
+RUN addgroup -S -g "${APP_GID}" app \
+    && adduser -S -D -H -u "${APP_UID}" -G app app \
+    && mkdir -p /home/app /app/.next/cache \
+    && chown -R app:app /home/app /app/.next/cache
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOME=/tmp
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.ts ./next.config.ts
+RUN chown -R app:app /app
+USER app:app
 EXPOSE 3000
 CMD ["npm", "run", "start"]

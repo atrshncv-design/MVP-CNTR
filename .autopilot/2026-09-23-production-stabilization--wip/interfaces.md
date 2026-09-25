@@ -83,3 +83,10 @@
 - Тест извлекает именованные `CREATE INDEX` из шести явно покрытых SQL migration sources и сопоставляет их с документом; специально проверяет два частичных RAG ivfflat индекса.
 - Проверки не доказывают совпадение key expressions/operator classes/`lists` каждого индекса с SQL: это неблокирующее замечание Craft review, оставлено concern для T21/final triage.
 - Доказательства: `.autopilot/2026-09-23-production-stabilization--wip/evidence/T12-db-index-inventory.md`.
+
+## Из T13 — static container hardening (2026-09-25)
+
+- Оба Compose профиля задают зафиксированную security-политику по каждому сервису; custom backend/frontend runner images имеют непривилегированного пользователя. Проверка — статический `test_container_hardening.py` и `docker compose config --quiet`; контейнеры в T13 не запускаются.
+- Различия runtime UID/entrypoint, writable mounts и ClamAV image behavior, требующие фактического запуска, остаются `UNKNOWN` до отдельной staging rehearsal. Не выводить non-root PASS для исключений без runtime evidence.
+- `infra/container-hardening-runbook.md` — будущий change plan, не команда к применению: любое staging/production изменение требует отдельного письменного разрешения владельца; содержит preconditions, команды, impact/downtime, stop/health gates и rollback.
+- T13 не меняет публичные API, бизнес-поведение, БД или schema. Evidence: `.autopilot/2026-09-23-production-stabilization--wip/evidence/T13-verification.md`.

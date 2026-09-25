@@ -27,6 +27,14 @@ services:
     image: pgvector/pgvector:0.8.0-pg16
     container_name: tz-prod-db-primary
     restart: unless-stopped
+    # T13 exception: the official PostgreSQL entrypoint initializes the volume,
+    # changes ownership, and drops privileges; non-root execution is not claimed.
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
+      - "/var/run/postgresql:rw,noexec,nosuid,nodev,size=16m"
     # P1 (таск 04): жёсткий ресурсный конверт — сумма лимитов памяти всех
     # сервисов не выше 8 ГиБ (см. таблицу в README-DEPLOY.md).
     deploy:
@@ -78,6 +86,13 @@ services:
     image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     container_name: tz-prod-minio
     restart: unless-stopped
+    user: "1000:1000"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
     deploy:
       resources:
         limits:
@@ -109,6 +124,15 @@ services:
     image: clamav/clamav:1.4.3@sha256:75fb5fd95fcbe1d7e6d240c369c1572b686ee2c95949d1042b5148de8eddebb4
     container_name: tz-prod-clamav
     restart: unless-stopped
+    # T13 exception: the official ClamAV entrypoint initializes the signature
+    # volume and daemon runtime; non-root execution is not claimed.
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
+      - "/var/run/clamav:rw,noexec,nosuid,nodev,size=16m"
+      - "/var/log/clamav:rw,noexec,nosuid,nodev,size=32m"
     logging:
       driver: json-file
       options:
@@ -139,6 +163,13 @@ services:
     image: redis:7-alpine
     container_name: tz-prod-redis
     restart: unless-stopped
+    user: "999:999"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=16m"
     deploy:
       resources:
         limits:
@@ -172,6 +203,13 @@ services:
       dockerfile: Dockerfile
     container_name: tz-prod-backend
     restart: unless-stopped
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
     logging:
       driver: json-file
       options:
@@ -278,6 +316,13 @@ services:
   backup-timer:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
     deploy:
       resources:
         limits:
@@ -343,6 +388,13 @@ services:
   wal-offsite:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
     deploy:
       resources:
         limits:
@@ -389,6 +441,13 @@ services:
   alerter:
     image: technozrelost-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
     deploy:
       resources:
         limits:
@@ -457,6 +516,14 @@ services:
         API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000}
     container_name: tz-prod-frontend
     restart: unless-stopped
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
+      - "/app/.next/cache:rw,noexec,nosuid,nodev,size=64m"
     deploy:
       resources:
         limits:
@@ -497,6 +564,16 @@ services:
     image: nginx:1.27-alpine
     container_name: tz-prod-nginx
     restart: unless-stopped
+    # T13 exception: the official nginx entrypoint binds privileged ports and
+    # manages pid/cache/log paths; a rootless image/config change is out of scope.
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=32m"
+      - "/var/cache/nginx:rw,noexec,nosuid,nodev,size=32m"
+      - "/var/run:rw,noexec,nosuid,nodev,size=16m"
+      - "/var/log/nginx:rw,noexec,nosuid,nodev,size=32m"
     deploy:
       resources:
         limits:
@@ -538,6 +615,13 @@ services:
     image: prom/prometheus:v2.54.1
     container_name: tz-prod-prometheus
     restart: unless-stopped
+    user: "65534:65534"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=32m"
     deploy:
       resources:
         limits:
@@ -580,6 +664,14 @@ services:
     image: grafana/grafana:11.2.0
     container_name: tz-prod-grafana
     restart: unless-stopped
+    user: "472:472"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=32m"
+      - "/var/log/grafana:rw,noexec,nosuid,nodev,size=32m"
     deploy:
       resources:
         limits:

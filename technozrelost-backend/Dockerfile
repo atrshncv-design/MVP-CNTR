@@ -51,7 +51,20 @@ COPY infra/cron ./infra/cron
 COPY infra/alerter ./infra/alerter
 RUN chmod +x ./backup.sh ./infra/backup.sh ./restore.sh ./infra/restore.sh \
     ./infra/backup-lock.py ./infra/mc-host-url.py ./infra/cron/*.sh ./infra/alerter/*.py
-ENV PATH="/app/.venv/bin:$PATH"
+# T13: приложение и все writable runtime surfaces принадлежат непривилегированному
+# пользователю уже на этапе сборки; root не нужен для запуска контейнера.
+ARG APP_UID=10001
+ARG APP_GID=10001
+RUN groupadd --gid "${APP_GID}" app \
+    && useradd --uid "${APP_UID}" --gid "${APP_GID}" --create-home \
+        --home-dir /home/app --shell /usr/sbin/nologin app \
+    && install -d -o app -g app /backups /wal-archive /state
+RUN chown -R app:app /app /backups /wal-archive /state
+ENV PATH="/app/.venv/bin:$PATH" \
+    HOME=/home/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 EXPOSE 8000
 # ADR-0015: workers>1 forbidden per ADR-0015 — single uvicorn worker per container, scale via replicas (see docs/adr/0015-scheduler-advisory-lock.md)
+USER app:app
 CMD ["/app/backend-entrypoint.sh"]

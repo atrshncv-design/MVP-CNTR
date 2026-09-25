@@ -5,6 +5,14 @@ services:
     image: pgvector/pgvector:0.8.0-pg16
     container_name: tz-pg-primary
     restart: unless-stopped
+    # T13 exception: the official PostgreSQL entrypoint initializes the volume,
+    # changes ownership, and drops privileges; non-root execution is not claimed.
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
+      - "/var/run/postgresql:rw,noexec,nosuid,nodev,size=16m"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-technoz}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
@@ -35,6 +43,14 @@ services:
     image: pgvector/pgvector:0.8.0-pg16
     container_name: tz-pg-replica
     restart: unless-stopped
+    # T13 exception: the official PostgreSQL entrypoint initializes the replica
+    # volume and drops privileges; non-root execution is not claimed.
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
+      - "/var/run/postgresql:rw,noexec,nosuid,nodev,size=16m"
     depends_on:
       pg-primary:
         condition: service_healthy
@@ -70,6 +86,13 @@ services:
     image: minio/minio:latest
     container_name: tz-minio
     restart: unless-stopped
+    user: "1000:1000"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-technoz}
@@ -92,6 +115,13 @@ services:
     image: redis:7-alpine
     container_name: tz-redis
     restart: unless-stopped
+    user: "999:999"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=16m"
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
@@ -107,6 +137,15 @@ services:
     image: mkodockx/docker-clamav:alpine
     container_name: tz-clamav
     restart: unless-stopped
+    # T13 exception: the official ClamAV entrypoint initializes the signature
+    # volume and daemon runtime; non-root execution is not claimed.
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,nodev,size=64m"
+      - "/var/run/clamav:rw,noexec,nosuid,nodev,size=16m"
+      - "/var/log/clamav:rw,noexec,nosuid,nodev,size=32m"
     ports:
       - "3310:3310"
     volumes:

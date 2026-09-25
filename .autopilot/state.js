@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T17:47:39+04:00",
+  "updatedAt": "2026-09-25T19:28:01+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -377,13 +377,40 @@ window.STATE =
       "status": "in-progress",
       "startedAt": "2026-09-25T17:41:10+04:00",
       "lastAttemptStartedAt": "2026-09-25T17:47:39+04:00",
+      "lastRepairStartedAt": "2026-09-25T18:59:50+04:00",
+      "lastRepairFinishedAt": "2026-09-25T19:16:33+04:00",
+      "finishedAt": "2026-09-25T19:28:01+04:00",
       "retries": 1,
-      "executorNote": "Первый запуск остановлен permission gate при запросе read `technozrelost-backend/infra/.env.production.example`; файл не читался, изменений нет. Перезапуск явно запрещает чтение любых env-файлов и использует только синтетические значения/статическую проверку.",
+      "executorNote": "Repair вернул nginx restart policy, evidence-limited ClamAV UNKNOWN и полный future-only change plan. Pointed Manifest/Spec re-review clean; Craft concern о per-service exception assertion остаётся non-blocking для final triage.",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/13-container-hardening.md",
-      "repairs": 0,
-      "handoffs": 0
+      "executorTests": {
+        "focused": "1 passed",
+        "full": "753 passed, 1 warning; 453.37s",
+        "infraContracts": "70 passed, 1 warning",
+        "alerter": "31 passed",
+        "ruff": "PASS",
+        "mypyPython311": "PASS",
+        "composeConfig": "synthetic dev/prod config --quiet PASS"
+      },
+      "tests": {
+        "focusedIndependent": "1 passed, 1 existing warning",
+        "ruff": "PASS",
+        "mypyPython311": "PASS; 62 files",
+        "composeDevSynthetic": "PASS",
+        "composeProdSynthetic": "PASS",
+        "fullIndependent": "753 passed, 1 existing warning; 461.16s"
+      },
+      "review": "Manifest/Spec pointed re-review clean; initial blocking findings repaired. Craft has one non-blocking concern about per-service exception-detail assertions; carried to final triage.",
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T13-verification.md",
+      "commit": null,
+      "status": "done",
+      "repairs": 1,
+      "handoffs": 0,
+      "concerns": [
+        "craft · technozrelost-backend/tests/test_container_hardening.py:90 · regression test checks exception-name presence but not per-service reason, writable surface, and compensating isolation; non-blocking finding for final triage"
+      ]
     },
     {
       "id": "25",

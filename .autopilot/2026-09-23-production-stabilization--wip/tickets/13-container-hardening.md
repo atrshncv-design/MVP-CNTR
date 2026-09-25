@@ -1,6 +1,6 @@
 # 13 — SEC-01: least-privilege container hardening
 
-**Требования:** R23 (SEC-01), R28. **Blocked by:** 12. **Зона:** `technozrelost-backend/infra/docker-compose.yml`, `technozrelost-backend/infra/docker-compose.prod.yml`, `technozrelost-backend/Dockerfile`, `technozrelost-frontend/Dockerfile`, `technozrelost-backend/tests/test_container_hardening.py`, `technozrelost-backend/infra/container-hardening-runbook.md`. **Волна:** 4. **Status:** in-progress.
+**Требования:** R23 (SEC-01), R28. **Blocked by:** 12. **Зона:** `technozrelost-backend/infra/docker-compose.yml`, `technozrelost-backend/infra/docker-compose.prod.yml`, `technozrelost-backend/Dockerfile`, `technozrelost-frontend/Dockerfile`, `technozrelost-backend/tests/test_container_hardening.py`, `technozrelost-backend/infra/container-hardening-runbook.md`. **Волна:** 4. **Status:** done with concerns; runtime UID/entrypoint/volume behavior remains UNKNOWN pending approved staging rehearsal.
 
 ## Что должно заработать
 
