@@ -26,6 +26,7 @@ from typing import Any
 from fastapi import Request
 
 from app.core.config import settings
+from app.services.metrics import suppressed_exception_observed
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,7 @@ def _get_redis() -> Any | None:
         _redis_checked = True
         return _redis_client
     except Exception:  # noqa: BLE001
+        suppressed_exception_observed("auth_throttle")
         _redis_checked = True
         _redis_client = None
         return None
@@ -114,6 +116,7 @@ async def is_blocked(email: str, client_host: str) -> bool:
                     return True
             return False
     except Exception:  # noqa: BLE001 — fallback на LRU
+        suppressed_exception_observed("auth_throttle")
         pass
     # Fallback LRU/TTL (N-07)
     now = time.monotonic()
@@ -148,9 +151,11 @@ async def record_failure(email: str, client_host: str) -> None:
                     if ttl == -1:
                         await asyncio.to_thread(client.expire, rkey, int(WINDOW_SECONDS))
                 except Exception:  # noqa: BLE001
+                    suppressed_exception_observed("auth_throttle")
                     pass
             return
     except Exception:  # noqa: BLE001
+        suppressed_exception_observed("auth_throttle")
         pass
     # Fallback LRU (N-07): append + evict старейший при переполнении
     now = time.monotonic()
@@ -183,6 +188,7 @@ async def record_success(email: str, client_host: str) -> None:
         if client is not None:
             await asyncio.to_thread(client.delete, f"throttle:{key}")
     except Exception:  # noqa: BLE001
+        suppressed_exception_observed("auth_throttle")
         pass
     _attempts.pop(key, None)
 
@@ -201,4 +207,5 @@ def reset() -> None:
             for k in client.scan_iter(match="throttle:*", count=200):
                 client.delete(k)
         except Exception:  # noqa: BLE001
+            suppressed_exception_observed("auth_throttle")
             pass

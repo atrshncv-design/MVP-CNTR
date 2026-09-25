@@ -6,9 +6,25 @@ import uuid
 
 from fastapi.testclient import TestClient
 
+from app.services import auth_throttle, metrics
+
 
 def _email() -> str:
     return f"throttle-{uuid.uuid4().hex[:8]}@example.com"
+
+
+def test_redis_connection_failure_is_counted(monkeypatch) -> None:
+    class BrokenRedis:
+        @staticmethod
+        def ping() -> None:
+            raise ConnectionError("offline")
+
+    metrics.reset()
+    monkeypatch.setattr(auth_throttle.settings, "redis_url", "redis://unavailable")
+    monkeypatch.setattr(auth_throttle, "_redis_client", BrokenRedis())
+
+    assert auth_throttle._get_redis() is None
+    assert 'technozrelost_suppressed_exceptions_total{module="auth_throttle"} 1' in metrics.render()
 
 
 def _login(

@@ -53,6 +53,7 @@ from app.services.metrics import (
     PrometheusMetricsMiddleware,
     build_route_templates,
     install_db_listeners,
+    suppressed_exception_observed,
 )
 from app.services.news_scheduler import (
     SCHEDULER_INTERVAL_SECONDS,
@@ -85,6 +86,7 @@ async def _news_scheduler_loop() -> None:
                     finally:
                         await session.execute(text("SELECT pg_advisory_unlock(42)"))
         except Exception:  # noqa: BLE001 — цикл не должен умирать
+            suppressed_exception_observed("main")
             logger.exception("news scheduler iteration failed")
         await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS)
 

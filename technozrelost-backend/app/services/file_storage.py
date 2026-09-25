@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import hashlib
 import io
 import re
@@ -26,6 +25,7 @@ from fastapi import HTTPException, Request
 
 from app.core.config import settings
 from app.core.errors import raise_error
+from app.services.metrics import suppressed_exception_observed
 
 ALLOWED_MIME: dict[str, tuple[bytes, str]] = {
     "application/pdf": (b"%PDF-", "pdf"),
@@ -65,6 +65,7 @@ def _cvd_files_age_seconds() -> float | None:
         latest_mtime = max(p.stat().st_mtime for p in cvd_files)
         return time.time() - latest_mtime
     except Exception:  # noqa: BLE001 -- метрики не должны падать
+        suppressed_exception_observed("file_storage")
         return None
 
 
@@ -78,9 +79,11 @@ def _ensure_bucket_versioning(client: Any) -> None:
             if getattr(cfg, "status", None) == "Enabled":
                 return
         except Exception:  # noqa: BLE001 -- отсутствие версионирования не ошибка
+            suppressed_exception_observed("file_storage")
             pass
         client.set_bucket_versioning(settings.minio_bucket, VersioningConfig(status="Enabled"))
     except Exception:  # noqa: BLE001 -- метрики/инициализация не должны падать
+        suppressed_exception_observed("file_storage")
         pass
 
 
@@ -158,6 +161,7 @@ def detect_mime(data: bytes) -> str | None:
                 # (покрывает минимальный OOXML-архив для тестов)
                 return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         except Exception:
+            suppressed_exception_observed("file_storage")
             return None
     for mime, (sig, _ext) in ALLOWED_MIME.items():
         if mime.startswith("application/vnd.openxmlformats"):
@@ -201,8 +205,10 @@ class ClamAvScanner:
             await writer.drain()
             reply = (await reader.read(4096)).decode("utf-8", errors="replace").strip()
             writer.close()
-            with contextlib.suppress(Exception):
+            try:
                 await writer.wait_closed()
+            except Exception:
+                suppressed_exception_observed("file_storage")
             if "FOUND" in reply.upper():
                 return "infected", reply
             if reply.startswith("stream:") and "OK" in reply.upper():
@@ -292,6 +298,7 @@ class ObjectStorage:
         try:
             return bool(self._minio().bucket_exists(settings.minio_bucket))
         except Exception:  # noqa: BLE001 -- метрики не должны падать
+            suppressed_exception_observed("file_storage")
             return False
 
     def object_count(self) -> int:
@@ -302,6 +309,7 @@ class ObjectStorage:
             client = self._minio()
             return sum(1 for _ in client.list_objects(settings.minio_bucket, recursive=True))
         except Exception:  # noqa: BLE001 -- метрики не должны падать
+            suppressed_exception_observed("file_storage")
             return 0
 
     def bucket_versioning_enabled(self) -> bool:
@@ -313,6 +321,7 @@ class ObjectStorage:
             cfg = client.get_bucket_versioning(settings.minio_bucket)
             return getattr(cfg, "status", None) == "Enabled"
         except Exception:  # noqa: BLE001
+            suppressed_exception_observed("file_storage")
             return False
 
 
@@ -341,6 +350,7 @@ def clamav_cvd_age_seconds_sync() -> float | None:
                     continue
         return None
     except Exception:  # noqa: BLE001
+        suppressed_exception_observed("file_storage")
         return None
 
 

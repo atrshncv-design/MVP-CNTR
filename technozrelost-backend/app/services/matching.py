@@ -27,6 +27,7 @@ from app.core.embeddings import expanded_terms
 from app.db.models import Organization
 from app.schemas import MatchCandidate, MatchIn, MatchOut
 from app.services.ai_wiring import resolve_llm_api_key
+from app.services.metrics import suppressed_exception_observed
 
 
 def _tokenize(text: str) -> set[str]:
@@ -40,6 +41,7 @@ def _expanded(text: str) -> set[str]:
         if terms:
             return terms
     except Exception:
+        suppressed_exception_observed("matching")
         pass
     return _tokenize(text)
 
@@ -265,6 +267,7 @@ async def match_organizations(db: DBSession, payload: MatchIn) -> MatchOut:
                             if idx < len(llm_reasons):
                                 top[idx] = (score, org, [llm_reasons[idx][:300]])
         except Exception:  # noqa: BLE001 — LLM не должен ломать мэтчинг
+            suppressed_exception_observed("matching")
             pass
 
     results = [

@@ -39,6 +39,10 @@ _http_duration_count: dict[tuple[str, str], int] = defaultdict(int)
 _http_duration_sum: dict[tuple[str, str], float] = defaultdict(float)
 _db_queries_total = 0
 _db_query_errors_total = 0
+_SUPPRESSED_EXCEPTION_MODULES = frozenset(
+    {"auth_throttle", "rag", "file_storage", "matching", "metrics", "main", "deps", "nioktr"}
+)
+_suppressed_exceptions_total: dict[str, int] = defaultdict(int)
 _lock = threading.Lock()
 
 _listeners_installed = False
@@ -51,6 +55,7 @@ def reset() -> None:
         _http_duration_samples.clear()
         _http_duration_count.clear()
         _http_duration_sum.clear()
+        _suppressed_exceptions_total.clear()
         globals().update(_db_queries_total=0, _db_query_errors_total=0)
 
 
@@ -70,6 +75,14 @@ def db_query_observed() -> None:
 def db_query_error_observed() -> None:
     with _lock:
         globals()["_db_query_errors_total"] += 1
+
+
+def suppressed_exception_observed(module: str) -> None:
+    """Count a swallowed exception using only a fixed, low-cardinality module label."""
+    if module not in _SUPPRESSED_EXCEPTION_MODULES:
+        return
+    with _lock:
+        _suppressed_exceptions_total[module] += 1
 
 
 def _quantile(sorted_samples: list[float], q: float) -> float:
@@ -148,6 +161,7 @@ def render(
         duration_sums = dict(_http_duration_sum)
         db_queries_total = _db_queries_total
         db_query_errors_total = _db_query_errors_total
+        suppressed_exceptions_total = sorted(_suppressed_exceptions_total.items())
 
     lines: list[str] = []
     lines.append(
@@ -195,6 +209,15 @@ def render(
     lines.append("# HELP technozrelost_db_query_errors_total Ошибки SQL-запросов (Primary).")
     lines.append("# TYPE technozrelost_db_query_errors_total counter")
     lines.append(f"technozrelost_db_query_errors_total {db_query_errors_total}")
+
+    lines.append(
+        "# HELP technozrelost_suppressed_exceptions_total Exceptions handled by fallback paths."
+    )
+    lines.append("# TYPE technozrelost_suppressed_exceptions_total counter")
+    for module, count in suppressed_exceptions_total:
+        lines.append(
+            f'technozrelost_suppressed_exceptions_total{{module="{module}"}} {count}'
+        )
 
     lines.append(
         "# HELP technozrelost_notification_outbox_pending "
@@ -282,6 +305,7 @@ class PrometheusMetricsMiddleware:
         try:
             await self.app(scope, receive, wrapped_send)
         except Exception:
+            suppressed_exception_observed("metrics")
             observe_http(
                 method,
                 self._resolve_route(scope),

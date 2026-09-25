@@ -14,6 +14,7 @@ from app.core.deps import ReadCurrentUserOptional, ReadDBSession
 from app.core.errors import raise_error
 from app.db.models import NioktrCard, Organization, User
 from app.schemas import NioktrCardOut, OrganizationDetailOut, OrgCardOut
+from app.services.metrics import suppressed_exception_observed
 
 router = APIRouter(prefix="/nioktr", tags=["nioktr"])
 
@@ -47,6 +48,7 @@ def _registry_get_redis() -> Any | None:
         _registry_redis_checked = True
         return _registry_redis_client
     except Exception:  # noqa: BLE001 — fallback на LRU
+        suppressed_exception_observed("nioktr")
         _registry_redis_checked = True
         _registry_redis_client = None
         return None
@@ -94,6 +96,7 @@ async def enforce_registry_limit(request: Request, user: User | None = None) -> 
                     if ttl == -1:
                         await asyncio.to_thread(client.expire, rkey, window)
                 except Exception:  # noqa: BLE001
+                    suppressed_exception_observed("nioktr")
                     pass
             if count > limit:
                 raise raise_error("REGISTRY_RATE_LIMITED", request=request)
@@ -101,6 +104,7 @@ async def enforce_registry_limit(request: Request, user: User | None = None) -> 
     except HTTPException:
         raise
     except Exception:  # noqa: BLE001 — fallback
+        suppressed_exception_observed("nioktr")
         pass
     # Fallback LRU/TTL in-memory 5k/60s
     now = time.monotonic()

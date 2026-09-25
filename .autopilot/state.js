@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T13:40:46+04:00",
+  "updatedAt": "2026-09-25T13:54:00+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -300,6 +300,9 @@ window.STATE =
       "reasoningEffort": "high",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/10-suppressed-exception-metric.md",
       "red": "tests/test_observability.py::test_suppressed_exception_counter_is_bounded_and_resettable — expected AttributeError: recorder not implemented",
+      "tests": {"focused": "41 passed, 1 existing warning", "counterConcurrency": "1 passed", "ruff": "PASS", "mypyPython311": "62 files, PASS", "fullBackendRegression": "scheduled after T10–T12"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T10-suppressed-exceptions.md",
+      "implementation": "green; awaiting wave regression and final review",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0

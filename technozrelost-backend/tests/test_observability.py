@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
 
@@ -29,6 +30,7 @@ def test_metrics_endpoint_returns_prometheus_text(client: TestClient) -> None:
         "technozrelost_http_request_duration_seconds",
         "technozrelost_db_queries_total",
         "technozrelost_db_query_errors_total",
+        "technozrelost_suppressed_exceptions_total",
         "technozrelost_notification_outbox_pending",
         "technozrelost_storage_up",
         "technozrelost_storage_objects",
@@ -200,14 +202,16 @@ def test_suppressed_exception_counter_is_bounded_and_resettable() -> None:
     metrics.reset()
     metrics.suppressed_exception_observed("rag")
     metrics.suppressed_exception_observed("rag")
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(metrics.suppressed_exception_observed, ["rag"] * 500))
     metrics.suppressed_exception_observed('rag{tenant="secret"}')
 
     body = metrics.render()
-    assert 'technozrelost_suppressed_exceptions_total{module="rag"} 2' in body
+    assert 'technozrelost_suppressed_exceptions_total{module="rag"} 502' in body
     assert "secret" not in body
 
     metrics.reset()
-    assert 'technozrelost_suppressed_exceptions_total{module="rag"} 2' not in metrics.render()
+    assert 'technozrelost_suppressed_exceptions_total{module="rag"} 502' not in metrics.render()
 
 
 def test_redact_masks_secrets_and_emails() -> None:

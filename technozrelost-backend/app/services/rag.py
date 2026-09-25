@@ -15,6 +15,7 @@ from app.schemas import (
     RagSearchIn,
     RagSearchResult,
 )
+from app.services.metrics import suppressed_exception_observed
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +162,7 @@ async def _lexical_fallback(
     try:
         rows = await db.execute(text(sql), params)
     except Exception:
+        suppressed_exception_observed("rag")
         logger.warning("rag lexical fallback: запрос к БД не удался")
         return []
     scored: list[tuple[float, Any]] = []
@@ -191,6 +193,7 @@ async def search_documents(
     try:
         query_vec = embed_text(payload.query)
     except Exception:
+        suppressed_exception_observed("rag")
         logger.warning("rag search: embedding-модель недоступна, лексический fallback")
         return await _lexical_fallback(db, payload)
     if not any(abs(v) > 1e-9 for v in query_vec):
@@ -210,6 +213,7 @@ async def search_documents(
             },
         )
     except Exception:
+        suppressed_exception_observed("rag")
         logger.warning("rag search: векторный поиск не удался, лексический fallback")
         return await _lexical_fallback(db, payload)
 

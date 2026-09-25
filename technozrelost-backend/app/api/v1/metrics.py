@@ -36,6 +36,7 @@ async def _queue_pending_count() -> int:
             )
             return int(result.scalar_one())
     except Exception:  # noqa: BLE001 -- метрики не должны ронять scrape
+        metrics.suppressed_exception_observed("metrics")
         return 0
 
 
@@ -52,6 +53,7 @@ async def _replica_lag_bytes() -> int:
             val = row.scalar_one_or_none()
             return int(val) if val is not None else 0
     except Exception:  # noqa: BLE001
+        metrics.suppressed_exception_observed("metrics")
         return 0
 
 
@@ -72,6 +74,7 @@ async def _slot_retained_bytes() -> int:
             val = row.scalar_one_or_none()
             return int(val) if val is not None else 0
     except Exception:  # noqa: BLE001
+        metrics.suppressed_exception_observed("metrics")
         return 0
 
 

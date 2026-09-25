@@ -10,6 +10,7 @@ from app.core.database import get_db, get_read_db
 from app.core.errors import raise_error
 from app.core.security import decode_token
 from app.db.models import User
+from app.services.metrics import suppressed_exception_observed
 
 bearer_scheme = HTTPBearer(auto_error=False)
 DBSession = Annotated[AsyncSession, Depends(get_db)]
@@ -91,6 +92,7 @@ async def get_current_user_optional(
             return None
         return user
     except Exception:  # noqa: BLE001 — невалидный токен = аноним
+        suppressed_exception_observed("deps")
         return None
 
 
@@ -119,6 +121,7 @@ async def get_current_user_optional_read(
             return None
         return user
     except Exception:  # noqa: BLE001 — невалидный токен = аноним
+        suppressed_exception_observed("deps")
         return None
 
 
