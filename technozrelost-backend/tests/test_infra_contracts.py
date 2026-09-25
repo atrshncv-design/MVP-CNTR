@@ -851,6 +851,7 @@ def test_deploy_generates_256_bit_auth_secrets_without_logging_them(tmp_path):
     env_file = tmp_path / "production.env"
     env_file.write_text(production_env_file(), encoding="ascii")
     env = os.environ.copy()
+    env.pop("POSTGRES_PASSWORD", None)
     env.pop("JWT_SECRET", None)
     env.pop("NEXTAUTH_SECRET", None)
     env["ENV_FILE"] = str(env_file)
