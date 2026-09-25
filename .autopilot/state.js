@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T08:15:42+04:00",
+  "updatedAt": "2026-09-25T08:45:37+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -74,8 +74,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 56,
-    "done": 13,
-    "inTicket": 7,
+    "done": 14,
+    "inTicket": 6,
     "inSpec": 33,
     "placeholder": 0,
     "deferred": 3,
@@ -395,11 +395,15 @@ window.STATE =
       "requirements": ["D11"],
       "blockedBy": ["33"],
       "zone": ["technozrelost-backend/infra/tls_deploy_gate.py", "technozrelost-backend/tests/test_tls_deploy_gate.py"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-25T08:15:42+04:00",
+      "finishedAt": "2026-09-25T08:45:37+04:00",
+      "commit": "5706518",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
-      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/34-tls-openssl-argv-portability.md"
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/34-tls-openssl-argv-portability.md",
+      "tests": {"tlsFocused": "40 passed", "fullRedisCiLike": "752 passed, 2 warnings", "ruff": "exit 0", "mypy": "62 files, exit 0", "linuxOpenSsl": "combined exit 0 empty; split exit 0 SAN present"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T34-verification.md"
     },
     {
       "id": "23",
