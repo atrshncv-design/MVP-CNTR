@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T20:36:01+04:00",
+  "updatedAt": "2026-09-25T20:59:32+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -453,6 +453,28 @@ window.STATE =
       "tests": {"focusedNoDbIndependent": "14 passed, 4 DB-backed deselected", "ruff": "PASS", "mypyPython311": "PASS; 62 files", "fullSuite": "BLOCKED: PostgreSQL test container tz-pg-primary restarting; no container operation authorized"},
       "review": "Manifest/Spec and Craft repair re-review clean for the three blocking findings. Non-blocking concern: budget_used_tokens docstring says last known local value on Redis read failure; production fallback is usually 0 while operator metric snapshot retains the last gauge.",
       "blocker": "Full pytest and 4 DB-backed T14 tests remain unverified until the local test PostgreSQL is safely restored."
+    },
+    {
+      "id": "15",
+      "title": "DB-04: evidence-bound at-rest encryption change plan",
+      "requirements": ["R23"],
+      "blockedBy": ["13"],
+      "wave": 4,
+      "zone": ["technozrelost-backend/infra/at-rest-encryption-change-plan.md"],
+      "startedAt": "2026-09-25T20:45:05+04:00",
+      "repairStartedAt": "2026-09-25T20:51:24+04:00",
+      "finishedAt": "2026-09-25T20:59:32+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/15-at-rest-encryption-plan.md",
+      "status": "done",
+      "retries": 0,
+      "repairs": 1,
+      "handoffs": 0,
+      "tests": {"documentReferences": "22 concrete tracked paths exist; 1 wildcard glob is intentional", "secretScan": "PASS; no credential values", "ruff": "PASS", "diffCheck": "PASS", "backendPytest": "BLOCKED by unavailable local PostgreSQL; 75 setup errors, no tests ran; not a T15 code gate"},
+      "review": "Manifest/Spec and Craft independent re-review CLEAN; the initial LUKS/offsite error was corrected. Minor punctuation issue fixed after review.",
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T15-at-rest-plan.md",
+      "executorNote": "Docs-only T15 complete. DB-04 remains UNKNOWN / READY FOR APPROVAL; no production/config/data changes. R23 remains in-ticket because it contains other unfinished requirements."
     },
     {
       "id": "25",
