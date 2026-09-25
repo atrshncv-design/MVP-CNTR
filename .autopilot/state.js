@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T10:06:46+04:00",
+  "updatedAt": "2026-09-25T10:31:51+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -257,11 +257,16 @@ window.STATE =
       "blockedBy": ["07"],
       "wave": 3,
       "zone": ["technozrelost-backend/app/services/ai_assistant.py", "technozrelost-backend/app/services/ai_metrics.py", "technozrelost-backend/tests/"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-25T10:06:46+04:00",
+      "updatedAt": "2026-09-25T10:30:48+04:00",
+      "finishedAt": "2026-09-25T10:30:48+04:00",
       "executorModel": "opencode/space-bunny-free",
       "reasoningVariant": "max",
-      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/08-malformed-llm-response.md"
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/08-malformed-llm-response.md",
+      "commit": "fc5063e",
+      "tests": {"focusedIndependent": "30 passed", "aiChatExecutor": "93 passed", "ruff": "PASS", "mypyPython311": "62 files, PASS", "fullSuite": "744 passed, 1 warning in 497.81s", "liveProvider": "BLOCKED until owner key"},
+      "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T08-verification.md"
     },
     {
       "id": "09",
@@ -270,7 +275,10 @@ window.STATE =
       "blockedBy": ["08"],
       "wave": 3,
       "zone": ["technozrelost-backend/app/core/config.py", "technozrelost-backend/.env.example", "technozrelost-backend/tests/"],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-25T10:31:51+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
       "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/09-explicit-environment-presets.md"
     },
     {
