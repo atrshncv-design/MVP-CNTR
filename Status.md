@@ -17,7 +17,7 @@
 - T34: OpenSSL SAN-check передаёт `-ext` и `subjectAltName` отдельными argv (`5706518`); независимые TLS 40/40, полный backend 752 passed, Ruff/mypy PASS. Синтетический нативный Linux OpenSSL 3.0.20 воспроизвёл старый сбой и новый успешный вывод SAN. GitHub backend CI после коммита ещё ожидает проверки.
 - CI после T32–T34: GitHub Actions run `36095799333` на `d2bca7e` завершён `success`; Backend Pytest/readiness и Frontend успешны. Волна quick wins T05–T12 теперь разблокирована; production всё ещё не менялся.
 - T05: публичный поиск `/projects` получил локализованное доступное имя, оба селекта УГТ `/roadmap` — нативную связь подписи и контрола (`d12c0ee`). Независимые 239 frontend-тестов, lint и webpack build PASS; два ревью PASS после устранения хрупкости нового теста. Визуальные screenshots не делались, production не менялся.
-- T06: CORS ограничен методами `GET/POST/PUT/PATCH/DELETE` и заголовками `Authorization/Content-Type` (`02f1a36`); origins/credentials сохранены. Focused tests, Ruff и Python 3.11 mypy независимо PASS; два ревью PASS. Полный backend suite превысил 300 секунд и остаётся обязательным на регрессионном этапе волны; production не менялся.
+- T06: CORS ограничен методами `GET/POST/PUT/PATCH/DELETE` и заголовками `Authorization/Content-Type` (`02f1a36`); origins/credentials сохранены. Focused tests, Ruff и Python 3.11 mypy независимо PASS; два ревью PASS. Полный backend suite — 723 passed, 1 pre-existing warning за 463.25 сек; production не менялся.
 
 ## 2026-09-21 — временно скрыты AI-функции из UX/UI серверной версии — done
 - Флаги: `AI_UI_ENABLED=false`, `P2_MATCHING_ENABLED=false` (`technozrelost-frontend/src/lib/release.ts`).
