@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "/Users/aleksandrtrisenkov/.config/opencode/skills/autopilot",
   "startedAt": "2026-09-23T11:36:02+04:00",
-  "updatedAt": "2026-09-25T19:28:01+04:00",
+  "updatedAt": "2026-09-25T19:33:57+04:00",
   "finishedAt": null,
   "stages": [
     {
@@ -73,8 +73,8 @@ window.STATE =
   "requirements": {
     "total": 56,
     "done": 15,
-    "inTicket": 6,
-    "inSpec": 32,
+    "inTicket": 7,
+    "inSpec": 31,
     "placeholder": 0,
     "deferred": 3,
     "dropped": 0
@@ -166,7 +166,7 @@ window.STATE =
       "blockedBy": ["02", "22"],
       "wave": 2,
       "zone": ["technozrelost-frontend/"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-24T08:43:11+04:00",
       "finishedAt": "2026-09-24T08:46:49+04:00",
       "executorModel": "gpt-6-luna",
@@ -374,7 +374,7 @@ window.STATE =
       "blockedBy": ["12"],
       "wave": 4,
       "zone": ["technozrelost-backend/infra/docker-compose.yml", "technozrelost-backend/infra/docker-compose.prod.yml", "technozrelost-backend/Dockerfile", "technozrelost-frontend/Dockerfile", "technozrelost-backend/tests/test_container_hardening.py", "technozrelost-backend/infra/container-hardening-runbook.md"],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-09-25T17:41:10+04:00",
       "lastAttemptStartedAt": "2026-09-25T17:47:39+04:00",
       "lastRepairStartedAt": "2026-09-25T18:59:50+04:00",
@@ -404,13 +404,28 @@ window.STATE =
       },
       "review": "Manifest/Spec pointed re-review clean; initial blocking findings repaired. Craft has one non-blocking concern about per-service exception-detail assertions; carried to final triage.",
       "evidence": ".autopilot/2026-09-23-production-stabilization--wip/evidence/T13-verification.md",
-      "commit": null,
-      "status": "done",
+      "commit": "af9ef2b",
       "repairs": 1,
       "handoffs": 0,
       "concerns": [
         "craft · technozrelost-backend/tests/test_container_hardening.py:90 · regression test checks exception-name presence but not per-service reason, writable surface, and compensating isolation; non-blocking finding for final triage"
       ]
+    },
+    {
+      "id": "14",
+      "title": "AI-01: per-route rate, token budget and circuit breaker",
+      "requirements": ["R23", "R26"],
+      "blockedBy": ["13"],
+      "wave": 4,
+      "zone": ["technozrelost-backend/app/core/config.py", "technozrelost-backend/app/services/ai_assistant.py", "technozrelost-backend/app/services/ai_metrics.py", "technozrelost-backend/app/api/v1/chat.py", "technozrelost-backend/app/api/v1/match.py", "technozrelost-backend/app/api/v1/rag.py", "technozrelost-backend/tests/"],
+      "status": "in-progress",
+      "startedAt": "2026-09-25T19:33:57+04:00",
+      "executorModel": "opencode/space-bunny-free",
+      "reasoningVariant": "max",
+      "ticket": ".autopilot/2026-09-23-production-stabilization--wip/tickets/14-ai-budget-rate-breaker.md",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     },
     {
       "id": "25",
